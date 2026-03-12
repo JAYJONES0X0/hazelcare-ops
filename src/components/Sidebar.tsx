@@ -1,64 +1,112 @@
+import type { ReactNode } from 'react';
 import type { Page } from '../App';
-import type { WeekSummary } from '../lib/types';
+import type { WeekSummary, Action, Incident } from '../lib/types';
 
 interface Props {
   page: Page;
   setPage: (p: Page) => void;
   weekData: WeekSummary | null;
+  actions: Action[];
+  incidents: Incident[];
+  isDemo: boolean;
+  onLoadDemo: () => void;
 }
 
-const navItems: { id: Page; label: string; icon: string }[] = [
-  { id: 'upload', label: 'Import Data', icon: '📥' },
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'templates', label: 'Templates', icon: '📋' },
-  { id: 'reports', label: 'Reports', icon: '📄' },
+const navSections: { heading?: string; items: { id: Page; label: string; icon: ReactNode }[] }[] = [
+  {
+    heading: 'Overview',
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" /></svg> },
+      { id: 'upload', label: 'Import Data', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> },
+    ],
+  },
+  {
+    heading: 'Operations',
+    items: [
+      { id: 'actions', label: 'Action Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
+      { id: 'incidents', label: 'Incidents', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> },
+      { id: 'staff', label: 'Staff', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+    ],
+  },
+  {
+    heading: 'Output',
+    items: [
+      { id: 'templates', label: 'Templates', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+      { id: 'reports', label: 'Reports', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+    ],
+  },
 ];
 
-export function Sidebar({ page, setPage, weekData }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }: Props) {
   const redFlags = weekData?.allFlags.red.length ?? 0;
   const amberFlags = weekData?.allFlags.amber.length ?? 0;
+  const openActions = actions.filter(a => a.status !== 'completed').length;
+  const activeIncidents = incidents.filter(i => i.stage !== 'closed').length;
+
+  function getBadge(id: Page): ReactNode | null {
+    if (id === 'dashboard' && redFlags > 0) {
+      return <span className="ml-auto bg-flag-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{redFlags}</span>;
+    }
+    if (id === 'actions' && openActions > 0) {
+      return <span className="ml-auto bg-hc-blue text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{openActions}</span>;
+    }
+    if (id === 'incidents' && activeIncidents > 0) {
+      return <span className="ml-auto bg-flag-amber text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{activeIncidents}</span>;
+    }
+    return null;
+  }
 
   return (
-    <aside className="w-56 bg-hc-darker border-r border-hc-border flex flex-col shrink-0" style={{ background: '#0a0f1a' }}>
+    <aside className="w-60 flex flex-col shrink-0 border-r border-hc-border" style={{ background: 'linear-gradient(180deg, #0a1020 0%, #060b14 100%)' }}>
       {/* Logo */}
-      <div className="p-4 border-b border-hc-border">
+      <div className="p-5 border-b border-hc-border">
         <div className="flex items-center gap-3">
-          <img src="/hazelcare-logo.png" alt="Hazelcare" className="h-8" />
+          <img src="/hazelcare-logo.png" alt="Hazelcare" className="h-9" />
           <div>
-            <div className="text-sm font-bold text-white">Ops Engine</div>
-            <div className="text-[10px] text-hc-muted">v2.0 — Zero Cost</div>
+            <div className="text-[13px] font-bold text-white tracking-tight">Ops Engine</div>
+            <div className="text-[10px] text-hc-muted font-medium">v2.0 — Zero Cost</div>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1">
-        {navItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => setPage(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-              page === item.id
-                ? 'bg-hc-teal/20 text-hc-teal-light font-semibold'
-                : 'text-hc-muted hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <span className="text-base">{item.icon}</span>
-            {item.label}
-            {item.id === 'dashboard' && redFlags > 0 && (
-              <span className="ml-auto bg-flag-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {redFlags}
-              </span>
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {navSections.map((section, si) => (
+          <div key={si}>
+            {section.heading && (
+              <div className="text-[10px] font-semibold text-hc-muted uppercase tracking-[0.1em] px-3 mb-2">
+                {section.heading}
+              </div>
             )}
-          </button>
+            <div className="space-y-0.5">
+              {section.items.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setPage(item.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all ${
+                    page === item.id
+                      ? 'bg-hc-teal/15 text-hc-teal-light font-semibold glow-teal'
+                      : 'text-hc-muted hover:text-white hover:bg-white/[0.03]'
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                  {getBadge(item.id)}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
-      {/* Status */}
+      {/* Status Panel */}
       <div className="p-3 border-t border-hc-border">
         {weekData ? (
-          <div className="bg-hc-card rounded-lg p-3">
-            <div className="text-[10px] text-hc-muted uppercase tracking-wider mb-2">This Week</div>
+          <div className="bg-hc-card rounded-xl p-3.5 border border-hc-border">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold">This Week</div>
+              {isDemo && <span className="text-[9px] text-hc-teal-light bg-hc-teal/20 px-1.5 py-0.5 rounded">DEMO</span>}
+            </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
                 <div className="text-lg font-bold text-white">{weekData.totalEntries}</div>
@@ -73,12 +121,41 @@ export function Sidebar({ page, setPage, weekData }: Props) {
                 <div className="text-[9px] text-hc-muted">Amber</div>
               </div>
             </div>
+            {/* Houses bar */}
+            <div className="mt-3 pt-3 border-t border-hc-border">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-hc-muted">{Object.keys(weekData.houses).length} houses</span>
+                <span className="text-hc-muted">{weekData.clients.length} clients</span>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="text-[11px] text-hc-muted text-center py-2">
-            No data loaded.<br/>Import from Nourish to start.
+          <div className="text-[11px] text-hc-muted text-center py-3">
+            No data loaded
           </div>
         )}
+      </div>
+
+      {/* Quick links */}
+      <div className="px-3 pb-4">
+        <div className="flex gap-2">
+          <a
+            href="https://hazelcare.nourishcare.com/user/login?destination=reporting/clientdiary"
+            target="_blank"
+            rel="noopener"
+            className="flex-1 text-[10px] text-center py-1.5 text-hc-muted hover:text-hc-teal-light border border-hc-border rounded-lg hover:border-hc-teal/30 transition-all"
+          >
+            Nourish
+          </a>
+          <a
+            href="https://org.nourishcare.co.uk/hazel-care-ltd+nc-hazelcare#/"
+            target="_blank"
+            rel="noopener"
+            className="flex-1 text-[10px] text-center py-1.5 text-hc-muted hover:text-hc-teal-light border border-hc-border rounded-lg hover:border-hc-teal/30 transition-all"
+          >
+            Portal
+          </a>
+        </div>
       </div>
     </aside>
   );

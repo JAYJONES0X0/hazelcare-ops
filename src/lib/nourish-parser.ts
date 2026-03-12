@@ -1,4 +1,5 @@
 import type { NourishEntry, HouseSummary, WeekSummary } from './types';
+import { uid } from './storage';
 
 // ============================================================
 // FLAG KEYWORDS — auto-severity from diary text
@@ -129,6 +130,7 @@ export function parseNourishData(rawText: string): NourishEntry[] {
         const houseRaw = extractHouseFromCarers(parts[4]);
         const { severity, flags } = detectFlags(parts[6]);
         entries.push({
+          id: uid(),
           date: parts[2] || parts[0],
           house: normalizeHouse(houseRaw),
           type: parts[3],
@@ -148,6 +150,7 @@ export function parseNourishData(rawText: string): NourishEntry[] {
       const houseRaw = extractHouseFromCarers(tabs[4]);
       const { severity, flags } = detectFlags(tabs[6]);
       entries.push({
+        id: uid(),
         date: tabs[2] || tabs[0],
         house: normalizeHouse(houseRaw),
         type: tabs[3],
@@ -196,6 +199,7 @@ function parseFreeText(text: string): NourishEntry[] {
     if (catMatch) {
       const { severity, flags } = detectFlags(catMatch[2]);
       entries.push({
+        id: uid(),
         date: '',
         house: currentHouse,
         type: catMatch[1],

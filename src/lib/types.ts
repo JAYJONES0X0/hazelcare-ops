@@ -1,5 +1,10 @@
+// ============================================================
+// CORE DATA TYPES
+// ============================================================
 export interface NourishEntry {
+  id: string;
   date: string;
+  time?: string;
   house: string;
   type: string;
   carer: string;
@@ -7,8 +12,84 @@ export interface NourishEntry {
   entry: string;
   severity: 'red' | 'amber' | 'green' | 'none';
   flags: string[];
+  category?: Category;
 }
 
+export type Category =
+  | 'incident'
+  | 'safeguarding'
+  | 'medication'
+  | 'handover'
+  | 'daily_support'
+  | 'finance'
+  | 'staff'
+  | 'health_safety'
+  | 'other';
+
+// ============================================================
+// ACTION TRACKING
+// ============================================================
+export type ActionStatus = 'open' | 'in_progress' | 'blocked' | 'completed' | 'overdue';
+export type ActionPriority = 'critical' | 'high' | 'medium' | 'low';
+
+export interface Action {
+  id: string;
+  title: string;
+  description: string;
+  house: string;
+  owner: string;
+  priority: ActionPriority;
+  status: ActionStatus;
+  createdAt: string;
+  dueDate: string;
+  completedAt?: string;
+  sourceEntry?: string;
+  tags: string[];
+}
+
+// ============================================================
+// INCIDENT TRACKING
+// ============================================================
+export type IncidentStage = 'logged' | 'investigating' | 'resolved' | 'reported' | 'closed';
+
+export interface Incident {
+  id: string;
+  title: string;
+  house: string;
+  client: string;
+  staff: string;
+  date: string;
+  severity: 'red' | 'amber';
+  stage: IncidentStage;
+  description: string;
+  flags: string[];
+  actions: string[];
+  outcome?: string;
+  reportedToCQC?: boolean;
+  createdAt: string;
+}
+
+// ============================================================
+// STAFF
+// ============================================================
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  house: string;
+  phone?: string;
+  email?: string;
+  dbsExpiry?: string;
+  trainingExpiry?: string;
+  nextSupervision?: string;
+  sicknessThisMonth: number;
+  latenessThisMonth: number;
+  status: 'active' | 'sickness' | 'leave' | 'suspended';
+}
+
+// ============================================================
+// HOUSE & WEEK SUMMARIES
+// ============================================================
 export interface HouseSummary {
   name: string;
   coordinator: string;
@@ -34,6 +115,9 @@ export interface WeekSummary {
   carers: string[];
 }
 
+// ============================================================
+// TEMPLATES
+// ============================================================
 export type TemplateType =
   | 'quality_meeting'
   | 'daily_quality'
@@ -62,3 +146,13 @@ export const TEMPLATES: Template[] = [
   { id: 'medication_audit', name: 'Medication Audit', icon: '💊', desc: 'Medication review & audit', color: '#0891b2' },
   { id: 'finance', name: 'Finance Meeting', icon: '💷', desc: 'Budget & finance review', color: '#059669' },
 ];
+
+// ============================================================
+// APP STATE
+// ============================================================
+export interface AppState {
+  weekData: WeekSummary | null;
+  actions: Action[];
+  incidents: Incident[];
+  staff: StaffMember[];
+}
