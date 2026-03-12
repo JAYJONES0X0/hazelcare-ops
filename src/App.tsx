@@ -76,7 +76,7 @@ export default function App() {
         isDemo={isDemo}
         onLoadDemo={loadDemoData}
       />
-      <main className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(180deg, #080e1a 0%, #0c1525 100%)' }}>
+      <main className="flex-1 overflow-y-auto pt-[52px] lg:pt-0" style={{ background: 'linear-gradient(180deg, #080e1a 0%, #0c1525 100%)' }}>
         {/* Demo banner */}
         {isDemo && (
           <div className="bg-hc-teal/10 border-b border-hc-teal/20 px-6 py-2 flex items-center justify-between">
