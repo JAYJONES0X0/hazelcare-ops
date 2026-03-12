@@ -6,12 +6,14 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { ActionsPage } from './pages/ActionsPage';
 import { IncidentsPage } from './pages/IncidentsPage';
 import { StaffPage } from './pages/StaffPage';
+import { StaffNotePage } from './pages/StaffNotePage';
+import { HandoverPage } from './pages/HandoverPage';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents } from './lib/storage';
 import { generateMockEntries, generateMockActions, generateMockIncidents, generateMockStaff } from './lib/mock-data';
 import { buildWeekSummary } from './lib/nourish-parser';
 
-export type Page = 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'reports';
+export type Page = 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'reports';
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
@@ -97,6 +99,8 @@ export default function App() {
         {page === 'actions' && <ActionsPage actions={actions} onUpdate={handleUpdateActions} />}
         {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} />}
         {page === 'staff' && <StaffPage staff={staff} />}
+        {page === 'notes' && <StaffNotePage />}
+        {page === 'handover' && <HandoverPage />}
         {page === 'reports' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
       </main>
     </div>
