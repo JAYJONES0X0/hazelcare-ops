@@ -10,6 +10,7 @@ import { StaffNotePage } from './pages/StaffNotePage';
 import { HandoverPage } from './pages/HandoverPage';
 import { BriefingPage } from './pages/BriefingPage';
 import { CompliancePage } from './pages/CompliancePage';
+import { ReportsPage } from './pages/ReportsPage';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents } from './lib/storage';
 import { generateMockEntries, generateMockActions, generateMockIncidents, generateMockStaff } from './lib/mock-data';
@@ -97,7 +98,7 @@ export default function App() {
         {page === 'notes' && <StaffNotePage />}
         {page === 'handover' && <HandoverPage />}
         {page === 'compliance' && <CompliancePage staff={staff} />}
-        {page === 'reports' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
+        {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
       </main>
     </div>
   );
