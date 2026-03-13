@@ -1,5 +1,122 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { uid } from '../lib/storage';
+
+// ============================================================
+// VOICE-TO-NOTE — Web Speech API
+// ============================================================
+const SpeechRecognitionAPI =
+  typeof window !== 'undefined'
+    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    : null;
+
+const speechSupported = !!SpeechRecognitionAPI;
+
+function useSpeechToText(onResult: (transcript: string) => void) {
+  const recognitionRef = useRef<any>(null);
+  const [listening, setListening] = useState(false);
+
+  const stop = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setListening(false);
+  }, []);
+
+  const start = useCallback(() => {
+    if (!speechSupported) return;
+    // Stop any existing session
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'en-GB';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = '';
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += t;
+          onResult(finalTranscript);
+          finalTranscript = '';
+        } else {
+          interim += t;
+        }
+      }
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [onResult]);
+
+  const toggle = useCallback(() => {
+    if (listening) stop();
+    else start();
+  }, [listening, start, stop]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  return { listening, toggle };
+}
+
+function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript: (key: string, text: string) => void }) {
+  const handleResult = useCallback((transcript: string) => {
+    onTranscript(fieldKey, transcript);
+  }, [fieldKey, onTranscript]);
+
+  const { listening, toggle } = useSpeechToText(handleResult);
+
+  if (!speechSupported) return null;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={toggle}
+        title={listening ? 'Stop recording' : 'Start voice input'}
+        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+          listening
+            ? 'bg-flag-red text-white shadow-lg shadow-flag-red/30 animate-mic-pulse'
+            : 'bg-hc-dark border border-hc-border text-hc-muted hover:text-white hover:border-hc-border-light'
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+      </button>
+      {listening && (
+        <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-flag-red font-semibold whitespace-nowrap animate-pulse">
+          Listening...
+        </span>
+      )}
+    </div>
+  );
+}
 
 // ============================================================
 // NOTE TYPES WITH GUIDED PROMPTS
@@ -150,6 +267,23 @@ export function StaffNotePage() {
     setAnswers(prev => ({ ...prev, [key]: value }));
   }
 
+  // Append transcribed speech to a guided prompt field
+  const appendToAnswer = useCallback((key: string, transcript: string) => {
+    setAnswers(prev => {
+      const existing = prev[key] || '';
+      const separator = existing && !existing.endsWith(' ') ? ' ' : '';
+      return { ...prev, [key]: existing + separator + transcript };
+    });
+  }, []);
+
+  // Append transcribed speech to free text
+  const appendToFreeText = useCallback((_key: string, transcript: string) => {
+    setFreeText(prev => {
+      const separator = prev && !prev.endsWith(' ') ? ' ' : '';
+      return prev + separator + transcript;
+    });
+  }, []);
+
   // ============================================================
   // GENERATE PROFESSIONAL NOTE
   // ============================================================
@@ -273,14 +407,17 @@ export function StaffNotePage() {
           {mode === 'guided' ? (
             <div className="space-y-3">
               {selectedType.prompts.map((prompt, i) => (
-                <div key={prompt.key} className="bg-hc-card border border-hc-border rounded-xl p-4 focus-within:border-hc-teal/30 transition-all">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-white mb-2">
-                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: `${selectedType.color}15`, color: selectedType.color }}>
-                      {i + 1}
-                    </span>
-                    {prompt.label}
-                    {prompt.required && <span className="text-flag-red text-[10px]">*</span>}
-                  </label>
+                <div key={prompt.key} className="bg-hc-card border border-hc-border rounded-xl p-4 focus-within:border-hc-teal/30 transition-all relative">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-white">
+                      <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: `${selectedType.color}15`, color: selectedType.color }}>
+                        {i + 1}
+                      </span>
+                      {prompt.label}
+                      {prompt.required && <span className="text-flag-red text-[10px]">*</span>}
+                    </label>
+                    <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
+                  </div>
                   <textarea
                     value={answers[prompt.key] || ''}
                     onChange={e => setAnswer(prompt.key, e.target.value)}
@@ -295,9 +432,8 @@ export function StaffNotePage() {
             <div className="bg-hc-card border border-hc-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-xs font-semibold text-white">Free Text Note</label>
-                <div className="flex items-center gap-1.5 ml-auto text-[10px] text-hc-muted">
-                  <svg className="w-3.5 h-3.5 text-hc-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                  Voice input — coming soon
+                <div className="ml-auto">
+                  <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
                 </div>
               </div>
               <textarea

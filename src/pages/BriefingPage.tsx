@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import type { WeekSummary, Action, Incident } from '../lib/types';
 import type { Page } from '../App';
+import { detectTrends } from '../lib/trends';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -33,6 +35,10 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
   const overdueActions = actions.filter(a => a.status !== 'completed' && a.priority === 'critical');
   const openActions = actions.filter(a => a.status === 'open' || a.status === 'in_progress');
   const activeIncidents = incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved');
+
+  // Trend detection
+  const allEntries = useMemo(() => Object.values(weekData.houses).flatMap(h => h.entries), [weekData]);
+  const trends = useMemo(() => detectTrends(allEntries), [allEntries]);
 
   // Houses that need attention (have red flags)
   const hotHouses = houseList.filter(h => h.flags.red > 0);
@@ -127,6 +133,63 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
             {amberFlags.length > 5 && (
               <div className="text-[11px] text-hc-muted text-center py-1">+ {amberFlags.length - 5} more amber items</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Trends & Patterns */}
+      {trends.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-xs font-semibold text-hc-blue uppercase tracking-wider mb-2">
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+              Trends & Patterns ({trends.length})
+            </span>
+          </h2>
+          <div className="space-y-1.5">
+            {trends.map(trend => (
+              <div
+                key={trend.id}
+                className={`rounded-xl p-3.5 flex items-start gap-3 border ${
+                  trend.severity === 'critical'
+                    ? 'bg-flag-red/5 border-flag-red/20'
+                    : trend.severity === 'warning'
+                    ? 'bg-flag-amber/5 border-flag-amber/15'
+                    : 'bg-hc-blue/5 border-hc-blue/15'
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                  trend.severity === 'critical'
+                    ? 'bg-flag-red/15'
+                    : trend.severity === 'warning'
+                    ? 'bg-flag-amber/15'
+                    : 'bg-hc-blue/15'
+                }`}>
+                  {trend.severity === 'critical' ? (
+                    <svg className="w-3.5 h-3.5 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                  ) : trend.severity === 'warning' ? (
+                    <svg className="w-3.5 h-3.5 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5 text-hc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-semibold text-white">{trend.title}</span>
+                    {trend.metric && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${
+                        trend.severity === 'critical'
+                          ? 'bg-flag-red/10 text-flag-red border-flag-red/20'
+                          : trend.severity === 'warning'
+                          ? 'bg-flag-amber/10 text-flag-amber border-flag-amber/20'
+                          : 'bg-hc-blue/10 text-hc-blue border-hc-blue/20'
+                      }`}>{trend.metric}</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-hc-muted leading-relaxed">{trend.detail}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
