@@ -11,12 +11,13 @@ import { HandoverPage } from './pages/HandoverPage';
 import { BriefingPage } from './pages/BriefingPage';
 import { CompliancePage } from './pages/CompliancePage';
 import { ReportsPage } from './pages/ReportsPage';
+import { RiskScoresPage } from './pages/RiskScoresPage';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents } from './lib/storage';
 import { generateMockEntries, generateMockActions, generateMockIncidents, generateMockStaff } from './lib/mock-data';
 import { buildWeekSummary } from './lib/nourish-parser';
 
-export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports';
+export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk';
 
 export default function App() {
   const [page, setPage] = useState<Page>('briefing');
@@ -99,6 +100,7 @@ export default function App() {
         {page === 'handover' && <HandoverPage />}
         {page === 'compliance' && <CompliancePage staff={staff} />}
         {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
+        {page === 'risk' && <RiskScoresPage weekData={weekData} />}
       </main>
     </div>
   );
