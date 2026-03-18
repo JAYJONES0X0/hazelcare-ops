@@ -107,7 +107,7 @@ export function buildPBSHtml(client: FullClient, sigs?: Sig[]): string {
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
 
   html += docHeader('POSITIVE BEHAVIOUR SUPPORT (PBS) PLAN', [
-    ['Service User', client.name],
+    ['Name', client.name],
     ['Preferred Name', client.preferredName || name],
     ['Date of Birth', client.dob],
     ['NHS Number', client.nhs],
@@ -242,10 +242,10 @@ export function buildPBSHtml(client: FullClient, sigs?: Sig[]): string {
   }
 
   // 11 — Review
-  html += sh('Review and Service User Involvement', 11);
+  html += sh('Review and How This Person Was Involved', 11);
   html += `<p>${pbs.reviewSchedule}</p>`;
   if (pbs.serviceUserInvolvement) {
-    html += `<p><strong>Service User Involvement:</strong> ${pbs.serviceUserInvolvement}</p>`;
+    html += `<p><strong>How This Person Was Involved:</strong> ${pbs.serviceUserInvolvement}</p>`;
   }
 
   html += sh('Signatures');
@@ -262,8 +262,8 @@ export function buildRiskHtml(client: FullClient, sigs?: Sig[]): string {
 
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
 
-  html += docHeader('RISK ASSESSMENT', [
-    ['Service User', client.name],
+  html += docHeader('KEEPING ME SAFE', [
+    ['Name', client.name],
     ['Date of Birth', client.dob],
     ['NHS Number', client.nhs],
     ['Address', client.address],
@@ -388,8 +388,8 @@ export function buildCarePlanHtml(client: FullClient): string {
     @media print{.domain-card{break-inside:avoid;}}
   </style></head><body>`;
 
-  html += docHeader('Care Plan', [
-    ['Client Name', client.name],
+  html += docHeader('My Support Plan', [
+    ['Name', client.name],
     ['Preferred Name', client.preferredName],
     ['Date of Birth', client.dob],
     ['NHS Number', client.nhs],
@@ -400,21 +400,21 @@ export function buildCarePlanHtml(client: FullClient): string {
   ]);
 
   if (cp.biography) {
-    html += sh('Biography');
+    html += sh('My Life Story');
     html += `<p>${cp.biography}</p>`;
   }
   if (cp.criticalInfo) {
-    html += sh('Critical Information');
+    html += sh('Important Things About Me');
     html += `<p style="white-space:pre-wrap;">${cp.criticalInfo}</p>`;
   }
   if (cp.emergencyInfo) {
-    html += sh('Emergency Information');
+    html += sh('In an Emergency');
     html += `<p style="white-space:pre-wrap;">${cp.emergencyInfo}</p>`;
   }
 
   // Summary table
-  html += sh('Care Plan Domains Summary');
-  html += `<table><tr><th>Domain</th><th>Level of Need</th><th>Risk Score</th><th>Next Review</th></tr>`;
+  html += sh('Areas of My Life — Summary');
+  html += `<table><tr><th>Area</th><th>Support Level</th><th>Risk</th><th>Next Review</th></tr>`;
   for (const d of enabledDomains) {
     const { score, color, label } = riskInfo(d.riskLikelihood, d.riskImpact);
     html += `<tr>
@@ -436,22 +436,22 @@ export function buildCarePlanHtml(client: FullClient): string {
       <span class="level" style="background:${levelColors[d.levelOfNeed]};margin-top:4px;">${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></div>`;
     html += `<div class="domain-body">`;
 
-    if (d.identifiedNeed) html += `<h3>Identified Need</h3><p style="white-space:pre-wrap;">${d.identifiedNeed}</p>`;
-    if (d.plannedOutcomes) html += `<h3>Planned Outcomes</h3><p style="white-space:pre-wrap;">${d.plannedOutcomes}</p>`;
-    if (d.howToAchieve) html += `<h3>How to Achieve Outcomes</h3><p style="white-space:pre-wrap;">${d.howToAchieve}</p>`;
+    if (d.identifiedNeed) html += `<h3>About Me — What I Need</h3><p style="white-space:pre-wrap;">${d.identifiedNeed}</p>`;
+    if (d.plannedOutcomes) html += `<h3>What Good Looks Like for Me</h3><p style="white-space:pre-wrap;">${d.plannedOutcomes}</p>`;
+    if (d.howToAchieve) html += `<h3>How My Team Supports Me</h3><p style="white-space:pre-wrap;">${d.howToAchieve}</p>`;
     if (d.riskTitle) {
-      html += `<h3>Risk</h3><p><strong>${d.riskTitle}</strong></p>`;
+      html += `<h3>What Could Go Wrong</h3><p><strong>${d.riskTitle}</strong></p>`;
       html += `<p>Likelihood: ${d.riskLikelihood} × Impact: ${d.riskImpact} = <span class="risk-badge" style="background:${color}">${score} — ${label}</span></p>`;
       if (d.riskMitigation) html += `<p>${d.riskMitigation}</p>`;
     }
     if (d.reviewNote) {
-      html += `<h3>Review Note</h3><p>${d.reviewNote}</p>`;
-      if (d.reviewer) html += `<p style="font-size:11px;color:#64748b;">Reviewer: ${d.reviewer} · ${d.reviewDate}</p>`;
+      html += `<h3>What's Working / What's Not</h3><p>${d.reviewNote}</p>`;
+      if (d.reviewer) html += `<p style="font-size:11px;color:#64748b;">Checked by: ${d.reviewer} · ${d.reviewDate}</p>`;
     }
     html += `</div></div>`;
   }
 
-  html += `<div class="footer">Hazel Care Ltd | Care Plan Document | Confidential — Not for distribution outside of the care team</div>`;
+  html += `<div class="footer">Hazel Care Ltd | Person-Centred Support Plan | Confidential — Not for distribution outside of the care team</div>`;
   html += `</body></html>`;
   return html;
 }

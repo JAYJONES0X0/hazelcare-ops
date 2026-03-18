@@ -51,7 +51,7 @@ function NeedLevelSelector({ value, onChange }: { value: number; onChange: (v: n
   const colors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
   return (
     <div className="mb-4">
-      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Level of Need</label>
+      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">How Much Support I Need</label>
       <div className="flex gap-2">
         {LEVEL_OF_NEED_LABELS.map((label, i) => (
           <button key={i} onClick={() => onChange(i)}
@@ -87,7 +87,7 @@ function RiskScoreWidget({ likelihood, impact, onLikelihood, onImpact }: {
 
   return (
     <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4 mb-4">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Risk Scoring</p>
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">How We Measure This Risk</p>
       <div className="grid grid-cols-2 gap-4 mb-3">
         <div>
           <label className="text-[10px] text-gray-500 mb-1 block">Likelihood: {likelihood} — {likelihoodLabels[likelihood]}</label>
@@ -121,40 +121,40 @@ function DomainEditor({ domain, onChange }: {
         <span className="text-2xl">{DOMAIN_ICONS[domain.title] || '📄'}</span>
         <div>
           <h2 className="text-base font-bold text-white">{domain.title}</h2>
-          <p className="text-xs text-gray-500">Complete each section as it applies to this person.</p>
+          <p className="text-xs text-gray-500">Tell us about this area of {domain.title.toLowerCase()}.</p>
         </div>
       </div>
 
       <NeedLevelSelector value={domain.levelOfNeed} onChange={v => up({ levelOfNeed: v })} />
 
-      <Field label="Identified Need" value={domain.identifiedNeed} onChange={v => up({ identifiedNeed: v })}
-        area rows={5} placeholder="Describe what support is needed and why — what are the challenges the person faces in this area?" />
+      <Field label="About Me — What I Need" value={domain.identifiedNeed} onChange={v => up({ identifiedNeed: v })}
+        area rows={5} placeholder="In their own words where possible — what challenges do they face in this area?" />
 
-      <Field label="Planned Outcomes" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
-        area rows={4} placeholder="What does good look like? What outcomes are we working towards?" />
+      <Field label="What Good Looks Like for Me" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
+        area rows={4} placeholder="What would they say 'good' looks like? Use their words." />
 
-      <Field label="How to Achieve Outcomes" value={domain.howToAchieve} onChange={v => up({ howToAchieve: v })}
-        area rows={6} placeholder="Step-by-step guidance for staff — daily tasks, weekly tasks, behavioural cues and triggers…" />
+      <Field label="How My Team Supports Me" value={domain.howToAchieve} onChange={v => up({ howToAchieve: v })}
+        area rows={6} placeholder="How should the team support them day-to-day? Include routines, preferences, and what to do if things change." />
 
-      <Field label="Risk Title" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
-        placeholder="e.g. Poor Air Quality Leading to Respiratory Issues" />
+      <Field label="What Could Go Wrong" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
+        placeholder="e.g. Risk of falls if mobility support isn't provided" />
 
       <RiskScoreWidget
         likelihood={domain.riskLikelihood} impact={domain.riskImpact}
         onLikelihood={v => up({ riskLikelihood: v })} onImpact={v => up({ riskImpact: v })} />
 
-      <Field label="Risk Mitigation / Control Measures" value={domain.riskMitigation} onChange={v => up({ riskMitigation: v })}
-        area rows={3} placeholder="How is this risk managed and monitored?" />
+      <Field label="How We Keep Me Safe" value={domain.riskMitigation} onChange={v => up({ riskMitigation: v })}
+        area rows={3} placeholder="What does the team do to reduce this risk? What should they watch for?" />
 
       <div className="border-t border-[#1e3050] pt-4 mt-4">
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Review</p>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Next Review Date" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
-          <Field label="Reviewer" value={domain.reviewer} onChange={v => up({ reviewer: v })} />
+          <Field label="When We Check Again" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
+          <Field label="Who Checked" value={domain.reviewer} onChange={v => up({ reviewer: v })} />
         </div>
-        <Field label="Review Note" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
-          area rows={3} placeholder="Summary of the last review — what's working, what needs attention?" />
-        <Field label="Review Date" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
+        <Field label="What's Working / What's Not" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
+          area rows={3} placeholder="What's working well? What needs to change? Include their own views." />
+        <Field label="When They Checked" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
           placeholder="DD/MM/YYYY" />
       </div>
     </div>
@@ -232,11 +232,11 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
         </button>
         <div className="w-px h-5 bg-[#1e3050]" />
         <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Client'}</span>
-          <span className="text-xs text-gray-500 ml-2">Care Plan</span>
+          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
+          <span className="text-xs text-gray-500 ml-2">Support Plan</span>
         </div>
         <div className="flex-1" />
-        <span className="text-[11px] text-gray-500">{filledCount}/{enabledCount} domains complete</span>
+        <span className="text-[11px] text-gray-500">{filledCount}/{enabledCount} areas complete</span>
         <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
           {saved ? '✓ Saved' : '● Unsaved'}
         </span>
@@ -245,7 +245,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          Generate PDF
+          Create My Document
         </button>
       </div>
 
@@ -282,20 +282,20 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
             {/* Overview mode */}
             {(showOverview || activeDomain === null) && (
               <div>
-                <h2 className="text-base font-bold text-white mb-1">Care Plan Overview</h2>
-                <p className="text-xs text-gray-500 mb-5">Toggle on the domains that apply to this client. Click any domain to edit.</p>
+                <h2 className="text-base font-bold text-white mb-1">My Support Plan</h2>
+                <p className="text-xs text-gray-500 mb-5">Toggle on the areas that apply to this person. Click any area to edit.</p>
 
                 {/* Bio + Emergency */}
-                <Field label="Biography" value={carePlan.biography} onChange={v => updateMeta({ biography: v })}
+                <Field label="My Life Story" value={carePlan.biography} onChange={v => updateMeta({ biography: v })}
                   area rows={4} placeholder="A brief personal history — who is this person, what is their background?" />
-                <Field label="Critical Information" value={carePlan.criticalInfo} onChange={v => updateMeta({ criticalInfo: v })}
+                <Field label="Important Things About Me" value={carePlan.criticalInfo} onChange={v => updateMeta({ criticalInfo: v })}
                   area rows={3} placeholder="Mobility aids, diet type, allergies, medical conditions…" />
-                <Field label="Emergency Information" value={carePlan.emergencyInfo} onChange={v => updateMeta({ emergencyInfo: v })}
+                <Field label="In an Emergency" value={carePlan.emergencyInfo} onChange={v => updateMeta({ emergencyInfo: v })}
                   area rows={3} placeholder="Emergency contacts, evacuation plan, rescue medication…" />
 
                 <div className="border-t border-[#1e3050] mt-6 pt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-white">Care Plan Domains ({enabledCount} active)</h3>
+                    <h3 className="text-sm font-bold text-white">Areas of My Life ({enabledCount} active)</h3>
                     <div className="flex gap-2">
                       <button onClick={() => {
                         setClient(prev => {
@@ -397,7 +397,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                     </button>
                   : <button onClick={generatePDF}
                       className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                      Generate PDF
+                      Create My Document
                     </button>}
               </div>
             )}

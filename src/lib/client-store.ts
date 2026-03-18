@@ -125,7 +125,7 @@ export const CARE_PLAN_DOMAINS = [
 
 export type CarePlanDomainName = typeof CARE_PLAN_DOMAINS[number];
 
-export const LEVEL_OF_NEED_LABELS = ['Independent', 'Low Need', 'Moderate Need', 'Substantial Need', 'High Need'];
+export const LEVEL_OF_NEED_LABELS = ['I manage independently', 'A little support', 'Some support needed', 'Quite a lot of support', 'Full support needed'];
 
 export interface CarePlanDomain {
   id: string;
@@ -215,7 +215,7 @@ export function emptyPBS(planDate: string): PBSData {
     communicatesBest: ['', '', '', '', ''],
     findsDifficult: ['', '', '', '', ''],
     diagnosisRows: [{ diagnosis: '', presentation: '' }],
-    keyPrinciple: "This person's behaviours of concern are a form of communication. They tell us they are overwhelmed, distressed, or experiencing unmet needs — they are not deliberate attempts to cause harm. Staff must always respond with this understanding.",
+    keyPrinciple: "[Name]'s behaviours of concern are a form of communication. They tell us they are overwhelmed, distressed, or experiencing unmet needs — they are not deliberate attempts to cause harm. Staff must always respond with this understanding.",
     functionRows: [{ behaviour: '', func: '' }],
     envStrategies: ['', '', '', ''],
     routineStrategies: ['', '', '', ''],
@@ -239,15 +239,15 @@ export function emptyPBS(planDate: string): PBSData {
     medicationRows: [{ name: '', dose: '', when: 'Morning', purpose: '', notes: '' }],
     medicationNote: '',
     agencyRows: [{ service: '', role: '', status: 'Active' }],
-    reviewSchedule: 'This PBS plan will be reviewed routinely every 3 months, following any significant incident, if presentation changes, following input from any professional review, or if the service user or their family request a review.',
-    serviceUserInvolvement: 'The service user was involved in the development of this plan and their views have been incorporated throughout.',
+    reviewSchedule: 'This PBS plan will be reviewed routinely every 3 months, following any significant incident, if presentation changes, following input from any professional review, or if the person or their family request a review.',
+    serviceUserInvolvement: 'This person was involved in the development of this plan and their views have been incorporated throughout.',
     planDate,
   };
 }
 
 export function emptyRisk(planDate: string): RiskData {
   return {
-    leastRestrictivePractice: 'All risk management strategies are based on the principle of least restrictive practice in accordance with the Mental Capacity Act 2005. The service user has capacity in relation to their daily choices and lifestyle. Support must always respect their autonomy, use the least restrictive approach, focus on enabling independence, and only restrict choices where necessary to prevent serious harm in a proportionate manner. Restrictive responses are not routine — they are a last resort.',
+    leastRestrictivePractice: 'All risk management strategies are based on the principle of least restrictive practice in accordance with the Mental Capacity Act 2005. This person has capacity in relation to their daily choices and lifestyle. Support must always respect their autonomy, use the least restrictive approach, focus on enabling independence, and only restrict choices where necessary to prevent serious harm in a proportionate manner. Restrictive responses are not routine — they are a last resort.',
     reviewSchedule: 'This risk assessment will be reviewed routinely every 3 months, following any significant incident, if there is a change in presentation or needs, following multi-agency input or professional review, and as part of routine care plan reviews.',
     multiAgencyRows: [{ service: '', role: '', status: 'Active' }],
     risks: [emptyRisk_item()],
@@ -261,7 +261,7 @@ export function emptyRisk_item(): RiskItem {
     title: '',
     description: '',
     behaviours: [''],
-    affectedPeople: ['The service user', 'Support staff', 'Other residents', 'Members of the public'],
+    affectedPeople: ['This person', 'Support staff', 'Other residents', 'Members of the public'],
     triggers: [''],
     earlyWarnings: [''],
     controls: [''],

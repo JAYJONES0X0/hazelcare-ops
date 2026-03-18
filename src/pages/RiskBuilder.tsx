@@ -94,7 +94,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
         </div>
         <div className="flex-1 min-w-0">
           <span className="text-sm font-semibold text-white truncate block">
-            {risk.title || <span className="text-gray-500 italic">Untitled risk</span>}
+            {risk.title || <span className="text-gray-500 italic">New risk — click to describe</span>}
           </span>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -116,7 +116,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
       {/* Card body */}
       {open && (
         <div className="px-4 py-4 border-t border-[#1e3050] space-y-1">
-          <Field label="Risk Title" value={risk.title} onChange={v => up({ title: v })}
+          <Field label="What Could Go Wrong" value={risk.title} onChange={v => up({ title: v })}
             placeholder="e.g. Emotional Dysregulation Resulting in Unsafe Behaviour" />
           <Field label="Description" value={risk.description} onChange={v => up({ description: v })} area rows={3}
             placeholder="Describe the nature of this risk and when it occurs…" />
@@ -136,13 +136,13 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
 
           {/* Score */}
           <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4 mt-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-4">Residual Risk Scoring</p>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-4">How We Measure This Risk</p>
             <ScoreSlider label="Likelihood" value={risk.likelihood} onChange={v => up({ likelihood: v })}
               labelArr={LIKELIHOOD_LABELS} />
             <ScoreSlider label="Impact" value={risk.impact} onChange={v => up({ impact: v })}
               labelArr={IMPACT_LABELS} />
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#1e3050]">
-              <span className="text-sm text-gray-400">Residual Risk Score:</span>
+              <span className="text-sm text-gray-400">Risk Level:</span>
               <span className="text-xl font-black" style={{ color }}>{score}</span>
               <span className="text-sm font-bold px-3 py-1 rounded-full text-white" style={{ background: color }}>
                 {label}
@@ -248,8 +248,8 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         </button>
         <div className="w-px h-5 bg-[#1e3050]" />
         <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Client'}</span>
-          <span className="text-xs text-gray-500 ml-2">Risk Assessment</span>
+          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
+          <span className="text-xs text-gray-500 ml-2">Keeping Me Safe</span>
         </div>
         <div className="flex-1" />
         <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
@@ -260,7 +260,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          Generate PDF
+          Create My Document
         </button>
       </div>
 
@@ -283,11 +283,11 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         {/* Risk cards */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-white">
-            Risk Items ({risk.risks.filter(r => r.title).length} of {risk.risks.length})
+            Things That Could Affect Me ({risk.risks.filter(r => r.title).length} of {risk.risks.length})
           </h2>
           <button onClick={addRisk}
             className="bg-teal-900/40 hover:bg-teal-800/40 border border-teal-800 text-teal-400 text-sm font-semibold px-4 py-1.5 rounded-lg">
-            + Add Risk
+            + Add a Risk
           </button>
         </div>
 
@@ -300,11 +300,11 @@ export function RiskBuilder({ clientId, onBack }: Props) {
 
         {/* Global fields */}
         <div className="mt-8 pt-6 border-t border-[#1e3050]">
-          <h3 className="text-sm font-bold text-white mb-4">Multi-Agency & Policy Statements</h3>
+          <h3 className="text-sm font-bold text-white mb-4">My Support Network & Safeguards</h3>
           <AgencyTable rows={risk.multiAgencyRows} onChange={v => updateRisk({ multiAgencyRows: v })} />
-          <Field label="Least Restrictive Practice Statement" value={risk.leastRestrictivePractice}
+          <Field label="Respecting My Freedom" value={risk.leastRestrictivePractice}
             onChange={v => updateRisk({ leastRestrictivePractice: v })} area rows={4} />
-          <Field label="Review Schedule" value={risk.reviewSchedule}
+          <Field label="When We Review This" value={risk.reviewSchedule}
             onChange={v => updateRisk({ reviewSchedule: v })} area rows={3} />
           <div className="grid grid-cols-2 gap-4">
             <Field label="Date of Assessment" value={risk.planDate}
@@ -322,7 +322,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         <div className="mt-6 flex justify-end">
           <button onClick={generatePDF}
             className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
-            Generate Risk Assessment PDF
+            Create My Document
           </button>
         </div>
       </div>

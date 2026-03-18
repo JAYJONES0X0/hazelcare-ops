@@ -19,6 +19,7 @@ export function ClientDocsPage() {
   const [importText, setImportText] = useState('');
   const [importTarget, setImportTarget] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<string[]>([]);
+  const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; domainsDetected: number } | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const refresh = () => setClients(loadClients());
@@ -46,13 +47,26 @@ export function ClientDocsPage() {
     openPBS(client.id);
   };
 
+  const handlePreview = () => {
+    if (!importText.trim()) return;
+    const result = parseNourishText(importText);
+    setImportResult(result.warnings);
+    const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
+    setImportPreview({
+      name: result.client.name || 'Not detected',
+      dob: result.client.dob || 'Not detected',
+      nhs: result.client.nhs || 'Not detected',
+      domainsDetected,
+    });
+  };
+
   const handleImport = () => {
     if (!importText.trim()) return;
     const result = parseNourishText(importText);
     setImportResult(result.warnings);
 
     if (importTarget) {
-      // Import into existing client
+      // Import into existing person
       const all = loadClients();
       const existing = all.find(c => c.id === importTarget);
       if (existing) {
@@ -65,16 +79,18 @@ export function ClientDocsPage() {
         saveClient(updated as FullClient);
         refresh();
         setImportText('');
+        setImportPreview(null);
         setSubView('list');
       }
     } else {
-      // Create new client from import
+      // Create new person from import
       const client = emptyClient();
       Object.assign(client, result.client);
       client.carePlan = result.carePlan;
       saveClient(client);
       refresh();
       setImportText('');
+      setImportPreview(null);
       setSubView('list');
     }
   };
@@ -100,14 +116,21 @@ export function ClientDocsPage() {
       <div className="p-4 lg:p-6 max-w-3xl">
         <button onClick={() => { setSubView('list'); setImportResult([]); }}
           className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium mb-6">
-          ← Back to Clients
+          ← Back to People
         </button>
 
-        <h1 className="text-xl font-bold text-white mb-1">Import from Nourish</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Open the Nourish Emergency Admission Pack PDF, select all text (Ctrl+A), copy it, and paste below.
-          We'll parse the client profile, all 21 care plan domains, risk scores, and review notes automatically.
+        <h1 className="text-xl font-bold text-white mb-1">Import Data</h1>
+        <p className="text-sm text-gray-500 mb-4">
+          Paste text from a Nourish Emergency Admission Pack, a support plan, or any care document. We'll detect the format, parse everything, and create a person-centred support plan automatically.
         </p>
+        <div className="bg-[#111b2e] border border-[#1e3050] rounded-lg px-4 py-3 mb-6">
+          <p className="text-xs text-teal-400 font-medium mb-1">Supported formats:</p>
+          <ul className="text-xs text-gray-400 space-y-0.5">
+            <li>Nourish Emergency Admission Pack (PDF text)</li>
+            <li>My Support Plan documents (Word/table format)</li>
+            <li>Any care document with structured headings</li>
+          </ul>
+        </div>
 
         {importTarget && (
           <div className="bg-teal-900/20 border border-teal-800 rounded-lg px-4 py-3 mb-4">
@@ -133,24 +156,48 @@ export function ClientDocsPage() {
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button onClick={handleImport} disabled={!importText.trim()}
-            className="bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
-            Parse & Import
-          </button>
-          {!importTarget && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Or import into existing client:</span>
-              <select
-                value={importTarget || ''}
-                onChange={e => setImportTarget(e.target.value || null)}
-                className="bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
-                <option value="">New client</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+        {importPreview && (
+          <div className="bg-teal-900/20 border border-teal-800 rounded-xl px-5 py-4 mb-4">
+            <p className="text-sm font-semibold text-teal-400 mb-3">Preview — What we found</p>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div><span className="text-gray-500">Name:</span> <span className="text-white font-medium">{importPreview.name}</span></div>
+              <div><span className="text-gray-500">DOB:</span> <span className="text-white font-medium">{importPreview.dob}</span></div>
+              <div><span className="text-gray-500">NHS:</span> <span className="text-white font-medium">{importPreview.nhs}</span></div>
+              <div><span className="text-gray-500">Areas detected:</span> <span className="text-white font-medium">{importPreview.domainsDetected} of 21</span></div>
             </div>
-          )}
-        </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={handleImport}
+                className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-6 py-2 rounded-lg">
+                Confirm & Import
+              </button>
+              <button onClick={() => setImportPreview(null)}
+                className="border border-[#1e3050] text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg">
+                Go Back
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!importPreview && (
+          <div className="flex gap-3">
+            <button onClick={handlePreview} disabled={!importText.trim()}
+              className="bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
+              Preview Import
+            </button>
+            {!importTarget && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Or import into existing person:</span>
+                <select
+                  value={importTarget || ''}
+                  onChange={e => setImportTarget(e.target.value || null)}
+                  className="bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                  <option value="">New person</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -168,9 +215,9 @@ export function ClientDocsPage() {
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">Client Documents</h1>
+          <h1 className="text-xl font-bold text-white">People & Plans</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {clients.length} client{clients.length !== 1 ? 's' : ''} · {pbsCount} PBS · {riskCount} Risk · {cpCount} Care Plan{cpCount !== 1 ? 's' : ''}
+            {clients.length} {clients.length !== 1 ? 'people' : 'person'} · {pbsCount} PBS · {riskCount} Risk · {cpCount} Support Plan{cpCount !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -179,14 +226,14 @@ export function ClientDocsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            Import from Nourish
+            Import Data
           </button>
           <button onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            New Client
+            New Person
           </button>
         </div>
       </div>
@@ -198,7 +245,7 @@ export function ClientDocsPage() {
             type="text"
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
-            placeholder="Search clients…"
+            placeholder="Find someone…"
             className="w-full max-w-sm bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600"
           />
         </div>
@@ -208,9 +255,9 @@ export function ClientDocsPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-4xl mb-3">📋</div>
-          <p className="text-gray-400 font-medium">{filterText ? 'No matching clients' : 'No clients yet'}</p>
+          <p className="text-gray-400 font-medium">{filterText ? 'No matching people' : 'No people yet'}</p>
           <p className="text-sm text-gray-600 mt-1">
-            {filterText ? 'Try a different search.' : 'Click "New Client" or "Import from Nourish" to get started.'}
+            {filterText ? 'Try a different search.' : 'Click "New Person" or "Import Data" to get started.'}
           </p>
         </div>
       ) : (
@@ -312,10 +359,10 @@ export function ClientDocsPage() {
 
                   <div className="w-px h-4 bg-[#1e3050]" />
 
-                  {/* Care Plan */}
+                  {/* Support Plan */}
                   <div className="flex items-center gap-1.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${hasCarePlan ? 'bg-blue-500' : 'bg-gray-600'}`} />
-                    <span className="text-xs text-gray-400">Care Plan</span>
+                    <span className="text-xs text-gray-400">Support Plan</span>
                     {hasCarePlan && (
                       <span className="text-[10px] text-gray-600">({cpFilled}/{cpDomains.length})</span>
                     )}
@@ -378,12 +425,12 @@ export function ClientDocsPage() {
         </div>
       )}
 
-      {/* New Client Modal */}
+      {/* New Person Modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-[#111b2e] border border-[#1e3050] rounded-2xl p-6 w-full max-w-sm">
-            <h2 className="text-base font-bold text-white mb-4">New Client</h2>
-            <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Full Name</label>
+            <h2 className="text-base font-bold text-white mb-4">New Person</h2>
+            <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">What is their full name?</label>
             <input
               autoFocus
               type="text"
@@ -394,7 +441,7 @@ export function ClientDocsPage() {
               className="w-full bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 mb-4 placeholder-gray-600"
             />
             <p className="text-xs text-gray-500 mb-5">
-              You'll be taken straight to the PBS Builder where you can fill in all details.
+              You'll start by building their Positive Behaviour Support plan.
             </p>
             <div className="flex gap-3">
               <button onClick={() => { setShowNewModal(false); setNewName(''); }}
@@ -403,7 +450,7 @@ export function ClientDocsPage() {
               </button>
               <button onClick={handleCreate} disabled={!newName.trim()}
                 className="flex-1 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg">
-                Create & Open
+                Start Building
               </button>
             </div>
           </div>

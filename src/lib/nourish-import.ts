@@ -1,11 +1,12 @@
 // ============================================================
-// NOURISH IMPORT PARSER — parses Nourish PDF text into client data
+// NOURISH IMPORT PARSER — parses Nourish PDF text into person data
 // ============================================================
 import type { FullClient, CarePlanDomain, CarePlanData, SupportPlanData, SupportPlanNeed } from './client-store';
 import { emptyCarePlan, CARE_PLAN_DOMAINS } from './client-store';
 
 // ─── NOURISH EMERGENCY ADMISSION PACK PARSER ────────────────────────────────────
 // Parses text extracted from Nourish's "Emergency Admission Pack" PDF export
+// Creates a person-centred support plan from the imported data
 
 const DOMAIN_MAP: Record<string, string> = {
   'ACCOMMODATION CLEANLINESS AND COMFORT': 'Accommodation Cleanliness and Comfort',
@@ -95,26 +96,26 @@ export function parseNourishText(rawText: string): ParseResult {
   const warnings: string[] = [];
   const text = rawText.replace(/\r\n/g, '\n');
 
-  // Extract basic profile
-  const firstName = extractField(text, 'First Name\n', ['Last Name', 'Preferred Name']).split('\n')[0];
-  const lastName = extractField(text, 'Last Name\n', ['Preferred Name', 'Gender']).split('\n')[0];
-  const preferredName = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0];
-  const dob = extractField(text, 'Date of Birth\n', ['Email', 'NHS']).split('\n')[0];
-  const nhs = extractField(text, 'NHS / CHI No.\n', ['Deprivation', 'Gold']).split('\n')[0];
-  const phone = extractField(text, 'Contact Number\n', ['Quick notes', 'CRITICAL']).split('\n')[0];
+  // Extract basic person details
+  const firstName = extractField(text, 'First Name\n', ['Last Name', 'Preferred Name']).split('\n')[0].trim();
+  const lastName = extractField(text, 'Last Name\n', ['Preferred Name', 'Gender']).split('\n')[0].trim();
+  const preferredName = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0].trim();
+  const dob = extractField(text, 'Date of Birth\n', ['Email', 'NHS']).split('\n')[0].trim();
+  const nhs = extractField(text, 'NHS / CHI No.\n', ['Deprivation', 'Gold']).split('\n')[0].trim();
+  const phone = extractField(text, 'Contact Number\n', ['Quick notes', 'CRITICAL']).split('\n')[0].trim();
   const name = `${firstName} ${lastName}`.trim();
 
   // Address
-  const street = extractField(text, 'Street Address\n', ['Town', 'County']).split('\n')[0];
-  const town = extractField(text, 'Town\n', ['County', 'Post Code']).split('\n')[0];
-  const postCode = extractField(text, 'Post Code\n', ['Country', 'National']).split('\n')[0];
+  const street = extractField(text, 'Street Address\n', ['Town', 'County']).split('\n')[0].trim();
+  const town = extractField(text, 'Town\n', ['County', 'Post Code']).split('\n')[0].trim();
+  const postCode = extractField(text, 'Post Code\n', ['Country', 'National']).split('\n')[0].trim();
   const address = [street, town, postCode].filter(Boolean).join(', ');
 
   // Admission date
-  const dateOfAdmission = extractField(text, 'Date of Admission\n', ['Leave date', 'Key Workers']).split('\n')[0];
+  const dateOfAdmission = extractField(text, 'Date of Admission\n', ['Leave date', 'Key Workers']).split('\n')[0].trim();
 
   // Key worker
-  const keyWorker = extractField(text, 'Key Workers\n', ['Last modified', 'BIOGRAPHY']).split('\n')[0];
+  const keyWorker = extractField(text, 'Key Workers\n', ['Last modified', 'BIOGRAPHY']).split('\n')[0].trim();
 
   // Biography
   const biography = extractBetween(text, 'BIOGRAPHY\n', ['2. Care Plans', 'CARE PLAN']);
@@ -204,9 +205,9 @@ export function parseNourishText(rawText: string): ParseResult {
 
   const enabledCount = carePlan.domains.filter(d => d.enabled).length;
   if (enabledCount === 0) {
-    warnings.push('No care plan domains were detected — check the pasted text format.');
+    warnings.push('No support plan areas were detected — check the pasted text format.');
   } else {
-    warnings.push(`Imported ${enabledCount} of ${CARE_PLAN_DOMAINS.length} care plan domains.`);
+    warnings.push(`Found ${enabledCount} of ${CARE_PLAN_DOMAINS.length} areas of this person's life.`);
   }
 
   return {

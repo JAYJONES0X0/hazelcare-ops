@@ -11,18 +11,18 @@ interface Props {
 }
 
 const SECTIONS = [
-  'Client Info',
-  'About the Person',
-  'Diagnoses',
-  'Function of Behaviour',
-  'Proactive Strategies',
-  'Early Warning Signs',
-  'Reactive Strategies',
-  'Post-Incident',
-  "What Works / Doesn't",
-  'Medication',
-  'Multi-Agency & Review',
-  'Signatures',
+  'About Me',
+  'Who I Am',
+  'My Diagnoses & How They Affect Me',
+  'What My Behaviour Is Telling You',
+  'How to Help Me Every Day',
+  'Signs I Might Be Struggling',
+  'What to Do When Things Escalate',
+  'After a Difficult Moment',
+  'What Works for Me / What Doesn\'t',
+  'My Medication',
+  'My Support Network & Reviews',
+  'Sign-Off',
 ];
 
 // ─── SHARED FIELD COMPONENTS ─────────────────────────────────────────────────
@@ -202,8 +202,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         </button>
         <div className="w-px h-5 bg-[#1e3050]" />
         <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Client'}</span>
-          <span className="text-xs text-gray-500 ml-2">PBS Plan</span>
+          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
+          <span className="text-xs text-gray-500 ml-2">My Positive Support Plan</span>
         </div>
         <div className="flex-1" />
         <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
@@ -214,7 +214,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          Generate PDF
+          Create My Document
         </button>
       </div>
 
@@ -238,7 +238,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 0 — Client Info */}
             {section === 0 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">Client Information</h2>
+                <h2 className="text-base font-bold text-white mb-5">About Me</h2>
                 <div className="grid grid-cols-2 gap-x-4">
                   <Field label="Full Name" value={client.name} onChange={v => update({ name: v })} />
                   <Field label="Preferred Name" value={client.preferredName} onChange={v => update({ preferredName: v })} />
@@ -262,7 +262,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 1 — About */}
             {section === 1 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">About the Person</h2>
+                <h2 className="text-base font-bold text-white mb-5">Who I Am</h2>
                 <Field label="About (main paragraph)" value={pbs.aboutText}
                   onChange={v => updatePBS({ aboutText: v })} area rows={5}
                   placeholder="Write a positive introduction to this person — strengths, personality, interests…" />
@@ -278,7 +278,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 2 — Diagnoses */}
             {section === 2 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-1">Diagnoses and How They Present</h2>
+                <h2 className="text-base font-bold text-white mb-1">My Diagnoses & How They Affect Me</h2>
                 <p className="text-xs text-gray-500 mb-5">Describe how each diagnosis presents for this specific person.</p>
                 <TableEditor
                   label="Diagnosis Rows"
@@ -298,7 +298,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 3 — Function */}
             {section === 3 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-1">Function of Behaviour</h2>
+                <h2 className="text-base font-bold text-white mb-1">What My Behaviour Is Telling You</h2>
                 <p className="text-xs text-gray-500 mb-5">What is each behaviour communicating? What unmet need does it express?</p>
                 <TableEditor
                   label="Behaviour / Function Rows"
@@ -316,7 +316,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 4 — Proactive Strategies */}
             {section === 4 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">Proactive Strategies</h2>
+                <h2 className="text-base font-bold text-white mb-5">How to Help Me Every Day</h2>
                 <ListField label="Environmental Strategies" items={pbs.envStrategies}
                   onChange={v => updatePBS({ envStrategies: v })} />
                 <ListField label="Routine & Structure Strategies" items={pbs.routineStrategies}
@@ -333,7 +333,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 5 — Early Warning Signs */}
             {section === 5 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-1">Early Warning Signs and Staff Response</h2>
+                <h2 className="text-base font-bold text-white mb-1">Signs I Might Be Struggling</h2>
                 <p className="text-xs text-gray-500 mb-5">Signs that the person is becoming dysregulated — and what staff should do.</p>
                 <TableEditor
                   label="Warning Sign Rows"
@@ -351,7 +351,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 6 — Reactive Strategies */}
             {section === 6 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-1">Reactive Strategies</h2>
+                <h2 className="text-base font-bold text-white mb-1">What to Do When Things Escalate</h2>
                 <p className="text-xs text-gray-500 mb-5">De-escalation steps in order — from early response to emergency contact.</p>
                 {[
                   ['Step 1 — Lower voice and body language', pbs.reactiveStep1, (v: string) => updatePBS({ reactiveStep1: v })],
@@ -372,7 +372,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 7 — Post-Incident */}
             {section === 7 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">Post-Incident Support and Recovery</h2>
+                <h2 className="text-base font-bold text-white mb-5">After a Difficult Moment</h2>
                 <ListField label="Immediate Post-Incident Actions" items={pbs.postImmediate}
                   onChange={v => updatePBS({ postImmediate: v })} rows={2} />
                 <ListField label="Debrief (When Calm)" items={pbs.postDebrief}
@@ -385,7 +385,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 8 — What Works */}
             {section === 8 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">What Works Well / What Does Not Work</h2>
+                <h2 className="text-base font-bold text-white mb-5">What Works for Me / What Doesn't</h2>
                 <ListField label="✓ What Works Well" items={pbs.whatWorks}
                   onChange={v => updatePBS({ whatWorks: v })} placeholder="e.g. Calm, quiet voice from staff" />
                 <ListField label="✗ What Does Not Work" items={pbs.doesntWork}
@@ -396,7 +396,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 9 — Medication */}
             {section === 9 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">Medication</h2>
+                <h2 className="text-base font-bold text-white mb-5">My Medication</h2>
                 <TableEditor
                   label="Medication Rows"
                   rows={pbs.medicationRows as unknown as Record<string, string>[]}
@@ -418,7 +418,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             {/* 10 — Multi-Agency & Review */}
             {section === 10 && (
               <div>
-                <h2 className="text-base font-bold text-white mb-5">Multi-Agency Involvement & Review</h2>
+                <h2 className="text-base font-bold text-white mb-5">My Support Network & Reviews</h2>
                 <TableEditor
                   label="Multi-Agency Rows"
                   rows={pbs.agencyRows as unknown as Record<string, string>[]}
@@ -432,7 +432,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                 />
                 <Field label="Review Schedule" value={pbs.reviewSchedule}
                   onChange={v => updatePBS({ reviewSchedule: v })} area rows={3} />
-                <Field label="Service User Involvement" value={pbs.serviceUserInvolvement}
+                <Field label="How This Person Was Involved" value={pbs.serviceUserInvolvement}
                   onChange={v => updatePBS({ serviceUserInvolvement: v })} area rows={2} />
               </div>
             )}
@@ -455,7 +455,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   </button>
                 : <button onClick={generatePDF}
                     className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                    Generate PDF
+                    Create My Document
                   </button>}
             </div>
           </div>
