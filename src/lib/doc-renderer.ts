@@ -1,7 +1,8 @@
 // ============================================================
-// DOC RENDERER — builds print-ready HTML for PBS + Risk docs
+// DOC RENDERER — builds print-ready HTML for PBS + Risk + Care Plan docs
 // ============================================================
 import type { FullClient, RiskItem } from './client-store';
+import { LEVEL_OF_NEED_LABELS } from './client-store';
 import type { Sig } from '../components/SignaturePad';
 
 const TEAL = '#0f766e';
@@ -358,6 +359,99 @@ export function buildRiskHtml(client: FullClient, sigs?: Sig[]): string {
   html += sh('Signatures');
   html += sigBlock(sigs);
   html += `<div class="footer">Hazel Care Ltd | Nourish Care Systems | Confidential — Not for distribution outside of the care team</div>`;
+  html += `</body></html>`;
+  return html;
+}
+
+// ─── CARE PLAN HTML ───────────────────────────────────────────────────────────
+export function buildCarePlanHtml(client: FullClient): string {
+  const cp = client.carePlan;
+  if (!cp) return '<html><body><p>No care plan data.</p></body></html>';
+
+  const enabledDomains = cp.domains.filter(d => d.enabled);
+  const levelColors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
+
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1e293b;line-height:1.5;margin:0;padding:20px 30px;}
+    h1{font-size:20px;color:${TEAL};margin:0 0 4px;}
+    h2{font-size:15px;font-weight:700;color:${TEAL};border-bottom:2px solid ${TEAL};padding-bottom:6px;margin:24px 0 12px;}
+    h3{font-size:13px;font-weight:700;color:#334155;margin:12px 0 6px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    td,th{padding:5px 10px;border:1px solid #e2e8f0;font-size:12px;vertical-align:top;}
+    th{background:#f1f5f9;font-weight:600;text-align:left;}
+    .level{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;}
+    .risk-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;}
+    .domain-card{margin-bottom:24px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;}
+    .domain-header{background:#f1f5f9;padding:10px 14px;border-bottom:1px solid #e2e8f0;}
+    .domain-body{padding:12px 14px;}
+    .footer{margin-top:40px;padding-top:12px;border-top:2px solid ${TEAL};font-size:10px;color:#94a3b8;text-align:center;}
+    @media print{.domain-card{break-inside:avoid;}}
+  </style></head><body>`;
+
+  html += docHeader('Care Plan', [
+    ['Client Name', client.name],
+    ['Preferred Name', client.preferredName],
+    ['Date of Birth', client.dob],
+    ['NHS Number', client.nhs],
+    ['Address', client.address],
+    ['Key Worker', client.keyWorker],
+    ['Date of Admission', client.dateOfAdmission],
+    ['Plan Date', cp.planDate],
+  ]);
+
+  if (cp.biography) {
+    html += sh('Biography');
+    html += `<p>${cp.biography}</p>`;
+  }
+  if (cp.criticalInfo) {
+    html += sh('Critical Information');
+    html += `<p style="white-space:pre-wrap;">${cp.criticalInfo}</p>`;
+  }
+  if (cp.emergencyInfo) {
+    html += sh('Emergency Information');
+    html += `<p style="white-space:pre-wrap;">${cp.emergencyInfo}</p>`;
+  }
+
+  // Summary table
+  html += sh('Care Plan Domains Summary');
+  html += `<table><tr><th>Domain</th><th>Level of Need</th><th>Risk Score</th><th>Next Review</th></tr>`;
+  for (const d of enabledDomains) {
+    const { score, color, label } = riskInfo(d.riskLikelihood, d.riskImpact);
+    html += `<tr>
+      <td style="font-weight:600;">${d.title}</td>
+      <td><span class="level" style="background:${levelColors[d.levelOfNeed]}">${d.levelOfNeed} — ${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></td>
+      <td>${d.riskTitle ? `<span class="risk-badge" style="background:${color}">${score} — ${label}</span>` : '—'}</td>
+      <td>${d.nextReviewDate || '—'}</td>
+    </tr>`;
+  }
+  html += `</table>`;
+
+  for (let i = 0; i < enabledDomains.length; i++) {
+    const d = enabledDomains[i];
+    const { score, color, label } = riskInfo(d.riskLikelihood, d.riskImpact);
+    if (i > 0 && i % 3 === 0) html += pb();
+
+    html += `<div class="domain-card">`;
+    html += `<div class="domain-header"><h3 style="margin:0;color:${TEAL};">${i + 1}. ${d.title}</h3>
+      <span class="level" style="background:${levelColors[d.levelOfNeed]};margin-top:4px;">${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></div>`;
+    html += `<div class="domain-body">`;
+
+    if (d.identifiedNeed) html += `<h3>Identified Need</h3><p style="white-space:pre-wrap;">${d.identifiedNeed}</p>`;
+    if (d.plannedOutcomes) html += `<h3>Planned Outcomes</h3><p style="white-space:pre-wrap;">${d.plannedOutcomes}</p>`;
+    if (d.howToAchieve) html += `<h3>How to Achieve Outcomes</h3><p style="white-space:pre-wrap;">${d.howToAchieve}</p>`;
+    if (d.riskTitle) {
+      html += `<h3>Risk</h3><p><strong>${d.riskTitle}</strong></p>`;
+      html += `<p>Likelihood: ${d.riskLikelihood} × Impact: ${d.riskImpact} = <span class="risk-badge" style="background:${color}">${score} — ${label}</span></p>`;
+      if (d.riskMitigation) html += `<p>${d.riskMitigation}</p>`;
+    }
+    if (d.reviewNote) {
+      html += `<h3>Review Note</h3><p>${d.reviewNote}</p>`;
+      if (d.reviewer) html += `<p style="font-size:11px;color:#64748b;">Reviewer: ${d.reviewer} · ${d.reviewDate}</p>`;
+    }
+    html += `</div></div>`;
+  }
+
+  html += `<div class="footer">Hazel Care Ltd | Care Plan Document | Confidential — Not for distribution outside of the care team</div>`;
   html += `</body></html>`;
   return html;
 }

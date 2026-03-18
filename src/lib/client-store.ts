@@ -98,10 +98,80 @@ export interface RiskData {
   planDate: string;
 }
 
+// ─── CARE PLAN DATA ────────────────────────────────────────────────────────────
+export const CARE_PLAN_DOMAINS = [
+  'Accommodation Cleanliness and Comfort',
+  'Breathing',
+  'Communication and Senses',
+  'Companionship, Social Interaction and Recreation',
+  'Daily Routine',
+  'Eating and Drinking',
+  'Elimination',
+  'Environment',
+  'Equality, Diversity and Inclusion',
+  'Expressing Sexuality',
+  'Financial',
+  'Health and Wellbeing',
+  'Infection Prevention and Control',
+  'Medication',
+  'Mental Health and Cognition',
+  'Mobility',
+  'Pain',
+  'Personal Care and Dressing',
+  'Skin Integrity',
+  'Sleeping',
+  'Spirituality, Religion and Culture',
+] as const;
+
+export type CarePlanDomainName = typeof CARE_PLAN_DOMAINS[number];
+
+export const LEVEL_OF_NEED_LABELS = ['Independent', 'Low Need', 'Moderate Need', 'Substantial Need', 'High Need'];
+
+export interface CarePlanDomain {
+  id: string;
+  title: CarePlanDomainName | string;
+  nextReviewDate: string;
+  identifiedNeed: string;
+  levelOfNeed: number; // 0-4
+  plannedOutcomes: string;
+  howToAchieve: string;
+  riskTitle: string;
+  riskLikelihood: number; // 1-5
+  riskImpact: number; // 1-5
+  riskMitigation: string;
+  reviewNote: string;
+  reviewer: string;
+  reviewDate: string;
+  enabled: boolean;
+}
+
+export interface CarePlanData {
+  domains: CarePlanDomain[];
+  biography: string;
+  criticalInfo: string;
+  emergencyInfo: string;
+  planDate: string;
+}
+
+// ─── SUPPORT PLAN (parsed from external "My Support Plan" docs) ────────────────
+export interface SupportPlanNeed {
+  area: string;
+  canDoMyself: string;
+  risks: string;
+  howToSupport: string;
+}
+
+export interface SupportPlanData {
+  needs: SupportPlanNeed[];
+  planDate: string;
+}
+
 // ─── FULL CLIENT ───────────────────────────────────────────────────────────────
 export interface FullClient extends ClientBasic {
   pbs: PBSData | null;
   risk: RiskData | null;
+  carePlan: CarePlanData | null;
+  supportPlan: SupportPlanData | null;
 }
 
 // ─── STORAGE ───────────────────────────────────────────────────────────────────
@@ -203,6 +273,43 @@ export function emptyRisk_item(): RiskItem {
   };
 }
 
+export function emptyCarePlanDomain(title: string, reviewDate: string): CarePlanDomain {
+  return {
+    id: `cpd-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    title,
+    nextReviewDate: reviewDate,
+    identifiedNeed: '',
+    levelOfNeed: 0,
+    plannedOutcomes: '',
+    howToAchieve: '',
+    riskTitle: '',
+    riskLikelihood: 1,
+    riskImpact: 1,
+    riskMitigation: '',
+    reviewNote: '',
+    reviewer: '',
+    reviewDate: '',
+    enabled: false,
+  };
+}
+
+export function emptyCarePlan(planDate: string, reviewDate: string): CarePlanData {
+  return {
+    domains: CARE_PLAN_DOMAINS.map(title => emptyCarePlanDomain(title, reviewDate)),
+    biography: '',
+    criticalInfo: '',
+    emergencyInfo: '',
+    planDate,
+  };
+}
+
+export function emptySupportPlan(planDate: string): SupportPlanData {
+  return {
+    needs: [],
+    planDate,
+  };
+}
+
 export function emptyClient(): FullClient {
   const today = new Date().toLocaleDateString('en-GB');
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
@@ -224,6 +331,8 @@ export function emptyClient(): FullClient {
     updatedAt: new Date().toISOString(),
     pbs: emptyPBS(today),
     risk: emptyRisk(today),
+    carePlan: null,
+    supportPlan: null,
   };
 }
 
@@ -365,6 +474,8 @@ function seedClients(): FullClient[] {
         { id: 'r8', title: 'Risk of Using Inappropriate or Offensive Language (Including Racial Language)', description: 'When emotionally dysregulated, Jamie may use inappropriate, offensive, or racially abusive language toward staff, other residents, or members of the public. This has resulted in a police matter (racial abuse allegation). While linked to emotional dysregulation rather than deliberate intent, this behaviour presents risk of harm to others and legal consequences for Jamie.', behaviours: [], affectedPeople: ['Staff', 'Other residents', 'Members of the public', 'Jamie himself (legal consequences, impact on placement stability)'], triggers: ['Emotional escalation and dysregulation', 'Impulsivity linked to ADHD', 'Limited understanding of the impact of his language on others', 'Frustration or feeling misunderstood'], earlyWarnings: [], controls: ['PBS plan in place — de-escalation strategies to prevent escalation to this behaviour', 'If offensive language is used: staff respond calmly and professionally without matching aggression', "Address language at a calm, reflective moment — not during escalation", "Work with Jamie over time to build understanding of the impact of his language", 'Celebrate and reinforce positive, respectful communication', 'Multi-agency awareness — LD Forensic Team involvement and police awareness noted'], dynamicControls: [], leastRestrictive: '', likelihood: 4, impact: 2, reviewTrigger: '' },
       ],
     },
+    carePlan: null,
+    supportPlan: null,
   };
 
   const clients = [jamie];
