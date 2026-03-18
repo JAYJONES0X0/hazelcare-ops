@@ -24,3 +24,21 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Secrets — never commit
+.env
+.env.*
+*.env
+.env.local
+.env.production
+.env.development
+keys.env
+
+# Client data exports — never commit
+*.csv
+*.xlsx
+*.xls
+arbiflow-export*.json
+
+# OS
+Thumbs.db
