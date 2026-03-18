@@ -12,16 +12,40 @@ const SpeechRecognitionAPI =
 const speechSupported = !!SpeechRecognitionAPI;
 
 export const VOICE_LANGUAGES = [
+  // English
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  // South Asia
+  { code: 'hi-IN', label: 'हिन्दी (Hindi)', flag: '🇮🇳' },
+  { code: 'bn-IN', label: 'বাংলা (Bengali)', flag: '🇧🇩' },
+  { code: 'ne-NP', label: 'नेपाली (Nepali)', flag: '🇳🇵' },
+  { code: 'si-LK', label: 'සිංහල (Sinhala)', flag: '🇱🇰' },
+  { code: 'ta-IN', label: 'தமிழ் (Tamil)', flag: '🇱🇰' },
+  { code: 'ur-PK', label: 'اردو (Urdu)', flag: '🇵🇰' },
+  { code: 'gu-IN', label: 'ગુજરાતી (Gujarati)', flag: '🇮🇳' },
+  { code: 'pa-Guru-IN', label: 'ਪੰਜਾਬੀ (Punjabi)', flag: '🇮🇳' },
+  { code: 'ml-IN', label: 'മലയാളം (Malayalam)', flag: '🇮🇳' },
+  { code: 'te-IN', label: 'తెలుగు (Telugu)', flag: '🇮🇳' },
+  // South-East & East Asia
+  { code: 'fil-PH', label: 'Filipino / Tagalog', flag: '🇵🇭' },
+  { code: 'zh-CN', label: '普通话 (Mandarin)', flag: '🇨🇳' },
+  { code: 'zh-HK', label: '廣東話 (Cantonese)', flag: '🇭🇰' },
+  { code: 'vi-VN', label: 'Tiếng Việt', flag: '🇻🇳' },
+  // Africa
+  { code: 'sw-KE', label: 'Kiswahili', flag: '🇰🇪' },
+  { code: 'yo-NG', label: 'Yorùbá', flag: '🇳🇬' },
+  { code: 'ig-NG', label: 'Igbo', flag: '🇳🇬' },
+  { code: 'am-ET', label: 'አማርኛ (Amharic)', flag: '🇪🇹' },
+  { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
+  // Europe
   { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
   { code: 'ro-RO', label: 'Română', flag: '🇷🇴' },
   { code: 'pt-PT', label: 'Português', flag: '🇵🇹' },
   { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
   { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'hi-IN', label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'ur-PK', label: 'اردو', flag: '🇵🇰' },
+  { code: 'lt-LT', label: 'Lietuvių', flag: '🇱🇹' },
+  { code: 'lv-LV', label: 'Latviešu', flag: '🇱🇻' },
+  { code: 'sk-SK', label: 'Slovenčina', flag: '🇸🇰' },
 ];
 
 // Global lang so all MicButtons share the same setting
@@ -67,15 +91,30 @@ function useSpeechToText(onResult: (transcript: string) => void) {
 function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript: (key: string, text: string) => void }) {
   const handleResult = useCallback((t: string) => onTranscript(fieldKey, t), [fieldKey, onTranscript]);
   const { listening, toggle } = useSpeechToText(handleResult);
+  const lang = VOICE_LANGUAGES.find(l => l.code === _voiceLang);
   if (!speechSupported) return null;
   return (
-    <div className="relative">
-      <button type="button" onClick={toggle} title={`Dictate in ${VOICE_LANGUAGES.find(l => l.code === _voiceLang)?.label ?? _voiceLang}`}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${listening ? 'bg-flag-red text-white shadow-lg shadow-flag-red/30 animate-pulse' : 'bg-hc-dark border border-hc-border text-hc-teal-light hover:text-white hover:border-hc-teal/50'}`}>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-      </button>
-      {listening && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-flag-red font-semibold whitespace-nowrap animate-pulse">● REC</span>}
-    </div>
+    <button
+      type="button"
+      onClick={toggle}
+      title={`Tap to speak in ${lang?.label ?? _voiceLang}`}
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all select-none ${
+        listening
+          ? 'bg-red-500/20 border border-red-500 text-red-400 shadow-lg shadow-red-500/20'
+          : 'bg-hc-dark border border-hc-border text-hc-teal-light hover:border-hc-teal hover:text-white hover:bg-hc-teal/10'
+      }`}
+    >
+      <svg className={`w-4 h-4 shrink-0 ${listening ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+      </svg>
+      <span className="text-xs leading-none">
+        {listening ? (
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block" />Recording…</span>
+        ) : (
+          <span>{lang?.flag} Speak {lang?.label?.split(' ')[0]}</span>
+        )}
+      </span>
+    </button>
   );
 }
 
@@ -523,6 +562,9 @@ export function StaffNotePage() {
   const [copied, setCopied] = useState(false);
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>(loadNotes);
   const [showHistory, setShowHistory] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [enhancedNote, setEnhancedNote] = useState('');
+  const [enhanceError, setEnhanceError] = useState('');
   const [search, setSearch] = useState('');
   const [activeGroup, setActiveGroup] = useState<string>('client');
 
@@ -569,8 +611,6 @@ export function StaffNotePage() {
       parts.push(text);
     }
     if (parts.length <= 3) return '';
-    parts.push('');
-    parts.push(`Hazel Care Ltd | Confidential`);
     return parts.join('\n');
   }
 
@@ -579,52 +619,120 @@ export function StaffNotePage() {
   const flagResult = detectFlags(allText);
   const wordCount = generatedNote.trim() ? generatedNote.trim().split(/\s+/).length : 0;
 
-  function copyNote() {
-    if (!generatedNote) return;
-    navigator.clipboard.writeText(generatedNote);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
 
   function saveNote() {
-    if (!generatedNote) return;
-    const note: SavedNote = { id: uid(), type: selectedType.label, house, client, text: generatedNote, date: new Date().toLocaleDateString('en-GB') };
+    const noteToSave = enhancedNote || generatedNote;
+    if (!noteToSave) return;
+    const note: SavedNote = { id: uid(), type: selectedType.label, house, client, text: noteToSave, date: new Date().toLocaleDateString('en-GB') };
     const updated = [note, ...savedNotes].slice(0, 100);
     setSavedNotes(updated);
     saveNotes(updated);
     setAnswers({});
     setFreeText('');
     setClient('');
+    setEnhancedNote('');
+  }
+
+  async function enhanceNote() {
+    const source = generatedNote.trim();
+    if (!source || enhancing) return;
+    setEnhancing(true);
+    setEnhancedNote('');
+    setEnhanceError('');
+    try {
+      const res = await fetch('/api/enhance-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: source, noteType: selectedType.label, clientName: client }),
+      });
+      if (!res.ok) throw new Error('Enhancement failed');
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+        setEnhancedNote(result);
+      }
+    } catch {
+      setEnhanceError('AI enhancement unavailable — note unchanged');
+    } finally {
+      setEnhancing(false);
+    }
   }
 
   const [voiceLang, setVoiceLangState] = useState(_voiceLang);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   function handleLangChange(code: string) {
     setVoiceLang(code);
     setVoiceLangState(code);
+    setShowLangPicker(false);
   }
+  const currentLang = VOICE_LANGUAGES.find(l => l.code === voiceLang) ?? VOICE_LANGUAGES[0];
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Staff Note Assistant</h1>
-          <p className="text-hc-muted text-sm">All {NOTE_TYPES.length} Nourish diary entry types — guided prompts + voice dictation in any language.</p>
-        </div>
-        {speechSupported && (
-          <div className="flex items-center gap-2 bg-hc-card border border-hc-border rounded-xl px-3 py-2">
-            <svg className="w-4 h-4 text-hc-teal-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-            <span className="text-[11px] text-hc-muted font-medium whitespace-nowrap">Voice language:</span>
-            <select value={voiceLang} onChange={e => handleLangChange(e.target.value)}
-              className="bg-transparent text-white text-[11px] font-semibold focus:outline-none cursor-pointer">
-              {VOICE_LANGUAGES.map(l => (
-                <option key={l.code} value={l.code} className="bg-hc-darker text-white">{l.flag} {l.label}</option>
-              ))}
-            </select>
+
+      {/* ── PAGE HEADER ───────────────────────────────────────── */}
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Staff Note Assistant</h1>
+            <p className="text-hc-muted text-sm">All {NOTE_TYPES.length} Nourish diary entry types — guided prompts + voice dictation in any language.</p>
           </div>
-        )}
-        {!speechSupported && (
-          <div className="text-[11px] text-hc-muted bg-hc-card border border-hc-border rounded-xl px-3 py-2">
-            Voice dictation: use Chrome or Edge for microphone support
+        </div>
+
+        {/* ── LANGUAGE BANNER ─────────────────────────────────── */}
+        {speechSupported ? (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowLangPicker(v => !v)}
+              className="w-full flex items-center gap-3 bg-hc-card border border-hc-teal/40 rounded-xl px-4 py-3 hover:border-hc-teal transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-hc-teal/10 border border-hc-teal/30 flex items-center justify-center text-2xl shrink-0">
+                {currentLang.flag}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-xs text-hc-muted uppercase tracking-wider font-semibold mb-0.5">Voice language — tap to change</div>
+                <div className="text-white font-semibold text-sm">{currentLang.label}</div>
+              </div>
+              <div className="text-hc-muted text-xs text-right hidden sm:block">
+                <div className="font-medium text-hc-teal-light">Speak, type, or dictate</div>
+                <div>in any language — AI translates</div>
+              </div>
+              <svg className={`w-4 h-4 text-hc-muted shrink-0 transition-transform ${showLangPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+
+            {/* Flag grid dropdown */}
+            {showLangPicker && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-hc-darker border border-hc-border rounded-xl p-3 z-50 shadow-2xl">
+                <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-3 px-1">Select your language</div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-64 overflow-y-auto">
+                  {VOICE_LANGUAGES.map(l => (
+                    <button
+                      key={l.code}
+                      type="button"
+                      onClick={() => handleLangChange(l.code)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all text-center ${
+                        voiceLang === l.code
+                          ? 'border-hc-teal bg-hc-teal/10 text-white'
+                          : 'border-hc-border bg-hc-card text-hc-muted hover:border-hc-teal/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{l.flag}</span>
+                      <span className="text-[10px] font-medium leading-tight">{l.label.split(' ')[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 bg-hc-card border border-hc-border rounded-xl px-4 py-3 text-sm text-hc-muted">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            For voice dictation in any language, open this page in Chrome or Edge.
           </div>
         )}
       </div>
@@ -706,21 +814,19 @@ export function StaffNotePage() {
             <div className="space-y-3">
               {selectedType.prompts.map((prompt, i) => (
                 <div key={prompt.key} className="bg-hc-card border border-hc-border rounded-xl p-4 focus-within:border-hc-teal/30 transition-all">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-white">
-                      <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: `${selectedType.color}15`, color: selectedType.color }}>{i + 1}</span>
-                      {prompt.label}
-                      {prompt.required && <span className="text-flag-red text-[10px]">*</span>}
-                    </label>
-                    <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
-                  </div>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-white mb-2">
+                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: `${selectedType.color}15`, color: selectedType.color }}>{i + 1}</span>
+                    {prompt.label}
+                    {prompt.required && <span className="text-flag-red text-[10px]">*</span>}
+                  </label>
                   <textarea
                     value={answers[prompt.key] || ''}
                     onChange={e => setAnswer(prompt.key, e.target.value)}
                     placeholder={prompt.placeholder}
-                    className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal-light resize-none leading-relaxed"
+                    className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal-light resize-none leading-relaxed mb-2"
                     rows={2}
                   />
+                  <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
                 </div>
               ))}
             </div>
@@ -733,7 +839,7 @@ export function StaffNotePage() {
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
-                placeholder="Type your care note here. Write naturally — describe what happened, what you observed, and what action you took..."
+                placeholder="Type or dictate in any language — English, Bengali, Nepali, Sinhala, Polski, Yorùbá, Tagalog, हिन्दी, Kiswahili... AI will translate and polish it into professional care English."
                 className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-3 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal-light resize-y leading-relaxed"
                 rows={8}
               />
@@ -776,22 +882,55 @@ export function StaffNotePage() {
               </div>
 
               <div className="p-4 min-h-[200px]">
-                {generatedNote ? (
+                {/* AI Enhanced output — streams in live */}
+                {enhancedNote ? (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-hc-teal-light bg-hc-teal/10 border border-hc-teal/20 px-2 py-0.5 rounded">✦ AI Enhanced</span>
+                      <button onClick={() => setEnhancedNote('')} className="text-[9px] text-slate-500 hover:text-slate-300 ml-auto">Show original</button>
+                    </div>
+                    <pre className="text-xs text-hc-text font-mono leading-relaxed whitespace-pre-wrap">{enhancedNote}{enhancing && <span className="inline-block w-1.5 h-3.5 bg-hc-teal-light ml-0.5 animate-pulse align-middle" />}</pre>
+                  </div>
+                ) : enhancing ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-[11px] text-hc-teal-light font-medium">AI is rewriting your note...</span>
+                    </div>
+                    <pre className="text-xs text-hc-muted/40 font-mono leading-relaxed whitespace-pre-wrap line-clamp-4">{generatedNote}</pre>
+                  </div>
+                ) : generatedNote ? (
                   <pre className="text-xs text-hc-text font-mono leading-relaxed whitespace-pre-wrap">{generatedNote}</pre>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-hc-muted">
                     <svg className="w-10 h-10 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    <div className="text-xs text-center">Start filling in the prompts<br/>to see your note build in real-time</div>
+                    <div className="text-xs text-center opacity-60">Fill in the prompts or type/dictate<br/>in any language — AI will polish it</div>
                   </div>
                 )}
+                {enhanceError && <div className="text-red-400 text-[10px] mt-2">{enhanceError}</div>}
               </div>
 
+              {/* AI enhance button */}
+              {generatedNote && !enhancing && (
+                <div className="px-4 pb-3">
+                  <button onClick={enhanceNote}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-hc-teal/30 bg-hc-teal/5 hover:bg-hc-teal/10 text-hc-teal-light text-xs font-medium transition-all">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                    ✦ AI Enhance — make it professional
+                  </button>
+                </div>
+              )}
+
               <div className="p-4 border-t border-hc-border flex gap-2">
-                <button onClick={copyNote} disabled={!generatedNote}
+                <button onClick={() => { const n = enhancedNote || generatedNote; if (n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(() => setCopied(false), 2000); } }} disabled={!generatedNote && !enhancedNote}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-30 ${copied ? 'bg-flag-green text-white' : 'bg-hc-teal text-white hover:bg-hc-teal-light glow-teal'}`}>
                   {copied ? (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied!</>) : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy to Clipboard</>)}
                 </button>
-                <button onClick={saveNote} disabled={!generatedNote} className="px-4 py-2.5 bg-hc-card border border-hc-border text-sm text-hc-muted rounded-xl hover:text-white hover:border-hc-border-light disabled:opacity-30">Save</button>
+                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-4 py-2.5 bg-hc-card border border-hc-border text-sm text-hc-muted rounded-xl hover:text-white hover:border-hc-border-light disabled:opacity-30">Save</button>
               </div>
             </div>
 

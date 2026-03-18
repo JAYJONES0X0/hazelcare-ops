@@ -113,6 +113,7 @@ export interface WeekSummary {
   entryTypes: Record<string, number>;
   clients: string[];
   carers: string[];
+  clientDiary: Record<string, NourishEntry[]>;  // per-client diary entries
 }
 
 // ============================================================

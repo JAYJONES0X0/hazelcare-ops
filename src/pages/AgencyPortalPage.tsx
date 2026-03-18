@@ -175,7 +175,7 @@ function ShiftBoard() {
   const open = SHIFTS.filter(s => s.status === 'open').length;
   const critical = SHIFTS.filter(s => s.urgency === 'critical' && s.status === 'open').length;
   const filled = SHIFTS.filter(s => s.status === 'filled' || s.status === 'confirmed').length;
-  const totalValue = SHIFTS.filter(s => s.status === 'open').reduce((a, s) => a + s.hours * s.rate, 0);
+  const totalHours = SHIFTS.filter(s => s.status === 'open').reduce((a, s) => a + s.hours, 0);
 
   return (
     <div className="space-y-5">
@@ -185,7 +185,7 @@ function ShiftBoard() {
           { label: 'Open Shifts', value: open, color: 'text-hc-teal-light', sub: 'Require coverage' },
           { label: 'Critical', value: critical, color: 'text-red-400', sub: 'Fill today' },
           { label: 'Filled / Confirmed', value: filled, color: 'text-green-400', sub: 'This week' },
-          { label: 'Open Shift Value', value: `£${totalValue.toFixed(0)}`, color: 'text-amber-300', sub: 'Available earnings' },
+          { label: 'Total Open Hours', value: `${totalHours}h`, color: 'text-amber-300', sub: 'Across all houses' },
         ].map(s => (
           <div key={s.label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
             <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -230,8 +230,8 @@ function ShiftBoard() {
                 {shift.notes && <div className="mt-1.5 text-amber-300/70 text-[11px]">⚠ {shift.notes}</div>}
               </div>
               <div className="text-right shrink-0">
-                <div className="text-hc-teal-light text-lg font-bold">£{shift.rate.toFixed(2)}<span className="text-slate-500 text-xs font-normal">/hr</span></div>
-                <div className="text-slate-500 text-[11px] mt-0.5">£{(shift.rate * shift.hours).toFixed(2)} total</div>
+                <div className="text-hc-teal-light text-lg font-bold">{shift.hours}h</div>
+                <div className="text-slate-500 text-[11px] mt-0.5">{shift.role}</div>
               </div>
             </div>
 
@@ -407,8 +407,8 @@ function AgencyDirectory() {
 function RateCards() {
   return (
     <div className="space-y-5">
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-300/80 text-xs">
-        These are standard Hazel Care Ltd agency rates effective 01/04/2026. All rates are per hour excluding agency margin. Payment terms: 30 days. VAT applicable.
+      <div className="bg-hc-teal/10 border border-hc-teal/20 rounded-xl px-4 py-3 text-hc-teal-light/80 text-xs">
+        Hazel Care Ltd agency rates are agreed directly with registered agencies. Contact the operations team for current rate information.
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -423,14 +423,14 @@ function RateCards() {
             </tr>
           </thead>
           <tbody>
-            {RATE_CARDS.map((r, i) => (
-              <tr key={r.role} className={`border-b border-white/[0.04] ${i === 0 ? '' : ''}`}>
+            {RATE_CARDS.map((r) => (
+              <tr key={r.role} className="border-b border-white/[0.04]">
                 <td className="text-white font-medium py-3 pr-4">{r.role}</td>
-                <td className="text-hc-teal-light font-semibold text-right px-3 py-3">£{r.day.toFixed(2)}</td>
-                <td className="text-slate-300 text-right px-3 py-3">£{r.evening.toFixed(2)}</td>
-                <td className="text-slate-300 text-right px-3 py-3">£{r.night.toFixed(2)}</td>
-                <td className="text-slate-300 text-right px-3 py-3">£{r.weekend.toFixed(2)}</td>
-                <td className="text-amber-300 text-right pl-3 py-3 font-medium">£{r.bank_hol.toFixed(2)}</td>
+                <td className="text-slate-500 text-right px-3 py-3 text-xs">On request</td>
+                <td className="text-slate-500 text-right px-3 py-3 text-xs">On request</td>
+                <td className="text-slate-500 text-right px-3 py-3 text-xs">On request</td>
+                <td className="text-slate-500 text-right px-3 py-3 text-xs">On request</td>
+                <td className="text-slate-500 text-right pl-3 py-3 text-xs">On request</td>
               </tr>
             ))}
           </tbody>
