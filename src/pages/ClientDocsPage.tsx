@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, deleteClient, emptyClient } from '../lib/client-store';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, riskInfo } from '../lib/doc-renderer';
 import { parseNourishText } from '../lib/nourish-import';
@@ -6,6 +7,9 @@ import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import type { FullClient } from '../lib/client-store';
+
+// Set up pdfjs worker for Vite
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'import';
 
@@ -20,7 +24,9 @@ export function ClientDocsPage() {
   const [importTarget, setImportTarget] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; domainsDetected: number } | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => setClients(loadClients());
 
@@ -45,6 +51,36 @@ export function ClientDocsPage() {
     setShowNewModal(false);
     refresh();
     openPBS(client.id);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    setImportResult(['Reading PDF...']);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+
+      setImportText(fullText);
+      setImportResult(['PDF text extracted successfully. Press "Preview Import" to continue.']);
+    } catch (err) {
+      console.error('PDF extract error:', err);
+      setImportResult(['Failed to read PDF. Try copy-pasting the text manually instead.']);
+    } finally {
+      setIsExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handlePreview = () => {
@@ -114,22 +150,39 @@ export function ClientDocsPage() {
   if (subView === 'import') {
     return (
       <div className="p-4 lg:p-6 max-w-3xl">
-        <button onClick={() => { setSubView('list'); setImportResult([]); }}
+        <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
           className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium mb-6">
           ← Back to People
         </button>
 
         <h1 className="text-xl font-bold text-white mb-1">Import Data</h1>
         <p className="text-sm text-gray-500 mb-4">
-          Paste text from a Nourish Emergency Admission Pack, a support plan, or any care document. We'll detect the format, parse everything, and create a person-centred support plan automatically.
+          Upload a PDF from Nourish or paste text manually. We'll detect the format and create a person-centred support plan automatically.
         </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isExtracting}
+            className="flex-1 flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-600 disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-lg shadow-teal-900/20"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+            {isExtracting ? 'Extracting text...' : 'Upload Nourish PDF'}
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept=".pdf"
+            className="hidden"
+          />
+        </div>
+
         <div className="bg-[#111b2e] border border-[#1e3050] rounded-lg px-4 py-3 mb-6">
-          <p className="text-xs text-teal-400 font-medium mb-1">Supported formats:</p>
-          <ul className="text-xs text-gray-400 space-y-0.5">
-            <li>Nourish Emergency Admission Pack (PDF text)</li>
-            <li>My Support Plan documents (Word/table format)</li>
-            <li>Any care document with structured headings</li>
-          </ul>
+          <p className="text-xs text-teal-400 font-medium mb-1">Mobile Tip:</p>
+          <p className="text-xs text-gray-400">
+            Tap the button above and select your "Emergency Admission Pack" PDF. No need to copy-paste.
+          </p>
         </div>
 
         {importTarget && (
@@ -143,8 +196,8 @@ export function ClientDocsPage() {
         <textarea
           value={importText}
           onChange={e => setImportText(e.target.value)}
-          rows={16}
-          placeholder="Paste the full text from the Nourish PDF here…"
+          rows={12}
+          placeholder="Or paste the full text from the Nourish PDF here…"
           className="w-full bg-[#0c1525] border border-[#1e3050] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600 resize-y mb-4 font-mono"
         />
 
@@ -213,7 +266,7 @@ export function ClientDocsPage() {
   return (
     <div className="p-4 lg:p-6">
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">People & Plans</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -222,14 +275,14 @@ export function ClientDocsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2 bg-[#111b2e] hover:bg-[#162035] border border-[#1e3050] text-gray-300 text-sm font-medium px-4 py-2 rounded-lg">
+            className="flex items-center gap-2 bg-[#111b2e] hover:bg-[#162035] border border-[#1e3050] text-gray-300 text-sm font-medium px-3 py-2 rounded-lg">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            Import Data
+            Import
           </button>
           <button onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            className="flex items-center gap-2 btn-gradient text-sm px-3 py-2 rounded-lg">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -281,121 +334,137 @@ export function ClientDocsPage() {
 
             return (
               <div key={client.id}
-                className="bg-[#111b2e] border border-[#1e3050] rounded-xl overflow-hidden hover:border-[#2a4060] transition-colors">
+                className="bg-[#111b2e] border border-[#1e3050] rounded-xl overflow-hidden hover:border-[#2a4060] transition-colors card-glow">
                 {/* Client header */}
-                <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 rounded-full bg-teal-900/40 border border-teal-800 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-teal-400">
-                      {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap">
+                <div className="px-4 sm:px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-teal-900/40 border border-teal-800 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-teal-400">
+                        {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <span className="text-base font-bold text-white">{client.name}</span>
-                      {client.dob && (
-                        <span className="text-xs text-gray-500">DOB: {client.dob}</span>
-                      )}
-                      {client.nhs && (
-                        <span className="text-xs text-gray-500">NHS: {client.nhs}</span>
-                      )}
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                        {client.dob && (
+                          <span className="text-xs text-gray-500">DOB: {client.dob}</span>
+                        )}
+                        {client.nhs && (
+                          <span className="text-xs text-gray-500">NHS: {client.nhs}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {client.diagnoses.slice(0, 3).map((d, i) => (
-                        <span key={i} className="text-[10px] bg-[#0a1120] border border-[#1e3050] px-2 py-0.5 rounded-full text-gray-400">
-                          {d}
+                    {topRisk > 0 && (
+                      <div className="flex-shrink-0 text-right hidden sm:block">
+                        <div className="text-[10px] text-gray-500 mb-0.5">Highest risk</div>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
+                          style={{ background: riskColor + '30', color: riskColor, border: `1px solid ${riskColor}` }}>
+                          {topRisk} — {riskLabel}
                         </span>
-                      ))}
-                      {client.diagnoses.length > 3 && (
-                        <span className="text-[10px] text-gray-600">+{client.diagnoses.length - 3} more</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                  {topRisk > 0 && (
-                    <div className="flex-shrink-0 text-right">
-                      <div className="text-[10px] text-gray-500 mb-0.5">Highest risk</div>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
+                  {/* Diagnoses + mobile risk badge */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    {client.diagnoses.slice(0, 2).map((d, i) => (
+                      <span key={i} className="text-[10px] bg-[#0a1120] border border-[#1e3050] px-2 py-0.5 rounded-full text-gray-400 truncate max-w-[140px]">
+                        {d}
+                      </span>
+                    ))}
+                    {client.diagnoses.length > 2 && (
+                      <span className="text-[10px] text-gray-600">+{client.diagnoses.length - 2}</span>
+                    )}
+                    {topRisk > 0 && (
+                      <span className="sm:hidden ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{ background: riskColor + '30', color: riskColor, border: `1px solid ${riskColor}` }}>
                         {topRisk} — {riskLabel}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Document actions */}
-                <div className="border-t border-[#1e3050] px-5 py-3 flex items-center gap-3 flex-wrap bg-[#0a1120]">
-                  {/* PBS */}
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${hasPBS ? 'bg-teal-500' : 'bg-gray-600'}`} />
-                    <span className="text-xs text-gray-400">PBS</span>
+                <div className="border-t border-[#1e3050] px-4 sm:px-5 py-3 bg-[#0a1120]">
+                  <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
+                    {/* PBS */}
+                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${hasPBS ? 'bg-teal-500' : 'bg-gray-600'}`} />
+                        <span className="text-[11px] sm:text-xs text-gray-400">PBS</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openPBS(client.id)}
+                          className="text-[11px] sm:text-xs bg-teal-900/40 hover:bg-teal-800/50 border border-teal-800 text-teal-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
+                          {hasPBS ? 'Edit' : 'Create'}
+                        </button>
+                        {hasPBS && (
+                          <button onClick={() => printDoc(client, 'pbs')}
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            PDF
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Risk */}
+                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${hasRisk ? 'bg-amber-500' : 'bg-gray-600'}`} />
+                        <span className="text-[11px] sm:text-xs text-gray-400">Risk</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openRisk(client.id)}
+                          className="text-[11px] sm:text-xs bg-amber-900/30 hover:bg-amber-800/40 border border-amber-800 text-amber-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
+                          {hasRisk ? 'Edit' : 'Create'}
+                        </button>
+                        {hasRisk && (
+                          <button onClick={() => printDoc(client, 'risk')}
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            PDF
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Support Plan */}
+                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${hasCarePlan ? 'bg-blue-500' : 'bg-gray-600'}`} />
+                        <span className="text-[11px] sm:text-xs text-gray-400">Plan</span>
+                        {hasCarePlan && (
+                          <span className="text-[9px] sm:text-[10px] text-gray-600">({cpFilled}/{cpDomains.length})</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openCarePlan(client.id)}
+                          className="text-[11px] sm:text-xs bg-blue-900/30 hover:bg-blue-800/40 border border-blue-800 text-blue-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
+                          {hasCarePlan ? 'Edit' : 'Create'}
+                        </button>
+                        {hasCarePlan && (
+                          <button onClick={() => printDoc(client, 'careplan')}
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            PDF
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <button onClick={() => openPBS(client.id)}
-                    className="text-xs bg-teal-900/40 hover:bg-teal-800/50 border border-teal-800 text-teal-400 px-3 py-1 rounded-lg font-medium">
-                    {hasPBS ? 'Edit' : 'Create'}
-                  </button>
-                  {hasPBS && (
-                    <button onClick={() => printDoc(client, 'pbs')}
-                      className="text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
-                      PDF
+
+                  {/* Bottom row: Import + meta */}
+                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1e3050]/50">
+                    <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
+                      className="text-[11px] text-gray-500 hover:text-teal-400 font-medium">
+                      Import
                     </button>
-                  )}
-
-                  <div className="w-px h-4 bg-[#1e3050]" />
-
-                  {/* Risk */}
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${hasRisk ? 'bg-amber-500' : 'bg-gray-600'}`} />
-                    <span className="text-xs text-gray-400">Risk</span>
-                  </div>
-                  <button onClick={() => openRisk(client.id)}
-                    className="text-xs bg-amber-900/30 hover:bg-amber-800/40 border border-amber-800 text-amber-400 px-3 py-1 rounded-lg font-medium">
-                    {hasRisk ? 'Edit' : 'Create'}
-                  </button>
-                  {hasRisk && (
-                    <button onClick={() => printDoc(client, 'risk')}
-                      className="text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
-                      PDF
-                    </button>
-                  )}
-
-                  <div className="w-px h-4 bg-[#1e3050]" />
-
-                  {/* Support Plan */}
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${hasCarePlan ? 'bg-blue-500' : 'bg-gray-600'}`} />
-                    <span className="text-xs text-gray-400">Support Plan</span>
-                    {hasCarePlan && (
-                      <span className="text-[10px] text-gray-600">({cpFilled}/{cpDomains.length})</span>
+                    <div className="flex-1" />
+                    {client.keyWorker && (
+                      <span className="text-[11px] text-gray-600 truncate max-w-[180px]">Key Worker: {client.keyWorker}</span>
                     )}
-                  </div>
-                  <button onClick={() => openCarePlan(client.id)}
-                    className="text-xs bg-blue-900/30 hover:bg-blue-800/40 border border-blue-800 text-blue-400 px-3 py-1 rounded-lg font-medium">
-                    {hasCarePlan ? 'Edit' : 'Create'}
-                  </button>
-                  {hasCarePlan && (
-                    <button onClick={() => printDoc(client, 'careplan')}
-                      className="text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
-                      PDF
+                    <button onClick={() => handleDelete(client.id, client.name)}
+                      className="text-[11px] text-gray-600 hover:text-red-400">
+                      Delete
                     </button>
-                  )}
-
-                  <div className="w-px h-4 bg-[#1e3050]" />
-
-                  {/* Import into this client */}
-                  <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
-                    className="text-[11px] text-gray-500 hover:text-teal-400 font-medium">
-                    Import
-                  </button>
-
-                  <div className="flex-1" />
-
-                  {/* Meta */}
-                  {client.keyWorker && (
-                    <span className="text-[11px] text-gray-600">Key Worker: {client.keyWorker}</span>
-                  )}
-                  <button onClick={() => handleDelete(client.id, client.name)}
-                    className="text-[11px] text-gray-600 hover:text-red-400">
-                    Delete
-                  </button>
+                  </div>
                 </div>
 
                 {/* Care plan domains preview */}

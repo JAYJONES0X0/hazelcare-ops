@@ -186,7 +186,7 @@ const NOTE_TYPES: NoteType[] = [
     prompts: [
       { key: 'what', label: 'What happened?', placeholder: 'e.g. Client fell in bathroom while getting out of shower...', required: true },
       { key: 'when', label: 'When did it happen (date/time)?', placeholder: 'e.g. 12/03/2026 at approximately 06:30' },
-      { key: 'who', label: 'Who was involved?', placeholder: 'e.g. Client: Jamie Morton. Staff present: Sarah Mitchell...' },
+      { key: 'who', label: 'Who was involved?', placeholder: 'e.g. Client: [Name]. Staff present: Sarah Mitchell...' },
       { key: 'injuries', label: 'Any injuries?', placeholder: 'e.g. Small bruise on left forearm. No head injury. Client alert and oriented.' },
       { key: 'action', label: 'What action was taken?', placeholder: 'e.g. First aid administered. Ice pack applied. GP notified by phone...' },
       { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. House coordinator, on-call manager, GP surgery, family (NOK)...' },
@@ -269,7 +269,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'gp_appointment', label: 'GP Appointment', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'client', label: 'Client and reason for appointment?', placeholder: 'e.g. Jamie Morton — review of Risperidone dosage and annual health check', required: true },
+      { key: 'client', label: 'Client and reason for appointment?', placeholder: 'e.g. [Name] — review of Risperidone dosage and annual health check', required: true },
       { key: 'outcome', label: 'What was the outcome?', placeholder: 'e.g. Medication adjusted. Blood test requested. Follow-up in 4 weeks...' },
       { key: 'actions', label: 'Follow-up actions required?', placeholder: 'e.g. Collect new prescription from pharmacy. Book blood test. Update MAR chart...' },
       { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. Keyworker informed. Family updated. Manager copy of letter filed...' },
@@ -278,7 +278,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'medication', label: 'Medication', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'what', label: 'Which medication and client?', placeholder: 'e.g. Olanzapine 10mg — Jamie Morton', required: true },
+      { key: 'what', label: 'Which medication and client?', placeholder: 'e.g. Olanzapine 10mg — [Name]', required: true },
       { key: 'status', label: 'Was it administered, refused, or missed?', placeholder: 'e.g. Refused at 08:00, attempted again at 09:30...' },
       { key: 'reason', label: 'Reason if refused/missed?', placeholder: 'e.g. Client said they didn\'t want it, appeared drowsy...' },
       { key: 'action', label: 'Action taken?', placeholder: 'e.g. GP informed by phone. Will attempt at lunchtime. MAR chart updated.' },
@@ -296,7 +296,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'medication_collected', label: 'Medication Collected', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'client', label: 'Client and medication collected?', placeholder: 'e.g. Jamie Morton — monthly prescription collected from Boots Pharmacy', required: true },
+      { key: 'client', label: 'Client and medication collected?', placeholder: 'e.g. [Name] — monthly prescription collected from Boots Pharmacy', required: true },
       { key: 'items', label: 'Items collected?', placeholder: 'e.g. Olanzapine 10mg x 30, Metformin 500mg x 60, Vitamin D x 90...' },
       { key: 'check', label: 'Checked against prescription?', placeholder: 'e.g. All items verified against prescription. Quantities correct. Expiry dates checked...' },
       { key: 'stored', label: 'Stored correctly?', placeholder: 'e.g. All medication stored in locked cabinet. CD in CD cupboard. Temperature checked.' },
@@ -305,7 +305,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'medication_ordered', label: 'Medication Ordered', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'client', label: 'Client and medication ordered?', placeholder: 'e.g. Repeat prescription ordered for Jamie Morton — Olanzapine 10mg', required: true },
+      { key: 'client', label: 'Client and medication ordered?', placeholder: 'e.g. Repeat prescription ordered for [Name] — Olanzapine 10mg', required: true },
       { key: 'method', label: 'How was it ordered?', placeholder: 'e.g. Online via GP practice portal. Requested 7 days before running out...' },
       { key: 'expected', label: 'Expected collection date?', placeholder: 'e.g. Ready to collect from Boots by 20/03/2026' },
     ],
@@ -321,7 +321,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'medication_review', label: 'Medication Review', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'client', label: 'Client and review details?', placeholder: 'e.g. Jamie Morton — annual medication review with Dr Smith on 12/03/2026', required: true },
+      { key: 'client', label: 'Client and review details?', placeholder: 'e.g. [Name] — annual medication review with Dr Smith on 12/03/2026', required: true },
       { key: 'outcome', label: 'Outcome of review?', placeholder: 'e.g. Olanzapine dose reduced. Metformin continued. New prescription issued for Vitamin D...' },
       { key: 'changes', label: 'Changes to MAR chart needed?', placeholder: 'e.g. MAR updated for Olanzapine dose change from 10mg to 5mg effective 15/03/2026...' },
       { key: 'actions', label: 'Next steps?', placeholder: 'e.g. Collect new prescription. Update care plan. Inform all shift staff of changes...' },
@@ -330,7 +330,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'finance_transaction', label: 'Financial Transaction', group: 'client', color: '#059669',
     prompts: [
-      { key: 'client', label: 'Client and transaction details?', placeholder: 'e.g. Jamie Morton — weekly spending money £30 withdrawn from Halifax', required: true },
+      { key: 'client', label: 'Client and transaction details?', placeholder: 'e.g. [Name] — weekly spending money £30 withdrawn from Halifax', required: true },
       { key: 'purpose', label: 'Purpose of transaction?', placeholder: 'e.g. Food shop, clothing, leisure activity, personal purchase...' },
       { key: 'amount', label: 'Amount and balance?', placeholder: 'e.g. £30 withdrawn. Balance remaining: £145.23. Receipts obtained.' },
       { key: 'witnessed', label: 'Witnessed by?', placeholder: 'e.g. Witnessed by Sarah Mitchell. Client signed transaction record...' },
@@ -348,7 +348,7 @@ const NOTE_TYPES: NoteType[] = [
   {
     id: 'service_charge', label: 'Service Charge', group: 'client', color: '#059669',
     prompts: [
-      { key: 'client', label: 'Client and charge details?', placeholder: 'e.g. Jamie Morton — monthly service charge £XXX.XX for March 2026', required: true },
+      { key: 'client', label: 'Client and charge details?', placeholder: 'e.g. [Name] — monthly service charge £XXX.XX for March 2026', required: true },
       { key: 'payment', label: 'Payment method and status?', placeholder: 'e.g. Direct debit received. Payment confirmed by accounts team...' },
       { key: 'notes', label: 'Any notes or queries?', placeholder: 'e.g. Client\'s DWP payment increase applied from April. Funding review due...' },
     ],
@@ -794,7 +794,7 @@ export function StaffNotePage() {
               </div>
               <div>
                 <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Client / Staff Name</label>
-                <input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. Jamie Morton" className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light" />
+                <input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. [Name]" className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light" />
               </div>
               <div>
                 <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Input Mode</label>

@@ -25,7 +25,7 @@ const COORDINATORS: Record<string, string> = {
 };
 
 const CLIENTS = [
-  'Jamie Morton', 'Wayne Jefferson', 'Claire Hughes', 'Robert Ellis',
+  'Jordan Blake', 'Wayne Jefferson', 'Claire Hughes', 'Robert Ellis',
   'Sandra Peters', 'Michael Quinn', 'Deborah Lane', 'Steven Cross',
   'Patricia Webb', 'Andrew Shaw', 'Helen Barnes', 'Gary Newman',
   'Julie Foster', 'Keith Bryant', 'Donna Marshall', 'Brian Cooper',
@@ -152,7 +152,7 @@ export function generateMockEntries(): NourishEntry[] {
 
 export function generateMockActions(): Action[] {
   return [
-    { id: uid(), title: 'Follow up GP referral for Jamie Morton', description: 'GP referral made after fall incident. Need confirmation of appointment date.', house: 'Lingfield House', owner: 'Sarah Mitchell', priority: 'critical', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-1), tags: ['medical', 'fall'] },
+    { id: uid(), title: 'Follow up GP referral for Jordan Blake', description: 'GP referral made after fall incident. Need confirmation of appointment date.', house: 'Lingfield House', owner: 'Sarah Mitchell', priority: 'critical', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-1), tags: ['medical', 'fall'] },
     { id: uid(), title: 'Review medication protocol — evening count', description: 'Discrepancy found in evening medication count. Review process and retrain staff if needed.', house: 'Church House', owner: 'David Clarke', priority: 'high', status: 'open', createdAt: dateStr(2), dueDate: dateStr(-2), tags: ['medication'] },
     { id: uid(), title: 'Schedule maintenance — bathroom light', description: 'Bathroom light reported flickering. Health & safety concern for night shifts.', house: 'Laurel House', owner: 'Emma Thompson', priority: 'medium', status: 'open', createdAt: dateStr(1), dueDate: dateStr(-4), tags: ['maintenance', 'h&s'] },
     { id: uid(), title: 'Complete safeguarding referral', description: 'Local authority referral for threatening behaviour incident. Paperwork needs completing.', house: 'Station House', owner: 'Mark Williams', priority: 'critical', status: 'in_progress', createdAt: dateStr(2), dueDate: dateStr(-1), tags: ['safeguarding'] },
@@ -167,7 +167,7 @@ export function generateMockActions(): Action[] {
 
 export function generateMockIncidents(): Incident[] {
   return [
-    { id: uid(), title: 'Client fall — bathroom', house: 'Lingfield House', client: 'Jamie Morton', staff: 'Sarah Mitchell', date: dateStr(3), severity: 'red', stage: 'investigating', description: 'Client fell in bathroom at 06:30. Small bruise on left arm. First aid administered. GP notified.', flags: ['fall', 'injury'], actions: ['GP referral', 'Incident form filed', 'Family notified'], createdAt: dateStr(3) },
+    { id: uid(), title: 'Client fall — bathroom', house: 'Lingfield House', client: 'Jordan Blake', staff: 'Sarah Mitchell', date: dateStr(3), severity: 'red', stage: 'investigating', description: 'Client fell in bathroom at 06:30. Small bruise on left arm. First aid administered. GP notified.', flags: ['fall', 'injury'], actions: ['GP referral', 'Incident form filed', 'Family notified'], createdAt: dateStr(3) },
     { id: uid(), title: 'Medication refusal — antipsychotic', house: 'Church House', client: 'Wayne Jefferson', staff: 'David Clarke', date: dateStr(2), severity: 'red', stage: 'logged', description: 'Client refused morning medication including prescribed antipsychotic. GP informed.', flags: ['refused medication'], actions: ['GP notification', 'MAR chart updated'], createdAt: dateStr(2) },
     { id: uid(), title: 'Threatening behaviour disclosure', house: 'Station House', client: 'Robert Ellis', staff: 'Mark Williams', date: dateStr(2), severity: 'red', stage: 'investigating', description: 'Client disclosed threatening comments from another resident. Statements taken.', flags: ['safeguarding', 'threatened'], actions: ['Statements taken', 'Manager notified', 'LA referral pending'], createdAt: dateStr(2) },
     { id: uid(), title: 'Self-harm disclosure', house: 'Cottrell House', client: 'Patricia Webb', staff: 'Paul Taylor', date: dateStr(1), severity: 'red', stage: 'investigating', description: 'Client expressed self-harm thoughts during 1:1. Crisis plan activated. MH team contacted.', flags: ['self-harm'], actions: ['Crisis plan activated', 'MH team referral', '1:1 obs increased'], createdAt: dateStr(1) },

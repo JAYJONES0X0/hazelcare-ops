@@ -84,7 +84,10 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
       {/* Logo */}
       <div className="p-4 lg:p-5 border-b border-hc-border">
         <div className="flex items-center gap-3">
-          <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-9 w-9 rounded-lg" />
+          <div className="relative">
+            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-9 w-9 rounded-lg relative z-10" />
+            <div className="absolute inset-0 rounded-lg bg-hc-teal/20 blur-md" />
+          </div>
           <div>
             <div className="text-[13px] font-bold text-white tracking-tight">Ops Engine</div>
             <div className="text-[10px] text-hc-muted font-medium">Hazel Care Ltd</div>
@@ -109,7 +112,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
                   key={item.id}
                   onClick={() => handleNav(item.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all ${
-                    page === item.id ? 'bg-hc-teal/15 text-hc-teal-light font-semibold glow-teal' : 'text-hc-muted hover:text-white hover:bg-white/[0.03]'
+                    page === item.id ? 'bg-gradient-to-r from-hc-teal/15 to-hc-blue/10 text-hc-teal-light font-semibold border-l-2 border-hc-teal-light glow-teal' : 'text-hc-muted hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   {item.icon}
@@ -125,7 +128,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
       {/* Status Panel */}
       <div className="p-3 border-t border-hc-border hidden lg:block">
         {weekData ? (
-          <div className="bg-hc-card rounded-xl p-3.5 border border-hc-border">
+          <div className="bg-hc-card rounded-xl p-3.5 border border-hc-border card-glow">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold">This Week</div>
               {isDemo && <span className="text-[9px] text-hc-teal-light bg-hc-teal/20 px-1.5 py-0.5 rounded">DEMO</span>}
