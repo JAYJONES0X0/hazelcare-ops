@@ -68,7 +68,20 @@ export function ClientDocsPage() {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        const pageText = content.items.map((item: any) => item.str).join(' ');
+        // Reconstruct line breaks using Y-position of each text item
+        let lastY: number | null = null;
+        let pageText = '';
+        for (const item of content.items as any[]) {
+          if (!item.str) continue;
+          const y = item.transform ? item.transform[5] : null;
+          if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
+            pageText += '\n';
+          } else if (pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
+            pageText += ' ';
+          }
+          pageText += item.str;
+          lastY = y;
+        }
         fullText += pageText + '\n';
       }
 

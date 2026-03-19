@@ -127,10 +127,10 @@ function parseCarePlanReport(text: string, warnings: string[]): { client: Partia
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
   const carePlan = emptyCarePlan(today, reviewDate);
 
-  // Extract name from "Care Plan – [Name] Report run on"
+  // Extract name from "Care Plan – [Name] Report run on" or "Emergency Admission Pack - [Name] Report run on"
   let name = '';
   let preferredName = '';
-  const headerMatch = text.match(/Care Plan\s*[–\-]\s*(.+?)\s*Report run on/i);
+  const headerMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–\-]\s*(.+?)\s*Report run on/i);
   if (headerMatch) {
     name = headerMatch[1].trim();
     preferredName = name.split(' ')[0];
@@ -266,10 +266,11 @@ export function parseNourishText(rawText: string): ParseResult {
   const text = rawText.replace(/\r\n/g, '\n');
   const flat = isFlat(text);
 
-  // Detect format: "Care Plan –" header = Care Plan report format
+  // Detect format: "Care Plan –" or "Emergency Admission Pack -" header
   const isCarePlanReport = /Care Plan\s*[–\-]\s*.+Report run on/i.test(text);
+  const isAdmissionPack = /Emergency Admission Pack\s*[–\-]\s*.+Report run on/i.test(text);
 
-  if (isCarePlanReport || flat) {
+  if ((isCarePlanReport || isAdmissionPack) && flat) {
     // Use the Care Plan report parser (handles flat pdf.js output)
     const result = parseCarePlanReport(text, warnings);
     const enabledCount = result.carePlan.domains.filter(d => d.enabled).length;
@@ -301,14 +302,23 @@ export function parseNourishText(rawText: string): ParseResult {
     return { client: result.client, carePlan: result.carePlan, warnings };
   }
 
-  // Original newline-delimited parser (manually pasted text)
+  // Original newline-delimited parser (properly extracted text or manually pasted)
   const firstName = extractField(text, 'First Name\n', ['Last Name', 'Preferred Name']).split('\n')[0].trim();
   const lastName = extractField(text, 'Last Name\n', ['Preferred Name', 'Gender']).split('\n')[0].trim();
-  const preferredName = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0].trim();
+  let preferredNameNL = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0].trim();
   const dob = extractField(text, 'Date of Birth\n', ['Email', 'NHS']).split('\n')[0].trim();
   const nhs = extractField(text, 'NHS / CHI No.\n', ['Deprivation', 'Gold']).split('\n')[0].trim();
   const phone = extractField(text, 'Contact Number\n', ['Quick notes', 'CRITICAL']).split('\n')[0].trim();
-  const name = `${firstName} ${lastName}`.trim();
+  let name = `${firstName} ${lastName}`.trim();
+
+  // Fallback: extract name from header if field extraction failed
+  if (!name || name.length < 2) {
+    const hdrMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–\-]\s*(.+?)(?:\n|Report run on)/i);
+    if (hdrMatch) {
+      name = hdrMatch[1].trim();
+      preferredNameNL = preferredNameNL || name.split(' ')[0];
+    }
+  }
 
   const street = extractField(text, 'Street Address\n', ['Town', 'County']).split('\n')[0].trim();
   const town = extractField(text, 'Town\n', ['County', 'Post Code']).split('\n')[0].trim();
@@ -400,7 +410,7 @@ export function parseNourishText(rawText: string): ParseResult {
   return {
     client: {
       name,
-      preferredName,
+      preferredName: preferredNameNL,
       dob,
       address,
       nhs,
