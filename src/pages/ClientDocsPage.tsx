@@ -164,7 +164,7 @@ export function ClientDocsPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isExtracting}
-            className="flex-1 flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-600 disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-lg shadow-teal-900/20"
+            className="flex-1 flex items-center justify-center gap-2 btn-gradient disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-lg shadow-teal-900/20"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
             {isExtracting ? 'Extracting text...' : 'Upload Nourish PDF'}
@@ -178,7 +178,7 @@ export function ClientDocsPage() {
           />
         </div>
 
-        <div className="bg-[#111b2e] border border-[#1e3050] rounded-lg px-4 py-3 mb-6">
+        <div className="glass border border-hc-border rounded-lg px-4 py-3 mb-6">
           <p className="text-xs text-teal-400 font-medium mb-1">Mobile Tip:</p>
           <p className="text-xs text-gray-400">
             Tap the button above and select your "Emergency Admission Pack" PDF. No need to copy-paste.
@@ -198,11 +198,11 @@ export function ClientDocsPage() {
           onChange={e => setImportText(e.target.value)}
           rows={12}
           placeholder="Or paste the full text from the Nourish PDF here…"
-          className="w-full bg-[#0c1525] border border-[#1e3050] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600 resize-y mb-4 font-mono"
+          className="w-full bg-hc-dark border border-hc-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600 resize-y mb-4 font-mono"
         />
 
         {importResult.length > 0 && (
-          <div className="bg-[#111b2e] border border-[#1e3050] rounded-lg px-4 py-3 mb-4">
+          <div className="glass border border-hc-border rounded-lg px-4 py-3 mb-4">
             {importResult.map((w, i) => (
               <p key={i} className="text-xs text-gray-400">{w}</p>
             ))}
@@ -220,11 +220,11 @@ export function ClientDocsPage() {
             </div>
             <div className="flex gap-3 mt-4">
               <button onClick={handleImport}
-                className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-6 py-2 rounded-lg">
+                className="btn-gradient text-white text-sm font-semibold px-6 py-2 rounded-lg">
                 Confirm & Import
               </button>
               <button onClick={() => setImportPreview(null)}
-                className="border border-[#1e3050] text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg">
+                className="border border-hc-border text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg">
                 Go Back
               </button>
             </div>
@@ -234,7 +234,7 @@ export function ClientDocsPage() {
         {!importPreview && (
           <div className="flex gap-3">
             <button onClick={handlePreview} disabled={!importText.trim()}
-              className="bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
+              className="btn-gradient disabled:opacity-40 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
               Preview Import
             </button>
             {!importTarget && (
@@ -243,7 +243,7 @@ export function ClientDocsPage() {
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
-                  className="bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
+                  className="bg-hc-dark border border-hc-border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
                   <option value="">New person</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -275,7 +275,7 @@ export function ClientDocsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2 bg-[#111b2e] hover:bg-[#162035] border border-[#1e3050] text-gray-300 text-sm font-medium px-3 py-2 rounded-lg">
+            className="flex items-center gap-2 glass hover:bg-hc-card-hover border border-hc-border text-gray-300 text-sm font-medium px-3 py-2 rounded-lg">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -299,7 +299,7 @@ export function ClientDocsPage() {
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
             placeholder="Find someone…"
-            className="w-full max-w-sm bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600"
+            className="w-full max-w-sm bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600"
           />
         </div>
       )}
@@ -334,7 +334,7 @@ export function ClientDocsPage() {
 
             return (
               <div key={client.id}
-                className="bg-[#111b2e] border border-[#1e3050] rounded-xl overflow-hidden hover:border-[#2a4060] transition-colors card-glow">
+                className="glass border border-hc-border rounded-xl overflow-hidden hover:border-hc-border-light transition-colors card-glow">
                 {/* Client header */}
                 <div className="px-4 sm:px-5 py-4">
                   <div className="flex items-start gap-3">
@@ -367,7 +367,7 @@ export function ClientDocsPage() {
                   {/* Diagnoses + mobile risk badge */}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {client.diagnoses.slice(0, 2).map((d, i) => (
-                      <span key={i} className="text-[10px] bg-[#0a1120] border border-[#1e3050] px-2 py-0.5 rounded-full text-gray-400 truncate max-w-[140px]">
+                      <span key={i} className="text-[10px] bg-hc-darker border border-hc-border px-2 py-0.5 rounded-full text-gray-400 truncate max-w-[140px]">
                         {d}
                       </span>
                     ))}
@@ -384,7 +384,7 @@ export function ClientDocsPage() {
                 </div>
 
                 {/* Document actions */}
-                <div className="border-t border-[#1e3050] px-4 sm:px-5 py-3 bg-[#0a1120]">
+                <div className="border-t border-hc-border px-4 sm:px-5 py-3 bg-hc-darker">
                   <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
                     {/* PBS */}
                     <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
@@ -399,7 +399,7 @@ export function ClientDocsPage() {
                         </button>
                         {hasPBS && (
                           <button onClick={() => printDoc(client, 'pbs')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
                             PDF
                           </button>
                         )}
@@ -419,7 +419,7 @@ export function ClientDocsPage() {
                         </button>
                         {hasRisk && (
                           <button onClick={() => printDoc(client, 'risk')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
                             PDF
                           </button>
                         )}
@@ -442,7 +442,7 @@ export function ClientDocsPage() {
                         </button>
                         {hasCarePlan && (
                           <button onClick={() => printDoc(client, 'careplan')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-[#1e3050] hover:border-[#2a4060] px-2 py-1 rounded-lg">
+                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
                             PDF
                           </button>
                         )}
@@ -451,7 +451,7 @@ export function ClientDocsPage() {
                   </div>
 
                   {/* Bottom row: Import + meta */}
-                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1e3050]/50">
+                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-hc-border/50">
                     <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
                       className="text-[11px] text-gray-500 hover:text-teal-400 font-medium">
                       Import
@@ -469,7 +469,7 @@ export function ClientDocsPage() {
 
                 {/* Care plan domains preview */}
                 {hasCarePlan && cpDomains.length > 0 && (
-                  <div className="border-t border-[#1e3050] px-5 py-2.5 bg-[#080e1a]">
+                  <div className="border-t border-hc-border px-5 py-2.5 bg-[#080e1a]">
                     <div className="flex flex-wrap gap-1.5">
                       {cpDomains.map((d, i) => {
                         const levelColors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
@@ -497,7 +497,7 @@ export function ClientDocsPage() {
       {/* New Person Modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111b2e] border border-[#1e3050] rounded-2xl p-6 w-full max-w-sm">
+          <div className="glass border border-hc-border rounded-2xl p-6 w-full max-w-sm">
             <h2 className="text-base font-bold text-white mb-4">New Person</h2>
             <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">What is their full name?</label>
             <input
@@ -507,18 +507,18 @@ export function ClientDocsPage() {
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
               placeholder="e.g. Jamie Morton"
-              className="w-full bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 mb-4 placeholder-gray-600"
+              className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 mb-4 placeholder-gray-600"
             />
             <p className="text-xs text-gray-500 mb-5">
               You'll start by building their Positive Behaviour Support plan.
             </p>
             <div className="flex gap-3">
               <button onClick={() => { setShowNewModal(false); setNewName(''); }}
-                className="flex-1 border border-[#1e3050] text-gray-400 hover:text-white text-sm font-medium py-2 rounded-lg">
+                className="flex-1 border border-hc-border text-gray-400 hover:text-white text-sm font-medium py-2 rounded-lg">
                 Cancel
               </button>
               <button onClick={handleCreate} disabled={!newName.trim()}
-                className="flex-1 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg">
+                className="flex-1 btn-gradient disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg">
                 Start Building
               </button>
             </div>

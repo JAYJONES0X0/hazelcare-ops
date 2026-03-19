@@ -309,7 +309,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Date of Assessment" value={risk.planDate}
               onChange={v => updateRisk({ planDate: v })} />
-            <Field label="Review Date (on client info)" value={client.reviewDate}
+            <Field label="Review Date" value={client.reviewDate}
               onChange={v => setClient(prev => { const n = { ...prev, reviewDate: v }; persist(n); return n; })} />
           </div>
         </div>

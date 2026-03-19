@@ -92,11 +92,216 @@ export interface ParseResult {
   warnings: string[];
 }
 
+// Detect if text is from pdf.js (flat, space-separated) vs manually pasted (newline-separated)
+function isFlat(text: string): boolean {
+  const lines = text.split('\n').filter(l => l.trim());
+  // If most content is on very few lines, it's flat pdf.js output
+  if (lines.length < 10 && text.length > 500) return true;
+  // If average line length is very long, it's flat
+  const avgLen = text.length / Math.max(lines.length, 1);
+  return avgLen > 200;
+}
+
+// Smart field extraction that works with both \n and space separators
+function extractFieldSmart(text: string, field: string, nextFields: string[]): string {
+  // Try newline version first
+  let result = extractField(text, field + '\n', nextFields);
+  if (result) return result.split('\n')[0].trim();
+  // Try space-separated version
+  result = extractField(text, field + ' ', nextFields);
+  if (result) {
+    // For space-separated, take until we hit something that looks like a new field
+    return result.split(/\s{2,}/)[0].trim();
+  }
+  // Try with no separator (field immediately followed by value)
+  result = extractField(text, field, nextFields);
+  return result.split('\n')[0].trim();
+}
+
+// Parse the "Care Plan" report format from Nourish
+// Header: "Care Plan – [Name] Report run on [date]"
+// Then: "Nourish Support [First] [First] [Last] [Age] years [Address]"
+// Then: "2. Care Plans [DOMAIN] Description – CARE PLAN [NAME] ..."
+function parseCarePlanReport(text: string, warnings: string[]): { client: Partial<FullClient>; carePlan: CarePlanData } {
+  const today = new Date().toLocaleDateString('en-GB');
+  const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+  const carePlan = emptyCarePlan(today, reviewDate);
+
+  // Extract name from "Care Plan – [Name] Report run on"
+  let name = '';
+  let preferredName = '';
+  const headerMatch = text.match(/Care Plan\s*[–\-]\s*(.+?)\s*Report run on/i);
+  if (headerMatch) {
+    name = headerMatch[1].trim();
+    preferredName = name.split(' ')[0];
+  }
+
+  // Try to extract from "Nourish Support [First] [First] [Last] [Age] years [Address]"
+  let address = '';
+  const nourishMatch = text.match(/Nourish Support\s+(\w+)\s+\w+\s+(\w+)\s+(\d+)\s+years?\s+(.+?)(?:,\s*\d+\.\s*Needs|$)/i);
+  if (nourishMatch) {
+    if (!name) {
+      name = `${nourishMatch[1]} ${nourishMatch[2]}`.trim();
+      preferredName = nourishMatch[1];
+    }
+    address = nourishMatch[4]?.trim() || '';
+  }
+
+  // Extract date of report
+  const dateMatch = text.match(/Report run on\s+(\d{2}\/\d{2}\/\d{4})/);
+
+  // Find all domain sections in the text
+  // Nourish Care Plan format: "[DOMAIN NAME] Description – CARE PLAN [NAME] [content]"
+  // Or: "[DOMAIN NAME] Description –" (with content after)
+  const domainKeys = Object.keys(DOMAIN_MAP);
+  const upper = text.toUpperCase();
+
+  for (const domainKey of domainKeys) {
+    const mappedName = DOMAIN_MAP[domainKey];
+    const domainIdx = carePlan.domains.findIndex(d => d.title === mappedName);
+    if (domainIdx === -1) continue;
+
+    // Find this domain in the text (case-insensitive)
+    const keyIdx = upper.indexOf(domainKey);
+    if (keyIdx === -1) continue;
+
+    // Find next domain or end of text
+    let sectionEnd = text.length;
+    for (const otherKey of domainKeys) {
+      if (otherKey === domainKey) continue;
+      const otherIdx = upper.indexOf(otherKey, keyIdx + domainKey.length + 10);
+      if (otherIdx !== -1 && otherIdx < sectionEnd) sectionEnd = otherIdx;
+    }
+    // Also check for section boundaries like "3. " or "Page "
+    const nextSectionMatch = text.slice(keyIdx + domainKey.length).match(/\d+\.\s+(Needs Assessing|Care Plans|Assessments)/i);
+    if (nextSectionMatch && nextSectionMatch.index !== undefined) {
+      const possibleEnd = keyIdx + domainKey.length + nextSectionMatch.index;
+      if (possibleEnd < sectionEnd) sectionEnd = possibleEnd;
+    }
+
+    const section = text.slice(keyIdx, sectionEnd);
+
+    // Extract the content after "Description –" or "Description -"
+    let content = '';
+    const descMatch = section.match(/Description\s*[–\-]\s*(.*)/is);
+    if (descMatch) {
+      content = descMatch[1].trim();
+    }
+
+    // Try to extract "CARE PLAN [NAME] [actual content]"
+    const carePlanMatch = content.match(/CARE PLAN\s+\w+\s+(.*)/is);
+    if (carePlanMatch) {
+      content = carePlanMatch[1].trim();
+    }
+
+    // Try structured fields (these may appear with spaces or newlines)
+    const identifiedNeed = extractFieldSmart(section, 'Identified Need', ['Level of need', 'Planned Outcomes', 'Description']);
+    const levelText = extractFieldSmart(section, 'Level of need', ['Planned Outcomes', 'How to', 'Description']);
+    const plannedOutcomes = extractFieldSmart(section, 'Planned Outcomes', ['How to Achieve', 'Risk', 'Description']);
+    const howToAchieve = extractFieldSmart(section, 'How to Achieve', ['Risk', 'Review', 'Likelihood', 'Description']);
+
+    // Risk fields
+    const riskTitle = extractFieldSmart(section, 'Risk', ['Likelihood', 'Review note', 'Reviewer', 'Description']);
+    const likelihoodText = extractFieldSmart(section, 'Likelihood', ['Impact', 'Total', 'Review']);
+    const impactText = extractFieldSmart(section, 'Impact', ['Total', 'Review', 'Risk']);
+
+    // Review fields
+    const reviewNote = extractFieldSmart(section, 'Review note', ['Reviewer', 'Page', 'Next']);
+    const reviewer = extractFieldSmart(section, 'Reviewer', ['Review date', 'Page', 'Next']);
+    const reviewDateVal = extractFieldSmart(section, 'Review date', ['Page', 'Next review']);
+    const nextReviewDateVal = extractFieldSmart(section, 'Next review date', ['Identified Need', 'Level', 'Description']);
+
+    // Parse level of need
+    let levelOfNeed = 0;
+    const levelLower = levelText.toLowerCase();
+    for (const [key, val] of Object.entries(LEVEL_MAP)) {
+      if (levelLower.includes(key)) { levelOfNeed = val; break; }
+    }
+    // Also check the section content for level indicators
+    if (levelOfNeed === 0) {
+      const sectionLower = section.toLowerCase();
+      for (const [key, val] of Object.entries(LEVEL_MAP)) {
+        if (sectionLower.includes(key)) { levelOfNeed = val; break; }
+      }
+    }
+
+    // Use content as identified need if structured extraction failed
+    const finalNeed = identifiedNeed || content.slice(0, 500);
+
+    // Only enable if we found real content (not just the domain header)
+    const hasContent = !!(finalNeed && finalNeed.length > 5);
+
+    const domain: CarePlanDomain = {
+      ...carePlan.domains[domainIdx],
+      identifiedNeed: finalNeed,
+      levelOfNeed,
+      plannedOutcomes: plannedOutcomes,
+      howToAchieve: howToAchieve,
+      riskTitle: riskTitle.split(/[\n]/)[0].trim(),
+      riskLikelihood: parseLikelihood(likelihoodText),
+      riskImpact: parseImpact(impactText),
+      riskMitigation: '',
+      reviewNote: reviewNote,
+      reviewer: reviewer,
+      reviewDate: reviewDateVal || (dateMatch ? dateMatch[1] : ''),
+      nextReviewDate: nextReviewDateVal,
+      enabled: hasContent,
+    };
+
+    carePlan.domains[domainIdx] = domain;
+  }
+
+  return {
+    client: {
+      name,
+      preferredName,
+      address,
+    },
+    carePlan,
+  };
+}
+
 export function parseNourishText(rawText: string): ParseResult {
   const warnings: string[] = [];
   const text = rawText.replace(/\r\n/g, '\n');
+  const flat = isFlat(text);
 
-  // Extract basic person details
+  // Detect format: "Care Plan –" header = Care Plan report format
+  const isCarePlanReport = /Care Plan\s*[–\-]\s*.+Report run on/i.test(text);
+
+  if (isCarePlanReport || flat) {
+    // Use the Care Plan report parser (handles flat pdf.js output)
+    const result = parseCarePlanReport(text, warnings);
+    const enabledCount = result.carePlan.domains.filter(d => d.enabled).length;
+
+    if (enabledCount === 0) {
+      // Even if structured parsing failed, mark domains as enabled if their header was found
+      const upper = text.toUpperCase();
+      const domainKeys = Object.keys(DOMAIN_MAP);
+      for (const domainKey of domainKeys) {
+        if (upper.includes(domainKey)) {
+          const mappedName = DOMAIN_MAP[domainKey];
+          const idx = result.carePlan.domains.findIndex(d => d.title === mappedName);
+          if (idx !== -1) {
+            result.carePlan.domains[idx].enabled = true;
+            result.carePlan.domains[idx].identifiedNeed = result.carePlan.domains[idx].identifiedNeed || 'Imported from Nourish — needs review';
+          }
+        }
+      }
+      const foundCount = result.carePlan.domains.filter(d => d.enabled).length;
+      if (foundCount === 0) {
+        warnings.push('No support plan areas were detected — check the pasted text format.');
+      } else {
+        warnings.push(`Found ${foundCount} of ${CARE_PLAN_DOMAINS.length} areas. Content needs review — PDF text was compressed.`);
+      }
+    } else {
+      warnings.push(`Found ${enabledCount} of ${CARE_PLAN_DOMAINS.length} areas of this person's life.`);
+    }
+
+    return { client: result.client, carePlan: result.carePlan, warnings };
+  }
+
+  // Original newline-delimited parser (manually pasted text)
   const firstName = extractField(text, 'First Name\n', ['Last Name', 'Preferred Name']).split('\n')[0].trim();
   const lastName = extractField(text, 'Last Name\n', ['Preferred Name', 'Gender']).split('\n')[0].trim();
   const preferredName = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0].trim();
@@ -105,29 +310,19 @@ export function parseNourishText(rawText: string): ParseResult {
   const phone = extractField(text, 'Contact Number\n', ['Quick notes', 'CRITICAL']).split('\n')[0].trim();
   const name = `${firstName} ${lastName}`.trim();
 
-  // Address
   const street = extractField(text, 'Street Address\n', ['Town', 'County']).split('\n')[0].trim();
   const town = extractField(text, 'Town\n', ['County', 'Post Code']).split('\n')[0].trim();
   const postCode = extractField(text, 'Post Code\n', ['Country', 'National']).split('\n')[0].trim();
   const address = [street, town, postCode].filter(Boolean).join(', ');
 
-  // Admission date
   const dateOfAdmission = extractField(text, 'Date of Admission\n', ['Leave date', 'Key Workers']).split('\n')[0].trim();
-
-  // Key worker
   const keyWorker = extractField(text, 'Key Workers\n', ['Last modified', 'BIOGRAPHY']).split('\n')[0].trim();
 
-  // Biography
   const biography = extractBetween(text, 'BIOGRAPHY\n', ['2. Care Plans', 'CARE PLAN']);
   const bioClean = biography.replace(/^[A-Z\s]+\n/, '').trim();
-
-  // Critical info
   const criticalInfo = extractBetween(text, 'CRITICAL INFORMATION\n', ['SLEEPING', 'ABILITIES', 'EMERGENCY']);
-
-  // Emergency info
   const emergencyInfo = extractBetween(text, 'EMERGENCY INFORMATION\n', ['ADDITIONAL INFO', 'Street Address']);
 
-  // Parse care plan domains
   const today = new Date().toLocaleDateString('en-GB');
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
   const carePlan = emptyCarePlan(today, reviewDate);
@@ -135,48 +330,40 @@ export function parseNourishText(rawText: string): ParseResult {
   carePlan.criticalInfo = criticalInfo;
   carePlan.emergencyInfo = emergencyInfo;
 
-  // Split text into care plan sections
   const domainKeys = Object.keys(DOMAIN_MAP);
   for (const domainKey of domainKeys) {
     const mappedName = DOMAIN_MAP[domainKey];
     const domainIdx = carePlan.domains.findIndex(d => d.title === mappedName);
     if (domainIdx === -1) continue;
 
-    // Find this domain section in the text
     const sectionStart = text.indexOf(domainKey);
     if (sectionStart === -1) continue;
 
-    // Find next domain or end
     let sectionEnd = text.length;
     for (const otherKey of domainKeys) {
       if (otherKey === domainKey) continue;
       const otherIdx = text.indexOf(otherKey, sectionStart + domainKey.length + 50);
       if (otherIdx !== -1 && otherIdx < sectionEnd) sectionEnd = otherIdx;
     }
-    // Also check for "2. Care Plans" as a section boundary
     let nextCarePlanIdx = text.indexOf('2. Care Plans', sectionStart + domainKey.length);
     if (nextCarePlanIdx !== -1 && nextCarePlanIdx < sectionEnd) sectionEnd = nextCarePlanIdx;
 
     const section = text.slice(sectionStart, sectionEnd);
 
-    // Extract fields
     const identifiedNeed = extractField(section, 'Identified Need\n', ['Level of need', 'Planned Outcomes']);
     const levelText = extractField(section, 'Level of need\n', ['Planned Outcomes', 'How to']);
     const plannedOutcomes = extractField(section, 'Planned Outcomes\n', ['How to Achieve', 'Risk\n']);
     const howToAchieve = extractField(section, 'How to Achieve Outcomes\n', ['Risk\n', 'Review note', 'Likelihood']);
 
-    // Risk
     const riskTitle = extractField(section, 'Risk\n', ['Likelihood', 'Review note', 'Reviewer']);
     const likelihoodText = extractField(section, 'Likelihood\n', ['=', 'Impact']);
     const impactText = extractField(section, 'Impact\n', ['Risk\n', 'Total score', 'Review']);
 
-    // Review
     const reviewNote = extractField(section, 'Review note\n', ['Reviewer', 'Page']);
     const reviewer = extractField(section, 'Reviewer\n', ['Review date', 'Page', '2. Care Plans']);
     const reviewDateVal = extractField(section, 'Review date\n', ['Page', '2. Care Plans', '\n\n']);
     const nextReviewDate = extractField(section, 'Next review date\n', ['Identified Need', 'Level of need']);
 
-    // Parse level of need
     let levelOfNeed = 0;
     const levelLower = levelText.toLowerCase().trim();
     for (const [key, val] of Object.entries(LEVEL_MAP)) {
