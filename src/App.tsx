@@ -383,7 +383,7 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
         <div className="relative z-10 min-h-[calc(100vh-100px)]">
           {page === 'briefing' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
           {page === 'dashboard' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} /></div>}
-          {page === 'upload' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} /></div>}
+          {page === 'upload' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
           {page === 'incidents' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
