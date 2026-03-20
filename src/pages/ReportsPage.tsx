@@ -10,11 +10,11 @@ interface Props {
 type ReportType = 'weekly_summary' | 'flag_report' | 'house_detail' | 'entry_log' | 'staff_activity';
 
 const REPORT_TYPES: { id: ReportType; label: string; desc: string; color: string; icon: string }[] = [
-  { id: 'weekly_summary', label: 'Tactical Weekly Summary', desc: 'Full-spectrum KPIs and sector node analysis', color: '#14b8a6', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { id: 'flag_report', label: 'Priority Flag Report', desc: 'Surgical deep-dive into critical RED-STRAT alerts', color: '#ef4444', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z' },
-  { id: 'house_detail', label: 'Sector Node Detail', desc: 'Granular investigation into individual house nodes', color: '#3b82f6', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { id: 'entry_log', label: 'Registry Entry Log', desc: 'Master searchable database of every telemetry point', color: '#8b5cf6', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
-  { id: 'staff_activity', label: 'Personnel Activity', desc: 'Mapping agent contributions across the network', color: '#f59e0b', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z' },
+  { id: 'weekly_summary', label: 'Weekly Summary', desc: 'Overview of weekly care activity', color: '#14b8a6', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { id: 'flag_report', label: 'Priority Flag Report', desc: 'Red and amber flag report', color: '#ef4444', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z' },
+  { id: 'house_detail', label: 'House Detail', desc: 'Detailed report for a specific house', color: '#3b82f6', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { id: 'entry_log', label: 'Entry Log', desc: 'Searchable log of all care entries', color: '#8b5cf6', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
+  { id: 'staff_activity', label: 'Staff Activity', desc: 'Staff activity and contributions', color: '#f59e0b', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z' },
 ];
 
 function EntryRow({ entry }: { entry: NourishEntry }) {
@@ -51,7 +51,7 @@ function EntryRow({ entry }: { entry: NourishEntry }) {
       {open && entry.carer && entry.carer !== 'Staff' && (
         <div className="px-5 pb-4 text-[10px] text-hc-muted font-bold uppercase tracking-[0.2em] border-t border-white/5 pt-3 bg-black/20 flex items-center gap-2">
           <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-          Personnel Protocol: {entry.carer}
+          Staff: {entry.carer}
         </div>
       )}
     </div>
@@ -86,31 +86,31 @@ function WeeklySummaryReport({ weekData }: { weekData: WeekSummary }) {
   </style></head><body>
   <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #0f766e;padding-bottom:16px;margin-bottom:32px;">
     <div>
-      <h1>Operational Intelligence Summary</h1>
+      <h1>Weekly Summary</h1>
       <div style="font-size:13px;font-weight:600;color:#64748b;margin-top:4px;">${weekData.dateFrom || '—'} TO ${weekData.dateTo || '—'} &nbsp;·&nbsp; GENERATED ${new Date().toLocaleDateString('en-GB').toUpperCase()}</div>
     </div>
     <img src="/hazelcare-logo.png" style="height:50px;" />
   </div>
   <div class="stat-row">
-    <div class="stat teal"><span class="num">${weekData.totalEntries}</span><span class="lbl">Total Intelligence</span></div>
+    <div class="stat teal"><span class="num">${weekData.totalEntries}</span><span class="lbl">Total Entries</span></div>
     <div class="stat red"><span class="num">${weekData.allFlags.red.length}</span><span class="lbl">Critical Red Flags</span></div>
     <div class="stat amber"><span class="num">${weekData.allFlags.amber.length}</span><span class="lbl">Amber Monitor Alerts</span></div>
     <div class="stat green"><span class="num">${weekData.totalEntries - weekData.allFlags.red.length - weekData.allFlags.amber.length}</span><span class="lbl">Routine Support</span></div>
-    <div class="stat teal"><span class="num">${Object.keys(weekData.houses).length}</span><span class="lbl">Sector Nodes</span></div>
+    <div class="stat teal"><span class="num">${Object.keys(weekData.houses).length}</span><span class="lbl">Houses</span></div>
   </div>
   ${weekData.allFlags.red.length > 0 ? `
-  <h2>🔴 RED-STRAT ALERTS — IMMEDIATE INTERVENTION REQUIRED</h2>
-  <table><tr style="background:#fef2f2;"><th>Node</th><th>Client</th><th>Date</th><th>Intelligence Detail</th><th>Analysis Flags</th></tr>
-  ${weekData.allFlags.red.map(e => `<tr><td><span class="house-name">${e.house}</span></td><td><strong>${e.client || '—'}</strong></td><td>${e.date}</td><td>${e.entry}<div class="carer">Personnel: ${e.carer}</div></td><td class="flag-red">${e.flags.join(', ')}</td></tr>`).join('')}
+  <h2>🔴 RED ALERTS — IMMEDIATE ACTION REQUIRED</h2>
+  <table><tr style="background:#fef2f2;"><th>House</th><th>Client</th><th>Date</th><th>Details</th><th>Flags</th></tr>
+  ${weekData.allFlags.red.map(e => `<tr><td><span class="house-name">${e.house}</span></td><td><strong>${e.client || '—'}</strong></td><td>${e.date}</td><td>${e.entry}<div class="carer">Staff: ${e.carer}</div></td><td class="flag-red">${e.flags.join(', ')}</td></tr>`).join('')}
   </table>` : ''}
   ${weekData.allFlags.amber.length > 0 ? `
-  <h2>🟡 AMBER MONITOR — ACTIVE SURVEILLANCE</h2>
-  <table><tr style="background:#fffbeb;"><th>Node</th><th>Client</th><th>Date</th><th>Intelligence Detail</th><th>Analysis Flags</th></tr>
-  ${weekData.allFlags.amber.slice(0, 30).map(e => `<tr><td><span class="house-name">${e.house}</span></td><td><strong>${e.client || '—'}</strong></td><td>${e.date}</td><td>${e.entry}<div class="carer">Personnel: ${e.carer}</div></td><td class="flag-amber">${e.flags.join(', ')}</td></tr>`).join('')}
+  <h2>🟡 AMBER — MONITORING REQUIRED</h2>
+  <table><tr style="background:#fffbeb;"><th>House</th><th>Client</th><th>Date</th><th>Details</th><th>Flags</th></tr>
+  ${weekData.allFlags.amber.slice(0, 30).map(e => `<tr><td><span class="house-name">${e.house}</span></td><td><strong>${e.client || '—'}</strong></td><td>${e.date}</td><td>${e.entry}<div class="carer">Staff: ${e.carer}</div></td><td class="flag-amber">${e.flags.join(', ')}</td></tr>`).join('')}
   ${weekData.allFlags.amber.length > 30 ? `<tr><td colspan="5" style="color:#64748b;font-style:italic;text-align:center;padding:15px;">+ ${weekData.allFlags.amber.length - 30} ADDITIONAL AMBER ALERTS TRUNCATED FOR BREVITY</td></tr>` : ''}
   </table>` : ''}
-  <h2>Sector Node Stratification</h2>
-  <table><tr><th>House / Sector</th><th>Entries</th><th>Red</th><th>Amber</th><th>Incidents</th><th>Safeguard</th><th>Medication</th><th>Coordinator</th></tr>
+  <h2>House Breakdown</h2>
+  <table><tr><th>House</th><th>Entries</th><th>Red</th><th>Amber</th><th>Incidents</th><th>Safeguard</th><th>Medication</th><th>Coordinator</th></tr>
   ${houses.map(h => `<tr${h.flags.red > 0 ? ' style="background:#fef2f2;"' : h.flags.amber > 0 ? ' style="background:#fffbeb;"' : ''}><td><span class="house-name">${h.name}</span></td><td>${h.entries.length}</td><td class="flag-red">${h.flags.red || '—'}</td><td class="flag-amber">${h.flags.amber || '—'}</td><td>${h.incidents.length || '—'}</td><td>${h.safeguarding.length || '—'}</td><td>${h.medication.length || '—'}</td><td>${h.coordinator || '—'}</td></tr>`).join('')}
   </table>
   <div style="text-align:center;color:#94a3b8;font-size:10px;margin-top:40px;padding-top:16px;border-top:2px solid #f1f5f9;font-weight:600;letter-spacing:0.1em;">
@@ -125,19 +125,19 @@ function WeeklySummaryReport({ weekData }: { weekData: WeekSummary }) {
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
           <div>
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-0.5">Payload Preview</div>
-            <p className="text-[11px] font-bold text-white opacity-80">{weekData.totalEntries} entries across {Object.keys(weekData.houses).length} sector nodes</p>
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-0.5">Data Preview</div>
+            <p className="text-[11px] font-bold text-white opacity-80">{weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses</p>
           </div>
         </div>
         <button onClick={() => iframeRef.current?.contentWindow?.print()}
           className="flex items-center justify-center gap-2.5 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-[1.02] transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-          Deploy to Printer / PDF
+          Print / Save as PDF
         </button>
       </div>
       <div className="bg-white rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl p-1 relative group">
         <div className="absolute inset-0 bg-hc-teal/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-        <iframe ref={iframeRef} srcDoc={html} className="w-full relative z-10" style={{ minHeight: 850 }} title="Tactical Summary" />
+        <iframe ref={iframeRef} srcDoc={html} className="w-full relative z-10" style={{ minHeight: 850 }} title="Report Preview" />
       </div>
     </div>
   );
@@ -158,14 +158,14 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
                 ${filter === f 
                   ? f === 'red' ? 'pill-red shadow-lg' : f === 'amber' ? 'pill-amber shadow-lg' : 'pill-teal shadow-lg'
                   : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-              {f === 'both' ? `All Protocol Flags` : f === 'red' ? `Critical RED-STRAT` : `Amber Surveil`}
+              {f === 'both' ? `All Flags` : f === 'red' ? `Red Flags` : `Amber Flags`}
               <span className={`ml-3 px-2 py-0.5 rounded-lg tabular-nums ${filter === f ? 'bg-white/20' : 'bg-white/5 opacity-40'}`}>
                 {f === 'both' ? weekData.allFlags.red.length + weekData.allFlags.amber.length : f === 'red' ? weekData.allFlags.red.length : weekData.allFlags.amber.length}
               </span>
             </button>
           ))}
         </div>
-        <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] mr-2">Showing {entries.length} tactical points</span>
+        <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] mr-2">Showing {entries.length} entries</span>
       </div>
       
       <div className="space-y-3">
@@ -173,7 +173,7 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
         {entries.length === 0 && (
           <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">🛡️</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Fleet Secure</div>
+            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Issues</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">No priority flags detected in this stream</div>
           </div>
         )}
@@ -190,20 +190,20 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
 
   const sections: { label: string; entries: NourishEntry[]; color: string; pill: string }[] = house ? [
     { label: 'Incidents & Alerts', entries: house.incidents, color: '#ef4444', pill: 'pill-red' },
-    { label: 'Safeguarding Protocol', entries: house.safeguarding, color: '#be185d', pill: 'pill-red shadow-lg shadow-red-900/20' },
+    { label: 'Safeguarding', entries: house.safeguarding, color: '#be185d', pill: 'pill-red shadow-lg shadow-red-900/20' },
     { label: 'Medication Management', entries: house.medication, color: '#0891b2', pill: 'pill-teal' },
     { label: 'Health & Safety Scans', entries: house.healthSafety, color: '#d97706', pill: 'pill-amber' },
-    { label: 'Personnel Performance', entries: house.staffPerformance, color: '#7c3aed', pill: 'pill-purple' },
+    { label: 'Staff Notes', entries: house.staffPerformance, color: '#7c3aed', pill: 'pill-purple' },
     { label: 'Shift Transitions', entries: house.handovers, color: '#3b82f6', pill: 'pill-blue' },
     { label: 'Care Operations', entries: house.dailySupport, color: '#14b8a6', pill: 'pill-teal' },
-    { label: 'Uncategorized Telemetry', entries: house.entries.filter(e => !['incident','safeguarding','medication','health_safety','staff','handover','daily_support'].includes(e.category || '')), color: '#475569', pill: 'pill-blue opacity-60' },
+    { label: 'Other Entries', entries: house.entries.filter(e => !['incident','safeguarding','medication','health_safety','staff','handover','daily_support'].includes(e.category || '')), color: '#475569', pill: 'pill-blue opacity-60' },
   ].filter(s => s.entries.length > 0) : [];
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-white/5 p-5 rounded-2xl shadow-xl">
         <div className="flex items-center gap-4">
-          <span className="section-header text-[10px] tracking-[0.2em]">Select Sector Node</span>
+          <span className="section-header text-[10px] tracking-[0.2em]">Select House</span>
           <select value={selected} onChange={e => setSelected(e.target.value)}
             className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[250px]">
             {houses.map(h => <option key={h} value={h}>{h} ({weekData.houses[h].entries.length} POINTS)</option>)}
@@ -211,7 +211,7 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
         </div>
         {house && (
           <div className="flex items-center gap-4 ml-auto">
-            {house.flags.red > 0 && <span className="pill pill-red text-[10px] font-black px-4 shadow-lg animate-pulse-soft">{house.flags.red} RED-STRAT</span>}
+            {house.flags.red > 0 && <span className="pill pill-red text-[10px] font-black px-4 shadow-lg animate-pulse-soft">{house.flags.red} RED FLAGS</span>}
             {house.flags.amber > 0 && <span className="pill pill-amber text-[10px] font-black px-4 shadow-lg">{house.flags.amber} ALERTS</span>}
             <div className="h-4 w-px bg-white/10 mx-2" />
             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] tabular-nums">{house.entries.length} TOTAL POINTS</span>
@@ -277,7 +277,7 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
     <div className="animate-in fade-in duration-700">
       <div className="flex flex-wrap items-center gap-4 mb-8 glass-light border border-white/5 p-5 rounded-[2rem] shadow-2xl backdrop-blur-xl">
         <div className="relative group flex-1 min-w-[300px]">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search registry stream (entries, clients, agents)..."
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries, people, staff..."
             className="w-full pl-12 pr-6 py-3.5 bg-hc-dark/60 border border-white/10 rounded-2xl text-sm text-white placeholder:text-hc-muted/30 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -287,7 +287,7 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
         <div className="flex flex-wrap items-center gap-3">
           <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
             className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
-            <option value="all">Entire Fleet</option>
+            <option value="all">All Houses</option>
             {houses.map(h => <option key={h} value={h}>{h}</option>)}
           </select>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
@@ -326,7 +326,7 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
         {filtered.length === 0 && (
           <div className="text-center py-32 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">📡</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Registry Stream Empty</div>
+            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Entries Yet</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Adjust sensor parameters to restore visibility</div>
           </div>
         )}
@@ -361,8 +361,8 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
           <svg className="w-5 h-5 text-hc-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
         </div>
         <div>
-          <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-0.5">Workforce Matrix</div>
-          <p className="text-[11px] font-bold text-white opacity-80">{byStaff.length} personnel active in registry · {allEntries.length} transmissions captured</p>
+          <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-0.5">Staff Summary</div>
+          <p className="text-[11px] font-bold text-white opacity-80">{byStaff.length} staff on shift · {allEntries.length} entries recorded</p>
         </div>
       </div>
 
@@ -378,7 +378,7 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
               <div className="flex-1 min-w-0">
                 <div className="text-lg font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1.5">{name}</div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Sectors:</span>
+                  <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Houses:</span>
                   <span className="text-[10px] font-bold text-hc-text/80 truncate">{[...data.houses].join(', ')}</span>
                 </div>
               </div>
@@ -445,9 +445,9 @@ export function ReportsPage({ weekData, setPage }: Props) {
         <div className="w-24 h-24 rounded-2xl glass border border-hc-teal/20 flex items-center justify-center mb-8 glow-teal animate-float">
           <svg className="w-12 h-12 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
         </div>
-        <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Intelligence Analysis</h2>
-        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Load Nourish telemetry streams to generate tactical operational reports.</p>
-        <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Sync Terminal</button>
+        <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Report</h2>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import Nourish data to generate weekly care reports.</p>
+        <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Import Data</button>
       </div>
     );
   }
@@ -456,13 +456,13 @@ export function ReportsPage({ weekData, setPage }: Props) {
 
   return (
     <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Analytical Suite</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Reports</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Intelligence Output</span>
+            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Weekly Analysis</span>
             <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1 tabular-nums">
-              {weekData.totalEntries} datapoints · {weekData.allFlags.red.length} RED-STRAT · {weekData.allFlags.amber.length} alerts
+              {weekData.totalEntries} entries · {weekData.allFlags.red.length} red flags · {weekData.allFlags.amber.length} alerts
             </p>
           </div>
         </div>
@@ -471,17 +471,17 @@ export function ReportsPage({ weekData, setPage }: Props) {
             <span className="w-5 h-5 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
               <svg className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </span>
-            Return to Suite
+            Back to Reports
           </button>
         )}
       </div>
 
       {/* Report type selector */}
       {!selectedReport && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
           {REPORT_TYPES.map((rt, idx) => (
             <button key={rt.id} onClick={() => setSelectedReport(rt.id)}
-              className="glass-light border border-white/10 rounded-[2rem] p-6 text-left hover:border-hc-teal/40 hover:bg-white/[0.03] transition-all duration-500 group relative overflow-hidden card-glow animate-in slide-in-from-bottom-4 active:scale-95 shadow-xl"
+              className="glass-light border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-left hover:border-hc-teal/40 hover:bg-white/[0.03] transition-all duration-500 group relative overflow-hidden card-glow animate-in slide-in-from-bottom-4 active:scale-95 shadow-xl"
               style={{ animationDelay: `${idx * 100}ms` }}>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.03] blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-[0.1] transition-opacity duration-1000" style={{ background: rt.color }} />
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 shadow-2xl border border-white/10 relative z-10" style={{ background: `${rt.color}15` }}>

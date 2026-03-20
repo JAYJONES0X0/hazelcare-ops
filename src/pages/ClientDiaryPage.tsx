@@ -50,7 +50,7 @@ function ClientStats({ entries }: { entries: NourishEntry[] }) {
       <div className="glass-light border border-white/5 rounded-xl p-5">
         <h3 className="section-header mb-4 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-          Pattern Intelligence
+          Weekly Patterns
         </h3>
         <div className="space-y-3">
           {byType.slice(0, 8).map(([type, count]) => (
@@ -126,7 +126,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">No diary data loaded</h2>
         <p className="text-hc-muted text-sm mb-8 max-w-xs leading-relaxed">
-          Drop a Nourish CSV export to see all client diaries with ArbiFlow pattern intelligence.
+          Drop a Nourish CSV export to see all client diaries with care insights.
         </p>
         <button onClick={() => setPage('upload')}
           className="px-8 py-3 btn-gradient rounded-xl shadow-lg hover:shadow-hc-teal/20 transition-all">
@@ -148,7 +148,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search intelligence…"
+              placeholder="Search entries…"
               className="w-full bg-hc-dark/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 focus:bg-hc-dark transition-all placeholder-hc-muted/50 shadow-inner"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
@@ -184,7 +184,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                   {hasDocs && (
                     <span className="flex items-center gap-1.5 text-[9px] font-black text-hc-teal-light/70 uppercase tracking-widest animate-pulse-soft">
                       <div className="w-1 h-1 rounded-full bg-hc-teal shadow-[0_0_5px_#14b8a6]" />
-                      STRAT-FILE
+                      VIEW FILE
                     </span>
                   )}
                 </div>
@@ -201,20 +201,20 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             <div className="w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mb-8 glow-blue opacity-20 group">
               <span className="text-5xl grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110 group-hover:rotate-3">👤</span>
             </div>
-            <p className="text-white font-black tracking-[0.3em] uppercase text-xs opacity-40">Tactical Node Selection Required</p>
+            <p className="text-white font-black tracking-[0.3em] uppercase text-xs opacity-40">Select a house to view notes</p>
             <div className="h-px w-12 bg-white/10 my-4" />
-            <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[0.4em] opacity-30">{allClients.length} NODES DISCOVERED IN GRID</p>
+            <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[0.4em] opacity-30">{allClients.length} people found</p>
           </div>
         ) : (
-          <div className="p-8 lg:p-12 max-w-[1200px] mx-auto animate-in slide-in-from-bottom-4 duration-700">
+          <div className="p-4 md:p-6 lg:p-8 max-w-[1200px] mx-auto animate-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-4xl font-black text-white mb-2 tracking-tighter uppercase text-shimmer">{selectedClient}</h2>
+                <h2 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter uppercase text-shimmer">{selectedClient}</h2>
                 <div className="flex items-center gap-3">
-                  <span className="pill pill-teal text-[10px] uppercase tracking-[0.2em] font-black shadow-xl">Subject Pattern Registry</span>
+                  <span className="pill pill-teal text-[10px] uppercase tracking-[0.2em] font-black shadow-xl">Care Entries</span>
                   <span className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] ml-2 tabular-nums">
-                    TEMPORAL RANGE: {weekData.dateFrom} – {weekData.dateTo}
+                    DATE RANGE: {weekData.dateFrom} – {weekData.dateTo}
                   </span>
                 </div>
               </div>
@@ -223,7 +223,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                   <button onClick={() => setPage('client-docs')}
                     className="px-8 py-3.5 glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal-light rounded-2xl hover:bg-hc-teal/10 hover:shadow-hc-teal/20 transition-all shadow-xl active:scale-95 group/btn">
                     <svg className="w-4 h-4 inline-block mr-2 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    Open Strat-Matrix
+                    View Risk Assessment
                   </button>
                 )}
               </div>
@@ -233,22 +233,22 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             <ClientStats entries={clientDiary[selectedClient] || []} />
 
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-4 mb-10 glass-light border border-white/5 p-5 rounded-[2rem] shadow-2xl backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-3 mb-6 glass-light border border-white/5 p-3 md:p-4 rounded-xl lg:rounded-2xl shadow-xl backdrop-blur-xl">
               <div className="flex items-center gap-3">
-                <span className="section-header text-[9px] tracking-[0.3em] opacity-60">Pattern Sensor:</span>
+                <span className="section-header text-[9px] tracking-[0.3em] opacity-60">Filter:</span>
                 <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
                   className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
-                  <option value="">All Streams</option>
+                  <option value="">All Types</option>
                   {allTypes.map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
                 <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}
                   className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
-                  <option value="">All Vectors</option>
-                  <option value="red">🔴 RED-STRAT ONLY</option>
-                  <option value="amber">🟡 AMBER MONITOR</option>
-                  <option value="none">STABLE STATUS</option>
+                  <option value="">All Types</option>
+                  <option value="red">🔴 Red Flags Only</option>
+                  <option value="amber">🟡 Amber Alerts</option>
+                  <option value="none">No Flags</option>
                 </select>
               </div>
               
@@ -257,7 +257,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
               {(typeFilter || severityFilter) && (
                 <button onClick={() => { setTypeFilter(''); setSeverityFilter(''); }}
                   className="text-[9px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-white transition-colors underline decoration-white/10 underline-offset-8">
-                  Reset Sensor
+                  Clear Filter
                 </button>
               )}
               

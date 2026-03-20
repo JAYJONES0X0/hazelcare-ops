@@ -42,11 +42,11 @@ export function ClientRiskPage({ weekData }: Props) {
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-4xl font-black text-white mb-2 tracking-tighter text-shimmer">Strategic Risk Stratification</h1>
+        <h1 className="text-4xl font-black text-white mb-2 tracking-tighter text-shimmer">Risk Overview</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-purple text-[10px] font-black uppercase tracking-wider shadow-lg">Pattern Analytics Engine</span>
+          <span className="pill pill-purple text-[10px] font-black uppercase tracking-wider shadow-lg">Risk Overview</span>
           <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-            Real-time vulnerability mapping across {stats.total} tactical nodes
+            Risk overview across {stats.total} people
           </p>
         </div>
       </div>
@@ -55,8 +55,8 @@ export function ClientRiskPage({ weekData }: Props) {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {[
           { label: 'Population', value: stats.total, color: '#7a95b0', pill: 'pill-blue opacity-40' },
-          { label: 'Critical Breaches', value: stats.critical, color: '#ef4444', pill: 'pill-red animate-pulse-soft' },
-          { label: 'High Risk Vectors', value: stats.high, color: '#f59e0b', pill: 'pill-amber' },
+          { label: 'Critical Risks', value: stats.critical, color: '#ef4444', pill: 'pill-red animate-pulse-soft' },
+          { label: 'High Risk Areas', value: stats.high, color: '#f59e0b', pill: 'pill-amber' },
           { label: 'Moderate Alerts', value: stats.medium, color: '#3b82f6', pill: 'pill-blue' },
           { label: 'Secure Status', value: stats.low, color: '#22c55e', pill: 'pill-green' },
         ].map(s => (
@@ -80,7 +80,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 : 'border-transparent text-hc-muted hover:text-white hover:bg-white/5'
             }`}
           >
-            {f === 'all' ? 'Entire Fleet' : `${f} Nodes`}
+            {f === 'all' ? 'All Houses' : `${f}`}
             {f !== 'all' && (
               <span className={`ml-3 px-2 py-0.5 rounded-lg tabular-nums ${filter === f ? 'bg-hc-teal/30' : 'bg-white/5 opacity-40'}`}>
                 {stats[f]}
@@ -95,7 +95,7 @@ export function ClientRiskPage({ weekData }: Props) {
         {filteredProfiles.length === 0 ? (
           <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20 grayscale">📡</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Zero Matches in Matrix</div>
+            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No matches found</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Adjust sensor parameters to restore visibility</div>
           </div>
         ) : (
@@ -119,13 +119,12 @@ export function ClientRiskPage({ weekData }: Props) {
                     <div className="flex items-center gap-4 mb-1.5 flex-wrap">
                       <span className="text-xl font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter uppercase leading-none">{profile.name}</span>
                       <span className={`pill ${getRiskPill(profile.riskLevel)} text-[9px] font-black px-3`}>
-                        {profile.riskLevel} STRAT
-                      </span>
+                        {profile.riskLevel}                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{profile.house} Node</span>
+                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{profile.house}</span>
                       <span className="w-1 h-1 rounded-full bg-white/10" />
-                      <span className="text-[10px] font-bold text-hc-teal-light/60 uppercase tracking-widest">Active Surveillance Protocol</span>
+                      <span className="text-[10px] font-bold text-hc-teal-light/60 uppercase tracking-widest">Active Monitoring</span>
                     </div>
                   </div>
                 </div>
@@ -191,7 +190,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 <div>
                   <h2 className="text-4xl font-black text-white tracking-tighter uppercase text-shimmer mb-2">{selectedClient.name}</h2>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-hc-muted uppercase tracking-[0.2em]">{selectedClient.house} Node</span>
+                    <span className="text-xs font-black text-hc-muted uppercase tracking-[0.2em]">{selectedClient.house}</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
                     <span className="text-xs font-black text-hc-teal-light uppercase tracking-widest">In-Depth Stratification</span>
                   </div>
@@ -237,7 +236,7 @@ export function ClientRiskPage({ weekData }: Props) {
 
               {/* Recent Activity */}
               <div className="animate-in slide-in-from-bottom-4 duration-700 delay-300">
-                <h3 className="section-header text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-5">Historical Telemetry</h3>
+                <h3 className="section-header text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-5">Recent History</h3>
                 <div className="space-y-3">
                   {selectedClient.recentEntries.map((entry) => (
                     <div key={entry.id} className="glass-light border border-white/5 rounded-2xl p-5 group/entry hover:bg-white/[0.03] transition-all interactive-row">
@@ -263,13 +262,13 @@ export function ClientRiskPage({ weekData }: Props) {
                   onClick={() => setSelectedClient(null)}
                   className="flex-1 btn-gradient rounded-2xl py-4 text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] transition-all"
                 >
-                  Confirm Strategic Read
+                  Done
                 </button>
                 <button
                   onClick={() => setSelectedClient(null)}
                   className="px-10 glass-light border border-white/10 text-hc-muted py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:text-white transition-all shadow-xl"
                 >
-                  Abort
+                  Close
                 </button>
               </div>
             </div>

@@ -3,7 +3,8 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { parseNourishData, buildWeekSummary } from '../lib/nourish-parser';
 import { parseNourishText, parseSupportPlanText } from '../lib/nourish-import';
-import { saveClient, emptyClient, findExistingClient } from '../lib/client-store';
+import { saveClient, emptyClient, findExistingClient, loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
+import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents } from '../lib/storage';
 import type { WeekSummary } from '../lib/types';
 import type { FullClient } from '../lib/client-store';
 import type { Page } from '../App';
@@ -183,6 +184,62 @@ const TYPE_INFO: Record<ImportType, { label: string; desc: string; icon: string;
   },
 };
 
+function DataManager() {
+  const weekData = loadWeekData();
+  const actions = loadActions();
+  const incidents = loadIncidents();
+  const clients = loadClients();
+  const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
+
+  const datasets = [
+    { key: 'diary', label: 'Diary / Briefing Data', count: weekData?.totalEntries || 0, present: !!weekData, clear: () => { clearWeekData(); window.location.reload(); }, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'No data loaded' },
+    { key: 'clients', label: 'People & Support Plans', count: clients.length, present: clients.length > 0, clear: () => { clearClientData(); window.location.reload(); }, desc: clients.length > 0 ? `${clients.length} people` : 'No people added' },
+    { key: 'actions', label: 'Actions', count: actions.length, present: actions.length > 0, clear: () => { clearActions(); window.location.reload(); }, desc: actions.length > 0 ? `${actions.length} actions` : 'No actions' },
+    { key: 'incidents', label: 'Incidents', count: incidents.length, present: incidents.length > 0, clear: () => { clearIncidents(); window.location.reload(); }, desc: incidents.length > 0 ? `${incidents.length} incidents` : 'No incidents' },
+    { key: 'notes', label: 'Staff Notes', count: notes.length, present: notes.length > 0, clear: () => { clearStaffNotes(); window.location.reload(); }, desc: notes.length > 0 ? `${notes.length} saved notes` : 'No notes saved' },
+  ];
+
+  const hasAnyData = datasets.some(d => d.present);
+
+  return (
+    <div className="glass-light border border-white/5 rounded-2xl p-6 mb-8">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <div className="text-sm font-black text-white uppercase tracking-tight">Stored Data</div>
+          <div className="text-[10px] text-hc-muted/60">Clear specific datasets or everything at once.</div>
+        </div>
+        {hasAnyData && (
+          <button
+            onClick={() => { if (confirm('Delete ALL data from this device? This cannot be undone.')) purgeSystemData(); }}
+            className="px-4 py-2 text-[9px] font-bold uppercase tracking-wider rounded-xl border border-flag-red/20 text-flag-red/60 hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/40 transition-all">
+            Clear Everything
+          </button>
+        )}
+      </div>
+      <div className="space-y-2">
+        {datasets.map(d => (
+          <div key={d.key} className={`flex items-center justify-between py-3 px-4 rounded-xl border transition-all ${d.present ? 'border-white/5 bg-white/[0.02]' : 'border-white/[0.02] opacity-40'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full ${d.present ? 'bg-flag-green shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-white/10'}`} />
+              <div>
+                <div className="text-[11px] font-bold text-white">{d.label}</div>
+                <div className="text-[10px] text-hc-muted/50">{d.desc}</div>
+              </div>
+            </div>
+            {d.present && (
+              <button
+                onClick={() => { if (confirm(`Clear all ${d.label.toLowerCase()}? This cannot be undone.`)) d.clear(); }}
+                className="text-[9px] font-bold uppercase tracking-wider text-hc-muted/40 hover:text-flag-red transition-colors px-3 py-1">
+                Clear
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function UploadPage({ onDataParsed, setPage }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -254,7 +311,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   };
 
   // ─── Confirm and process ─────────────────────────────────────────────────────
-  const handleConfirm = () => {
+  const [goTo, setGoTo] = useState<Page | null>(null);
+
+  const handleConfirm = (destination?: Page) => {
     if (!preview) return;
 
     if (preview.type === 'diary') {
@@ -266,9 +325,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       }
       const summary = buildWeekSummary(entries);
       onDataParsed(summary);
+      const target = destination || goTo || 'briefing';
       setResultMsg(`${summary.totalEntries} diary entries loaded across ${Object.keys(summary.houses).length} houses.`);
       setStep('done');
-      setTimeout(() => setPage('briefing'), 1500);
+      setTimeout(() => setPage(target), 1500);
       return;
     }
 
@@ -278,7 +338,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       const client = existing ? { ...existing } : emptyClient();
       Object.assign(client, result.client);
       if (existing) {
-        // Keep existing name if it was manually set
         client.name = existing.name || result.client.name || '';
       }
       client.carePlan = result.carePlan;
@@ -287,7 +346,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       const verb = existing ? 'updated' : 'created';
       setResultMsg(`${client.name || 'Client'} ${verb} with ${domains} care plan domains.`);
       setStep('done');
-      setTimeout(() => setPage('client-docs'), 1500);
+      setTimeout(() => setPage(destination || goTo || 'client-docs'), 1500);
       return;
     }
 
@@ -305,7 +364,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       const verb = existing ? 'updated' : 'created';
       setResultMsg(`${client.name} ${verb} with ${spResult.needs.length} support areas.`);
       setStep('done');
-      setTimeout(() => setPage('client-docs'), 1500);
+      setTimeout(() => setPage(destination || goTo || 'client-docs'), 1500);
       return;
     }
   };
@@ -327,8 +386,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   return (
     <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-5xl mx-auto">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-white mb-2 tracking-tighter text-shimmer">Import Hub</h1>
+      <div className="mb-6">
+        <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
         <p className="text-hc-muted text-sm font-medium">Upload data from Nourish or your local authority. We'll detect the format and route it to the right place.</p>
       </div>
 
@@ -336,7 +395,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       {step === 'choose' && (
         <>
           {/* What can you import */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             {(Object.entries(TYPE_INFO) as [ImportType, typeof TYPE_INFO['diary']][]).map(([key, info]) => (
               <div key={key} className="glass-light border border-white/5 rounded-2xl p-6 hover:border-hc-teal/30 transition-all group cursor-default">
                 <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{info.icon}</div>
@@ -512,11 +571,38 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             </div>
           )}
 
+          {/* Where to go after import */}
+          {preview.type === 'diary' && (
+            <div className="glass-light border border-white/5 rounded-2xl p-5 mb-6">
+              <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-3">After import, go to:</div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { page: 'briefing' as Page, label: 'Briefing' },
+                  { page: 'dashboard' as Page, label: 'Dashboard' },
+                  { page: 'reports' as Page, label: 'Reports' },
+                  { page: 'client-diary' as Page, label: 'Client Diary' },
+                  { page: 'risk' as Page, label: 'Risk Scores' },
+                  { page: 'templates' as Page, label: 'Templates' },
+                ]).map(opt => (
+                  <button key={opt.page} onClick={() => setGoTo(opt.page)}
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl border transition-all active:scale-95 ${
+                      (goTo || 'briefing') === opt.page
+                        ? 'border-hc-teal/40 bg-hc-teal/10 text-hc-teal-light shadow-lg'
+                        : 'border-white/5 text-hc-muted hover:text-white hover:bg-white/5'
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-hc-muted/60 mt-3 italic">Your data will be available on ALL pages — this just controls where you land.</p>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex gap-4">
-            <button onClick={handleConfirm}
+            <button onClick={() => handleConfirm()}
               className="flex-[2] btn-gradient text-white text-sm font-bold py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-              Import and go to {TYPE_INFO[preview.type].destination}
+              Import Data
             </button>
             <button onClick={reset}
               className="flex-1 glass-light border border-white/10 text-sm font-bold text-hc-muted hover:text-white py-4 rounded-2xl transition-all">
@@ -556,6 +642,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
           </button>
         </div>
       )}
+
+      {/* ─── DATA MANAGEMENT ─────────────────────────────────────────────────── */}
+      {step === 'choose' && <DataManager />}
 
       {/* Footer */}
       <div className="mt-auto pt-16 pb-6 flex justify-center">

@@ -28,7 +28,7 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   );
 }
 
-function ListField({ label, items, onChange, placeholder = 'Enter objective…' }: {
+function ListField({ label, items, onChange, placeholder = 'Enter details…' }: {
   label: string; items: string[]; onChange: (items: string[]) => void; placeholder?: string;
 }) {
   const update = (i: number, v: string) => { const a = [...items]; a[i] = v; onChange(a); };
@@ -38,7 +38,7 @@ function ListField({ label, items, onChange, placeholder = 'Enter objective…' 
     <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
       <div className="flex items-center justify-between mb-3 px-1">
         <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
-        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Strategy Node</button>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Item</button>
       </div>
       <div className="space-y-3">
         {items.map((item, i) => (
@@ -54,7 +54,7 @@ function ListField({ label, items, onChange, placeholder = 'Enter objective…' 
           <button onClick={add}
             className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Initialize Tactical List
+            Initialize List
           </button>
         )}
       </div>
@@ -108,7 +108,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
           <div className="flex-1 min-w-0">
             <span className={`text-xl font-black tracking-tighter uppercase transition-colors
               ${risk.title ? 'text-white group-hover:text-hc-teal-light' : 'text-hc-muted italic opacity-40'}`}>
-              {risk.title || 'UNNAMED RISK VECTOR — CONFIGURE DATA'}
+              {risk.title || 'NEW RISK AREA — CONFIGURE DETAILS'}
             </span>
           </div>
         </div>
@@ -138,52 +138,52 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
       {/* Card body */}
       {open && (
         <div className="px-8 py-10 border-t border-white/5 space-y-2 animate-in slide-in-from-top-4 duration-500 bg-black/10 backdrop-blur-3xl">
-          <Field label="Tactical Threat Definition" value={risk.title} onChange={v => up({ title: v })}
-            placeholder="e.g. EMOTIONAL DYSREGULATION — PROTOCOL BREACH" />
-          <Field label="Intelligence Summary" value={risk.description} onChange={v => up({ description: v })} area rows={4}
-            placeholder="Synthesize the nature of this threat node and temporal triggers..." />
+          <Field label="Risk Title" value={risk.title} onChange={v => up({ title: v })}
+            placeholder="e.g. Falls risk during morning routine" />
+          <Field label="Description & Context" value={risk.description} onChange={v => up({ description: v })} area rows={4}
+            placeholder="Describe the nature of this risk and what triggers it..." />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
-            <ListField label="Recorded Signal Patterns" items={risk.behaviours}
-              onChange={v => up({ behaviours: v })} placeholder="e.g. Vocal escalation detected" />
-            <ListField label="Exposed Command Nodes" items={risk.affectedPeople}
-              onChange={v => up({ affectedPeople: v })} placeholder="e.g. Deployment agents" />
+            <ListField label="Behaviors or Signs" items={risk.behaviours}
+              onChange={v => up({ behaviours: v })} placeholder="e.g. Unsteady walking" />
+            <ListField label="People Affected" items={risk.affectedPeople}
+              onChange={v => up({ affectedPeople: v })} placeholder="e.g. Staff supporting with mobility" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6">
-            <ListField label="Threat Triggers / Vector Factors" items={risk.triggers}
-              onChange={v => up({ triggers: v })} placeholder="e.g. Asynchronous structure cycle" />
-            <ListField label="Anomalous Signal Warnings" items={risk.earlyWarnings}
-              onChange={v => up({ earlyWarnings: v })} placeholder="e.g. Latency in processing instructions" />
+            <ListField label="Triggers & Factors" items={risk.triggers}
+              onChange={v => up({ triggers: v })} placeholder="e.g. Rushing or uneven floors" />
+            <ListField label="Warning Signs" items={risk.earlyWarnings}
+              onChange={v => up({ earlyWarnings: v })} placeholder="e.g. Attempting to stand without support" />
           </div>
 
-          <ListField label="Intervention & Control Countermeasures" items={risk.controls}
-            onChange={v => up({ controls: v })} placeholder="e.g. Activate PBS de-escalation cycle" />
+          <ListField label="Actions to Manage Risk" items={risk.controls}
+            onChange={v => up({ controls: v })} placeholder="e.g. Staff to provide steadying support" />
           
-          <Field label="Recalibration Protocol Trigger" value={risk.reviewTrigger}
+          <Field label="Review Trigger" value={risk.reviewTrigger}
             onChange={v => up({ reviewTrigger: v })}
-            placeholder="e.g. Following any high-intensity incident or baseline shift" />
+            placeholder="e.g. Following any fall or change in mobility" />
 
           {/* Score */}
           <div className="glass border-2 border-white/5 rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover/score:opacity-100 transition-opacity duration-1000" />
             <div className="section-header text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-shimmer flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-              Strategic Risk Quantization
+              Risk Evaluation
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <ScoreSlider label="Probability Matrix" value={risk.likelihood} onChange={v => up({ likelihood: v })}
+              <ScoreSlider label="Likelihood" value={risk.likelihood} onChange={v => up({ likelihood: v })}
                 labelArr={LIKELIHOOD_LABELS} />
-              <ScoreSlider label="Operational Impact" value={risk.impact} onChange={v => up({ impact: v })}
+              <ScoreSlider label="Impact" value={risk.impact} onChange={v => up({ impact: v })}
                 labelArr={IMPACT_LABELS} />
             </div>
             <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/5 relative z-10">
-              <div className="text-sm font-black text-hc-muted uppercase tracking-[0.2em]">Matrix Level:</div>
+              <div className="text-sm font-black text-hc-muted uppercase tracking-[0.2em]">Risk Rating:</div>
               <div className="text-4xl font-black tabular-nums tracking-tighter shadow-2xl" style={{ color, textShadow: `0 0 30px ${color}40` }}>{score}</div>
               <div className="pill text-[11px] font-black uppercase tracking-[0.2em] px-6 py-2 shadow-2xl animate-shimmer" style={{ background: color + '33', color, border: `1px solid ${color}60` }}>
                 {label}
               </div>
-              <span className="text-[10px] font-bold text-hc-muted/40 uppercase tracking-widest ml-auto tabular-nums">DATA SYNC: {risk.likelihood} × {risk.impact} CALCULATION</span>
+              <span className="text-[10px] font-bold text-hc-muted/40 uppercase tracking-widest ml-auto tabular-nums">CALCULATION: {risk.likelihood} × {risk.impact}</span>
             </div>
           </div>
         </div>
@@ -201,18 +201,18 @@ function AgencyTable({ rows, onChange }: { rows: AgencyRow[]; onChange: (r: Agen
   return (
     <div className="mb-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between mb-4 px-1">
-        <label className="section-header text-[10px] font-black uppercase tracking-[0.3em] opacity-60">HUB REPOSITORY — MULTI-AGENCY GRID</label>
-        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Network Node</button>
+        <label className="section-header text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Professional Network — Involved Agencies</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Agency</button>
       </div>
       <div className="space-y-3">
         {rows.map((row, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center group">
-            <input value={row.service} onChange={e => update(i, 'service', e.target.value)} placeholder="Sector Hub / Agency"
+            <input value={row.service} onChange={e => update(i, 'service', e.target.value)} placeholder="Service / Agency Name"
               className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
-            <input value={row.role} onChange={e => update(i, 'role', e.target.value)} placeholder="Tactical Role"
+            <input value={row.role} onChange={e => update(i, 'role', e.target.value)} placeholder="Role / Responsibility"
               className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
             <div className="flex gap-3">
-              <input value={row.status} onChange={e => update(i, 'status', e.target.value)} placeholder="Sync Status"
+              <input value={row.status} onChange={e => update(i, 'status', e.target.value)} placeholder="Current Status"
                 className="flex-1 bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-hc-teal-light focus:outline-none focus:border-hc-teal/50 shadow-inner" />
               <button onClick={() => remove(i)} className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100 shadow-lg">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -224,7 +224,7 @@ function AgencyTable({ rows, onChange }: { rows: AgencyRow[]; onChange: (r: Agen
           <button onClick={add}
             className="w-full glass-light border-2 border-dashed border-white/5 rounded-2xl py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Initialize Network Matrix
+            Add Agency Details
           </button>
         )}
       </div>
@@ -293,20 +293,20 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </span>
-          Abort
+          Back
         </button>
         
         <div className="h-8 w-px bg-white/10 hidden md:block" />
         
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
-            <span className="text-shimmer">{client.name || 'UNINITIALIZED NODE'}</span>
-            <span className="pill pill-amber text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">RISK MATRIX ARCHITECT</span>
+            <span className="text-shimmer">{client.name || 'PERSON PROFILE'}</span>
+            <span className="pill pill-amber text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">RISK ASSESSMENT BUILDER</span>
           </h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Comprehensive Safeguarding Blueprint</span>
+            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Service Safety & Risk Planning</span>
             <span className={`text-[10px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
-              {saved ? '✓ DATA SYNCHRONIZED' : '● BUFFERING CHANGES'}
+              {saved ? '✓ DATA SAVED' : '● SAVING CHANGES...'}
             </span>
           </div>
         </div>
@@ -317,7 +317,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            Transmit Document
+            Print Assessment
           </button>
         </div>
       </div>
@@ -343,13 +343,13 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           {/* Header row */}
           <div className="flex items-center justify-between mb-8 px-3">
             <div className="transition-transform duration-500 hover:translate-x-1">
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Strategic Threat Nodes</h2>
-              <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Mapping {risk.risks.filter(r => r.title).length} confirmed vectors</p>
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Identified Risks</h2>
+              <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Evaluating {risk.risks.filter(r => r.title).length} risk areas</p>
             </div>
             <button onClick={addRisk}
               className="flex items-center gap-3 px-8 py-3.5 glass-light border border-hc-teal/30 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-hc-teal/10 hover:border-hc-teal/60 hover:text-white transition-all shadow-2xl active:scale-95 group/add">
               <svg className="w-4 h-4 group-hover/add:scale-110 group-hover/add:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              Deploy Risk Node
+              Add Risk Area
             </button>
           </div>
 
@@ -364,8 +364,8 @@ export function RiskBuilder({ clientId, onBack }: Props) {
             {risk.risks.length === 0 && (
               <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
                 <div className="text-5xl mb-6 opacity-20">🛡️</div>
-                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Threat Grid Clear</div>
-                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Initiate risk nodes to populate matrix</div>
+                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Risk List Empty</div>
+                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Add risk areas above to build the assessment</div>
               </div>
             )}
           </div>
@@ -373,25 +373,25 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           {/* Global fields */}
           <div className="mt-16 pt-10 border-t border-white/10 space-y-10">
             <div className="px-2">
-              <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">Global Safeguards</h3>
-              <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">System-wide infrastructure & multi-agency sync</p>
+              <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">Service Safeguards</h3>
+              <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">Professional network & review cycle</p>
             </div>
             
             <AgencyTable rows={risk.multiAgencyRows} onChange={v => updateRisk({ multiAgencyRows: v })} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Field label="Autonomous Freedom & Ethics" value={risk.leastRestrictivePractice}
+              <Field label="Least Restrictive Practice" value={risk.leastRestrictivePractice}
                 onChange={v => updateRisk({ leastRestrictivePractice: v })} area rows={5}
-                placeholder="Synthesize least restrictive practice protocols..." />
-              <Field label="Recalibration Frequency" value={risk.reviewSchedule}
+                placeholder="Describe how we ensure the least restrictive support..." />
+              <Field label="Review Schedule" value={risk.reviewSchedule}
                 onChange={v => updateRisk({ reviewSchedule: v })} area rows={5}
-                placeholder="Define review temporal cycles..." />
+                placeholder="Define how often this assessment will be reviewed..." />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/20 p-8 rounded-[2rem] border border-white/5">
-              <Field label="Tactical Assessment Date" value={risk.planDate}
+              <Field label="Assessment Date" value={risk.planDate}
                 onChange={v => updateRisk({ planDate: v })} />
-              <Field label="Temporal Re-Scan Date" value={client.reviewDate}
+              <Field label="Next Review Date" value={client.reviewDate}
                 onChange={v => { const n = { ...client, reviewDate: v }; persist(n); setClient(n); }} />
             </div>
           </div>
@@ -407,7 +407,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
               <svg className="w-6 h-6 inline-block mr-4 group-hover/btn-transmit:scale-110 group-hover/btn-transmit:rotate-3 transition-transform align-middle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
-              Transmit Completed Matrix
+              Print Risk Assessment
             </button>
           </div>
         </div>

@@ -33,15 +33,15 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Incident Pipeline</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
           <div className="flex items-center gap-3">
             <span className="pill pill-red text-[10px] uppercase tracking-wider font-bold shadow-lg animate-pulse-soft">
-              {totalActive} Active Escalations
+              {totalActive} Active Incidents
             </span>
             <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-              {totalRed} Critical Red Alerts in Network
+              {totalRed} Critical Red Alerts
             </span>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                   </div>
                   
                   <div className="flex items-center gap-2 mb-3 px-1">
-                    <span className="text-[9px] font-black text-hc-teal-light/80 uppercase tracking-widest">{incident.house} Node</span>
+                    <span className="text-[9px] font-black text-hc-teal-light/80 uppercase tracking-widest">{incident.house}</span>
                     {incident.client && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-white/10" />
@@ -110,7 +110,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                   {/* Actions */}
                   {incident.actions.length > 0 && (
                     <div className="space-y-2 mb-5 bg-black/30 p-3 rounded-xl border border-white/5 shadow-inner">
-                      <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1.5 opacity-40">Tactical Directives</div>
+                      <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1.5 opacity-40">Actions Taken</div>
                       {incident.actions.slice(0, 3).map((a, i) => (
                         <div key={i} className="flex items-center gap-2.5 text-[9px] font-black text-hc-teal-light/70 uppercase tracking-widest group-hover/card:text-hc-teal-light transition-colors">
                           <svg className="w-3 h-3 text-hc-teal-light/40 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -124,7 +124,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40 tabular-nums">{incident.date}</span>
                     {incident.stage !== 'closed' && (
                       <div className="flex items-center gap-2 opacity-0 group-hover/card:opacity-100 transition-all -translate-x-3 group-hover/card:translate-x-0">
-                        <span className="text-[8px] font-black text-hc-teal-light uppercase tracking-widest">DEPLOY NODE</span>
+                        <span className="text-[8px] font-black text-hc-teal-light uppercase tracking-widest">ADVANCE</span>
                         <svg className="w-3.5 h-3.5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                       </div>
                     )}
@@ -145,7 +145,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               {stage.items.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 opacity-20 grayscale group-hover/stage:opacity-40 group-hover/stage:grayscale-0 transition-all duration-700">
                   <div className="text-3xl mb-3 animate-float">🛡️</div>
-                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Sector Secure</div>
+                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">No Incidents</div>
                 </div>
               )}
             </div>

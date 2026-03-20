@@ -39,13 +39,13 @@ export function StaffPage({ staff }: Props) {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Human Intelligence Roster</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Staff Team</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-blue text-[10px] uppercase tracking-wider font-bold shadow-lg">Workforce Logistics</span>
+            <span className="pill pill-blue text-[10px] uppercase tracking-wider font-bold shadow-lg">Team Overview</span>
             <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-              {staff.length} agents deployed across {houses.length} tactical nodes
+              {staff.length} staff across {houses.length} houses
             </span>
           </div>
         </div>
@@ -53,10 +53,10 @@ export function StaffPage({ staff }: Props) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Active Personnel', value: totalActive, color: '#22c55e', pill: 'pill-green' },
-          { label: 'Off-Line (Sick)', value: totalSickness, color: '#ef4444', pill: 'pill-red' },
-          { label: 'Monthly Sickness', value: totalSicknessEvents, sub: 'Events', color: '#f59e0b', pill: 'pill-amber' },
-          { label: 'Latency Issues', value: totalLatenessEvents, sub: 'Events', color: '#3b82f6', pill: 'pill-blue' },
+          { label: 'Active Staff', value: totalActive, color: '#22c55e', pill: 'pill-green' },
+          { label: 'Off Sick', value: totalSickness, color: '#ef4444', pill: 'pill-red' },
+          { label: 'Sickness This Month', value: totalSicknessEvents, sub: 'Events', color: '#f59e0b', pill: 'pill-amber' },
+          { label: 'Lateness This Month', value: totalLatenessEvents, sub: 'Events', color: '#3b82f6', pill: 'pill-blue' },
         ].map(kpi => (
           <div key={kpi.label} className="glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default">
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: kpi.color }} />
@@ -76,7 +76,7 @@ export function StaffPage({ staff }: Props) {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search agents by name or designation..."
+            placeholder="Search staff by name or role..."
             className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/20 focus:bg-hc-dark"
           />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
@@ -85,20 +85,20 @@ export function StaffPage({ staff }: Props) {
         </div>
         
         <div className="flex items-center gap-4">
-          <span className="section-header text-[9px] tracking-[0.3em] opacity-60">Sector Node:</span>
+          <span className="section-header text-[9px] tracking-[0.3em] opacity-60">House:</span>
           <select
             value={houseFilter}
             onChange={e => setHouseFilter(e.target.value)}
             className="bg-hc-dark/80 border border-white/10 rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]"
           >
-            <option value="all">Entire Network Fleet</option>
+            <option value="all">All Houses</option>
             {houses.map(h => <option key={h} value={h}>{h}</option>)}
           </select>
         </div>
         
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] tabular-nums">
-            Registry Nodes: {filtered.length} Agents
+            Showing: {filtered.length} Staff
           </span>
         </div>
       </div>
@@ -109,10 +109,10 @@ export function StaffPage({ staff }: Props) {
           <div key={house} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${hIdx * 100}ms` }}>
             <div className="flex items-center gap-4 mb-6 px-2 group cursor-default">
               <h2 className="text-2xl font-black text-white tracking-tighter uppercase group-hover:text-shimmer group-hover:translate-x-1 transition-all duration-500">{house}</h2>
-              <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg opacity-80">{members.length} Personnel</span>
+              <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg opacity-80">{members.length} Staff</span>
               {members.some(m => m.status === 'sickness') && (
                 <span className="pill pill-red text-[10px] font-black px-3 py-0.5 shadow-xl shadow-red-950/20 animate-pulse">
-                  {members.filter(m => m.status === 'sickness').length} OFF-LINE
+                  {members.filter(m => m.status === 'sickness').length} OFF SICK
                 </span>
               )}
             </div>
@@ -181,7 +181,7 @@ export function StaffPage({ staff }: Props) {
                     <div className="mt-6 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-all -translate-y-2 group-hover/card:translate-y-0 relative z-10">
                       <span className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.3em] flex items-center gap-2">
                         <div className="w-1 h-1 rounded-full bg-hc-teal shadow-[0_0_5px_#14b8a6]" />
-                        Management Protocol
+                        Management
                       </span>
                       <div className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg group-hover/card:bg-hc-teal/10 transition-colors">
                         <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -198,8 +198,8 @@ export function StaffPage({ staff }: Props) {
       {filtered.length === 0 && (
         <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Zero Personnel Detected</div>
-          <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to restore fleet visibility</div>
+          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Staff Found</div>
+          <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to see all staff</div>
         </div>
       )}
     </div>

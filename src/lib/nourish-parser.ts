@@ -60,6 +60,19 @@ function normalizeHouse(raw: string): string {
   return raw.trim() || 'General';
 }
 
+function isKnownHouse(raw: string): boolean {
+  if (!raw) return false;
+  const lower = raw.toLowerCase().trim();
+  // Check if this value matches any known house pattern
+  for (const key of Object.keys(HOUSE_MAP)) {
+    if (lower.includes(key)) return true;
+  }
+  // Also catch generic patterns like "X House", "X Lodge", standalone "Office"
+  if (/\b(house|lodge|flats?|management)\b/i.test(raw)) return true;
+  if (/^office$/i.test(raw.trim())) return true;
+  return false;
+}
+
 // ============================================================
 // ENTRY CATEGORY
 // ============================================================
@@ -224,10 +237,24 @@ export function parseNourishCSV(text: string): NourishEntry[] {
 
     if (!entryRaw && !typeRaw) continue;
 
-    // House: explicit house column wins, else extract from carers region field
-    const house = houseRaw
-      ? normalizeHouse(houseRaw)
-      : normalizeHouse(extractHouseFromCarers(carersRaw));
+    // Nourish "Clients involved" often contains the HOUSE name instead of a person.
+    // Also sometimes contains carer region strings that leaked into the wrong column.
+    const clientIsRegionLeak = /all carers in region/i.test(clientRaw);
+    const clientLooksLikeHouse = isKnownHouse(clientRaw) || clientIsRegionLeak;
+
+    // House: explicit house column → client-as-house fallback → carers region field
+    let house: string;
+    let client: string;
+    if (houseRaw) {
+      house = normalizeHouse(houseRaw);
+      client = clientLooksLikeHouse ? '' : clientRaw;
+    } else if (clientLooksLikeHouse) {
+      house = normalizeHouse(clientRaw);
+      client = '';
+    } else {
+      house = normalizeHouse(extractHouseFromCarers(carersRaw));
+      client = clientRaw;
+    }
 
     const carer = cleanCarerName(carersRaw);
     const { severity, flags } = detectFlags(entryRaw + ' ' + typeRaw);
@@ -239,7 +266,7 @@ export function parseNourishCSV(text: string): NourishEntry[] {
       house,
       type: typeRaw || 'Diary Entry',
       carer,
-      client: clientRaw,
+      client,
       entry: entryRaw,
       severity,
       flags,

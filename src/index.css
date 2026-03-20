@@ -81,7 +81,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Glass card — premium frosted glass (ArbiFlow-grade) */
+/* Glass card — premium frosted glass */
 .glass {
   background: linear-gradient(135deg, rgba(24, 37, 54, 0.9), rgba(24, 37, 54, 0.55));
   backdrop-filter: blur(20px);

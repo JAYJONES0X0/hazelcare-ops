@@ -32,7 +32,7 @@ function generateQualityMeeting(data: WeekSummary): string {
     <tr><td style="padding: 10px 15px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px;">Attendees</td><td style="padding: 10px 15px; border: 1px solid #e2e8f0;">${data.carers.slice(0, 8).join(', ')}</td></tr>
   </table>
 
-  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Executive Intelligence Summary</h2>
+  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Weekly Summary</h2>
   <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
     <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px; text-align: center;">
       <div style="font-size: 32px; font-weight: 900; color: #ef4444; line-height: 1;">${redFlags.length}</div>
@@ -48,21 +48,21 @@ function generateQualityMeeting(data: WeekSummary): string {
     </div>
     <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 16px; text-align: center;">
       <div style="font-size: 32px; font-weight: 900; color: #0f766e; line-height: 1;">${houses.length}</div>
-      <div style="font-size: 9px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Nodes</div>
+      <div style="font-size: 9px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Houses</div>
     </div>
   </div>`;
 
   if (redFlags.length > 0) {
-    html += `<h2 style="font-size: 15px; font-weight: 800; color: #ef4444; border-bottom: 2px solid #ef4444; padding-bottom: 6px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">🔴 RED-STRAT ALERTS — IMMEDIATE ATTENTION</h2>
+    html += `<h2 style="font-size: 15px; font-weight: 800; color: #ef4444; border-bottom: 2px solid #ef4444; padding-bottom: 6px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">🔴 RED FLAG ALERTS — IMMEDIATE ATTENTION</h2>
     <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
-      <tr style="background: #f8fafc;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">Node</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Intelligence Detail</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 150px;">Flags</th></tr>`;
+      <tr style="background: #f8fafc;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Details</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 150px;">Flags</th></tr>`;
     for (const e of redFlags) {
       html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${e.client || '—'}</td><td style="padding: 10px; border: 1px solid #e2e8f0; line-height: 1.5;">${e.entry}</td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #ef4444; font-weight: 700;">${e.flags.join(', ')}</td></tr>`;
     }
     html += `</table>`;
   }
 
-  html += `<h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Sector Node Stratification</h2>`;
+  html += `<h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">House Breakdown</h2>`;
   for (const house of houses) {
     const hasIssues = house.flags.red > 0 || house.flags.amber > 0;
     html += `
@@ -82,7 +82,7 @@ function generateQualityMeeting(data: WeekSummary): string {
 
     const sections: [string, NourishEntry[]][] = [
       ['Incidents & Safety', house.incidents],
-      ['Safeguarding Protocol', house.safeguarding],
+      ['Safeguarding', house.safeguarding],
       ['Medication Management', house.medication],
       ['Operational Support', house.dailySupport],
     ];
@@ -103,7 +103,7 @@ function generateQualityMeeting(data: WeekSummary): string {
   }
 
   html += `
-  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-top: 32px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Decisions & Countermeasures</h2>
+  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-top: 32px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Decisions & Actions</h2>
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">
     <tr style="background: #f8fafc;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 40px;">ID</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Strategic Action</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 150px;">Owner</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 100px;">Deadline</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 80px;">Status</th></tr>
     <tr><td style="padding: 15px 10px; border: 1px solid #e2e8f0;">1</td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0; font-weight: 700; color: #94a3b8;">OPEN</td></tr>
@@ -122,7 +122,7 @@ function generateIncidentReport(data: WeekSummary): string {
 <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 16px; margin-bottom: 24px;">
     <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.02em;">Incident Intelligence Summary</h1>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.02em;">Incident Report</h1>
       <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
     </div>
     <img src="/hazelcare-logo.png" style="height: 50px;" />
@@ -166,7 +166,7 @@ function generateDailyQuality(data: WeekSummary): string {
 
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">
     <tr style="background: #eff6ff;">
-      <th style="padding: 10px; text-align: left; border: 1px solid #bfdbfe; text-transform: uppercase;">Sector Node</th>
+      <th style="padding: 10px; text-align: left; border: 1px solid #bfdbfe; text-transform: uppercase;">House</th>
       <th style="padding: 10px; text-align: center; border: 1px solid #bfdbfe; text-transform: uppercase; width: 60px;">Logs</th>
       <th style="padding: 10px; text-align: center; border: 1px solid #bfdbfe; text-transform: uppercase; width: 60px;">Red</th>
       <th style="padding: 10px; text-align: left; border: 1px solid #bfdbfe; text-transform: uppercase;">Status</th>
@@ -184,11 +184,11 @@ function generateDailyQuality(data: WeekSummary): string {
   html += `</table>`;
 
   if (allFlagged.length > 0) {
-    html += `<h2 style="font-size: 15px; font-weight: 800; color: ${COLOR}; border-bottom: 2px solid ${COLOR}; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Overnight Telemetry</h2>`;
+    html += `<h2 style="font-size: 15px; font-weight: 800; color: ${COLOR}; border-bottom: 2px solid ${COLOR}; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Overnight Notes</h2>`;
     for (const e of allFlagged.slice(0, 15)) {
       const badge = e.severity === 'red' ? '#ef4444' : '#f59e0b';
       html += `<div style="background: #f8fafc; border-left: 5px solid ${badge}; padding: 12px 16px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 12px; border: 1px solid #e2e8f0; border-left-width: 5px;">
-        <strong>${e.house}Node:</strong> ${truncate(e.entry, 200)}
+        <strong>${e.house}:</strong> ${truncate(e.entry, 200)}
       </div>`;
     }
   }
@@ -229,25 +229,25 @@ export function TemplatesPage({ weekData }: Props) {
           <span className="text-4xl">📋</span>
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Template Generator</h2>
-        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Synchronize Nourish telemetry streams to auto-populate tactical templates with real-time intelligence.</p>
-        <button onClick={() => window.location.reload()} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Sync Terminal</button>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import Nourish data to auto-fill templates with up-to-date care information.</p>
+        <button onClick={() => window.location.reload()} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Import Data</button>
       </div>
     );
   }
 
   return (
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-      <div className="mb-10">
-        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Intelligence Templates</h1>
+      <div className="mb-6">
+        <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Report Templates</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Document Synthesizer</span>
+          <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Auto-Generated</span>
           <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1 tabular-nums">
-            Processing {weekData.totalEntries} transmissions across {Object.keys(weekData.houses).length} nodes
+            Processing {weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 lg:mb-8">
         {TEMPLATES.map((tpl, idx) => (
           <button
             key={tpl.id}
@@ -283,13 +283,13 @@ export function TemplatesPage({ weekData }: Props) {
                 <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Payload Synthesized</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Review intelligence detail before transmission to printer</p>
+                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Review the report before printing</p>
                 </div>
               </div>
             </div>
             <button onClick={handlePrint} className="w-full md:w-auto flex items-center justify-center gap-3 px-10 py-4 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-[1.02] transition-all group">
               <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              Deploy to PDF / Printer
+              Print / Save as PDF
             </button>
           </div>
           <div className="bg-white rounded-[3rem] overflow-hidden border-4 border-white/5 shadow-2xl p-1">

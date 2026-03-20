@@ -82,9 +82,9 @@ const RATE_CARDS = [
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 
 function UrgencyBadge({ urgency }: { urgency: ShiftUrgency }) {
-  if (urgency === 'critical') return <span className="pill pill-red animate-pulse-soft text-[9px] font-black uppercase tracking-widest shadow-lg">⚡ Critical Breach</span>;
-  if (urgency === 'urgent') return <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest shadow-md">Priority Escalation</span>;
-  return <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest opacity-60">Standard Deployment</span>;
+  if (urgency === 'critical') return <span className="pill pill-red animate-pulse-soft text-[9px] font-black uppercase tracking-widest shadow-lg">⚡ Critical</span>;
+  if (urgency === 'urgent') return <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest shadow-md">Urgent</span>;
+  return <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest opacity-60">Standard Booking</span>;
 }
 
 function StatusBadge({ status }: { status: ShiftStatus | WorkerStatus }) {
@@ -99,8 +99,8 @@ function StatusBadge({ status }: { status: ShiftStatus | WorkerStatus }) {
     declined: 'pill-red',
   };
   const labels: Record<string, string> = {
-    open: 'Open for Bidding', submitted: 'Agent Transmitted', confirmed: 'Verified & Committed', filled: 'Filled',
-    dbs_check: 'Security Scan', training_check: 'Training Audit', active: 'Active on Grid', declined: 'Rejected',
+    open: 'Open', submitted: 'Submitted', confirmed: 'Confirmed', filled: 'Filled',
+    dbs_check: 'DBS Check', training_check: 'Training Check', active: 'Active', declined: 'Declined',
   };
   return (
     <span className={`pill ${map[status] ?? 'pill-blue'} text-[9px] font-black uppercase tracking-widest shadow-sm`}>
@@ -110,18 +110,18 @@ function StatusBadge({ status }: { status: ShiftStatus | WorkerStatus }) {
 }
 
 function TierBadge({ tier }: { tier: Agency['tier'] }) {
-  if (tier === 'preferred') return <span className="pill pill-teal text-[9px] font-black uppercase tracking-widest shadow-lg glow-teal">★★★ Strategic Partner</span>;
-  if (tier === 'approved') return <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest shadow-md">★★☆ Verified Vendor</span>;
-  return <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest opacity-60">★☆☆ Provisional Node</span>;
+  if (tier === 'preferred') return <span className="pill pill-teal text-[9px] font-black uppercase tracking-widest shadow-lg glow-teal">★★★ Preferred</span>;
+  if (tier === 'approved') return <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest shadow-md">★★☆ Approved</span>;
+  return <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest opacity-60">★☆☆ Provisional</span>;
 }
 
 function WorkerPipeline({ status }: { status: WorkerStatus }) {
   const steps: { key: WorkerStatus; label: string }[] = [
-    { key: 'submitted', label: 'Transmit' },
+    { key: 'submitted', label: 'Submitted' },
     { key: 'dbs_check', label: 'DBS' },
-    { key: 'training_check', label: 'Audit' },
+    { key: 'training_check', label: 'Training' },
     { key: 'confirmed', label: 'Verify' },
-    { key: 'active', label: 'Deploy' },
+    { key: 'active', label: 'Book' },
   ];
   const order = ['submitted', 'dbs_check', 'training_check', 'confirmed', 'active'];
   const currentIdx = order.indexOf(status);
@@ -163,18 +163,18 @@ function ShiftBoard() {
   const totalHours = SHIFTS.filter(s => s.status === 'open').reduce((a, s) => a + s.hours, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-4 lg:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Tactical Vacancies', value: open, color: '#14b8a6', sub: 'Nodes requiring coverage' },
-          { label: 'Critical Breaches', value: critical, color: '#ef4444', sub: 'Immediate fill required', glow: 'glow-red' },
-          { label: 'Verified Placements', value: filled, color: '#22c55e', sub: 'Cycle confirmed' },
-          { label: 'Network Hours', value: `${totalHours}H`, color: '#f59e0b', sub: 'Total open deployment' },
+          { label: 'Open Shifts', value: open, color: '#14b8a6', sub: 'Shifts needing cover' },
+          { label: 'Critical Gaps', value: critical, color: '#ef4444', sub: 'Immediate fill required', glow: 'glow-red' },
+          { label: 'Confirmed Cover', value: filled, color: '#22c55e', sub: 'Shifts filled' },
+          { label: 'Network Hours', value: `${totalHours}H`, color: '#f59e0b', sub: 'Total hours booked' },
         ].map(s => (
-          <div key={s.label} className={`glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
+          <div key={s.label} className={`glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
-            <div className="text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 20px ${s.color}40` }}>{s.value}</div>
+            <div className="text-2xl md:text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 20px ${s.color}40` }}>{s.value}</div>
             <div className="section-header text-[9px] mt-2 opacity-60 tracking-[0.2em]">{s.label}</div>
             <div className="text-hc-muted text-[9px] font-bold uppercase tracking-widest mt-2 opacity-40 group-hover:opacity-100 transition-opacity">{s.sub}</div>
           </div>
@@ -204,7 +204,7 @@ function ShiftBoard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-4 flex-wrap mb-4 transition-transform duration-500 group-hover/shift:translate-x-1">
-                  <span className="text-xl font-black text-white group-hover/shift:text-hc-teal-light transition-colors tracking-tighter uppercase">{shift.house} Node</span>
+                  <span className="text-xl font-black text-white group-hover/shift:text-hc-teal-light transition-colors tracking-tighter uppercase">{shift.house}</span>
                   <UrgencyBadge urgency={shift.urgency} />
                   <StatusBadge status={shift.status} />
                 </div>
@@ -233,15 +233,15 @@ function ShiftBoard() {
                   <div className="max-w-2xl">
                     <h3 className="section-header text-[10px] mb-6 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                      Personnel Deployment Request
+                      Staffing Request
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       {[
-                        { key: 'name', label: 'Agent Full Name', placeholder: "Agent Identity" },
-                        { key: 'role', label: 'Protocol Role', placeholder: 'Designation' },
-                        { key: 'agency', label: 'Sector Agency', placeholder: 'Command Hub' },
-                        { key: 'dbs', label: 'Security Certificate', placeholder: 'DBS ID Ref' },
-                        { key: 'phone', label: 'Communication Link', placeholder: 'Signal Line' },
+                        { key: 'name', label: 'Full Name', placeholder: "Worker's name" },
+                        { key: 'role', label: 'Job Role', placeholder: 'Role title' },
+                        { key: 'agency', label: 'Agency', placeholder: 'Agency name' },
+                        { key: 'dbs', label: 'DBS Number', placeholder: 'DBS reference' },
+                        { key: 'phone', label: 'Phone Number', placeholder: 'Contact number' },
                       ].map(f => (
                         <div key={f.key} className={f.key === 'name' ? 'md:col-span-2' : ''}>
                           <label className="section-header text-[8px] mb-1.5 ml-1 block opacity-40">{f.label}</label>
@@ -253,10 +253,10 @@ function ShiftBoard() {
                       ))}
                     </div>
                     <div className="flex justify-end gap-4">
-                      <button onClick={() => setSelectedShift(null)} className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white transition-all">Abort</button>
+                      <button onClick={() => setSelectedShift(null)} className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white transition-all">Cancel</button>
                       <button onClick={() => setSubmitted(true)}
                         className="px-10 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-105 transition-all">
-                        Transmit Agent Data →
+                        Submit Worker Details →
                       </button>
                     </div>
                   </div>
@@ -266,9 +266,9 @@ function ShiftBoard() {
                     <div className="w-16 h-16 rounded-2xl bg-flag-green/10 border border-flag-green/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-flag-green/10">
                       <svg className="w-8 h-8 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <div className="text-lg font-black text-white uppercase tracking-tight mb-2">Transmission Successful</div>
-                    <p className="text-sm text-hc-muted font-medium max-w-sm mx-auto mb-6">Hazelcare command will verify agent credentials and respond within the T-minus 2 hour window.</p>
-                    <button onClick={() => { setSubmitted(false); setSelectedShift(null); }} className="text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all underline decoration-hc-teal/30 underline-offset-8 decoration-2">Cycle Feed</button>
+                    <div className="text-lg font-black text-white uppercase tracking-tight mb-2">Request Sent</div>
+                    <p className="text-sm text-hc-muted font-medium max-w-sm mx-auto mb-6">Hazel Care will check the worker's details and respond within 2 hours.</p>
+                    <button onClick={() => { setSubmitted(false); setSelectedShift(null); }} className="text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all underline decoration-hc-teal/30 underline-offset-8 decoration-2">Back to Shifts</button>
                   </div>
                 )}
               </div>
@@ -286,7 +286,7 @@ function WorkerPipelinePage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-        {['Transmissions', 'Security Scan', 'Audit Cycle', 'Verified', 'Active Grid'].map((label, i) => {
+        {['Requests', 'DBS Check', 'Audit', 'Verified', 'Active'].map((label, i) => {
           const counts = [1, 1, 0, 1, 0];
           return (
             <div key={label} className="glass-light border border-white/5 rounded-2xl p-5 text-center shadow-lg group hover:bg-white/5 transition-all">
@@ -321,11 +321,11 @@ function WorkerPipelinePage() {
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4 text-hc-muted text-[10px] font-bold uppercase tracking-widest px-2">
-                    <div className="flex items-center gap-2">Designation: <span className="text-white/80">{w.role}</span></div>
-                    <div className="flex items-center gap-2">Signal Line: <span className="text-white/80 tabular-nums">{w.phone}</span></div>
+                    <div className="flex items-center gap-2">Role title: <span className="text-white/80">{w.role}</span></div>
+                    <div className="flex items-center gap-2">Phone: <span className="text-white/80 tabular-nums">{w.phone}</span></div>
                     {shift && (
                       <div className="flex items-center gap-2 text-hc-teal-light">
-                        Deployed To: <span className="font-black underline decoration-hc-teal/30">{shift.house} — {shift.date}</span>
+                        Assigned To: <span className="font-black underline decoration-hc-teal/30">{shift.house} — {shift.date}</span>
                       </div>
                     )}
                   </div>
@@ -341,7 +341,7 @@ function WorkerPipelinePage() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LEGAL RTW STATUS</span>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${w.rightToWork ? 'text-flag-green' : 'text-flag-red'}`}>{w.rightToWork ? '✓ Synchronized' : '✗ Protocol Error'}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${w.rightToWork ? 'text-flag-green' : 'text-flag-red'}`}>{w.rightToWork ? '✓ Verified' : '✗ Not Verified'}</span>
                     </div>
                   </div>
 
@@ -351,8 +351,8 @@ function WorkerPipelinePage() {
                         <svg className="w-6 h-6 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                       </div>
                       <div>
-                        <div className="text-[11px] font-black text-white uppercase tracking-[0.1em] mb-1">Deployment Halted</div>
-                        <p className="text-xs font-medium text-flag-red/80 leading-relaxed italic">"Transmission declined — security credentials (DBS) have passed temporal expiry. Re-initiate agent data with updated certificate payload."</p>
+                        <div className="text-[11px] font-black text-white uppercase tracking-[0.1em] mb-1">Booking Blocked</div>
+                        <p className="text-xs font-medium text-flag-red/80 leading-relaxed italic">"This worker's DBS has expired. Please provide an updated DBS certificate before booking."</p>
                       </div>
                     </div>
                   )}
@@ -404,7 +404,7 @@ function AgencyDirectory() {
                 <div className="text-hc-muted text-[10px] font-bold uppercase tracking-widest mt-4 flex flex-wrap gap-x-6 gap-y-2 opacity-60 group-hover:opacity-100 transition-opacity">
                   <div className="flex items-center gap-2">Link: <span className="text-white/80">{agency.contact}</span></div>
                   <div className="flex items-center gap-2">Stream: <span className="text-white/80 lowercase">{agency.email}</span></div>
-                  <div className="flex items-center gap-2">Signal: <span className="text-white/80 tabular-nums">{agency.phone}</span></div>
+                  <div className="flex items-center gap-2">Phone: <span className="text-white/80 tabular-nums">{agency.phone}</span></div>
                 </div>
               </div>
 
@@ -430,7 +430,7 @@ function AgencyDirectory() {
                   {[
                     { label: 'Cumulative Syncs', value: `${Math.round(agency.fillRate * 2.3)}` },
                     { label: 'Avg Latency Cycle', value: agency.responseTime },
-                    { label: 'Active Fleet Deploy', value: agency.activeWorkers },
+                    { label: 'Active Workers', value: agency.activeWorkers },
                     { label: 'Integrity Rating', value: `${agency.complianceScore}%` },
                   ].map(s => (
                     <div key={s.label} className="bg-black/20 rounded-2xl border border-white/5 p-4 text-center shadow-inner group/sub">
@@ -440,9 +440,9 @@ function AgencyDirectory() {
                   ))}
                 </div>
                 <div className="flex flex-col md:flex-row gap-3">
-                  <button className="flex-1 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">Transmit Deployment Command</button>
-                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Registry Log</button>
-                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Direct Uplink</button>
+                  <button className="flex-1 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">Send Booking Request</button>
+                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">View History</button>
+                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Contact Agency</button>
                 </div>
               </div>
             )}
@@ -462,8 +462,8 @@ function RateCards() {
           <span className="text-2xl animate-pulse-soft">💰</span>
         </div>
         <p className="text-xs font-medium text-hc-teal-light leading-relaxed relative z-10">
-          <span className="font-black uppercase tracking-widest block mb-1">Fiscal Protocol Alert:</span>
-          Hazel Care Ltd agency rates are verified directly with hub command. Current data reflects baseline strategic projections. Contact HQ for tactical quote verification.
+          <span className="font-black uppercase tracking-widest block mb-1">Cost Alert:</span>
+          Hazel Care Ltd agency rates are verified directly with the agency. Current data reflects standard rates. Contact the office for a confirmed quote.
         </p>
       </div>
 
@@ -472,7 +472,7 @@ function RateCards() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-black/30 border-b border-white/5">
-                <th className="px-8 py-5 section-header text-[10px] tracking-[0.2em]">Operational Designation</th>
+                <th className="px-8 py-5 section-header text-[10px] tracking-[0.2em]">Operational Role title</th>
                 <th className="px-6 py-5 section-header text-[10px] tracking-[0.2em] text-center">Day Cycle<br/><span className="text-[8px] font-bold text-hc-muted opacity-60">07:00–19:00</span></th>
                 <th className="px-6 py-5 section-header text-[10px] tracking-[0.2em] text-center">Evening Shift<br/><span className="text-[8px] font-bold text-hc-muted opacity-60">15:00–23:00</span></th>
                 <th className="px-6 py-5 section-header text-[10px] tracking-[0.2em] text-center">Night Patrol<br/><span className="text-[8px] font-bold text-hc-muted opacity-60">23:00–07:00</span></th>
@@ -485,13 +485,13 @@ function RateCards() {
                 <tr key={r.role} className={`group hover:bg-white/[0.03] transition-colors border-b border-white/5 ${idx === RATE_CARDS.length - 1 ? 'border-none' : ''}`}>
                   <td className="px-8 py-6">
                     <div className="text-sm font-black text-white group-hover:text-hc-teal-light transition-colors uppercase tracking-tight">{r.role}</div>
-                    <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-40">Protocol Level Cover</div>
+                    <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-40">Cover Level</div>
                   </td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">On Uplink</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">On Uplink</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">On Uplink</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">On Uplink</td>
-                  <td className="px-8 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">On Uplink</td>
+                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
+                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
+                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
+                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
+                  <td className="px-8 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
                 </tr>
               ))}
             </tbody>
@@ -501,9 +501,9 @@ function RateCards() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {[
-          { title: 'Mandatory Compliance Protocol', items: ['Enhanced DBS Security Scan (< 3y)', 'Right to Work Payload Verification', 'Mandatory Tactical Training Cycle', 'Verified HQ References (×2 Min)', 'Medical Integrity Declaration'] },
-          { title: 'Elite Deployment Standards', items: ['PBS Specialized Certification', 'ND Pattern Awareness (ASD/LD)', 'Positive Intervention Techniques', 'Critical First Aid Synchronized', 'Medication Protocol Competency'] },
-          { title: 'Fiscal Transmission Rules', items: ['Weekly Telemetry Timesheets', 'Invoice Transmission by T+12:00', 'Payment Settlement T+30 Days', 'Dispute Analysis Window (5 Days)', 'Electronic Credits (BACS) Only'] },
+          { title: 'Mandatory Compliance', items: ['Enhanced DBS DBS Check (< 3y)', 'Right to Work check', 'Mandatory Training completed', 'Two verified references', 'Health declaration'] },
+          { title: 'Specialist Requirements', items: ['PBS trained', 'Autism & learning disability awareness', 'Positive behaviour support', 'Critical First Aid Verified', 'Medication trained'] },
+          { title: 'Payment Terms', items: ['Weekly timesheets', 'Invoices within 12 hours', 'Payment within 30 days', '5-day dispute window', 'BACS payment only'] },
         ].map((section, idx) => (
           <div key={section.title} className="glass-light border border-white/5 rounded-3xl p-6 shadow-xl card-glow animate-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 150}ms` }}>
             <div className="text-xs font-black text-hc-teal-light mb-5 uppercase tracking-[0.2em] flex items-center gap-3">
@@ -537,19 +537,19 @@ export function AgencyPortalPage() {
   const pendingWorkers = WORKERS.filter(w => w.status !== 'active' && w.status !== 'declined').length;
 
   const tabs: { id: TabId; label: string; badge?: number }[] = [
-    { id: 'shifts', label: 'Tactical Shift Board', badge: openShifts },
-    { id: 'pipeline', label: 'Deployment Pipeline', badge: pendingWorkers },
-    { id: 'agencies', label: 'Agency Hub Registry' },
-    { id: 'rates', label: 'Fiscal Rate Cards' },
+    { id: 'shifts', label: 'Shift Board', badge: openShifts },
+    { id: 'pipeline', label: 'Worker Pipeline', badge: pendingWorkers },
+    { id: 'agencies', label: 'Agency List' },
+    { id: 'rates', label: 'Rate Cards' },
   ];
 
   return (
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-10">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center gap-4 mb-3">
-            <h1 className="text-4xl font-black text-white tracking-tighter text-shimmer">External Workforce Matrix</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter text-shimmer">Agency Staff</h1>
             {criticalShifts > 0 && (
               <span className="pill pill-red animate-pulse-soft text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-950/20 px-4">
                 {criticalShifts} Critical Gaps
@@ -557,7 +557,7 @@ export function AgencyPortalPage() {
             )}
           </div>
           <p className="text-hc-muted text-sm font-medium opacity-80 max-w-2xl leading-relaxed">
-            Live telemetry monitoring shift coverage, agent deployment cycles, and agency compliance integrity across the entire sector network.
+            Monitoring shift coverage, worker bookings, and agency compliance across all houses.
           </p>
         </div>
         
@@ -576,7 +576,7 @@ export function AgencyPortalPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-10 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-2xl w-fit mx-auto lg:mx-0">
+      <div className="flex gap-2 mb-6 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/5 shadow-xl w-fit mx-auto lg:mx-0">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center justify-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500

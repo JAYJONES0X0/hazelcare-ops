@@ -31,7 +31,7 @@ const HOUSES = [
 const CATEGORIES: { id: HandoverItem['category']; label: string; color: string; icon: string }[] = [
   { id: 'incident', label: 'Incident', color: '#ef4444', icon: 'M12 9v2m0 4h.01' },
   { id: 'medication', label: 'Medication', color: '#14b8a6', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
-  { id: 'client_update', label: 'Client Update', color: '#3b82f6', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' },
+  { id: 'client_update', label: 'Person Update', color: '#3b82f6', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' },
   { id: 'task', label: 'Outstanding Task', color: '#f59e0b', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   { id: 'general', label: 'General', color: '#64748b', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
 ];
@@ -87,7 +87,7 @@ export function HandoverPage() {
     let text = `SHIFT HANDOVER — ${house}\n`;
     text += `Date: ${now.toLocaleDateString('en-GB')}\n`;
     text += `Shift: ${shiftFrom} → ${shiftTo}\n`;
-    text += `Outgoing: ${staffOut || '___'} | Incoming: ${staffIn || '___'}\n`;
+    text += `Outgoing Staff: ${staffOut || '___'} | Incoming Staff: ${staffIn || '___'}\n`;
     text += `${'─'.repeat(50)}\n\n`;
 
     const grouped: Record<string, HandoverItem[]> = {};
@@ -100,7 +100,7 @@ export function HandoverPage() {
       if (!catItems?.length) continue;
       text += `${cat.label.toUpperCase()}\n`;
       for (const item of catItems) {
-        const flag = item.severity === 'red' ? ' [RED FLAG]' : item.severity === 'amber' ? ' [AMBER]' : '';
+        const flag = item.severity === 'red' ? ' [RED FLAG]' : item.severity === 'amber' ? ' [AMBER ALERT]' : '';
         const status = item.resolved ? ' ✓ Resolved' : '';
         text += `  • ${item.text}${flag}${status}\n`;
       }
@@ -145,30 +145,30 @@ export function HandoverPage() {
 
   return (
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-      <div className="mb-10">
-        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Shift Handover Protocol</h1>
+      <div className="mb-6">
+        <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Shift Handover Report</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-blue text-[10px] uppercase tracking-wider font-black shadow-lg">Continuity Engine</span>
+          <span className="pill pill-blue text-[10px] uppercase tracking-wider font-black shadow-lg">Shift Continuity</span>
           <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-            Constructing tactical intelligence for upcoming deployment cycles
+            Preparing information for the next shift team
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
         {/* Left — Input */}
         <div className="lg:col-span-3 space-y-6">
           {/* Meta */}
-          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl backdrop-blur-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
                 <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Cycle Transition</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Shift Transition</label>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {['Day → Night', 'Night → Day'].map(s => {
                     const [from, to] = s.split(' → ');
@@ -182,12 +182,12 @@ export function HandoverPage() {
                 </div>
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Outgoing Lead</label>
-                <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Agent ID" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Outgoing Staff</label>
+                <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Incoming Lead</label>
-                <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Agent ID" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Incoming Staff</label>
+                <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
             </div>
           </div>
@@ -218,7 +218,7 @@ export function HandoverPage() {
                 value={newText}
                 onChange={e => setNewText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addItem(); } }}
-                placeholder="Compose handover intelligence... (Enter to deploy)"
+                placeholder="Enter handover details... (Enter to add)"
                 className="flex-1 bg-hc-dark/60 border border-white/10 rounded-3xl p-6 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none scrollbar-thin font-medium italic"
                 rows={3}
               />
@@ -242,7 +242,7 @@ export function HandoverPage() {
                   ))}
                 </div>
                 <button onClick={addItem} disabled={!newText.trim()} className="flex-1 md:flex-none px-10 py-5 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-20 transition-all">
-                  DEPLOY
+                  ADD ITEM
                 </button>
               </div>
             </div>
@@ -250,7 +250,7 @@ export function HandoverPage() {
 
           {/* Items list */}
           <div className="space-y-3">
-            {items.length > 0 && <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">ACTIVE INTELLIGENCE LOG — {items.length} ITEMS</div>}
+            {items.length > 0 && <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">ACTIVE HANDOVER LOG — {items.length} ITEMS</div>}
             {items.map((item, idx) => {
               const cat = CATEGORIES.find(c => c.id === item.category);
               const isRed = item.severity === 'red';
@@ -284,9 +284,9 @@ export function HandoverPage() {
             
             {items.length === 0 && (
               <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
-                <div className="text-5xl mb-6 opacity-20">📡</div>
-                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Intelligence Feed Empty</div>
-                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Initiate handover components to populate stream</div>
+                <div className="text-5xl mb-6 opacity-20">📝</div>
+                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Handover List Empty</div>
+                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Add items above to build your shift handover report</div>
               </div>
             )}
           </div>
@@ -298,15 +298,15 @@ export function HandoverPage() {
             <div className="glass border-2 border-hc-teal/30 rounded-[2.5rem] overflow-hidden shadow-2xl glow-teal animate-in slide-in-from-right-4 duration-700">
               <div className="p-8 border-b border-white/10 bg-hc-teal/[0.02] flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-black text-white uppercase tracking-tighter text-shimmer">Protocol Preview</h3>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tighter text-shimmer">Report Preview</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{items.length} Points · {items.filter(i => !i.resolved).length} Unresolved</span>
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{items.length} Items · {items.filter(i => !i.resolved).length} Pending</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={copyToClipboard} className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 shadow-2xl hover:scale-105 active:scale-90 ${copied ? 'bg-flag-green text-white shadow-flag-green/30' : 'btn-gradient text-white'}`}>
-                    {copied ? 'SYNCHRONIZED' : 'TRANSMIT'}
+                    {copied ? 'COPIED' : 'COPY'}
                   </button>
                   <button onClick={saveHandover} disabled={items.length === 0} className="px-6 py-3.5 glass-light border border-white/10 text-[10px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-500 hover:bg-white/5 active:scale-90 disabled:opacity-20 disabled:grayscale">
                     LOG
@@ -315,7 +315,7 @@ export function HandoverPage() {
               </div>
               <div className="p-8">
                 <pre className="text-[12px] text-hc-text/90 font-mono leading-loose whitespace-pre-wrap max-h-[600px] overflow-y-auto scrollbar-thin italic">
-                  {items.length > 0 ? generateHandoverText() : '// Compose intelligence payload to see encrypted preview...'}
+                  {items.length > 0 ? generateHandoverText() : '// Your shift handover report will appear here...'}
                 </pre>
               </div>
             </div>
@@ -327,7 +327,7 @@ export function HandoverPage() {
                   <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </span>
-                  ARCHIVE REPOSITORY ({history.length})
+                  HANDOVER HISTORY ({history.length})
                 </button>
                 {showHistory && (
                   <div className="mt-6 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-700">
@@ -339,7 +339,7 @@ export function HandoverPage() {
                         </div>
                         <div className="flex items-center gap-4 transition-transform duration-500 group-hover/archive:translate-x-1">
                           <span className="pill pill-blue text-[8px] font-black py-0 px-2 shadow-sm">{h.shiftFrom} → {h.shiftTo}</span>
-                          <span className="text-[9px] font-black text-hc-muted/60 uppercase tracking-[0.3em] tabular-nums">{h.items.length} UNITS</span>
+                          <span className="text-[9px] font-black text-hc-muted/60 uppercase tracking-[0.3em] tabular-nums">{h.items.length} ITEMS</span>
                         </div>
                       </div>
                     ))}

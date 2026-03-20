@@ -81,9 +81,9 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
     <div className="bg-flag-red/5 border border-flag-red/30 rounded-2xl px-6 py-4 text-center mb-4 animate-in shake duration-500 shadow-2xl glow-red">
       <div className="text-flag-red text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 flex items-center justify-center gap-2">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-        Restricted Access
+        Staff Access Only
       </div>
-      <div className="text-hc-text text-[11px] font-medium leading-relaxed opacity-80 italic">"This terminal is secured. Unauthorized deployment is prohibited and subject to legal intervention under the Computer Misuse Act 1990."</div>
+      <div className="text-hc-text text-[11px] font-medium leading-relaxed opacity-80 italic">"This system is for authorised staff only. Unauthorised access is prohibited under the Computer Misuse Act 1990."</div>
     </div>
   );
 
@@ -94,18 +94,18 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
       <div className="absolute bottom-1/4 -right-32 w-[500px] h-[500px] bg-hc-blue/5 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
       <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-hc-purple/5 rounded-full blur-[100px]" />
 
-      <div className="flex flex-col gap-6 w-full max-sm relative z-10 animate-in zoom-in-95 duration-1000">
+      <div className="flex flex-col gap-4 w-full max-w-sm relative z-10 animate-in zoom-in-95 duration-1000">
         <div className="text-center mb-2">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center shadow-2xl glow-teal animate-float">
               <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-12 w-12 rounded-xl" />
             </div>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter text-shimmer leading-none mb-2 uppercase">HazelCare Ops</h1>
+          <h1 className="text-4xl font-black text-white tracking-tighter text-shimmer leading-none mb-2 uppercase">Hazel Care</h1>
           <p className="text-hc-muted text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
-            {step === 'password' && 'Initialize Terminal Access'}
-            {step === 'email' && 'Personnel Verification'}
-            {step === 'code' && `Transmission Verification`}
+            {step === 'password' && 'Sign In'}
+            {step === 'email' && 'Staff Verification'}
+            {step === 'code' && `Code Verification`}
           </p>
         </div>
 
@@ -117,54 +117,54 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
           {step === 'password' && (
             <form onSubmit={handlePassword} className="flex flex-col gap-6">
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PROTOCOL KEY</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PASSWORD</label>
                 <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
-                  placeholder="Enter Key..." autoFocus
+                  placeholder="Enter password..." autoFocus
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-black tracking-widest" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
-              <button type="submit" className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">Continue to Uplink</button>
+              <button type="submit" className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">Sign In</button>
             </form>
           )}
 
           {step === 'email' && (
             <form onSubmit={handleEmail} className="flex flex-col gap-6">
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PERSONNEL IDENTIFIER</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">EMAIL ADDRESS</label>
                 <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                  placeholder="agent@hazelcare.co.uk" autoFocus
+                  placeholder="staff@hazelcare.co.uk" autoFocus
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-bold" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
               <button type="submit" disabled={loading} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
-                {loading ? 'SYNCHRONIZING...' : 'Request Verification Code'}
+                {loading ? 'SENDING...' : 'Send Code'}
               </button>
-              <button type="button" onClick={() => setStep('password')} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Abort</button>
+              <button type="button" onClick={() => setStep('password')} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Back</button>
             </form>
           )}
 
           {step === 'code' && (
             <form onSubmit={handleCode} className="flex flex-col gap-6">
               <div className="bg-hc-teal/5 border border-hc-teal/20 rounded-2xl px-5 py-3 text-center mb-2">
-                <div className="text-hc-teal-light text-[10px] font-black uppercase tracking-widest leading-relaxed">Verification pulse transmitted. Enter signal code below.</div>
+                <div className="text-hc-teal-light text-[10px] font-black uppercase tracking-widest leading-relaxed">Verification code sent. Enter it below.</div>
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">6-DIGIT SYNC CODE</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">6-DIGIT CODE</label>
                 <input type="text" value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
                   placeholder="000000" autoFocus inputMode="numeric" maxLength={6}
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-hc-teal/50 shadow-inner tracking-[0.5em] text-center text-2xl font-black" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
               <button type="submit" disabled={loading || code.length < 6} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
-                {loading ? 'VERIFYING...' : 'Authorize Terminal'}
+                {loading ? 'VERIFYING...' : 'Verify'}
               </button>
-              <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); }} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Resend Signal</button>
+              <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); }} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Resend Code</button>
             </form>
           )}
         </div>
         
         <div className="text-center opacity-40">
-          <p className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em]">ArbiFlow v4.6 Operational OS</p>
+          <p className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em]">Hazel Care Ltd</p>
         </div>
       </div>
     </div>
@@ -189,8 +189,7 @@ import { ClientDiaryPage } from './pages/ClientDiaryPage';
 import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents } from './lib/storage';
-import { generateMockEntries, generateMockActions, generateMockIncidents, generateMockStaff } from './lib/mock-data';
-import { buildWeekSummary } from './lib/nourish-parser';
+
 
 export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency';
 
@@ -267,7 +266,7 @@ function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink:
           </div>
           <div>
             <div className="text-base font-black text-white tracking-tighter uppercase text-shimmer">{TOOL_LABELS[page] || 'Staff Tool'}</div>
-            <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">HazelCare Ops — Limited Staff Channel</div>
+            <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Hazel Care — Staff Access</div>
           </div>
         </div>
         <button onClick={onClose}
@@ -291,19 +290,8 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
   const [weekData, setWeekData] = useState<WeekSummary | null>(null);
   const [actions, setActions] = useState<Action[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [isDemo, setIsDemo] = useState(false);
+  const [staff] = useState<StaffMember[]>([]);
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
-
-  const loadDemoData = useCallback(() => {
-    const entries = generateMockEntries();
-    const summary = buildWeekSummary(entries);
-    setWeekData(summary);
-    setActions(generateMockActions());
-    setIncidents(generateMockIncidents());
-    setStaff(generateMockStaff());
-    setIsDemo(true);
-  }, []);
 
   useEffect(() => {
     const saved = loadWeekData();
@@ -313,15 +301,12 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
       setWeekData(saved);
       setActions(savedActions);
       setIncidents(savedIncidents);
-    } else {
-      loadDemoData();
     }
-  }, [loadDemoData]);
+  }, []);
 
   function handleDataParsed(data: WeekSummary) {
     setWeekData(data);
     saveWeekData(data);
-    setIsDemo(false);
     setPage('dashboard');
   }
 
@@ -351,22 +336,8 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
         weekData={weekData}
         actions={actions}
         incidents={incidents}
-        isDemo={isDemo}
-        onLoadDemo={loadDemoData}
       />
       <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin">
-        {isDemo && (
-          <div className="sticky top-0 z-30 glass border-b border-hc-teal/30 bg-hc-teal/[0.05] px-6 py-2.5 flex items-center justify-between shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-hc-teal-light animate-pulse shadow-[0_0_10px_#14b8a6]" />
-              <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em]">Simulation Mode — Pattern Synthesis from 10 Sector Nodes</span>
-            </div>
-            <button onClick={() => setPage('upload')} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-[0.2em] underline decoration-hc-teal/30 underline-offset-4 transition-all">
-              Initialize Live Transmission
-            </button>
-          </div>
-        )}
-
         {/* Staff share buttons on Staff Tools pages */}
         {(page === 'notes' || page === 'handover') && (
           <div className="px-8 pt-6 flex justify-end animate-in fade-in duration-1000">
@@ -375,7 +346,7 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
               className="group flex items-center gap-3 px-6 py-3 glass-light border border-white/10 text-hc-muted hover:text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl"
             >
               <svg className={`w-4 h-4 transition-transform ${showShareModal === page ? 'scale-125 text-flag-green' : 'group-hover:rotate-12'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-              {showShareModal === page ? 'LINK SYNCHRONIZED' : 'SECURE PERSONNEL UPLINK'}
+              {showShareModal === page ? 'Link Copied' : 'Share Staff Link'}
             </button>
           </div>
         )}

@@ -40,6 +40,22 @@ export function saveIncidents(incidents: Incident[]) {
   save({ incidents });
 }
 
+export function clearWeekData() {
+  save({ weekData: null });
+}
+
+export function clearActions() {
+  save({ actions: [] });
+}
+
+export function clearIncidents() {
+  save({ incidents: [] });
+}
+
+export function clearAllData() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function uid(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }

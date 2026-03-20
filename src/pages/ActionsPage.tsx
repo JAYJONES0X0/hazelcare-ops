@@ -74,13 +74,13 @@ export function ActionsPage({ actions, onUpdate }: Props) {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1200px] mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Action Tracker</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Action Tracker</h1>
           <div className="flex items-center gap-2">
-            <span className="pill pill-teal text-[10px] uppercase tracking-wider font-bold">Execution Engine</span>
+            <span className="pill pill-teal text-[10px] uppercase tracking-wider font-bold">Action Tracker</span>
             <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-2">
-              Track tactical maneuvers and accountability
+              Track tasks and accountability
             </span>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
       {/* Add form */}
       {showAdd && (
         <div className="glass border border-hc-teal/30 rounded-2xl p-6 mb-8 glow-teal animate-in slide-in-from-top-4 duration-500 shadow-2xl">
-          <h3 className="section-header mb-4 text-hc-teal-light">Deploy New Objective</h3>
+          <h3 className="section-header mb-4 text-hc-teal-light">Create New Action</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="md:col-span-2 lg:col-span-2">
               <label className="section-header text-[9px] mb-1.5 ml-1 block">Objective Title</label>
@@ -125,8 +125,8 @@ export function ActionsPage({ actions, onUpdate }: Props) {
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <button onClick={() => setShowAdd(false)} className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-hc-muted hover:text-white transition-colors">Abort</button>
-            <button onClick={addAction} className="px-8 py-2.5 btn-gradient rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg">Confirm Deployment</button>
+            <button onClick={() => setShowAdd(false)} className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-hc-muted hover:text-white transition-colors">Cancel</button>
+            <button onClick={addAction} className="px-8 py-2.5 btn-gradient rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg">Save Action</button>
           </div>
         </div>
       )}
@@ -230,7 +230,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         {sorted.length === 0 && (
           <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">🎯</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Mission Accomplished</div>
+            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">All Done</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">No active objectives matching these parameters</div>
           </div>
         )}

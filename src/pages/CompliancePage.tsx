@@ -23,26 +23,26 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
       <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
-          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">{staff.id && staff.name ? 'Refine Personnel Node' : 'Initialize New Node'}</h3>
-          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Compliance & Roster Protocol</p>
+          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">{staff.id && staff.name ? 'Edit Staff Member' : 'Add New Staff Member'}</h3>
+          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Compliance & Roster Details</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
           <div className="space-y-4">
             <div className="group">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Personnel Designation (Full Name)</label>
-              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Agent Alpha"
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Full Name</label>
+              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sarah Mitchell"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Operational Role</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Job Role</label>
                 <select value={form.role} onChange={e => set('role', e.target.value)}
                   className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Primary House</label>
                 <select value={form.house} onChange={e => set('house', e.target.value)}
                   className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
@@ -58,7 +58,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TRAIN EXPIRY</label>
+              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TRAINING EXPIRY</label>
               <input value={form.trainingExpiry} onChange={e => set('trainingExpiry', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
@@ -73,10 +73,10 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
             <button onClick={() => { if (form.name.trim()) onSave(form); }}
               disabled={!form.name.trim()}
               className="flex-[2] btn-gradient disabled:opacity-20 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
-              Commit Protocol
+              Save Staff Member
             </button>
             <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-2xl transition-all">
-              Abort
+              Cancel
             </button>
           </div>
         </div>
@@ -101,13 +101,13 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
       <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-blue/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
-          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Operational Audit</h3>
-          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Strategic Quality Control Scan</p>
+          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Service Audit</h3>
+          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Quality Control & Compliance Audit</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
               <select value={form.house} onChange={e => set('house', e.target.value)}
                 className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
@@ -131,19 +131,19 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Investigating Lead</label>
-              <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Agent ID"
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Completed By</label>
+              <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Name"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Findings & Data Notes</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Intelligence summary..."
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Findings & Observations</label>
+              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Summary of findings..."
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
             </div>
           </div>
           <div className="flex gap-4 pt-2">
-            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Store Audit Result</button>
-            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-xl transition-all">Abort</button>
+            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Save Audit Result</button>
+            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-xl transition-all">Cancel</button>
           </div>
         </div>
       </div>
@@ -155,15 +155,15 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
 // STATUS BADGE
 // ============================================================
 function StatusBadge({ status }: { status: 'ok' | 'due_soon' | 'overdue' }) {
-  if (status === 'overdue') return <span className="pill pill-red text-[9px] font-black px-2 shadow-lg animate-pulse-soft">CRITICAL OVERDUE</span>;
-  if (status === 'due_soon') return <span className="pill pill-amber text-[9px] font-black px-2 shadow-lg">SCAN PENDING</span>;
-  return <span className="pill pill-green text-[9px] font-black px-2 opacity-60">STATUS NOMINAL</span>;
+  if (status === 'overdue') return <span className="pill pill-red text-[9px] font-black px-2 shadow-lg animate-pulse-soft">OVERDUE</span>;
+  if (status === 'due_soon') return <span className="pill pill-amber text-[9px] font-black px-2 shadow-lg">DUE SOON</span>;
+  return <span className="pill pill-green text-[9px] font-black px-2 opacity-60">COMPLIANT</span>;
 }
 
 function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: number }) {
-  if (!dateStr) return <span className="text-[10px] text-hc-muted/40 font-bold uppercase italic tracking-widest">IDLE</span>;
+  if (!dateStr) return <span className="text-[10px] text-hc-muted/40 font-bold uppercase italic tracking-widest">—</span>;
   const d = daysUntil(dateStr);
-  if (d < 0) return <span className="text-[10px] text-flag-red font-black tabular-nums">{Math.abs(d)}D DELAY</span>;
+  if (d < 0) return <span className="text-[10px] text-flag-red font-black tabular-nums">{Math.abs(d)}D OVERDUE</span>;
   if (d < warnDays) return <span className="text-[10px] text-flag-amber font-black tabular-nums">{d}D REMAINING</span>;
   return <span className="text-[10px] text-hc-text font-black tabular-nums tracking-widest">{dateStr}</span>;
 }
@@ -218,14 +218,14 @@ export function CompliancePage() {
     const out: { label: string; house: string; person: string; date: string; type: string; status: 'ok' | 'due_soon' | 'overdue'; notes?: string }[] = [];
 
     for (const s of staffList) {
-      if (s.dbsExpiry) out.push({ label: `DBS Protocol — ${s.name}`, house: s.house, person: s.name, date: s.dbsExpiry, type: 'DBS', status: staffStatus(s.dbsExpiry, 60) });
-      if (s.trainingExpiry) out.push({ label: `Tactical Training — ${s.name}`, house: s.house, person: s.name, date: s.trainingExpiry, type: 'Training', status: staffStatus(s.trainingExpiry, 30) });
-      if (s.nextSupervision) out.push({ label: `Leadership Supervision — ${s.name}`, house: s.house, person: s.name, date: s.nextSupervision, type: 'Supervision', status: staffStatus(s.nextSupervision, 7) });
+      if (s.dbsExpiry) out.push({ label: `DBS Renewal — ${s.name}`, house: s.house, person: s.name, date: s.dbsExpiry, type: 'DBS', status: staffStatus(s.dbsExpiry, 60) });
+      if (s.trainingExpiry) out.push({ label: `Staff Training — ${s.name}`, house: s.house, person: s.name, date: s.trainingExpiry, type: 'Training', status: staffStatus(s.trainingExpiry, 30) });
+      if (s.nextSupervision) out.push({ label: `Staff Supervision — ${s.name}`, house: s.house, person: s.name, date: s.nextSupervision, type: 'Supervision', status: staffStatus(s.nextSupervision, 7) });
     }
 
     for (const a of audits) {
       const cfg = AUDIT_TYPES.find(t => t.id === a.type);
-      out.push({ label: `${cfg?.label || a.type} Scan — ${a.house}`, house: a.house, person: a.completedBy, date: a.dueDate, type: cfg?.label || a.type, status: staffStatus(a.dueDate, 14), notes: a.notes });
+      out.push({ label: `${cfg?.label || a.type} Audit — ${a.house}`, house: a.house, person: a.completedBy, date: a.dueDate, type: cfg?.label || a.type, status: staffStatus(a.dueDate, 14), notes: a.notes });
     }
 
     return out;
@@ -244,13 +244,13 @@ export function CompliancePage() {
   return (
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Compliance Tactical Hub</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Compliance & Quality</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Integrity Matrix</span>
+            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Compliance Status</span>
             <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-              DBS · Tactical Training · Personnel Supervision · System Audits
+              DBS · Training · Supervision · Service Audits
             </p>
           </div>
         </div>
@@ -258,40 +258,40 @@ export function CompliancePage() {
           <button onClick={() => setEditAudit(emptyAudit())}
             className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-blue/30 group shadow-xl">
             <svg className="w-4 h-4 text-hc-blue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-            Add Audit
+            Log Audit
           </button>
           <button onClick={() => setEditStaff(emptyStaff())}
             className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Add Personnel
+            Add Staff Member
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'FLEET READINESS', value: `${compRate}%`, color: compColor, sub: `${items.length} Vector points tracked` },
-          { label: 'OVERDUE VECTORS', value: overdue.length, color: '#ef4444', sub: 'Critical intervention required', glow: 'glow-red' },
-          { label: 'UPCOMING EXPIRIES', value: dueSoon.length, color: '#f59e0b', sub: 'Next 30-day window', glow: 'glow-amber' },
-          { label: 'SECURE NODES', value: ok.length, color: '#22c55e', sub: 'Operational status nominal' },
+          { label: 'OVERALL COMPLIANCE', value: `${compRate}%`, color: compColor, sub: `${items.length} items tracked` },
+          { label: 'OVERDUE ITEMS', value: overdue.length, color: '#ef4444', sub: 'Action required', glow: 'glow-red' },
+          { label: 'DUE SOON', value: dueSoon.length, color: '#f59e0b', sub: 'Next 30 days', glow: 'glow-amber' },
+          { label: 'COMPLIANT ITEMS', value: ok.length, color: '#22c55e', sub: 'Status: Good' },
         ].map(s => (
-          <div key={s.label} className={`glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
+          <div key={s.label} className={`glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
-            <div className="section-header text-[9px] mb-3 opacity-60 tracking-[0.2em]">{s.label}</div>
-            <div className="text-4xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 30px ${s.color}40` }}>{s.value}</div>
+            <div className="section-header text-[8px] md:text-[9px] mb-1.5 opacity-60 tracking-[0.15em]">{s.label}</div>
+            <div className="text-2xl md:text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 30px ${s.color}40` }}>{s.value}</div>
             <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-2 opacity-40 group-hover:opacity-100 transition-opacity">{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-2xl mb-10 w-fit mx-auto md:mx-0">
+      <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/5 shadow-xl mb-6 w-fit mx-auto md:mx-0">
         {(['overview', 'staff', 'audits'] as const).map(id => (
           <button key={id} onClick={() => setTab(id)}
             className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.25rem] transition-all duration-500 ease-out active:scale-95
               ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-            {id === 'overview' ? 'Command Overview' : id === 'staff' ? 'Personnel Registry' : 'Audit Repository'}
+            {id === 'overview' ? 'Overview' : id === 'staff' ? 'Staff Records' : 'Audit Logs'}
           </button>
         ))}
       </div>
@@ -304,9 +304,9 @@ export function CompliancePage() {
               <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 group">
                 <svg className="w-10 h-10 text-hc-muted group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Compliance Telemetry</h2>
-              <p className="text-sm text-hc-muted max-w-sm mb-10 font-medium leading-relaxed opacity-80">Initialize personnel registry and audit scans to populate the integrity matrix.</p>
-              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Initialize Personnel</button>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Compliance Data</h2>
+              <p className="text-sm text-hc-muted max-w-sm mb-10 font-medium leading-relaxed opacity-80">Add staff profiles and log audits to start tracking compliance.</p>
+              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Add Staff Member</button>
             </div>
           )}
 
@@ -314,7 +314,7 @@ export function CompliancePage() {
             <div className="animate-in slide-in-from-left-4 duration-700">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-red glow-red animate-pulse" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Critical Breaches — {overdue.length} Vectors</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Critical Overdue — {overdue.length} Items</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {overdue.map((item, i) => (
@@ -337,7 +337,7 @@ export function CompliancePage() {
             <div className="animate-in slide-in-from-left-4 duration-700 delay-150">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-amber glow-amber" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Incoming Deadlines — {dueSoon.length} Vectors</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Upcoming Expiries — {dueSoon.length} Items</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {dueSoon.map((item, i) => (
@@ -356,11 +356,11 @@ export function CompliancePage() {
             </div>
           )}
 
-          {ok.length > 0 && (
+          {ok.length > 0 && overdue.length === 0 && (
             <div className="animate-in slide-in-from-left-4 duration-700 delay-300">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-green shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Nominal Infrastructure — {ok.length} Vectors</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Compliant Status — {ok.length} Items</h2>
               </div>
               <div className="glass-light border border-white/5 rounded-[2rem] px-8 py-6 text-sm text-hc-muted font-medium flex items-center justify-between shadow-xl">
                 <div className="flex items-center gap-4">
@@ -368,11 +368,11 @@ export function CompliancePage() {
                     <svg className="w-6 h-6 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
-                    <span className="text-white font-black uppercase tracking-widest block mb-0.5">Secure Vector Matrix</span>
-                    <span>All other compliance vectors are current across the entire fleet.</span>
+                    <span className="text-white font-black uppercase tracking-widest block mb-0.5">Service-Wide Compliance</span>
+                    <span>All compliance checks are up to date across the service.</span>
                   </div>
                 </div>
-                <div className="pill pill-teal text-[10px] font-black px-4 py-1 animate-pulse-soft shadow-lg">SYSTEMS NOMINAL</div>
+                <div className="pill pill-teal text-[10px] font-black px-4 py-1 animate-pulse-soft shadow-lg">GOOD STATUS</div>
               </div>
             </div>
           )}
@@ -384,10 +384,10 @@ export function CompliancePage() {
         <div className="animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-white/5 p-5 rounded-[2rem] shadow-xl backdrop-blur-xl">
             <div className="flex items-center gap-4">
-              <span className="section-header text-[10px] tracking-[0.2em]">Registry Filter</span>
+              <span className="section-header text-[10px] tracking-[0.2em]">Filter by House</span>
               <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
                 className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]">
-                <option value="all">Entire Personnel Fleet ({staffList.length})</option>
+                <option value="all">All Staff Members ({staffList.length})</option>
                 {HAZELCARE_HOUSES.map(h => {
                   const c = staffList.filter(s => s.house === h).length;
                   return c > 0 ? <option key={h} value={h}>{h} ({c})</option> : null;
@@ -395,16 +395,16 @@ export function CompliancePage() {
               </select>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] tabular-nums">Registry Nodes: {filteredStaff.length} Agents</span>
+              <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] tabular-nums">Showing: {filteredStaff.length} Staff</span>
             </div>
           </div>
 
           {filteredStaff.length === 0 ? (
             <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem]">
               <div className="text-5xl mb-6 opacity-20 grayscale">👥</div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Zero Personnel Found</h2>
-              <p className="text-sm text-hc-muted max-w-sm mx-auto mb-10 font-medium leading-relaxed opacity-80">Adjust filter parameters or initialize new personnel nodes.</p>
-              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Deploy Agent</button>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Profiles Found</h2>
+              <p className="text-sm text-hc-muted max-w-sm mx-auto mb-10 font-medium leading-relaxed opacity-80">Adjust filter or add a new staff member.</p>
+              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Add Staff Profile</button>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
@@ -429,28 +429,28 @@ export function CompliancePage() {
                           <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{s.role}</span>
                             <span className="w-1 h-1 rounded-full bg-white/10" />
-                            <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{s.house} Node</span>
+                            <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{s.house}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-8 relative z-10 md:px-10 md:border-x md:border-white/5">
                         <div className="flex flex-col gap-1">
-                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">DBS STATUS</span>
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">DBS EXPIRY</span>
                           <div className="flex items-center gap-2">
                             <DaysChip dateStr={s.dbsExpiry} warnDays={60} />
                             <StatusBadge status={dbsS} />
                           </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">TRAINING CYCLE</span>
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">TRAINING DUE</span>
                           <div className="flex items-center gap-2">
                             <DaysChip dateStr={s.trainingExpiry} />
                             <StatusBadge status={trainS} />
                           </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LEADERSHIP SUP.</span>
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">SUPERVISION</span>
                           <div className="flex items-center gap-2">
                             <DaysChip dateStr={s.nextSupervision} warnDays={7} />
                             <StatusBadge status={supS} />
@@ -464,8 +464,8 @@ export function CompliancePage() {
                         </button>
                         {deleteConfirm === s.id ? (
                           <div className="flex gap-2 animate-in slide-in-from-right-4 duration-300">
-                            <button onClick={() => deleteStaff(s.id)} className="px-4 py-2 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-flag-red/30 shadow-lg">PURGE</button>
-                            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 glass-light border border-white/10 text-hc-muted text-[10px] font-black uppercase tracking-widest rounded-xl hover:text-white">ABORT</button>
+                            <button onClick={() => deleteStaff(s.id)} className="px-4 py-2 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-flag-red/30 shadow-lg">DELETE</button>
+                            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 glass-light border border-white/10 text-hc-muted text-[10px] font-black uppercase tracking-widest rounded-xl hover:text-white">CANCEL</button>
                           </div>
                         ) : (
                           <button onClick={() => setDeleteConfirm(s.id)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/30 transition-all shadow-lg group/btn">
@@ -490,9 +490,9 @@ export function CompliancePage() {
               <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 mx-auto">
                 <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               </div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Audit Repository Empty</h2>
-              <p className="text-sm text-hc-muted max-w-md mx-auto mb-10 font-medium leading-relaxed opacity-80">System audits for medication, fire safety, and CQC requirements are pending initialization.</p>
-              <button onClick={() => setEditAudit(emptyAudit())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Initiate Scan</button>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Audit Logs Yet</h2>
+              <p className="text-sm text-hc-muted max-w-md mx-auto mb-10 font-medium leading-relaxed opacity-80">Service audits for medication, fire safety, and environmental checks are pending initialization.</p>
+              <button onClick={() => setEditAudit(emptyAudit())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Add Audit Record</button>
             </div>
           ) : (
             <div className="space-y-12">
@@ -503,9 +503,9 @@ export function CompliancePage() {
                   <div key={atype.id} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${groupIdx * 100}ms` }}>
                     <div className="flex items-center gap-4 mb-5 px-2">
                       <h3 className="text-lg font-black uppercase tracking-tight text-white transition-all" style={{ color: atype.color }}>
-                        {atype.label} Protocol
+                        {atype.label} Records
                       </h3>
-                      <span className="pill pill-teal text-[10px] font-black px-3">{typeAudits.length} Records</span>
+                      <span className="pill pill-teal text-[10px] font-black px-3">{typeAudits.length} Audits</span>
                       <div className="flex-1 h-px bg-white/5" />
                     </div>
                     
@@ -518,29 +518,29 @@ export function CompliancePage() {
                             <div className="flex items-start justify-between mb-4">
                               <div>
                                 <div className="text-[15px] font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tight leading-none mb-1.5">{a.house}</div>
-                                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Node Integrity Scan</div>
+                                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Service Audit</div>
                               </div>
                               <StatusBadge status={s} />
                             </div>
                             
                             <div className="flex flex-wrap items-center gap-6 mb-6 pb-5 border-b border-white/5">
                               <div className="flex flex-col gap-1">
-                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LAST SCAN</span>
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LAST COMPLETED</span>
                                 <span className="text-[11px] font-bold text-white/80 tabular-nums tracking-widest">{a.lastCompleted || 'PENDING'}</span>
                               </div>
                               <div className="flex flex-col gap-1">
-                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">NEXT SCAN</span>
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">NEXT DUE</span>
                                 <DaysChip dateStr={a.dueDate} warnDays={14} />
                               </div>
                               <div className="flex flex-col gap-1 ml-auto text-right">
-                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">SCAN LEAD</span>
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">COMPLETED BY</span>
                                 <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{a.completedBy || 'UNASSIGNED'}</span>
                               </div>
                             </div>
                             
                             {a.notes && (
                               <div className="mb-6 p-4 bg-black/20 rounded-xl border border-white/5">
-                                <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-50">Telemetry Analysis</div>
+                                <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-50">Audit Findings</div>
                                 <p className="text-[11px] font-medium text-hc-text leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">"{a.notes}"</p>
                               </div>
                             )}
@@ -568,15 +568,15 @@ export function CompliancePage() {
                         <svg className="w-8 h-8 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Incomplete Coverage</h3>
-                        <p className="text-sm text-flag-amber/70 font-medium leading-relaxed mb-4">The following nodes have zero documented audit activity. Security and quality coverage is missing.</p>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Audit Gaps Identified</h3>
+                        <p className="text-sm text-flag-amber/70 font-medium leading-relaxed mb-4">The following houses have no documented audit activity. Quality assurance coverage is currently missing.</p>
                         <div className="flex flex-wrap gap-2">
                           {HAZELCARE_HOUSES.filter(h => !housesInAudits.includes(h)).map(h => (
                             <span key={h} className="pill pill-amber text-[10px] font-black px-3 py-1 shadow-lg">{h}</span>
                           ))}
                         </div>
                       </div>
-                      <button onClick={() => setEditAudit(emptyAudit())} className="ml-auto btn-gradient px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Resolve Gaps</button>
+                      <button onClick={() => setEditAudit(emptyAudit())} className="ml-auto btn-gradient px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Log Audit</button>
                     </div>
                   </div>
                 </div>

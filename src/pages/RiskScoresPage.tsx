@@ -23,7 +23,17 @@ export function RiskScoresPage({ weekData }: Props) {
     });
   }, [profiles, filterLevel, searchTerm]);
 
-  if (!weekData) return null;
+  if (!weekData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 animate-in fade-in duration-700">
+        <div className="w-24 h-24 rounded-2xl glass border border-hc-teal/20 flex items-center justify-center mb-8 glow-teal animate-float">
+          <svg className="w-12 h-12 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Risk Scores</h2>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import Nourish data to generate risk profiles and scores for each person.</p>
+      </div>
+    );
+  }
 
   function getRiskPill(level: string) {
     switch (level) {
@@ -46,11 +56,11 @@ export function RiskScoresPage({ weekData }: Props) {
     <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer uppercase leading-none">Predictive Risk Matrix</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer uppercase leading-none">Risk Overview</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-amber text-[10px] font-black uppercase tracking-wider shadow-lg">Vector Stratification</span>
+            <span className="pill pill-amber text-[10px] font-black uppercase tracking-wider shadow-lg">Risk Levels</span>
             <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-              Analyzing behavioral telemetry to quantify fleet safeguard levels
+              Reviewing risk levels across all people
             </p>
           </div>
         </div>
@@ -70,7 +80,7 @@ export function RiskScoresPage({ weekData }: Props) {
                   : 'bg-white/5 text-hc-muted hover:text-white hover:bg-white/10'
               }`}
             >
-              {level === 'all' ? 'Entire Fleet' : level}
+              {level === 'all' ? 'All Houses' : level}
               {level !== 'all' && (
                 <span className={`ml-3 px-2 py-0.5 rounded-lg tabular-nums ${filterLevel === level ? 'bg-white/20' : 'bg-white/5 opacity-40'}`}>
                   {stats[level as keyof typeof stats]}
@@ -82,7 +92,7 @@ export function RiskScoresPage({ weekData }: Props) {
         <div className="flex-1 relative group">
           <input
             type="text"
-            placeholder="Search tactical nodes (name or house)..."
+            placeholder="Search by name or house..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-12 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
@@ -117,12 +127,11 @@ export function RiskScoresPage({ weekData }: Props) {
                   </div>
                   <div>
                     <div className="text-lg font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter uppercase leading-none mb-1.5">{client.name}</div>
-                    <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{client.house} Node</div>
+                    <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{client.house}</div>
                   </div>
                 </div>
                 <span className={`pill text-[9px] font-black uppercase tracking-widest shadow-xl ${getRiskPill(client.riskLevel)} px-3 py-1`}>
-                  {client.riskLevel} STRAT
-                </span>
+                  {client.riskLevel}                </span>
               </div>
 
               <div className="flex items-center gap-6 mb-6 pb-5 border-b border-white/5 relative z-10">
@@ -166,7 +175,7 @@ export function RiskScoresPage({ weekData }: Props) {
               <div className="mt-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0 relative z-10">
                 <span className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.2em] flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-hc-teal shadow-[0_0_5px_#14b8a6]" />
-                  Open Intelligence File
+                  View Details
                 </span>
                 <div className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg group-hover:bg-hc-teal/10 transition-colors">
                   <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -190,7 +199,7 @@ export function RiskScoresPage({ weekData }: Props) {
                   <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-1">{selectedClient.name}</h3>
                   <div className="flex items-center gap-3">
                     <span className={`pill text-[10px] font-black uppercase tracking-widest ${getRiskPill(selectedClient.riskLevel)}`}>{selectedClient.riskLevel} STRAT</span>
-                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">{selectedClient.house} Node</span>
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">{selectedClient.house}</span>
                   </div>
                 </div>
               </div>
@@ -208,8 +217,8 @@ export function RiskScoresPage({ weekData }: Props) {
                 </div>
               </section>
               <section>
-                <div className="section-header text-[10px] mb-4 opacity-40 tracking-[0.3em]">STRATEGIC DIRECTIVE</div>
-                <p className="text-hc-text text-sm leading-relaxed italic border-l-2 border-hc-teal pl-6 font-medium">"Initiate high-frequency pattern surveillance. Correlate behavioral telemetry with recent environmental shifts. Keyworker recalibration required within next 24-hour cycle."</p>
+                <div className="section-header text-[10px] mb-4 opacity-40 tracking-[0.3em]">RECOMMENDED ACTION</div>
+                <p className="text-hc-text text-sm leading-relaxed italic border-l-2 border-hc-teal pl-6 font-medium">"Review care notes more frequently. Look at any recent changes in environment or routine. Keyworker should check in within the next 24 hours."</p>
               </section>
               <div className="flex justify-end pt-4">
                 <button

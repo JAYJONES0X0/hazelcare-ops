@@ -106,19 +106,16 @@ function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript:
     >
       <div className={`w-2 h-2 rounded-full ${listening ? 'bg-red-500 animate-ping' : 'bg-hc-teal'}`} />
       <span className="text-[10px]">
-        {listening ? 'TRANSMITTING VOICE...' : `${lang?.flag} DICTATE ${lang?.label?.split(' ')[0]}`}
+        {listening ? 'RECORDING VOICE...' : `${lang?.flag} DICTATE ${lang?.label?.split(' ')[0]}`}
       </span>
     </button>
   );
 }
 
-// ============================================================
-// ALL 43 NOURISH DIARY TYPES — FULL COVERAGE
-// ============================================================
 interface NoteType {
   id: string;
   label: string;
-  group: 'client' | 'carer' | 'meeting' | 'auto';
+  group: 'client' | 'staff' | 'meeting' | 'auto';
   color: string;
   prompts: { key: string; label: string; placeholder: string; required?: boolean }[];
 }
@@ -126,259 +123,107 @@ interface NoteType {
 const NOTE_TYPES: NoteType[] = [
   // ── CLIENT NOTES ───────────────────────────────────────────
   {
-    id: 'daily_support', label: 'Daily 1:1 Support', group: 'client', color: '#14b8a6',
+    id: 'daily_support', label: 'Daily Support Entry', group: 'client', color: '#14b8a6',
     prompts: [
-      { key: 'mood', label: 'How was the client\'s mood and presentation?', placeholder: 'e.g. Client appeared calm and engaged, good eye contact, responded well to prompts...', required: true },
+      { key: 'mood', label: 'How was the person\'s mood and presentation?', placeholder: 'e.g. Appeared calm and engaged, good eye contact, responded well to prompts...', required: true },
       { key: 'activities', label: 'What activities or support was provided?', placeholder: 'e.g. Supported with personal care, attended community group, cooked lunch together...' },
       { key: 'concerns', label: 'Any concerns or observations?', placeholder: 'e.g. Mentioned feeling anxious about upcoming appointment, appeared quieter than usual...' },
-      { key: 'followup', label: 'Follow-up actions needed?', placeholder: 'e.g. Monitor mood, remind about Thursday appointment, inform keyworker...' },
+      { key: 'followup', label: 'Follow-up actions needed?', placeholder: 'e.g. Monitor mood, remind about Thursday appointment, inform key worker...' },
     ],
   },
   {
-    id: 'keyworker_session', label: 'Keyworker Session', group: 'client', color: '#0f766e',
+    id: 'keyworker_session', label: 'Key Worker Session', group: 'client', color: '#0f766e',
     prompts: [
-      { key: 'topics', label: 'What topics were discussed in the session?', placeholder: 'e.g. Reviewed care plan goals, discussed community access, talked through recent concerns...', required: true },
-      { key: 'client_views', label: 'What were the client\'s views and wishes?', placeholder: 'e.g. Client expressed desire to go to college, happy with current support...' },
-      { key: 'progress', label: 'Progress against care plan goals?', placeholder: 'e.g. Making good progress with independence. Has started cooking 2 meals per week independently...' },
+      { key: 'topics', label: 'What topics were discussed in the session?', placeholder: 'e.g. Reviewed support plan goals, discussed community access, talked through recent concerns...', required: true },
+      { key: 'client_views', label: 'What were the person\'s views and wishes?', placeholder: 'e.g. Expressed desire to go to college, happy with current support...' },
+      { key: 'progress', label: 'Progress against support plan goals?', placeholder: 'e.g. Making good progress with independence. Has started cooking 2 meals per week independently...' },
       { key: 'risks', label: 'Any risks or safeguarding matters?', placeholder: 'e.g. No new concerns. Previous concern regarding finances resolved...' },
-      { key: 'actions', label: 'Agreed actions before next session?', placeholder: 'e.g. Client to try bus journey independently. Review funding application next week...' },
-      { key: 'next', label: 'Next keyworker session date?', placeholder: 'e.g. 4 weeks — 14/04/2026' },
+      { key: 'actions', label: 'Agreed actions before next session?', placeholder: 'e.g. Person to try bus journey independently. Review funding application next week...' },
+      { key: 'next', label: 'Next key worker session date?', placeholder: 'e.g. 4 weeks — 14/04/2026' },
     ],
   },
   {
-    id: 'care_review', label: 'Care Review', group: 'client', color: '#0f766e',
+    id: 'care_review', label: 'Care & Support Review', group: 'client', color: '#0f766e',
     prompts: [
-      { key: 'attendees', label: 'Who attended the review?', placeholder: 'e.g. Client, keyworker, social worker, family member, house coordinator...', required: true },
-      { key: 'current_plan', label: 'How is the current care plan working?', placeholder: 'e.g. Plan is broadly working well. Client achieving most goals. Medication support still required...' },
-      { key: 'client_views', label: 'Client\'s views on their care?', placeholder: 'e.g. Happy with support staff. Would like more community access. Finds morning routine rushed...' },
-      { key: 'changes', label: 'Changes to care plan agreed?', placeholder: 'e.g. Increase community access to 3x per week. Reduce prompting for personal care...' },
+      { key: 'attendees', label: 'Who attended the review?', placeholder: 'e.g. Client, key worker, social worker, family member, house coordinator...', required: true },
+      { key: 'current_plan', label: 'How is the current support plan working?', placeholder: 'e.g. Plan is broadly working well. Achieving most goals. Medication support still required...' },
+      { key: 'client_views', label: 'Person\'s views on their care?', placeholder: 'e.g. Happy with support staff. Would like more community access. Finds morning routine rushed...' },
+      { key: 'changes', label: 'Changes to support plan agreed?', placeholder: 'e.g. Increase community access to 3x per week. Reduce prompting for personal care...' },
       { key: 'risks', label: 'Risk assessment updates?', placeholder: 'e.g. Risk around finances to be updated. PBS to be reviewed following recent incidents...' },
       { key: 'next_review', label: 'Next review date?', placeholder: 'e.g. 6 months — September 2026' },
     ],
   },
   {
-    id: 'handover', label: 'Handover', group: 'client', color: '#3b82f6',
+    id: 'handover', label: 'Shift Handover', group: 'client', color: '#3b82f6',
     prompts: [
-      { key: 'events', label: 'Key events this shift?', placeholder: 'e.g. Quiet shift overall. Client A attended day centre, Client B had GP appointment...', required: true },
-      { key: 'clients', label: 'Client updates?', placeholder: 'e.g. Client B refused dinner, offered alternative and accepted. Client C had positive mood all day...' },
-      { key: 'outstanding', label: 'Outstanding tasks for next shift?', placeholder: 'e.g. Medication round at 20:00, laundry needs completing, log to be submitted...' },
-      { key: 'nextshift', label: 'Anything critical for incoming staff?', placeholder: 'e.g. GP calling back about Client A tomorrow morning. Night check required for Client C...' },
+      { key: 'events', label: 'Key events this shift?', placeholder: 'e.g. Quiet shift overall. Person A attended day centre, Person B had GP appointment...', required: true },
+      { key: 'clients', label: 'Client updates?', placeholder: 'e.g. Person B refused dinner, offered alternative and accepted. Person C had positive mood all day...' },
+      { key: 'outstanding', label: 'Outstanding tasks for next shift?', placeholder: 'e.g. Medication round at 20:00, laundry needs completing, entry to be submitted...' },
+      { key: 'nextshift', label: 'Anything critical for incoming staff?', placeholder: 'e.g. GP calling back about Person A tomorrow morning. Night check required for Person C...' },
     ],
   },
   {
-    id: 'abc_chart', label: 'ABC Chart', group: 'client', color: '#ef4444',
+    id: 'abc_chart', label: 'ABC Chart (Behavior)', group: 'client', color: '#ef4444',
     prompts: [
-      { key: 'antecedent', label: 'Antecedent — What happened before the behaviour?', placeholder: 'e.g. Staff asked client to turn off TV at 21:00. Client had not eaten dinner. Loud noise from outside...', required: true },
-      { key: 'behaviour', label: 'Behaviour — What did the client do?', placeholder: 'e.g. Client shouted at staff, threw remote control, paced around room for 10 minutes...', required: true },
-      { key: 'consequence', label: 'Consequence — What happened as a result?', placeholder: 'e.g. Staff used low arousal approach. Client de-escalated after 15 minutes. Offered alternative activity...' },
+      { key: 'antecedent', label: 'What happened before the behavior?', placeholder: 'e.g. Staff asked to turn off TV at 21:00. Person had not eaten dinner. Loud noise from outside...', required: true },
+      { key: 'behaviour', label: 'Behavior — What did the person do?', placeholder: 'e.g. Shouted at staff, threw remote control, paced around room for 10 minutes...', required: true },
+      { key: 'consequence', label: 'What happened as a result?', placeholder: 'e.g. Staff used low arousal approach. Person de-escalated after 15 minutes. Offered alternative activity...' },
       { key: 'intensity', label: 'Intensity and duration?', placeholder: 'e.g. High intensity — lasted approximately 15 minutes before de-escalating' },
-      { key: 'action', label: 'Actions taken and by whom?', placeholder: 'e.g. PBS strategies followed. Redirected to preferred activity. Keyworker notified...' },
+      { key: 'action', label: 'Actions taken and by whom?', placeholder: 'e.g. PBS strategies followed. Redirected to preferred activity. Key worker notified...' },
     ],
   },
   {
     id: 'incident', label: 'Accident / Incident', group: 'client', color: '#dc2626',
     prompts: [
-      { key: 'what', label: 'What happened?', placeholder: 'e.g. Client fell in bathroom while getting out of shower...', required: true },
+      { key: 'what', label: 'What happened?', placeholder: 'e.g. Person fell in bathroom while getting out of shower...', required: true },
       { key: 'when', label: 'When did it happen (date/time)?', placeholder: 'e.g. 12/03/2026 at approximately 06:30' },
-      { key: 'who', label: 'Who was involved?', placeholder: 'e.g. Client: [Name]. Staff present: Sarah Mitchell...' },
-      { key: 'injuries', label: 'Any injuries?', placeholder: 'e.g. Small bruise on left forearm. No head injury. Client alert and oriented.' },
+      { key: 'who', label: 'Who was involved?', placeholder: 'e.g. Person: [Name]. Staff present: Sarah Mitchell...' },
+      { key: 'injuries', label: 'Any injuries?', placeholder: 'e.g. Small bruise on left forearm. No head injury. Person alert and oriented.' },
       { key: 'action', label: 'What action was taken?', placeholder: 'e.g. First aid administered. Ice pack applied. GP notified by phone...' },
       { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. House coordinator, on-call manager, GP surgery, family (NOK)...' },
     ],
   },
   {
-    id: 'incident_audit', label: 'Accident and Incidents Audit', group: 'client', color: '#dc2626',
+    id: 'safeguarding', label: 'Safeguarding Record', group: 'client', color: '#be185d',
     prompts: [
-      { key: 'period', label: 'Audit period covered?', placeholder: 'e.g. March 2026 — Cottrell House', required: true },
-      { key: 'total', label: 'Total number of incidents?', placeholder: 'e.g. 4 incidents recorded this month — 2 falls, 1 challenging behaviour, 1 medication error' },
-      { key: 'themes', label: 'Themes or patterns identified?', placeholder: 'e.g. 3 of 4 incidents occurred during evening shift. Falls cluster in Client A...' },
-      { key: 'actions', label: 'Actions taken to reduce incidents?', placeholder: 'e.g. Additional risk assessment completed. Moving/handling refresher booked...' },
-      { key: 'learning', label: 'Learning outcomes?', placeholder: 'e.g. PBS strategy updated. New grab rail fitted. Night check frequency increased...' },
-    ],
-  },
-  {
-    id: 'safeguarding', label: 'Safeguarding', group: 'client', color: '#be185d',
-    prompts: [
-      { key: 'concern', label: 'What is the safeguarding concern?', placeholder: 'e.g. Client disclosed that another resident made threatening comments...', required: true },
+      { key: 'concern', label: 'What is the safeguarding concern?', placeholder: 'e.g. Person disclosed that another resident made threatening comments...', required: true },
       { key: 'who', label: 'Who is involved?', placeholder: 'e.g. Alleged victim: Robert Ellis. Alleged perpetrator: unnamed resident...' },
-      { key: 'disclosure', label: 'How was it disclosed/discovered?', placeholder: 'e.g. Client told staff member during 1:1 session...' },
-      { key: 'action', label: 'Immediate actions taken?', placeholder: 'e.g. Ensured client safety. Statements taken. Manager notified...' },
+      { key: 'disclosure', label: 'How was it disclosed/discovered?', placeholder: 'e.g. Person told staff member during 1:1 session...' },
+      { key: 'action', label: 'Immediate actions taken?', placeholder: 'e.g. Ensured person\'s safety. Statements taken. Manager notified...' },
       { key: 'referral', label: 'Referrals made?', placeholder: 'e.g. Local authority safeguarding team contacted. Reference number pending...' },
-    ],
-  },
-  {
-    id: 'concern', label: 'Concern', group: 'client', color: '#d97706',
-    prompts: [
-      { key: 'concern', label: 'What is the concern?', placeholder: 'e.g. Client appeared withdrawn and refused meals for 2 days. Possible deterioration in mental health...', required: true },
-      { key: 'context', label: 'Context and background?', placeholder: 'e.g. Client recently had medication review. Family visited last week and reported concerns...' },
-      { key: 'risk', label: 'Level of risk?', placeholder: 'e.g. Amber — monitoring required. Not an immediate safety issue but trend is concerning...' },
-      { key: 'action', label: 'Actions taken or planned?', placeholder: 'e.g. GP referral made. Manager notified. Increased monitoring frequency...' },
-    ],
-  },
-  {
-    id: 'complaint', label: 'Complaints', group: 'client', color: '#dc2626',
-    prompts: [
-      { key: 'complaint', label: 'What is the complaint?', placeholder: 'e.g. Client/family complained about staff attitude during morning shift on 10/03/2026...', required: true },
-      { key: 'who', label: 'Who made the complaint?', placeholder: 'e.g. Client\'s mother — Mrs Singh. Contact number on file.' },
-      { key: 'investigation', label: 'Investigation steps taken?', placeholder: 'e.g. Spoke to staff member concerned. Reviewed CCTV footage. Statements taken...' },
-      { key: 'outcome', label: 'Outcome and response?', placeholder: 'e.g. Formal apology issued. Staff retraining scheduled. Complaint registered in log...' },
-      { key: 'learning', label: 'Learning from this complaint?', placeholder: 'e.g. Communication guidance to be updated. Team discussion at next house meeting...' },
-    ],
-  },
-  {
-    id: 'compliment', label: 'Compliments', group: 'client', color: '#16a34a',
-    prompts: [
-      { key: 'compliment', label: 'What was the compliment about?', placeholder: 'e.g. Family praised staff for excellent communication during hospital visit...', required: true },
-      { key: 'who', label: 'Who gave the compliment?', placeholder: 'e.g. Client\'s sister, Mrs Patel, called to say thank you...' },
-      { key: 'staff', label: 'Staff member mentioned (if any)?', placeholder: 'e.g. Amy Rogers specifically mentioned for her kindness and professionalism...' },
-      { key: 'share', label: 'How will this be shared?', placeholder: 'e.g. Shared at team meeting. Added to staff file. Passed on to manager...' },
-    ],
-  },
-  {
-    id: 'family_feedback', label: 'Family Feedback', group: 'client', color: '#059669',
-    prompts: [
-      { key: 'family', label: 'Who provided feedback?', placeholder: 'e.g. Client\'s mother Mrs Singh visited on 12/03/2026...', required: true },
-      { key: 'feedback', label: 'What feedback was given?', placeholder: 'e.g. Happy with overall care. Noted client looks well and happy. Concerns about medication side effects...' },
-      { key: 'action', label: 'Any actions arising?', placeholder: 'e.g. Medication review requested. GP appointment arranged. Next visit planned for 26/03/2026...' },
-    ],
-  },
-  {
-    id: 'client_feedback', label: 'Client Feedback', group: 'client', color: '#059669',
-    prompts: [
-      { key: 'feedback', label: 'What feedback did the client give?', placeholder: 'e.g. Client said they are happy with their support worker but would like to do more cooking...', required: true },
-      { key: 'method', label: 'How was feedback gathered?', placeholder: 'e.g. Easy Read feedback form. Verbal during 1:1. Client survey...' },
-      { key: 'action', label: 'Actions agreed?', placeholder: 'e.g. Weekly cooking session added to care plan. Client to choose recipes...' },
-    ],
-  },
-  {
-    id: 'cqc', label: 'CQC', group: 'client', color: '#be185d',
-    prompts: [
-      { key: 'type', label: 'Type of CQC activity?', placeholder: 'e.g. Scheduled inspection, spot check, quality monitoring, regulatory notification...', required: true },
-      { key: 'date', label: 'Date and inspector details?', placeholder: 'e.g. 12/03/2026. Inspector: Jane Doe. Ref: INS-2026-XXX' },
-      { key: 'findings', label: 'Key findings or queries raised?', placeholder: 'e.g. Reviewed medication records, staffing levels, care plans. Queried PBS documentation...' },
-      { key: 'response', label: 'Our response?', placeholder: 'e.g. All documents produced. Action plan presented. No immediate concerns raised...' },
-      { key: 'outcome', label: 'Outcome or next steps?', placeholder: 'e.g. Full report expected within 20 days. Follow-up visit scheduled...' },
     ],
   },
   {
     id: 'gp_appointment', label: 'GP Appointment', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'client', label: 'Client and reason for appointment?', placeholder: 'e.g. [Name] — review of Risperidone dosage and annual health check', required: true },
+      { key: 'client', label: 'Person and reason for appointment?', placeholder: 'e.g. [Name] — review of Risperidone dosage and annual health check', required: true },
       { key: 'outcome', label: 'What was the outcome?', placeholder: 'e.g. Medication adjusted. Blood test requested. Follow-up in 4 weeks...' },
       { key: 'actions', label: 'Follow-up actions required?', placeholder: 'e.g. Collect new prescription from pharmacy. Book blood test. Update MAR chart...' },
-      { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. Keyworker informed. Family updated. Manager copy of letter filed...' },
+      { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. Key worker informed. Family updated. Manager copy of letter filed...' },
     ],
   },
   {
-    id: 'medication', label: 'Medication', group: 'client', color: '#0891b2',
+    id: 'medication', label: 'Medication Entry', group: 'client', color: '#0891b2',
     prompts: [
-      { key: 'what', label: 'Which medication and client?', placeholder: 'e.g. Olanzapine 10mg — [Name]', required: true },
+      { key: 'what', label: 'Which medication and person?', placeholder: 'e.g. Olanzapine 10mg — [Name]', required: true },
       { key: 'status', label: 'Was it administered, refused, or missed?', placeholder: 'e.g. Refused at 08:00, attempted again at 09:30...' },
-      { key: 'reason', label: 'Reason if refused/missed?', placeholder: 'e.g. Client said they didn\'t want it, appeared drowsy...' },
+      { key: 'reason', label: 'Reason if refused/missed?', placeholder: 'e.g. Said they didn\'t want it, appeared drowsy...' },
       { key: 'action', label: 'Action taken?', placeholder: 'e.g. GP informed by phone. Will attempt at lunchtime. MAR chart updated.' },
-    ],
-  },
-  {
-    id: 'medication_audit', label: 'Medication Audit', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'period', label: 'Audit period and house?', placeholder: 'e.g. March 2026 — Cottrell House. All clients audited.', required: true },
-      { key: 'findings', label: 'Key findings?', placeholder: 'e.g. 2 MAR charts incomplete for Client B. CD book balance correct. Stock levels checked...' },
-      { key: 'discrepancies', label: 'Any discrepancies?', placeholder: 'e.g. 1 missing signature on 08/03. Medication returned — count verified and correct...' },
-      { key: 'actions', label: 'Actions taken?', placeholder: 'e.g. Missing signature investigated — staff retraining completed. Manager notified of all discrepancies...' },
-    ],
-  },
-  {
-    id: 'medication_collected', label: 'Medication Collected', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'client', label: 'Client and medication collected?', placeholder: 'e.g. [Name] — monthly prescription collected from Boots Pharmacy', required: true },
-      { key: 'items', label: 'Items collected?', placeholder: 'e.g. Olanzapine 10mg x 30, Metformin 500mg x 60, Vitamin D x 90...' },
-      { key: 'check', label: 'Checked against prescription?', placeholder: 'e.g. All items verified against prescription. Quantities correct. Expiry dates checked...' },
-      { key: 'stored', label: 'Stored correctly?', placeholder: 'e.g. All medication stored in locked cabinet. CD in CD cupboard. Temperature checked.' },
-    ],
-  },
-  {
-    id: 'medication_ordered', label: 'Medication Ordered', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'client', label: 'Client and medication ordered?', placeholder: 'e.g. Repeat prescription ordered for [Name] — Olanzapine 10mg', required: true },
-      { key: 'method', label: 'How was it ordered?', placeholder: 'e.g. Online via GP practice portal. Requested 7 days before running out...' },
-      { key: 'expected', label: 'Expected collection date?', placeholder: 'e.g. Ready to collect from Boots by 20/03/2026' },
-    ],
-  },
-  {
-    id: 'medication_returned', label: 'Medication Returned', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'what', label: 'What medication was returned and why?', placeholder: 'e.g. Risperidone 2mg returned to pharmacy — discontinued by GP on 15/03/2026', required: true },
-      { key: 'count', label: 'Count at time of return?', placeholder: 'e.g. 45 tablets returned. Count verified by 2 staff. Witnessed by coordinator...' },
-      { key: 'pharmacy', label: 'Pharmacy details?', placeholder: 'e.g. Returned to Boots, High Street. Receipt obtained and filed.' },
-    ],
-  },
-  {
-    id: 'medication_review', label: 'Medication Review', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'client', label: 'Client and review details?', placeholder: 'e.g. [Name] — annual medication review with Dr Smith on 12/03/2026', required: true },
-      { key: 'outcome', label: 'Outcome of review?', placeholder: 'e.g. Olanzapine dose reduced. Metformin continued. New prescription issued for Vitamin D...' },
-      { key: 'changes', label: 'Changes to MAR chart needed?', placeholder: 'e.g. MAR updated for Olanzapine dose change from 10mg to 5mg effective 15/03/2026...' },
-      { key: 'actions', label: 'Next steps?', placeholder: 'e.g. Collect new prescription. Update care plan. Inform all shift staff of changes...' },
     ],
   },
   {
     id: 'finance_transaction', label: 'Financial Transaction', group: 'client', color: '#059669',
     prompts: [
-      { key: 'client', label: 'Client and transaction details?', placeholder: 'e.g. [Name] — weekly spending money £30 withdrawn from Halifax', required: true },
+      { key: 'client', label: 'Person and transaction details?', placeholder: 'e.g. [Name] — weekly spending money £30 withdrawn from Halifax', required: true },
       { key: 'purpose', label: 'Purpose of transaction?', placeholder: 'e.g. Food shop, clothing, leisure activity, personal purchase...' },
       { key: 'amount', label: 'Amount and balance?', placeholder: 'e.g. £30 withdrawn. Balance remaining: £145.23. Receipts obtained.' },
-      { key: 'witnessed', label: 'Witnessed by?', placeholder: 'e.g. Witnessed by Sarah Mitchell. Client signed transaction record...' },
-    ],
-  },
-  {
-    id: 'finance_audit', label: 'Finance Audit', group: 'client', color: '#059669',
-    prompts: [
-      { key: 'period', label: 'Period and house audited?', placeholder: 'e.g. March 2026 — Cottrell House. All client accounts reviewed.', required: true },
-      { key: 'findings', label: 'Key findings?', placeholder: 'e.g. All accounts balance. 2 missing receipts found and filed. Petty cash correct...' },
-      { key: 'discrepancies', label: 'Any discrepancies?', placeholder: 'e.g. £12.50 unaccounted for in Client B\'s account. Investigation underway...' },
-      { key: 'actions', label: 'Actions taken?', placeholder: 'e.g. Manager notified. Policy refresher issued. Additional checks put in place...' },
-    ],
-  },
-  {
-    id: 'service_charge', label: 'Service Charge', group: 'client', color: '#059669',
-    prompts: [
-      { key: 'client', label: 'Client and charge details?', placeholder: 'e.g. [Name] — monthly service charge £XXX.XX for March 2026', required: true },
-      { key: 'payment', label: 'Payment method and status?', placeholder: 'e.g. Direct debit received. Payment confirmed by accounts team...' },
-      { key: 'notes', label: 'Any notes or queries?', placeholder: 'e.g. Client\'s DWP payment increase applied from April. Funding review due...' },
-    ],
-  },
-  {
-    id: 'professional_notes', label: 'Professional Notes', group: 'client', color: '#9333ea',
-    prompts: [
-      { key: 'professional', label: 'Which professional and purpose?', placeholder: 'e.g. Community Psychiatric Nurse (CPN) home visit — quarterly review', required: true },
-      { key: 'outcome', label: 'Outcome and findings?', placeholder: 'e.g. CPN assessed client as stable. No changes to mental health care plan required...' },
-      { key: 'recommendations', label: 'Recommendations made?', placeholder: 'e.g. Increase social activities. Refer to OT for independent living assessment...' },
-      { key: 'actions', label: 'Actions arising?', placeholder: 'e.g. Referral to OT submitted. Next CPN visit in 3 months. Copy of notes to keyworker...' },
-    ],
-  },
-  {
-    id: 'multi_agency', label: 'Multi Agency Meeting', group: 'client', color: '#7c3aed',
-    prompts: [
-      { key: 'attendees', label: 'Agencies and attendees?', placeholder: 'e.g. Social worker, CPN, OT, House coordinator, client, family representative...', required: true },
-      { key: 'purpose', label: 'Purpose of meeting?', placeholder: 'e.g. EHCP review, transition planning, safeguarding strategy, care planning...' },
-      { key: 'discussion', label: 'Key discussion points?', placeholder: 'e.g. Client\'s progress reviewed. Transition to supported living discussed. Funding confirmed...' },
-      { key: 'decisions', label: 'Decisions and actions agreed?', placeholder: 'e.g. Increase community hours. Review in 3 months. EHCP to be updated by LA by 30/04...' },
-      { key: 'next', label: 'Next meeting date?', placeholder: 'e.g. Review meeting — 3 months — July 2026' },
-    ],
-  },
-  {
-    id: 'repairs', label: 'Repairs', group: 'client', color: '#d97706',
-    prompts: [
-      { key: 'issue', label: 'What repair is needed?', placeholder: 'e.g. Bathroom tap leaking. Bedroom door hinge broken. Kitchen ceiling damp patch...', required: true },
-      { key: 'reported', label: 'How and when was it reported?', placeholder: 'e.g. Reported at daily maintenance meeting on 12/03/2026. Work order raised...' },
-      { key: 'priority', label: 'Priority level?', placeholder: 'e.g. High — health and safety risk. Medium — does not affect daily living. Low — cosmetic...' },
-      { key: 'action', label: 'Action taken?', placeholder: 'e.g. Maintenance contractor contacted. Visit booked for 15/03/2026. Client informed...' },
+      { key: 'witnessed', label: 'Witnessed by?', placeholder: 'e.g. Witnessed by Sarah Mitchell. Person signed transaction record...' },
     ],
   },
 
-  // ── CARER / STAFF NOTES ────────────────────────────────────
+  // ── STAFF / TEAM NOTES ────────────────────────────────────
   {
-    id: 'supervision', label: 'Supervision', group: 'carer', color: '#7c3aed',
+    id: 'supervision', label: 'Staff Supervision', group: 'staff', color: '#7c3aed',
     prompts: [
       { key: 'staff', label: 'Staff member supervised?', placeholder: 'e.g. Amy Rogers — Support Worker, Cottrell House', required: true },
       { key: 'discussed', label: 'Topics discussed?', placeholder: 'e.g. Workload manageable. Discussed de-escalation training needs. Raised concerns about rota...' },
@@ -388,134 +233,28 @@ const NOTE_TYPES: NoteType[] = [
     ],
   },
   {
-    id: 'probation', label: 'Probation Review (1st 3 months)', group: 'carer', color: '#7c3aed',
-    prompts: [
-      { key: 'staff', label: 'Staff member on probation?', placeholder: 'e.g. Tom Walsh — Support Worker. Started 01/01/2026. Review: 3-month mark.', required: true },
-      { key: 'performance', label: 'Overall performance to date?', placeholder: 'e.g. Good progress. Settled into the team well. Punctual and reliable. Good rapport with clients...' },
-      { key: 'strengths', label: 'Key strengths observed?', placeholder: 'e.g. Excellent communication with clients. Proactive approach. Completes documentation accurately...' },
-      { key: 'development', label: 'Areas for development?', placeholder: 'e.g. Needs more confidence with medication rounds. Still developing PBS knowledge...' },
-      { key: 'outcome', label: 'Probation outcome?', placeholder: 'e.g. Probation passed — confirmed in post from 01/04/2026. Extended by 1 month for further review...' },
-    ],
-  },
-  {
-    id: 'pip', label: 'Performance Improvement Plan', group: 'carer', color: '#ef4444',
-    prompts: [
-      { key: 'staff', label: 'Staff member on PIP?', placeholder: 'e.g. Staff member name and role', required: true },
-      { key: 'concerns', label: 'Performance concerns identified?', placeholder: 'e.g. Repeated lateness, incomplete documentation, concerns raised by colleagues...' },
-      { key: 'targets', label: 'Targets set?', placeholder: 'e.g. Arrive on time for all shifts. Complete all care notes within 30 mins of visit. No further documentation errors...' },
-      { key: 'support', label: 'Support offered?', placeholder: 'e.g. 1:1 coaching sessions. Additional training. Mentoring from senior staff...' },
-      { key: 'review', label: 'Review period and date?', placeholder: 'e.g. 4-week review on 14/04/2026. Progress to be assessed against targets.' },
-    ],
-  },
-  {
-    id: 'exit_interview', label: 'Exit Interview', group: 'carer', color: '#64748b',
-    prompts: [
-      { key: 'staff', label: 'Departing staff member?', placeholder: 'e.g. Amy Rogers — Support Worker, leaving 31/03/2026 after 2 years service', required: true },
-      { key: 'reason', label: 'Reason for leaving?', placeholder: 'e.g. Career progression. Relocation. Personal reasons. Higher salary elsewhere...' },
-      { key: 'feedback', label: 'Feedback on working at Hazelcare?', placeholder: 'e.g. Enjoyed working with clients. Found team supportive. Suggested better rota planning...' },
-      { key: 'improvements', label: 'Suggestions for improvement?', placeholder: 'e.g. More consistent communication from management. Better supervision structure...' },
-      { key: 'learning', label: 'Organisational learning?', placeholder: 'e.g. Concerns about staffing levels noted. Will be raised at next management meeting...' },
-    ],
-  },
-  {
-    id: 'expenses', label: 'Expenses / Mileage', group: 'carer', color: '#059669',
-    prompts: [
-      { key: 'staff', label: 'Staff member claiming?', placeholder: 'e.g. Sarah Mitchell — mileage claim for March 2026', required: true },
-      { key: 'type', label: 'Type of claim?', placeholder: 'e.g. Mileage — 142 miles @ 25p per mile. Petty cash — food shop receipt £34.20...' },
-      { key: 'amount', label: 'Amount claimed?', placeholder: 'e.g. £35.50 total. All receipts attached.' },
-      { key: 'authorised', label: 'Authorised by?', placeholder: 'e.g. Approved and signed by House Coordinator — Sarah Mitchell, 14/03/2026' },
-    ],
-  },
-  {
-    id: 'finance', label: 'Finance / Expenses (General)', group: 'carer', color: '#059669',
-    prompts: [
-      { key: 'type', label: 'Type of transaction?', placeholder: 'e.g. Petty cash, mileage claim, client expenses...', required: true },
-      { key: 'amount', label: 'Amount and details?', placeholder: 'e.g. £47.32 petty cash reconciled. All receipts present...' },
-      { key: 'authorised', label: 'Authorised by?', placeholder: 'e.g. Signed off by house coordinator Sarah Mitchell' },
-    ],
-  },
-
-  // ── MEETINGS ───────────────────────────────────────────────
-  {
-    id: 'quality_meeting', label: 'Quality Performance Meeting', group: 'meeting', color: '#0f766e',
+    id: 'quality_meeting', label: 'Quality & Performance Meeting', group: 'meeting', color: '#0f766e',
     prompts: [
       { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. House coordinator, manager, senior support workers...', required: true },
-      { key: 'flags', label: 'Red and amber flags this week?', placeholder: 'e.g. 1 red flag — Client A fall on Tuesday. 3 amber flags — concerns, lateness, medication...' },
-      { key: 'house_updates', label: 'House updates?', placeholder: 'e.g. Cottrell: quiet week. Hazelbury: client concern ongoing. Lingfield: CPN visit completed...' },
-      { key: 'actions', label: 'Actions agreed?', placeholder: 'e.g. GP referral for Client B by Friday. Training refresher booked for Amy. CCTV to be fixed...' },
-      { key: 'aob', label: 'Any other business?', placeholder: 'e.g. Bank holiday staffing confirmed. New starter joining Monday. CQC prep discussed...' },
+      { key: 'flags', label: 'Flags raised this week?', placeholder: 'e.g. 1 red flag — fall on Tuesday. 3 amber flags — concerns, lateness, medication...' },
+      { key: 'house_updates', label: 'House updates?', placeholder: 'e.g. Cottrell: quiet week. Hazelbury: concern ongoing. Lingfield: CPN visit completed...' },
+      { key: 'actions', label: 'Actions agreed?', placeholder: 'e.g. GP referral for Person B by Friday. Training refresher booked for Amy. CCTV to be fixed...' },
     ],
   },
   {
-    id: 'daily_quality', label: 'Daily Quality Meeting', group: 'meeting', color: '#1e40af',
-    prompts: [
-      { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. All house coordinators, on-call manager...', required: true },
-      { key: 'overnight', label: 'Overnight and early morning updates?', placeholder: 'e.g. Quiet overnight. Client C woke at 3am — settled within 20 minutes. All medication given...' },
-      { key: 'today', label: 'Key priorities for today?', placeholder: 'e.g. GP appointment Client A at 10:30. Maintenance visit at 14:00. Team meeting 15:00...' },
-      { key: 'concerns', label: 'Any concerns to flag?', placeholder: 'e.g. Client B mood low — monitor closely. Staff member off sick — cover in place...' },
-    ],
-  },
-  {
-    id: 'house_meeting', label: 'House Meeting', group: 'meeting', color: '#475569',
-    prompts: [
-      { key: 'attendees', label: 'Clients and staff present?', placeholder: 'e.g. 4 clients attended, 2 staff. Apologies from Client C (hospital appointment)...', required: true },
-      { key: 'discussions', label: 'What was discussed?', placeholder: 'e.g. Menu planning for next week. Upcoming trip to bowling. House maintenance updates...' },
-      { key: 'client_contributions', label: 'Client contributions and decisions?', placeholder: 'e.g. Clients voted for pizza night on Friday. Jamie asked for swimming to be added to schedule...' },
-      { key: 'actions', label: 'Actions arising?', placeholder: 'e.g. Book bowling alley for 22/03. Order ingredients for pizza night. Review swimming timetable...' },
-      { key: 'next', label: 'Next house meeting date?', placeholder: 'e.g. 4 weeks — 14/04/2026 at 15:00' },
-    ],
-  },
-  {
-    id: 'daily_finance_meeting', label: 'Daily Finance Meeting', group: 'meeting', color: '#059669',
-    prompts: [
-      { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. Finance lead, house coordinators...', required: true },
-      { key: 'balances', label: 'Current financial position?', placeholder: 'e.g. All client accounts reviewed. Petty cash balances checked. All within expected range...' },
-      { key: 'transactions', label: 'Transactions today?', placeholder: 'e.g. Service charges received. Mileage claims submitted. Food shop £87.40 approved...' },
-      { key: 'actions', label: 'Actions?', placeholder: 'e.g. Outstanding receipts to be submitted by Friday. Invoice from contractor to be processed...' },
-    ],
-  },
-  {
-    id: 'daily_hr_meeting', label: 'Daily HR Meeting', group: 'meeting', color: '#7c3aed',
-    prompts: [
-      { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. HR lead, managers, coordinators...', required: true },
-      { key: 'staffing', label: 'Staffing position today?', placeholder: 'e.g. Full staffing across all houses. 1 sickness call — cover arranged. 2 staff on leave...' },
-      { key: 'hr_issues', label: 'HR issues to address?', placeholder: 'e.g. Supervision overdue for 3 staff. DBS renewal required for Amy Rogers by end of month...' },
-      { key: 'actions', label: 'Actions?', placeholder: 'e.g. Contact agency for bank staff. Book supervisions. Chase DBS applications...' },
-    ],
-  },
-  {
-    id: 'daily_maintenance_meeting', label: 'Daily Maintenance Meeting', group: 'meeting', color: '#d97706',
-    prompts: [
-      { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. Maintenance lead, house coordinators...', required: true },
-      { key: 'outstanding', label: 'Outstanding repairs or maintenance?', placeholder: 'e.g. Kitchen tap fixed yesterday. Bedroom window still awaiting part — expected 20/03...' },
-      { key: 'new_issues', label: 'New issues reported today?', placeholder: 'e.g. Boiler making noise at Church House. Report submitted and contractor contacted...' },
-      { key: 'actions', label: 'Actions and priorities?', placeholder: 'e.g. High priority — boiler. Contractor visiting tomorrow. Monitor central heating overnight...' },
-    ],
-  },
-  {
-    id: 'weekly_quality_report', label: 'Weekly Quality Report — Regional', group: 'meeting', color: '#0f766e',
-    prompts: [
-      { key: 'week', label: 'Week covered?', placeholder: 'e.g. Week of 10/03/2026 — 16/03/2026. All 10 Hazelcare houses.', required: true },
-      { key: 'summary', label: 'Overall summary?', placeholder: 'e.g. Stable week across all houses. 2 red flags, 5 amber flags. All resolved or being managed...' },
-      { key: 'key_issues', label: 'Key issues requiring escalation?', placeholder: 'e.g. Safeguarding referral at Cottrell House — in progress. CQC inspection confirmed for next month...' },
-      { key: 'positives', label: 'Positives this week?', placeholder: 'e.g. Client A started college course. Zero incidents at Lingfield for 4th consecutive week...' },
-      { key: 'actions', label: 'Regional actions?', placeholder: 'e.g. Training review across all houses. Staffing stability plan to be presented at next board meeting...' },
-    ],
-  },
-  {
-    id: 'task_note', label: 'Task Note', group: 'carer', color: '#f59e0b',
+    id: 'task_note', label: 'General Task Note', group: 'staff', color: '#f59e0b',
     prompts: [
       { key: 'task', label: 'What task was completed?', placeholder: 'e.g. Weekly food shop, maintenance request, cleaning, admin task...', required: true },
       { key: 'details', label: 'Details?', placeholder: 'e.g. All items on menu plan purchased. Budget: £85.20. Receipts filed...' },
-      { key: 'followup', label: 'Any follow-up needed?', placeholder: 'e.g. Need to order special dietary items for Client C by Thursday...' },
+      { key: 'followup', label: 'Any follow-up needed?', placeholder: 'e.g. Need to order special dietary items for Person C by Thursday...' },
     ],
   },
 ];
 
 const GROUPS = [
-  { id: 'client', label: 'Client Focus', color: '#0f766e' },
-  { id: 'carer', label: 'Personnel Logistics', color: '#7c3aed' },
-  { id: 'meeting', label: 'Tactical Briefings', color: '#1e40af' },
+  { id: 'client', label: 'People We Support', color: '#0f766e' },
+  { id: 'staff', label: 'Staff Information', color: '#7c3aed' },
+  { id: 'meeting', label: 'Team Briefings', color: '#1e40af' },
 ] as const;
 
 // ============================================================
@@ -594,7 +333,7 @@ export function StaffNotePage() {
     const now = new Date();
     const parts: string[] = [];
     parts.push(`${selectedType.label} — ${house}`);
-    if (client) parts.push(`Client: ${client}`);
+    if (client) parts.push(`Person: ${client}`);
     parts.push(`Date: ${now.toLocaleDateString('en-GB')} at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
     parts.push('');
     for (const prompt of selectedType.prompts) {
@@ -668,12 +407,12 @@ export function StaffNotePage() {
     <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
 
       {/* ── PAGE HEADER ───────────────────────────────────────── */}
-      <div className="mb-10">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-8">
+      <div className="mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-4xl font-black text-white mb-2 tracking-tighter text-shimmer">Intelligence Assistant</h1>
+            <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Notes Assistant</h1>
             <div className="flex items-center gap-3">
-              <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Diary Transmission Log</span>
+              <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Daily Notes Log</span>
               <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
                 Guided prompts + voice dictation in any language
               </p>
@@ -687,19 +426,19 @@ export function StaffNotePage() {
             <button
               type="button"
               onClick={() => setShowLangPicker(v => !v)}
-              className="w-full flex items-center gap-5 glass border-2 border-hc-teal/30 rounded-3xl px-6 py-4 hover:bg-hc-teal/5 transition-all group shadow-2xl relative overflow-hidden active:scale-[0.99]"
+              className="w-full flex items-center gap-3 md:gap-4 glass border-2 border-hc-teal/30 rounded-xl md:rounded-2xl px-4 py-3 hover:bg-hc-teal/5 transition-all group shadow-xl relative overflow-hidden active:scale-[0.99]"
             >
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-14 h-14 rounded-[1.25rem] glass border border-white/10 flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-xl">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl glass border border-white/10 flex items-center justify-center text-xl md:text-2xl shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-xl">
                 {currentLang.flag}
               </div>
               <div className="flex-1 text-left relative z-10">
-                <div className="text-[10px] text-hc-teal-light uppercase tracking-[0.2em] font-black mb-1">Voice Protocol Channel — Tap to switch</div>
-                <div className="text-xl font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
+                <div className="text-[10px] text-hc-teal-light uppercase tracking-[0.2em] font-black mb-1">Voice Language — Tap to switch</div>
+                <div className="text-sm md:text-base font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
               </div>
               <div className="text-hc-muted text-right hidden md:block relative z-10 pr-4">
-                <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest mb-1">Multi-Lingual Synch</div>
-                <div className="text-xs font-medium opacity-60 italic">Speak, type, or dictate in any language — AI translates & polishes</div>
+                <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest mb-1">Multi-Language Support</div>
+                <div className="text-xs font-medium opacity-60 italic">Speak or dictate in any language — AI translates and polishes</div>
               </div>
               <div className={`w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 transition-transform duration-500 ${showLangPicker ? 'rotate-180 bg-hc-teal/10 border-hc-teal/30' : 'group-hover:bg-white/5'}`}>
                 <svg className="w-4 h-4 text-hc-muted group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -709,7 +448,7 @@ export function StaffNotePage() {
             {/* Flag grid dropdown */}
             {showLangPicker && (
               <div className="absolute top-full left-0 right-0 mt-4 glass border border-white/10 rounded-[2rem] p-6 z-50 shadow-2xl animate-in zoom-in-95 duration-300 backdrop-blur-3xl">
-                <div className="section-header text-[10px] mb-6 ml-2 opacity-60 tracking-[0.3em]">SELECT TACTICAL FREQUENCY</div>
+                <div className="section-header text-[10px] mb-6 ml-2 opacity-60 tracking-[0.3em]">Select Language</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                   {VOICE_LANGUAGES.map(l => (
                     <button
@@ -733,18 +472,18 @@ export function StaffNotePage() {
         ) : (
           <div className="flex items-center gap-4 glass-light border border-white/10 rounded-[1.5rem] px-6 py-4 text-sm text-hc-muted shadow-xl">
             <svg className="w-6 h-6 text-hc-teal-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span className="font-medium opacity-80 uppercase tracking-widest text-xs leading-relaxed">For voice-to-text transmission in any language, deploy this terminal via Chrome or Edge browser.</span>
+            <span className="font-medium opacity-80 uppercase tracking-widest text-xs leading-relaxed">For voice-to-text in any language, please open this page in Chrome or Edge browser.</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
         {/* Left — Input (3/5) */}
         <div className="lg:col-span-3 space-y-6">
 
           {/* Note type selector */}
-          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl backdrop-blur-md">
-            <div className="section-header text-[9px] mb-5 ml-1 opacity-60 tracking-[0.2em]">CLASSIFICATION CHANNEL</div>
+          <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
+            <div className="section-header text-[9px] mb-5 ml-1 opacity-60 tracking-[0.2em]">Note Category</div>
 
             {/* Search + group tabs */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -752,7 +491,7 @@ export function StaffNotePage() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search protocol types..."
+                  placeholder="Search entry types..."
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
@@ -788,7 +527,7 @@ export function StaffNotePage() {
             {/* Selected type indicator */}
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-3">
               <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ background: selectedType.color, boxShadow: `0 0 10px ${selectedType.color}` }} />
-              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Active Frequency: <span className="text-white ml-1">{selectedType.label}</span></span>
+              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Selected: <span className="text-white ml-1">{selectedType.label}</span></span>
             </div>
           </div>
 
@@ -796,21 +535,21 @@ export function StaffNotePage() {
           <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">SECTOR NODE</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
                 <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TARGET SUBJECT</label>
-                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Node Identifier" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Person</label>
+                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">INPUT PROTOCOL</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Input Mode</label>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {(['guided', 'free'] as const).map(m => (
                     <button key={m} onClick={() => setMode(m)} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition-all duration-500 active:scale-95 ${mode === m ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-                      {m === 'guided' ? 'Guided' : 'Free Stream'}
+                      {m === 'guided' ? 'Guided' : 'Free Text'}
                     </button>
                   ))}
                 </div>
@@ -842,13 +581,13 @@ export function StaffNotePage() {
           ) : (
             <div className="glass-light border border-white/5 rounded-[2.5rem] p-8 card-glow group">
               <div className="flex items-center justify-between mb-6">
-                <label className="text-sm font-black text-white uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Raw Intelligence Stream</label>
+                <label className="text-sm font-black text-white uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Free Text Entry</label>
                 <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
               </div>
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
-                placeholder="Type or dictate in any tactical language — HazelCare will translate, synthesize, and polish into professional operational English..."
+                placeholder="Type or dictate in any language — HazelCare will translate and polish your note into professional English..."
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
               />
             </div>
@@ -863,8 +602,8 @@ export function StaffNotePage() {
                 <svg className={`w-8 h-8 ${flagResult.severity === 'red' ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
               </div>
               <div>
-                <div className="text-xl font-black text-white tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Critical RED-STRAT Detected' : 'Amber Monitor Alert'}</div>
-                <p className="text-sm font-medium text-hc-muted mb-4 opacity-80 leading-relaxed">{flagResult.severity === 'red' ? 'This transmission contains critical vectors requiring immediate command escalation.' : 'Pattern alert detected — active surveillance recommended for this node.'}</p>
+                <div className="text-xl font-black text-white tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Red Flag Alert' : 'Amber Monitor Alert'}</div>
+                <p className="text-sm font-medium text-hc-muted mb-4 opacity-80 leading-relaxed">{flagResult.severity === 'red' ? 'This entry contains critical concerns requiring immediate manager escalation.' : 'Concerns detected — monitoring recommended for this person.'}</p>
                 <div className="flex flex-wrap gap-2">
                   {flagResult.flags.map((f, i) => (
                     <span key={i} className={`pill text-[9px] font-black uppercase tracking-widest px-3
@@ -884,10 +623,10 @@ export function StaffNotePage() {
               <div className="p-8 border-b border-white/5 bg-black/20 relative z-10">
                 <div className="flex items-center justify-between">
                   <div className="transition-transform duration-500 group-hover/preview:translate-x-1">
-                    <h3 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Protocol Preview</h3>
+                    <h3 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Preview</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words · {Math.max(1, Math.ceil(wordCount / 200))}M Cycle</span>
+                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words · ~{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
                     </div>
                   </div>
                   {flagResult.severity !== 'none' && (
@@ -900,12 +639,11 @@ export function StaffNotePage() {
               </div>
 
               <div className="p-8 min-h-[300px] relative z-10">
-                {/* AI Enhanced output — streams in live */}
                 {enhancedNote ? (
                   <div className="animate-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-3 mb-6">
-                      <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 shadow-lg glow-teal animate-shimmer">✦ AI SYNTHESIZED</span>
-                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] transition-all ml-auto">Revert to Source</button>
+                      <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 shadow-lg glow-teal animate-shimmer">✦ AI POLISHED</span>
+                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] transition-all ml-auto">Reset</button>
                     </div>
                     <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap italic group-hover/preview:text-white transition-colors duration-700">"{enhancedNote}{enhancing && <span className="inline-block w-2 h-4 bg-hc-teal-light ml-1 animate-pulse align-middle shadow-[0_0_10px_#14b8a6]" />}"</pre>
                   </div>
@@ -916,8 +654,8 @@ export function StaffNotePage() {
                       <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
                       <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <div className="text-sm font-black text-hc-teal-light uppercase tracking-[0.3em] animate-pulse">Synthesizing Protocol...</div>
-                    <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest mt-2 max-w-[200px]">Neutralizing tone · Correcting syntax · Mapping logic</p>
+                    <div className="text-sm font-black text-hc-teal-light uppercase tracking-[0.3em] animate-pulse">Enhancing note...</div>
+                    <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest mt-2 max-w-[200px]">Improving tone · Correcting grammar · Structuring content</p>
                   </div>
                 ) : generatedNote ? (
                   <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap animate-in fade-in duration-1000 italic opacity-90 group-hover/preview:opacity-100 transition-opacity">"{generatedNote}"</pre>
@@ -926,19 +664,18 @@ export function StaffNotePage() {
                     <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700">
                       <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed">Awaiting intelligence payload for encryption preview...</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed">Your note preview will appear here...</div>
                   </div>
                 )}
                 {enhanceError && <div className="pill pill-red text-[9px] font-black px-4 py-2 mt-6 shadow-lg animate-in shake duration-500 uppercase tracking-widest">{enhanceError}</div>}
               </div>
 
-              {/* AI enhance button */}
               {generatedNote && !enhancing && (
                 <div className="px-8 pb-6 animate-in slide-in-from-bottom-4 duration-500">
                   <button onClick={enhanceNote}
                     className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl glass-light border border-hc-teal/30 hover:bg-hc-teal/10 hover:border-hc-teal/60 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl hover:scale-[1.02] active:scale-95 group/enhance">
                     <svg className="w-5 h-5 group-hover/enhance:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                    ✦ AI SYNTHESIZE LOG
+                    ✦ AI Enhance Note
                   </button>
                 </div>
               )}
@@ -946,16 +683,16 @@ export function StaffNotePage() {
               <div className="p-8 border-t border-white/5 bg-black/30 flex gap-4 relative z-10">
                 <button onClick={() => { const n = enhancedNote || generatedNote; if (n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(() => setCopied(false), 2000); } }} disabled={!generatedNote && !enhancedNote}
                   className={`flex-1 flex items-center justify-center gap-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 disabled:opacity-20 disabled:grayscale shadow-2xl hover:scale-105 active:scale-95 ${copied ? 'bg-flag-green text-white shadow-flag-green/20' : 'btn-gradient text-white'}`}>
-                  {copied ? (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>SYNCHRONIZED</>) : (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>TRANSMIT TO NOURISH</>)}
+                  {copied ? (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>COPIED</>) : (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>COPY TO CLIPBOARD</>)}
                 </button>
-                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">LOG</button>
+                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">SAVE ENTRY</button>
               </div>
             </div>
 
             <div className="glass-light border border-hc-teal/20 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-default">
               <div className="absolute top-0 left-0 w-1 h-full bg-hc-teal opacity-40 group-hover:opacity-100 transition-opacity" />
-              <div className="text-[10px] font-black text-hc-teal-light mb-2 uppercase tracking-[0.3em] transition-transform group-hover:translate-x-1 duration-500">Operational Protocol</div>
-              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Compose tactical observations in any dialect — ArbiFlow synthesis neutralizes complexity. Direct transmission to Nourish registry maintains fleet integrity."</p>
+              <div className="text-[10px] font-black text-hc-teal-light mb-2 uppercase tracking-[0.3em] transition-transform group-hover:translate-x-1 duration-500">Helpful Tip</div>
+              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Write or dictate your notes in any language — HazelCare will translate and polish them into professional English for your records."</p>
             </div>
 
             {savedNotes.length > 0 && (
@@ -964,7 +701,7 @@ export function StaffNotePage() {
                   <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </span>
-                  HISTORICAL ARCHIVE ({savedNotes.length})
+                  HISTORY ({savedNotes.length})
                 </button>
                 {showHistory && (
                   <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-500">

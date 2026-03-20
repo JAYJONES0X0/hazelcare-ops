@@ -8,8 +8,6 @@ interface Props {
   weekData: WeekSummary | null;
   actions: Action[];
   incidents: Incident[];
-  isDemo: boolean;
-  onLoadDemo: () => void;
 }
 
 const navSections: { heading?: string; items: { id: Page; label: string; icon: ReactNode }[] }[] = [
@@ -17,8 +15,8 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
     heading: 'Overview',
     items: [
       { id: 'briefing' as Page, label: 'Morning Briefing', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg> },
-      { id: 'dashboard', label: 'Dashboard', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" /></svg> },
-      { id: 'upload', label: 'Import Data', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> },
+      { id: 'dashboard', label: 'Service Hub', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" /></svg> },
+      { id: 'upload', label: 'Sync Data', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> },
     ],
   },
   {
@@ -27,8 +25,8 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
       { id: 'client-diary' as Page, label: 'Client Diary', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg> },
       { id: 'actions', label: 'Action Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
       { id: 'incidents', label: 'Incidents', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> },
-      { id: 'risk', label: 'Risk Scores', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> },
-      { id: 'staff', label: 'Staff', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+      { id: 'risk', label: 'Risk Scores', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> },
+      { id: 'staff', label: 'Staff Roster', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
     ],
   },
   {
@@ -60,7 +58,7 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
   },
 ];
 
-export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const redFlags = weekData?.allFlags.red.length ?? 0;
   const amberFlags = weekData?.allFlags.amber.length ?? 0;
@@ -89,7 +87,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
             <div className="absolute inset-0 rounded-xl bg-hc-teal/25 blur-lg" />
           </div>
           <div className="flex-1">
-            <div className="text-sm font-bold text-white tracking-tight">Ops Engine</div>
+            <div className="text-sm font-bold text-white tracking-tight">Care Portal</div>
             <div className="text-[10px] text-hc-teal-light font-medium">Hazel Care Ltd</div>
           </div>
           {/* Mobile close */}
@@ -133,17 +131,16 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
           <div className="glass rounded-xl p-4 transition-all duration-500 hover:scale-[1.02] hover:bg-white/[0.02] hover:border-hc-teal/20 group/status">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[10px] text-hc-teal-light/70 uppercase tracking-wider font-semibold group-hover/status:text-hc-teal-light transition-colors">This Week</div>
-              {isDemo && <span className="pill pill-teal text-[9px] shadow-lg animate-pulse-soft">DEMO</span>}
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="group/val"><div className="text-lg font-black text-white group-hover/val:scale-110 transition-transform tabular-nums">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Logs</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-red group-hover/val:scale-110 transition-transform tabular-nums">{redFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Red</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-amber group-hover/val:scale-110 transition-transform tabular-nums">{amberFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Amb</div></div>
+              <div className="group/val"><div className="text-lg font-black text-white group-hover/val:scale-110 transition-transform tabular-nums">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Notes</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-red group-hover/val:scale-110 transition-transform tabular-nums">{redFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Flags</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-amber group-hover/val:scale-110 transition-transform tabular-nums">{amberFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Alerts</div></div>
             </div>
             <div className="mt-3 pt-3 border-t border-white/[0.06]">
               <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-hc-muted/60">
-                <span>{Object.keys(weekData.houses).length} Nodes</span>
-                <span>{weekData.clients.length} Subjects</span>
+                <span>{Object.keys(weekData.houses).length} Houses</span>
+                <span>{weekData.clients.length} Clients</span>
               </div>
             </div>
           </div>
@@ -170,7 +167,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-7 w-7 rounded-lg" />
-        <span className="text-sm font-bold text-white">Ops Engine</span>
+        <span className="text-sm font-bold text-white">Care Portal</span>
         {redFlags > 0 && <span className="pill pill-red text-[10px] ml-auto">{redFlags}</span>}
       </div>
 

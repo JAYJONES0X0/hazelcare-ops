@@ -351,3 +351,18 @@ export function emptyClient(): FullClient {
   };
 }
 
+export function purgeSystemData() {
+  localStorage.removeItem('hc-clients-v2');
+  localStorage.removeItem('hazelcare-ops');
+  localStorage.removeItem('hazelcare-staff-notes');
+  window.location.reload();
+}
+
+export function clearClientData() {
+  localStorage.removeItem('hc-clients-v2');
+}
+
+export function clearStaffNotes() {
+  localStorage.removeItem('hazelcare-staff-notes');
+}
+
