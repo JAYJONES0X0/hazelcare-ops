@@ -3,7 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { parseNourishData, buildWeekSummary } from '../lib/nourish-parser';
 import { parseNourishText, parseSupportPlanText } from '../lib/nourish-import';
-import { saveClient, emptyClient } from '../lib/client-store';
+import { saveClient, emptyClient, findExistingClient } from '../lib/client-store';
 import type { WeekSummary } from '../lib/types';
 import type { FullClient } from '../lib/client-store';
 import type { Page } from '../App';
@@ -274,12 +274,18 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
     if (preview.type === 'admission') {
       const result = parseNourishText(preview.rawText);
-      const client = emptyClient();
+      const existing = findExistingClient(result.client.name || '', result.client.nhs || '');
+      const client = existing ? { ...existing } : emptyClient();
       Object.assign(client, result.client);
+      if (existing) {
+        // Keep existing name if it was manually set
+        client.name = existing.name || result.client.name || '';
+      }
       client.carePlan = result.carePlan;
       saveClient(client);
       const domains = result.carePlan.domains.filter(d => d.enabled).length;
-      setResultMsg(`${result.client.name || 'Client'} created with ${domains} care plan domains.`);
+      const verb = existing ? 'updated' : 'created';
+      setResultMsg(`${client.name || 'Client'} ${verb} with ${domains} care plan domains.`);
       setStep('done');
       setTimeout(() => setPage('client-docs'), 1500);
       return;
@@ -287,12 +293,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
     if (preview.type === 'support-plan') {
       const spResult = parseSupportPlanText(preview.rawText);
-      const client = emptyClient();
-      client.name = preview.clientName || 'Imported Client';
-      client.preferredName = (preview.clientName || '').split(' ')[0] || 'Client';
+      const clientName = preview.clientName || 'Imported Client';
+      const existing = findExistingClient(clientName, '');
+      const client = existing ? { ...existing } : emptyClient();
+      if (!existing) {
+        client.name = clientName;
+        client.preferredName = clientName.split(' ')[0] || 'Client';
+      }
       (client as any).supportPlan = spResult;
       saveClient(client as FullClient);
-      setResultMsg(`${client.name} created with ${spResult.needs.length} support areas.`);
+      const verb = existing ? 'updated' : 'created';
+      setResultMsg(`${client.name} ${verb} with ${spResult.needs.length} support areas.`);
       setStep('done');
       setTimeout(() => setPage('client-docs'), 1500);
       return;

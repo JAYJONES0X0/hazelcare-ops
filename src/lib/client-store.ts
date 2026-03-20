@@ -198,6 +198,21 @@ export function saveClient(client: FullClient) {
   saveClients(clients);
 }
 
+export function findExistingClient(name: string, nhs: string): FullClient | undefined {
+  const clients = loadClients();
+  // Match by NHS number first (most reliable)
+  if (nhs && nhs.length > 3) {
+    const match = clients.find(c => c.nhs && c.nhs.replace(/\s/g, '') === nhs.replace(/\s/g, ''));
+    if (match) return match;
+  }
+  // Fallback: match by exact name
+  if (name && name.length > 2) {
+    const match = clients.find(c => c.name.toLowerCase().trim() === name.toLowerCase().trim());
+    if (match) return match;
+  }
+  return undefined;
+}
+
 export function deleteClient(id: string) {
   const clients = loadClients().filter(c => c.id !== id);
   saveClients(clients);

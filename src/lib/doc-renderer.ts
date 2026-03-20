@@ -55,6 +55,12 @@ const BASE_STYLES = `
     @page { margin: 0; }
     body { background: none; }
     .page { margin: 0; padding: 15mm; width: 100%; border: none; min-height: auto; }
+    table, tr, .risk-card, .domain-card, .sig-block, .sig-card, .info-grid, .section-block, .metric-row, .summary-card, .risk-indicator, blockquote, .field-pair {
+      page-break-inside: avoid;
+    }
+    .page > div { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+    table { page-break-before: auto; }
   }
 
   /* Executive Typography */
