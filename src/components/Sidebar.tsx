@@ -68,9 +68,9 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
   const activeIncidents = incidents.filter(i => i.stage !== 'closed').length;
 
   function getBadge(id: Page): ReactNode | null {
-    if (id === 'dashboard' && redFlags > 0) return <span className="ml-auto bg-flag-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{redFlags}</span>;
-    if (id === 'actions' && openActions > 0) return <span className="ml-auto bg-hc-blue text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{openActions}</span>;
-    if (id === 'incidents' && activeIncidents > 0) return <span className="ml-auto bg-flag-amber text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{activeIncidents}</span>;
+    if (id === 'dashboard' && redFlags > 0) return <span className="ml-auto pill pill-red text-[10px]">{redFlags}</span>;
+    if (id === 'actions' && openActions > 0) return <span className="ml-auto pill pill-blue text-[10px]">{openActions}</span>;
+    if (id === 'incidents' && activeIncidents > 0) return <span className="ml-auto pill pill-amber text-[10px]">{activeIncidents}</span>;
     return null;
   }
 
@@ -81,19 +81,19 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
 
   const sidebarContent = (
     <>
-      {/* Logo */}
-      <div className="p-4 lg:p-5 border-b border-hc-border">
+      {/* Logo + Brand */}
+      <div className="p-5 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-9 w-9 rounded-lg relative z-10" />
-            <div className="absolute inset-0 rounded-lg bg-hc-teal/20 blur-md" />
+            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-10 w-10 rounded-xl relative z-10" />
+            <div className="absolute inset-0 rounded-xl bg-hc-teal/25 blur-lg" />
           </div>
-          <div>
-            <div className="text-[13px] font-bold text-white tracking-tight">Ops Engine</div>
-            <div className="text-[10px] text-hc-muted font-medium">Hazel Care Ltd</div>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-white tracking-tight">Ops Engine</div>
+            <div className="text-[10px] text-hc-teal-light font-medium">Hazel Care Ltd</div>
           </div>
           {/* Mobile close */}
-          <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden text-hc-muted hover:text-white">
+          <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden text-hc-muted hover:text-white p-1">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -104,18 +104,20 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
         {navSections.map((section, si) => (
           <div key={si}>
             {section.heading && (
-              <div className="text-[10px] font-semibold text-hc-muted uppercase tracking-[0.1em] px-3 mb-2">{section.heading}</div>
+              <div className="text-[10px] font-semibold text-hc-teal-light/60 uppercase tracking-[0.12em] px-3 mb-2">{section.heading}</div>
             )}
             <div className="space-y-0.5">
               {section.items.map(item => (
                 <button
                   key={item.id}
                   onClick={() => handleNav(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all ${
-                    page === item.id ? 'bg-gradient-to-r from-hc-teal/15 to-hc-blue/10 text-hc-teal-light font-semibold border-l-2 border-hc-teal-light glow-teal' : 'text-hc-muted hover:text-white hover:bg-white/[0.04]'
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-300 ease-out active:scale-[0.97] hover:scale-[1.02] ${
+                    page === item.id
+                      ? 'glass-teal text-hc-teal-glow font-semibold shadow-[0_0_15px_rgba(20,184,166,0.15)] translate-x-1'
+                      : 'text-hc-text/70 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
-                  {item.icon}
+                  <span className={`transition-transform duration-500 ${page === item.id ? 'text-hc-teal-glow scale-110' : 'group-hover:scale-110'}`}>{item.icon}</span>
                   {item.label}
                   {getBadge(item.id)}
                 </button>
@@ -126,22 +128,22 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
       </nav>
 
       {/* Status Panel */}
-      <div className="p-3 border-t border-hc-border hidden lg:block">
+      <div className="p-3 border-t border-white/[0.06] hidden lg:block">
         {weekData ? (
-          <div className="bg-hc-card rounded-xl p-3.5 border border-hc-border card-glow">
+          <div className="glass rounded-xl p-4 transition-all duration-500 hover:scale-[1.02] hover:bg-white/[0.02] hover:border-hc-teal/20 group/status">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold">This Week</div>
-              {isDemo && <span className="text-[9px] text-hc-teal-light bg-hc-teal/20 px-1.5 py-0.5 rounded">DEMO</span>}
+              <div className="text-[10px] text-hc-teal-light/70 uppercase tracking-wider font-semibold group-hover/status:text-hc-teal-light transition-colors">This Week</div>
+              {isDemo && <span className="pill pill-teal text-[9px] shadow-lg animate-pulse-soft">DEMO</span>}
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div><div className="text-lg font-bold text-white">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted">Entries</div></div>
-              <div><div className="text-lg font-bold text-flag-red">{redFlags}</div><div className="text-[9px] text-hc-muted">Red</div></div>
-              <div><div className="text-lg font-bold text-flag-amber">{amberFlags}</div><div className="text-[9px] text-hc-muted">Amber</div></div>
+              <div className="group/val"><div className="text-lg font-black text-white group-hover/val:scale-110 transition-transform tabular-nums">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Logs</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-red group-hover/val:scale-110 transition-transform tabular-nums">{redFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Red</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-amber group-hover/val:scale-110 transition-transform tabular-nums">{amberFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Amb</div></div>
             </div>
-            <div className="mt-3 pt-3 border-t border-hc-border">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-hc-muted">{Object.keys(weekData.houses).length} houses</span>
-                <span className="text-hc-muted">{weekData.clients.length} clients</span>
+            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-hc-muted/60">
+                <span>{Object.keys(weekData.houses).length} Nodes</span>
+                <span>{weekData.clients.length} Subjects</span>
               </div>
             </div>
           </div>
@@ -153,8 +155,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
       {/* Quick links */}
       <div className="px-3 pb-4 hidden lg:block">
         <div className="flex gap-2">
-          <a href="https://hazelcare.nourishcare.com/user/login?destination=reporting/clientdiary" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-1.5 text-hc-muted hover:text-hc-teal-light border border-hc-border rounded-lg hover:border-hc-teal/30 transition-all">Nourish</a>
-          <a href="https://org.nourishcare.co.uk/hazel-care-ltd+nc-hazelcare#/" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-1.5 text-hc-muted hover:text-hc-teal-light border border-hc-border rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
+          <a href="https://hazelcare.nourishcare.com/user/login?destination=reporting/clientdiary" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Nourish</a>
+          <a href="https://org.nourishcare.co.uk/hazel-care-ltd+nc-hazelcare#/" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
         </div>
       </div>
     </>
@@ -163,27 +165,27 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, isDemo }:
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 border-b border-hc-border" style={{ background: 'linear-gradient(180deg, #0a1020 0%, #060b14 100%)' }}>
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 glass border-b border-white/[0.06]">
         <button onClick={() => setMobileOpen(true)} className="text-hc-muted hover:text-white">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
-        <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-7 w-7 rounded-md" />
+        <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-7 w-7 rounded-lg" />
         <span className="text-sm font-bold text-white">Ops Engine</span>
-        {redFlags > 0 && <span className="bg-flag-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{redFlags}</span>}
+        {redFlags > 0 && <span className="pill pill-red text-[10px] ml-auto">{redFlags}</span>}
       </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 flex flex-col" style={{ background: 'linear-gradient(180deg, #0a1020 0%, #060b14 100%)' }}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-72 flex flex-col" style={{ background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' }}>
             {sidebarContent}
           </aside>
         </div>
       )}
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-60 flex-col shrink-0 border-r border-hc-border" style={{ background: 'linear-gradient(180deg, #0a1020 0%, #060b14 100%)' }}>
+      {/* Desktop Sidebar — Glass morphism */}
+      <aside className="hidden lg:flex w-64 flex-col shrink-0 border-r border-white/[0.06] h-screen sticky top-0 overflow-hidden" style={{ background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' }}>
         {sidebarContent}
       </aside>
     </>

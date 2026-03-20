@@ -98,21 +98,15 @@ function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript:
       type="button"
       onClick={toggle}
       title={`Tap to speak in ${lang?.label ?? _voiceLang}`}
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all select-none ${
-        listening
-          ? 'bg-red-500/20 border border-red-500 text-red-400 shadow-lg shadow-red-500/20'
-          : 'bg-hc-dark border border-hc-border text-hc-teal-light hover:border-hc-teal hover:text-white hover:bg-hc-teal/10'
+      className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-500 select-none shadow-xl
+        ${listening
+          ? 'bg-red-500/20 border-2 border-red-500 text-red-400 glow-red animate-pulse'
+          : 'glass-light border border-white/10 text-hc-teal-light hover:border-hc-teal hover:text-white hover:bg-hc-teal/5 hover:scale-105 active:scale-95'
       }`}
     >
-      <svg className={`w-4 h-4 shrink-0 ${listening ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-      </svg>
-      <span className="text-xs leading-none">
-        {listening ? (
-          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block" />Recording…</span>
-        ) : (
-          <span>{lang?.flag} Speak {lang?.label?.split(' ')[0]}</span>
-        )}
+      <div className={`w-2 h-2 rounded-full ${listening ? 'bg-red-500 animate-ping' : 'bg-hc-teal'}`} />
+      <span className="text-[10px]">
+        {listening ? 'TRANSMITTING VOICE...' : `${lang?.flag} DICTATE ${lang?.label?.split(' ')[0]}`}
       </span>
     </button>
   );
@@ -519,9 +513,9 @@ const NOTE_TYPES: NoteType[] = [
 ];
 
 const GROUPS = [
-  { id: 'client', label: 'Client Notes', color: '#0f766e' },
-  { id: 'carer', label: 'Staff / Carer Notes', color: '#7c3aed' },
-  { id: 'meeting', label: 'Meeting Minutes', color: '#1e40af' },
+  { id: 'client', label: 'Client Focus', color: '#0f766e' },
+  { id: 'carer', label: 'Personnel Logistics', color: '#7c3aed' },
+  { id: 'meeting', label: 'Tactical Briefings', color: '#1e40af' },
 ] as const;
 
 // ============================================================
@@ -619,7 +613,6 @@ export function StaffNotePage() {
   const flagResult = detectFlags(allText);
   const wordCount = generatedNote.trim() ? generatedNote.trim().split(/\s+/).length : 0;
 
-
   function saveNote() {
     const noteToSave = enhancedNote || generatedNote;
     if (!noteToSave) return;
@@ -672,57 +665,65 @@ export function StaffNotePage() {
   const currentLang = VOICE_LANGUAGES.find(l => l.code === voiceLang) ?? VOICE_LANGUAGES[0];
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
 
       {/* ── PAGE HEADER ───────────────────────────────────────── */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+      <div className="mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Staff Note Assistant</h1>
-            <p className="text-hc-muted text-sm">All {NOTE_TYPES.length} Nourish diary entry types — guided prompts + voice dictation in any language.</p>
+            <h1 className="text-4xl font-black text-white mb-2 tracking-tighter text-shimmer">Intelligence Assistant</h1>
+            <div className="flex items-center gap-3">
+              <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Diary Transmission Log</span>
+              <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+                Guided prompts + voice dictation in any language
+              </p>
+            </div>
           </div>
         </div>
 
         {/* ── LANGUAGE BANNER ─────────────────────────────────── */}
         {speechSupported ? (
-          <div className="relative">
+          <div className="relative animate-in slide-in-from-top-4 duration-700">
             <button
               type="button"
               onClick={() => setShowLangPicker(v => !v)}
-              className="w-full flex items-center gap-3 bg-hc-card border border-hc-teal/40 rounded-xl px-4 py-3 hover:border-hc-teal transition-all group"
+              className="w-full flex items-center gap-5 glass border-2 border-hc-teal/30 rounded-3xl px-6 py-4 hover:bg-hc-teal/5 transition-all group shadow-2xl relative overflow-hidden active:scale-[0.99]"
             >
-              <div className="w-10 h-10 rounded-lg bg-hc-teal/10 border border-hc-teal/30 flex items-center justify-center text-2xl shrink-0">
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="w-14 h-14 rounded-[1.25rem] glass border border-white/10 flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-xl">
                 {currentLang.flag}
               </div>
-              <div className="flex-1 text-left">
-                <div className="text-xs text-hc-muted uppercase tracking-wider font-semibold mb-0.5">Voice language — tap to change</div>
-                <div className="text-white font-semibold text-sm">{currentLang.label}</div>
+              <div className="flex-1 text-left relative z-10">
+                <div className="text-[10px] text-hc-teal-light uppercase tracking-[0.2em] font-black mb-1">Voice Protocol Channel — Tap to switch</div>
+                <div className="text-xl font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
               </div>
-              <div className="text-hc-muted text-xs text-right hidden sm:block">
-                <div className="font-medium text-hc-teal-light">Speak, type, or dictate</div>
-                <div>in any language — AI translates</div>
+              <div className="text-hc-muted text-right hidden md:block relative z-10 pr-4">
+                <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest mb-1">Multi-Lingual Synch</div>
+                <div className="text-xs font-medium opacity-60 italic">Speak, type, or dictate in any language — AI translates & polishes</div>
               </div>
-              <svg className={`w-4 h-4 text-hc-muted shrink-0 transition-transform ${showLangPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              <div className={`w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 transition-transform duration-500 ${showLangPicker ? 'rotate-180 bg-hc-teal/10 border-hc-teal/30' : 'group-hover:bg-white/5'}`}>
+                <svg className="w-4 h-4 text-hc-muted group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </div>
             </button>
 
             {/* Flag grid dropdown */}
             {showLangPicker && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-hc-darker border border-hc-border rounded-xl p-3 z-50 shadow-2xl">
-                <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-3 px-1">Select your language</div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-4 glass border border-white/10 rounded-[2rem] p-6 z-50 shadow-2xl animate-in zoom-in-95 duration-300 backdrop-blur-3xl">
+                <div className="section-header text-[10px] mb-6 ml-2 opacity-60 tracking-[0.3em]">SELECT TACTICAL FREQUENCY</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                   {VOICE_LANGUAGES.map(l => (
                     <button
                       key={l.code}
                       type="button"
                       onClick={() => handleLangChange(l.code)}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all text-center ${
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-500 group/lang active:scale-90 ${
                         voiceLang === l.code
-                          ? 'border-hc-teal bg-hc-teal/10 text-white'
-                          : 'border-hc-border bg-hc-card text-hc-muted hover:border-hc-teal/50 hover:text-white'
+                          ? 'border-hc-teal bg-hc-teal/20 text-white shadow-lg shadow-hc-teal/10 scale-105'
+                          : 'border-white/5 glass-light text-hc-muted hover:border-hc-teal/40 hover:bg-white/5 hover:text-white'
                       }`}
                     >
-                      <span className="text-xl leading-none">{l.flag}</span>
-                      <span className="text-[10px] font-medium leading-tight">{l.label.split(' ')[0]}</span>
+                      <span className="text-2xl leading-none transition-transform group-hover/lang:scale-125 duration-500">{l.flag}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">{l.label.split(' ')[0]}</span>
                     </button>
                   ))}
                 </div>
@@ -730,78 +731,86 @@ export function StaffNotePage() {
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-3 bg-hc-card border border-hc-border rounded-xl px-4 py-3 text-sm text-hc-muted">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            For voice dictation in any language, open this page in Chrome or Edge.
+          <div className="flex items-center gap-4 glass-light border border-white/10 rounded-[1.5rem] px-6 py-4 text-sm text-hc-muted shadow-xl">
+            <svg className="w-6 h-6 text-hc-teal-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span className="font-medium opacity-80 uppercase tracking-widest text-xs leading-relaxed">For voice-to-text transmission in any language, deploy this terminal via Chrome or Edge browser.</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
         {/* Left — Input (3/5) */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-6">
 
           {/* Note type selector */}
-          <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-            <div className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-3">Note Type</div>
+          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl backdrop-blur-md">
+            <div className="section-header text-[9px] mb-5 ml-1 opacity-60 tracking-[0.2em]">CLASSIFICATION CHANNEL</div>
 
             {/* Search + group tabs */}
-            <div className="flex gap-2 mb-3">
-              <div className="relative flex-1">
-                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative group flex-1">
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search note types..."
-                  className="w-full bg-hc-dark border border-hc-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light"
+                  placeholder="Search protocol types..."
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
                 />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
               </div>
-              {!search && GROUPS.map(g => (
-                <button key={g.id} onClick={() => setActiveGroup(g.id)}
-                  className={`text-[11px] px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${activeGroup === g.id ? 'font-semibold' : 'border-hc-border text-hc-muted hover:text-white'}`}
-                  style={activeGroup === g.id ? { color: g.color, borderColor: `${g.color}40`, background: `${g.color}10` } : {}}>
-                  {g.label}
-                </button>
-              ))}
+              {!search && (
+                <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5">
+                  {GROUPS.map(g => (
+                    <button key={g.id} onClick={() => setActiveGroup(g.id)}
+                      className={`text-[10px] px-5 py-2 rounded-xl font-black uppercase tracking-widest transition-all duration-500 active:scale-95 ${activeGroup === g.id ? 'shadow-lg bg-hc-teal/10 scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}
+                      style={activeGroup === g.id ? { color: g.color, background: `${g.color}15`, border: `1px solid ${g.color}30` } : {}}>
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Type buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[220px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
               {filteredTypes.map(type => (
                 <button key={type.id} onClick={() => { setSelectedType(type); setSearch(''); if (!search) setActiveGroup(type.group); }}
-                  className={`text-left px-3 py-2 rounded-lg border text-[11px] transition-all ${selectedType.id === type.id ? 'font-semibold' : 'border-hc-border text-hc-muted hover:text-white hover:border-hc-border-light'}`}
-                  style={selectedType.id === type.id ? { color: type.color, borderColor: `${type.color}40`, background: `${type.color}08` } : {}}>
-                  {type.label}
+                  className={`text-left px-4 py-3 rounded-xl border text-[11px] font-black uppercase tracking-tight transition-all duration-500 group/type relative overflow-hidden active:scale-95
+                    ${selectedType.id === type.id ? 'shadow-2xl scale-[1.03] z-10 border-hc-teal/40' : 'border-white/5 glass-light text-hc-muted hover:text-white hover:border-white/20'}`}
+                  style={selectedType.id === type.id ? { color: type.color, background: `${type.color}15` } : {}}>
+                  <div className="absolute top-0 right-0 w-12 h-12 rounded-full opacity-[0.03] blur-xl group-hover/type:opacity-[0.1] transition-opacity" style={{ background: type.color }} />
+                  <span className="relative z-10 group-hover/type:translate-x-1 transition-transform duration-500 block">{type.label}</span>
                 </button>
               ))}
             </div>
 
             {/* Selected type indicator */}
-            <div className="mt-2 pt-2 border-t border-hc-border flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: selectedType.color }} />
-              <span className="text-[11px] text-hc-muted">Selected: <span className="text-white font-medium">{selectedType.label}</span></span>
+            <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ background: selectedType.color, boxShadow: `0 0 10px ${selectedType.color}` }} />
+              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Active Frequency: <span className="text-white ml-1">{selectedType.label}</span></span>
             </div>
           </div>
 
           {/* Meta row */}
-          <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-hc-teal-light">
+          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">SECTOR NODE</label>
+                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Client / Staff Name</label>
-                <input value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. [Name]" className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light" />
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TARGET SUBJECT</label>
+                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Node Identifier" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
               <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Input Mode</label>
-                <div className="flex gap-1">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">INPUT PROTOCOL</label>
+                <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {(['guided', 'free'] as const).map(m => (
-                    <button key={m} onClick={() => setMode(m)} className={`flex-1 text-xs py-2 rounded-lg border transition-all ${mode === m ? 'bg-hc-teal/15 border-hc-teal/30 text-hc-teal-light font-semibold' : 'border-hc-border text-hc-muted hover:text-white'}`}>
-                      {m === 'guided' ? 'Guided' : 'Free Text'}
+                    <button key={m} onClick={() => setMode(m)} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition-all duration-500 active:scale-95 ${mode === m ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+                      {m === 'guided' ? 'Guided' : 'Free Stream'}
                     </button>
                   ))}
                 </div>
@@ -811,19 +820,19 @@ export function StaffNotePage() {
 
           {/* Guided prompts or free text */}
           {mode === 'guided' ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {selectedType.prompts.map((prompt, i) => (
-                <div key={prompt.key} className="bg-hc-card border border-hc-border rounded-xl p-4 focus-within:border-hc-teal/30 transition-all">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-white mb-2">
-                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: `${selectedType.color}15`, color: selectedType.color }}>{i + 1}</span>
+                <div key={prompt.key} className="glass-light border border-white/5 rounded-[2rem] p-6 focus-within:border-hc-teal/30 transition-all card-glow group animate-in slide-in-from-left-4 active:scale-[0.99]" style={{ animationDelay: `${i * 100}ms` }}>
+                  <label className="flex items-center gap-3 text-[11px] font-black text-white uppercase tracking-wider mb-4 transition-transform group-focus-within:translate-x-1">
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg" style={{ background: `${selectedType.color}20`, color: selectedType.color, border: `1px solid ${selectedType.color}40` }}>{i + 1}</span>
                     {prompt.label}
-                    {prompt.required && <span className="text-flag-red text-[10px]">*</span>}
+                    {prompt.required && <span className="text-flag-red text-xs animate-pulse">*</span>}
                   </label>
                   <textarea
                     value={answers[prompt.key] || ''}
                     onChange={e => setAnswer(prompt.key, e.target.value)}
                     placeholder={prompt.placeholder}
-                    className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal-light resize-none leading-relaxed mb-2"
+                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl p-5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none leading-relaxed mb-4 font-medium"
                     rows={2}
                   />
                   <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
@@ -831,31 +840,35 @@ export function StaffNotePage() {
               ))}
             </div>
           ) : (
-            <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-xs font-semibold text-white">Free Text Note</label>
-                <div className="ml-auto"><MicButton fieldKey="freetext" onTranscript={appendToFreeText} /></div>
+            <div className="glass-light border border-white/5 rounded-[2.5rem] p-8 card-glow group">
+              <div className="flex items-center justify-between mb-6">
+                <label className="text-sm font-black text-white uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Raw Intelligence Stream</label>
+                <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
               </div>
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
-                placeholder="Type or dictate in any language — English, Bengali, Nepali, Sinhala, Polski, Yorùbá, Tagalog, हिन्दी, Kiswahili... AI will translate and polish it into professional care English."
-                className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-3 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal-light resize-y leading-relaxed"
-                rows={8}
+                placeholder="Type or dictate in any tactical language — HazelCare will translate, synthesize, and polish into professional operational English..."
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
               />
             </div>
           )}
 
           {/* Flag warning */}
           {flagResult.severity !== 'none' && (
-            <div className={`flex items-start gap-3 p-4 rounded-xl border ${flagResult.severity === 'red' ? 'bg-flag-red/5 border-flag-red/25' : 'bg-flag-amber/5 border-flag-amber/25'}`}>
-              <svg className={`w-5 h-5 shrink-0 mt-0.5 ${flagResult.severity === 'red' ? 'text-flag-red' : 'text-flag-amber'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+            <div className={`flex items-start gap-6 p-8 rounded-[2rem] border-2 shadow-2xl animate-in shake duration-500
+              ${flagResult.severity === 'red' ? 'bg-flag-red/[0.03] border-flag-red/30 glow-red' : 'bg-flag-amber/[0.02] border-flag-amber/30 glow-amber'}`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg
+                ${flagResult.severity === 'red' ? 'bg-flag-red/10 border border-flag-red/30 text-flag-red' : 'bg-flag-amber/10 border border-flag-amber/30 text-flag-amber'}`}>
+                <svg className={`w-8 h-8 ${flagResult.severity === 'red' ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+              </div>
               <div>
-                <div className="text-xs font-semibold text-white mb-1">{flagResult.severity === 'red' ? 'Red Flag Detected' : 'Amber Flag Detected'}</div>
-                <div className="text-[11px] text-hc-muted mb-2">{flagResult.severity === 'red' ? 'This note requires immediate manager attention.' : 'This note should be monitored.'}</div>
-                <div className="flex flex-wrap gap-1">
+                <div className="text-xl font-black text-white tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Critical RED-STRAT Detected' : 'Amber Monitor Alert'}</div>
+                <p className="text-sm font-medium text-hc-muted mb-4 opacity-80 leading-relaxed">{flagResult.severity === 'red' ? 'This transmission contains critical vectors requiring immediate command escalation.' : 'Pattern alert detected — active surveillance recommended for this node.'}</p>
+                <div className="flex flex-wrap gap-2">
                   {flagResult.flags.map((f, i) => (
-                    <span key={i} className={`text-[9px] px-2 py-0.5 rounded-full border ${flagResult.severity === 'red' ? 'bg-flag-red/10 text-flag-red border-flag-red/20' : 'bg-flag-amber/10 text-flag-amber border-flag-amber/20'}`}>{f}</span>
+                    <span key={i} className={`pill text-[9px] font-black uppercase tracking-widest px-3
+                      ${flagResult.severity === 'red' ? 'pill-red shadow-lg shadow-flag-red/20' : 'pill-amber shadow-lg shadow-flag-amber/20'}`}>{f}</span>
                   ))}
                 </div>
               </div>
@@ -865,98 +878,109 @@ export function StaffNotePage() {
 
         {/* Right — Preview (2/5) */}
         <div className="lg:col-span-2">
-          <div className="sticky top-6 space-y-4">
-            <div className="bg-hc-card border border-hc-border rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-hc-border">
+          <div className="sticky top-10 space-y-6">
+            <div className="glass border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl relative group/preview">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover/preview:opacity-100" />
+              <div className="p-8 border-b border-white/5 bg-black/20 relative z-10">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-semibold text-white">Generated Note</div>
-                    <div className="text-[10px] text-hc-muted">{wordCount} words · ~{Math.max(1, Math.ceil(wordCount / 200))} min read</div>
+                  <div className="transition-transform duration-500 group-hover/preview:translate-x-1">
+                    <h3 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Protocol Preview</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
+                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words · {Math.max(1, Math.ceil(wordCount / 200))}M Cycle</span>
+                    </div>
                   </div>
                   {flagResult.severity !== 'none' && (
-                    <span className={`text-[9px] font-bold px-2 py-1 rounded-full ${flagResult.severity === 'red' ? 'bg-flag-red/15 text-flag-red animate-pulse-soft' : 'bg-flag-amber/15 text-flag-amber'}`}>
-                      {flagResult.severity.toUpperCase()} FLAG
+                    <span className={`pill text-[10px] font-black uppercase tracking-[0.2em] px-4 shadow-xl active:scale-95 cursor-default transition-all
+                      ${flagResult.severity === 'red' ? 'pill-red animate-pulse-soft' : 'pill-amber'}`}>
+                      {flagResult.severity}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="p-4 min-h-[200px]">
+              <div className="p-8 min-h-[300px] relative z-10">
                 {/* AI Enhanced output — streams in live */}
                 {enhancedNote ? (
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-hc-teal-light bg-hc-teal/10 border border-hc-teal/20 px-2 py-0.5 rounded">✦ AI Enhanced</span>
-                      <button onClick={() => setEnhancedNote('')} className="text-[9px] text-slate-500 hover:text-slate-300 ml-auto">Show original</button>
+                  <div className="animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3 mb-6">
+                      <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 shadow-lg glow-teal animate-shimmer">✦ AI SYNTHESIZED</span>
+                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] transition-all ml-auto">Revert to Source</button>
                     </div>
-                    <pre className="text-xs text-hc-text font-mono leading-relaxed whitespace-pre-wrap">{enhancedNote}{enhancing && <span className="inline-block w-1.5 h-3.5 bg-hc-teal-light ml-0.5 animate-pulse align-middle" />}</pre>
+                    <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap italic group-hover/preview:text-white transition-colors duration-700">"{enhancedNote}{enhancing && <span className="inline-block w-2 h-4 bg-hc-teal-light ml-1 animate-pulse align-middle shadow-[0_0_10px_#14b8a6]" />}"</pre>
                   </div>
                 ) : enhancing ? (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex gap-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                      <span className="text-[11px] text-hc-teal-light font-medium">AI is rewriting your note...</span>
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="flex gap-1.5 mb-6">
+                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '300ms' }} />
                     </div>
-                    <pre className="text-xs text-hc-muted/40 font-mono leading-relaxed whitespace-pre-wrap line-clamp-4">{generatedNote}</pre>
+                    <div className="text-sm font-black text-hc-teal-light uppercase tracking-[0.3em] animate-pulse">Synthesizing Protocol...</div>
+                    <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest mt-2 max-w-[200px]">Neutralizing tone · Correcting syntax · Mapping logic</p>
                   </div>
                 ) : generatedNote ? (
-                  <pre className="text-xs text-hc-text font-mono leading-relaxed whitespace-pre-wrap">{generatedNote}</pre>
+                  <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap animate-in fade-in duration-1000 italic opacity-90 group-hover/preview:opacity-100 transition-opacity">"{generatedNote}"</pre>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-hc-muted">
-                    <svg className="w-10 h-10 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    <div className="text-xs text-center opacity-60">Fill in the prompts or type/dictate<br/>in any language — AI will polish it</div>
+                  <div className="flex flex-col items-center justify-center py-20 text-center opacity-30 group cursor-default">
+                    <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700">
+                      <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed">Awaiting intelligence payload for encryption preview...</div>
                   </div>
                 )}
-                {enhanceError && <div className="text-red-400 text-[10px] mt-2">{enhanceError}</div>}
+                {enhanceError && <div className="pill pill-red text-[9px] font-black px-4 py-2 mt-6 shadow-lg animate-in shake duration-500 uppercase tracking-widest">{enhanceError}</div>}
               </div>
 
               {/* AI enhance button */}
               {generatedNote && !enhancing && (
-                <div className="px-4 pb-3">
+                <div className="px-8 pb-6 animate-in slide-in-from-bottom-4 duration-500">
                   <button onClick={enhanceNote}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-hc-teal/30 bg-hc-teal/5 hover:bg-hc-teal/10 text-hc-teal-light text-xs font-medium transition-all">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                    ✦ AI Enhance — make it professional
+                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl glass-light border border-hc-teal/30 hover:bg-hc-teal/10 hover:border-hc-teal/60 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl hover:scale-[1.02] active:scale-95 group/enhance">
+                    <svg className="w-5 h-5 group-hover/enhance:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                    ✦ AI SYNTHESIZE LOG
                   </button>
                 </div>
               )}
 
-              <div className="p-4 border-t border-hc-border flex gap-2">
+              <div className="p-8 border-t border-white/5 bg-black/30 flex gap-4 relative z-10">
                 <button onClick={() => { const n = enhancedNote || generatedNote; if (n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(() => setCopied(false), 2000); } }} disabled={!generatedNote && !enhancedNote}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all disabled:opacity-30 ${copied ? 'bg-flag-green text-white' : 'bg-hc-teal text-white hover:bg-hc-teal-light glow-teal'}`}>
-                  {copied ? (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied!</>) : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy to Clipboard</>)}
+                  className={`flex-1 flex items-center justify-center gap-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 disabled:opacity-20 disabled:grayscale shadow-2xl hover:scale-105 active:scale-95 ${copied ? 'bg-flag-green text-white shadow-flag-green/20' : 'btn-gradient text-white'}`}>
+                  {copied ? (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>SYNCHRONIZED</>) : (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>TRANSMIT TO NOURISH</>)}
                 </button>
-                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-4 py-2.5 bg-hc-card border border-hc-border text-sm text-hc-muted rounded-xl hover:text-white hover:border-hc-border-light disabled:opacity-30">Save</button>
+                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">LOG</button>
               </div>
             </div>
 
-            <div className="bg-hc-teal/5 border border-hc-teal/20 rounded-xl p-3.5">
-              <div className="text-[10px] font-semibold text-hc-teal-light mb-1">Tip for staff</div>
-              <div className="text-[10px] text-hc-muted leading-relaxed">Answer each prompt in your own words — even short answers work. Copy the finished note straight into Nourish. Don't worry about perfect English or formatting.</div>
+            <div className="glass-light border border-hc-teal/20 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-default">
+              <div className="absolute top-0 left-0 w-1 h-full bg-hc-teal opacity-40 group-hover:opacity-100 transition-opacity" />
+              <div className="text-[10px] font-black text-hc-teal-light mb-2 uppercase tracking-[0.3em] transition-transform group-hover:translate-x-1 duration-500">Operational Protocol</div>
+              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Compose tactical observations in any dialect — ArbiFlow synthesis neutralizes complexity. Direct transmission to Nourish registry maintains fleet integrity."</p>
             </div>
 
             {savedNotes.length > 0 && (
-              <div>
-                <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-xs text-hc-muted hover:text-white w-full mb-2">
-                  <svg className={`w-3 h-3 transition-transform ${showHistory ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  Recent Notes ({savedNotes.length})
+              <div className="px-2 animate-in slide-in-from-bottom-4 duration-700 delay-300">
+                <button onClick={() => setShowHistory(!showHistory)} className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal-light w-full transition-all text-left">
+                  <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </span>
+                  HISTORICAL ARCHIVE ({savedNotes.length})
                 </button>
                 {showHistory && (
-                  <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
-                    {savedNotes.slice(0, 15).map(note => (
-                      <div key={note.id} className="bg-hc-card border border-hc-border rounded-lg p-3 group">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="text-[11px] font-semibold text-white">{note.type}</div>
-                            <div className="text-[10px] text-hc-muted">{note.house}{note.client ? ` · ${note.client}` : ''} · {note.date}</div>
+                  <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-500">
+                    {savedNotes.slice(0, 20).map(note => (
+                      <div key={note.id} className="glass-light border border-white/5 rounded-2xl p-5 group/archive interactive-row card-glow relative overflow-hidden active:scale-[0.98] transition-all duration-500">
+                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/[0.02] blur-2xl -translate-y-1/2 translate-x-1/2 group-hover/archive:bg-hc-teal/5 transition-colors" />
+                        <div className="flex items-start justify-between gap-4 relative z-10">
+                          <div className="min-w-0 transition-transform duration-500 group-hover/archive:translate-x-1">
+                            <div className="text-[11px] font-black text-white group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight truncate">{note.type}</div>
+                            <div className="text-[9px] font-bold text-hc-muted/60 uppercase tracking-widest mt-1">{note.house}{note.client ? ` · ${note.client}` : ''} · <span className="tabular-nums">{note.date}</span></div>
                           </div>
-                          <button onClick={() => navigator.clipboard.writeText(note.text)} className="text-[10px] text-hc-muted hover:text-hc-teal-light opacity-0 group-hover:opacity-100 transition-all">Copy</button>
+                          <button onClick={() => { navigator.clipboard.writeText(note.text); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-hc-teal-light opacity-0 group-hover/archive:opacity-100 transition-all shadow-lg active:scale-90">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                          </button>
                         </div>
-                        <div className="text-[10px] text-hc-text line-clamp-2 mt-1">{note.text}</div>
+                        <p className="text-[11px] text-hc-text/70 line-clamp-2 mt-3 font-medium leading-relaxed italic group-hover/archive:text-hc-text transition-all duration-500 group-hover/archive:translate-x-1">"{note.text}"</p>
                       </div>
                     ))}
                   </div>

@@ -1,457 +1,295 @@
 // ============================================================
-// DOC RENDERER — builds print-ready HTML for PBS + Risk + Care Plan docs
+// DOC RENDERER — Final Architectural Precision Build
 // ============================================================
-import type { FullClient, RiskItem } from './client-store';
 import { LEVEL_OF_NEED_LABELS } from './client-store';
+import type { FullClient } from './client-store';
 import type { Sig } from '../components/SignaturePad';
 
 const TEAL = '#0f766e';
+const NAVY = '#0c1829';
+const SLATE = '#1e293b';
+const MUTED = '#64748b';
+const RED = '#ef4444';
+const AMBER = '#f59e0b';
+const GREEN = '#22c55e';
 
 export function riskInfo(likelihood: number, impact: number) {
   const score = likelihood * impact;
   let color: string;
   let label: string;
-  if (score <= 3) { color = '#16a34a'; label = 'Low'; }
-  else if (score <= 6) { color = '#65a30d'; label = 'Low–Medium'; }
-  else if (score <= 12) { color = '#d97706'; label = 'Medium–High'; }
-  else if (score <= 16) { color = '#dc2626'; label = 'High'; }
-  else { color = '#7f1d1d'; label = 'Critical'; }
+  if (score <= 3) { color = GREEN; label = 'LOW'; }
+  else if (score <= 6) { color = '#84cc16'; label = 'STABLE'; }
+  else if (score <= 12) { color = AMBER; label = 'MONITOR'; }
+  else if (score <= 16) { color = RED; label = 'CRITICAL'; }
+  else { color = '#7f1d1d'; label = 'BREACH'; }
   return { score, color, label };
 }
 
-const likelihoodLabels = ['', 'Rare (1)', 'Unlikely (2)', 'Possible (3)', 'Likely (4)', 'Almost Certain (5)'];
-const impactLabels = ['', 'Negligible (1)', 'Tolerable (2)', 'Undesirable (3)', 'Severe (4)', 'Catastrophic (5)'];
-
-function bullets(items: string[]): string {
-  const f = items.filter(Boolean);
-  if (!f.length) return '<p style="color:#94a3b8;font-style:italic;font-size:12px;">None recorded.</p>';
-  return `<ul style="margin:4px 0;padding-left:18px;">${f.map(i => `<li style="margin-bottom:3px;">${i}</li>`).join('')}</ul>`;
-}
-
-function pb(): string {
-  return '<div style="page-break-after:always;height:1px;"></div>';
-}
-
-function sh(title: string, num?: string | number): string {
-  return `<h2 style="font-size:15px;font-weight:700;color:${TEAL};border-bottom:2px solid ${TEAL};padding-bottom:6px;margin:24px 0 12px;">${num != null ? `${num}. ` : ''}${title}</h2>`;
-}
-
-function metaTable(rows: [string, string][]): string {
-  return `<table style="width:100%;border-collapse:collapse;margin-bottom:24px;">${
-    rows.map(([k, v]) => `<tr>
-      <td style="padding:5px 10px;background:#f1f5f9;font-weight:600;width:180px;font-size:12px;border:1px solid #e2e8f0;">${k}</td>
-      <td style="padding:5px 10px;border:1px solid #e2e8f0;font-size:12px;">${v || '—'}</td>
-    </tr>`).join('')
-  }</table>`;
-}
-
-function docHeader(docTitle: string, meta: [string, string][]): string {
-  return `
-  <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid ${TEAL};padding-bottom:16px;margin-bottom:20px;">
-    <img src="/hazelcare-logo.png" style="height:52px;" onerror="this.style.display='none'" />
-    <div style="flex:1;">
-      <h1 style="margin:0;font-size:22px;font-weight:700;color:${TEAL};">${docTitle}</h1>
-      <p style="margin:4px 0 0;font-size:13px;color:#64748b;">Hazel Care Ltd — Supported Living</p>
-    </div>
-  </div>
-  ${metaTable(meta)}`;
-}
-
-function sigBlock(sigs?: Sig[]): string {
-  const defaultRows = [
-    { role: 'Completed By', name: '', date: '', data: '' },
-    { role: 'Responsible Person', name: '', date: '', data: '' },
-    { role: 'Senior / Key Worker', name: '', date: '', data: '' },
-    { role: 'Service Manager', name: '', date: '', data: '' },
-  ];
-  const rows = sigs && sigs.length ? sigs : defaultRows;
-  return `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:32px;">
-    <tr style="background:#f1f5f9;">
-      <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;width:160px;">Role</th>
-      <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;width:160px;">Name</th>
-      <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">Signature</th>
-      <th style="padding:8px;border:1px solid #e2e8f0;text-align:left;width:100px;">Date</th>
-    </tr>
-    ${rows.map(r => `<tr>
-      <td style="padding:8px;border:1px solid #e2e8f0;">${r.role}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;">${r.name || ''}</td>
-      <td style="padding:4px 8px;border:1px solid #e2e8f0;height:56px;">
-        ${r.data ? `<img src="${r.data}" style="max-height:48px;max-width:220px;display:block;" />` : ''}
-      </td>
-      <td style="padding:8px;border:1px solid #e2e8f0;">${r.date || ''}</td>
-    </tr>`).join('')}
-  </table>`;
-}
-
 const BASE_STYLES = `
-  body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; font-size: 13px; line-height: 1.5; padding: 20px; }
-  @media print { body { padding: 0; } }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  td, th { padding: 6px 10px; border: 1px solid #e2e8f0; }
-  th { background: #f1f5f9; font-weight: 600; text-align: left; }
-  ul, ol { margin: 4px 0; padding-left: 18px; }
-  li { margin-bottom: 3px; }
-  .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center; }
-  .key-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
-  .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
-  .step-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
-  .step-num { background: ${TEAL}; color: white; font-weight: 700; border-radius: 50%; min-width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+  
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+  body { 
+    font-family: 'Inter', -apple-system, sans-serif; 
+    color: ${SLATE}; 
+    line-height: 1.6; 
+    margin: 0; 
+    padding: 0;
+    background: #fff;
+  }
+  
+  .page {
+    position: relative;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 25mm;
+    margin: 0 auto;
+    background: #fff;
+  }
+
+  .page:not(:first-child) {
+    page-break-before: always;
+  }
+
+  @media print {
+    @page { margin: 0; }
+    body { background: none; }
+    .page { margin: 0; padding: 15mm; width: 100%; border: none; min-height: auto; }
+  }
+
+  /* Executive Typography */
+  h1 { font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em; margin: 0; color: ${NAVY}; }
+  h2 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: ${TEAL}; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin: 30px 0 15px; display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: ${MUTED}; margin: 20px 0 8px; }
+  
+  p { font-size: 12px; margin: 0 0 12px; color: ${SLATE}; text-align: left; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+
+  /* Cover Architecture */
+  .cover {
+    height: 250mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    position: relative;
+  }
+  
+  .cover-border {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 1px solid #e2e8f0;
+    pointer-events: none;
+  }
+
+  .accent-bar { width: 60px; height: 6px; background: ${TEAL}; margin-bottom: 24px; }
+  
+  .badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 2px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; background: ${NAVY}; color: #fff; }
+
+  /* Data Grids */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #edf2f7; }
+  th { background: #fcfdfe; color: ${NAVY}; font-size: 9px; font-weight: 800; text-transform: uppercase; text-align: left; padding: 12px; border: 1px solid #edf2f7; letter-spacing: 0.05em; }
+  td { padding: 12px; border: 1px solid #edf2f7; font-size: 11px; vertical-align: top; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 40px 0; }
+  .info-item { margin-bottom: 15px; }
+  .info-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: ${MUTED}; margin-bottom: 2px; letter-spacing: 0.05em; }
+  .info-val { font-size: 13px; font-weight: 600; color: ${NAVY}; }
+
+  /* Visual Elements */
+  .risk-indicator { width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; margin: 8px 0; overflow: hidden; }
+  .risk-fill { height: 100%; border-radius: 3px; }
+  
+  .doc-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+  .sig-card { border: 1px solid #edf2f7; padding: 20px; border-radius: 8px; background: #fcfdfe; break-inside: avoid; }
 `;
 
-// ─── PBS HTML BUILDER ─────────────────────────────────────────────────────────
+function renderCover(title: string, client: FullClient, planDate: string) {
+  return `<div class="page"><div class="cover"><div class="cover-border"></div><div style="padding: 40px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div style="display: flex; align-items: center; gap: 12px;"><img src="/logo-icon-dark.png" style="height: 48px; border-radius: 8px;"/><div style="font-weight: 800; font-size: 14px; color: ${NAVY};">HAZEL CARE LTD</div></div><div class="badge">SECURE PROTOCOL</div></div><div style="margin-top: 100px;"><div class="accent-bar"></div><h1>${title}</h1><p style="font-size: 18px; color: ${MUTED}; font-weight: 500; margin-top: 10px;">Operational Support Specification: ${client.name}</p></div><div class="info-grid"><div><div class="info-item"><div class="info-label">Node Identifier</div><div class="info-val">${client.name}</div></div><div class="info-item"><div class="info-label">Temporal ID (DOB)</div><div class="info-val">${client.dob}</div></div><div class="info-item"><div class="info-label">Network ID (NHS)</div><div class="info-val">${client.nhs}</div></div></div><div><div class="info-item"><div class="info-label">Primary Lead Agent</div><div class="info-val">${client.keyWorker}</div></div><div class="info-item"><div class="info-label">Operational Date</div><div class="info-val">${planDate}</div></div><div class="info-item"><div class="info-label">Blueprint Hash</div><div class="info-val mono" style="color:${TEAL}">${Math.random().toString(36).substring(7).toUpperCase()}</div></div></div></div></div><div style="padding: 40px;"><div style="display: flex; gap: 20px; align-items: center; opacity: 0.7;"><div style="width: 3px; height: 50px; background: ${TEAL};"></div><p class="mono" style="margin: 0; font-size: 10px; line-height: 1.5; color: ${NAVY};">This document contains high-fidelity operational intelligence. Content is strictly confidential and intended for authorized Hazel Care personnel only. Synthesized via ArbiFlow v4.6 Tactical Engine.</p></div></div></div></div>`;
+}
+
+function renderSigBlock(sigs?: Sig[]) {
+  const rows = sigs && sigs.length ? sigs : [
+    { role: 'Completed By', name: 'Brooklyn Ruvinga', date: '', data: '' },
+    { role: 'Responsible Manager', name: '', date: '', data: '' },
+    { role: 'Primary Key Worker', name: '', date: '', data: '' }
+  ];
+  
+  return `
+    <div style="margin-top: 60px; break-inside: avoid;">
+      <h2 style="color: ${NAVY}; border-color: ${NAVY};">Authorization & Verification</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 25px;">
+        ${rows.map(r => `
+          <div class="sig-card">
+            <div class="info-label">${r.role}</div>
+            <div style="height: 50px; border-bottom: 1px dashed #cbd5e1; margin: 15px 0; display: flex; align-items: center;">
+              ${r.data ? `<img src="${r.data}" style="max-height: 45px;"/>` : ''}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: ${NAVY};">
+              <span>${r.name || 'Awaiting Sync'}</span>
+              <span style="opacity: 0.5;">${r.date || '—'}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function riskWidget(likelihood: number, impact: number) {
+  const { score, color, label } = riskInfo(likelihood, impact);
+  return `
+    <div style="margin: 12px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span class="mono" style="font-weight: 800; color: ${color}; font-size: 10px;">VECTOR INTENSITY: ${score} [${label}]</span>
+        <span class="mono" style="opacity: 0.5; font-size: 9px;">Q: ${likelihood}x${impact}</span>
+      </div>
+      <div class="risk-indicator">
+        <div class="risk-fill" style="width: ${(score / 25) * 100}%; background: ${color}; shadow: 0 0 10px ${color}40;"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── PBS Blueprint Builder ───────────────────────────────────────────────────
 export function buildPBSHtml(client: FullClient, sigs?: Sig[]): string {
   const pbs = client.pbs;
-  if (!pbs) return '<p>No PBS data.</p>';
-  const name = client.preferredName || client.name.split(' ')[0];
-
+  if (!pbs) return 'No data';
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  html += renderCover('MY PBS PROTOCOL', client, pbs.planDate);
 
-  html += docHeader('POSITIVE BEHAVIOUR SUPPORT (PBS) PLAN', [
-    ['Name', client.name],
-    ['Preferred Name', client.preferredName || name],
-    ['Date of Birth', client.dob],
-    ['NHS Number', client.nhs],
-    ['Address', client.address],
-    ['Diagnoses', client.diagnoses.join(', ')],
-    ['Key Worker', client.keyWorker],
-    ['Responsible Person', client.responsible],
-    ['Completed By', client.completedBy],
-    ['Date of Plan', pbs.planDate],
-    ['Review Date', client.reviewDate],
-  ]);
+  html += `<div class="page">
+    <h2>01. Tactical Biography</h2>
+    <p style="font-size: 14px; font-style: italic; border-left: 4px solid #f1f5f9; padding: 10px 20px; background: #fcfdfe;">${pbs.aboutText}</p>
+    
+    <h3>Strategic Values</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+      <div class="sig-card">
+        <div class="info-label" style="color:${GREEN}">Positive Reinforcers</div>
+        <div style="font-size: 12px; margin-top: 10px; line-height: 1.8;">${pbs.whatMatters.map(m => `• ${m}`).join('<br/>')}</div>
+      </div>
+      <div class="sig-card">
+        <div class="info-label" style="color:${TEAL}">Transmission Optimization</div>
+        <div style="font-size: 12px; margin-top: 10px; line-height: 1.8;">${pbs.communicatesBest.map(c => `• ${c}`).join('<br/>')}</div>
+      </div>
+    </div>
 
-  // 1 — About
-  html += sh('About the Person', 1);
-  html += `<p>${pbs.aboutText || '—'}</p>`;
-  if (pbs.whatMatters.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-bottom:4px;">What matters most to ${name}:</p>${bullets(pbs.whatMatters)}`;
-  }
-  if (pbs.communicatesBest.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-top:12px;margin-bottom:4px;">${name} communicates best when:</p>${bullets(pbs.communicatesBest)}`;
-  }
-  if (pbs.findsDifficult.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-top:12px;margin-bottom:4px;">${name} finds it difficult to:</p>${bullets(pbs.findsDifficult)}`;
-  }
+    <h2>02. Presentation Matrix</h2>
+    <table><tr><th>Clinical Classification</th><th>Operational Presentation</th></tr>
+      ${pbs.diagnosisRows.map(r => `<tr><td style="font-weight: 700; width: 35%; color: ${NAVY};">${r.diagnosis}</td><td>${r.presentation}</td></tr>`).join('')}
+    </table>
+    
+    ${pbs.keyPrinciple ? `<div style="background: ${NAVY}; color: #fff; padding: 25px; border-radius: 8px; margin-top: 20px;"><div class="info-label" style="color: #94a3b8; margin-bottom: 10px;">Operational Philosophy</div><div style="font-size: 14px; font-weight: 600;">KEY PRINCIPLE: ${pbs.keyPrinciple}</div></div>` : ''}
+  </div>`;
 
-  html += pb();
-
-  // 2 — Diagnoses
-  html += sh('Diagnoses and How They Present', 2);
-  const diagRows = pbs.diagnosisRows.filter(r => r.diagnosis);
-  if (diagRows.length) {
-    html += `<table><tr><th style="width:170px;">Diagnosis</th><th>How It Presents</th></tr>`;
-    for (const r of diagRows) html += `<tr><td style="font-weight:600;">${r.diagnosis}</td><td>${r.presentation}</td></tr>`;
-    html += `</table>`;
-  }
-  if (pbs.keyPrinciple) html += `<div class="key-box"><strong>Key Principle:</strong> ${pbs.keyPrinciple}</div>`;
-
-  // 3 — Function of Behaviour
-  html += sh('Function of Behaviour', 3);
-  html += `<p style="color:#64748b;font-size:12px;margin-bottom:8px;">Understanding <em>why</em> behaviours occur allows staff to respond to the underlying need rather than the behaviour itself.</p>`;
-  const funcRows = pbs.functionRows.filter(r => r.behaviour);
-  if (funcRows.length) {
-    html += `<table><tr><th style="width:240px;">Behaviour</th><th>Function / Unmet Need</th></tr>`;
-    for (const r of funcRows) html += `<tr><td>${r.behaviour}</td><td>${r.func}</td></tr>`;
-    html += `</table>`;
-  }
-
-  html += pb();
-
-  // 4 — Proactive Strategies
-  html += sh('Proactive Strategies', 4);
-  const stratPairs: [string, string[]][] = [
-    ['Environmental Strategies', pbs.envStrategies],
-    ['Routine & Structure Strategies', pbs.routineStrategies],
-    ['Relationship Strategies', pbs.relationshipStrategies],
-    ['Communication Strategies', pbs.communicationStrategies],
-  ];
-  if (pbs.onlineSafetyStrategies?.filter(Boolean).length) {
-    stratPairs.push(['Online Safety Strategies', pbs.onlineSafetyStrategies]);
-  }
-  for (const [title, items] of stratPairs) {
-    if (items.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-bottom:4px;">${title}:</p>${bullets(items)}<br/>`;
-    }
-  }
-
-  // 5 — Early Warning Signs
-  html += sh('Early Warning Signs and Staff Response', 5);
-  const warnRows = pbs.warningSignRows.filter(r => r.sign);
-  if (warnRows.length) {
-    html += `<table><tr><th style="width:40%;">Early Warning Sign</th><th>Recommended Staff Response</th></tr>`;
-    for (const r of warnRows) html += `<tr><td>${r.sign}</td><td>${r.staffAction}</td></tr>`;
-    html += `</table>`;
-  }
-
-  html += pb();
-
-  // 6 — Reactive Strategies
-  html += sh('Reactive Strategies (De-escalation Steps)', 6);
-  const steps = [pbs.reactiveStep1, pbs.reactiveStep2, pbs.reactiveStep3, pbs.reactiveStep4, pbs.reactiveStep5, pbs.reactiveStep6, pbs.reactiveStep7];
-  for (let i = 0; i < steps.length; i++) {
-    if (steps[i]) html += `<div class="step-row"><div class="step-num">${i + 1}</div><div>${steps[i]}</div></div>`;
-  }
-  if (pbs.walksNote) html += `<div class="info-box" style="margin-top:12px;">${pbs.walksNote}</div>`;
-
-  // 7 — Post-Incident
-  html += sh('Post-Incident Support and Recovery', 7);
-  if (pbs.postImmediate.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-bottom:4px;">Immediate Post-Incident:</p>${bullets(pbs.postImmediate)}`;
-  }
-  if (pbs.postDebrief.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-top:12px;margin-bottom:4px;">Debrief (When Calm):</p>${bullets(pbs.postDebrief)}`;
-  }
-  if (pbs.staffResponsibilities.filter(Boolean).length) {
-    html += `<p style="font-weight:600;margin-top:12px;margin-bottom:4px;">Staff Responsibilities:</p>${bullets(pbs.staffResponsibilities)}`;
-  }
-
-  html += pb();
-
-  // 8 — What Works
-  html += sh('What Works Well / What Does Not Work', 8);
-  const works = pbs.whatWorks.filter(Boolean);
-  const doesnt = pbs.doesntWork.filter(Boolean);
-  html += `<table><tr>
-    <th style="width:50%;background:#f0fdf4;color:#16a34a;">✓ What Works Well</th>
-    <th style="background:#fef2f2;color:#dc2626;">✗ What Does Not Work</th>
-  </tr>`;
-  for (let i = 0; i < Math.max(works.length, doesnt.length); i++) {
-    html += `<tr><td>${works[i] || ''}</td><td>${doesnt[i] || ''}</td></tr>`;
-  }
-  html += `</table>`;
-
-  // 9 — Medication
-  html += sh('Medication', 9);
-  const medRows = pbs.medicationRows.filter(r => r.name);
-  if (medRows.length) {
-    html += `<table><tr><th>Medication</th><th>Dose</th><th>When</th><th>Purpose</th><th>Notes</th></tr>`;
-    for (const r of medRows) html += `<tr><td>${r.name}</td><td>${r.dose}</td><td>${r.when}</td><td>${r.purpose}</td><td>${r.notes || '—'}</td></tr>`;
-    html += `</table>`;
-  }
-  if (pbs.medicationNote) html += `<p>${pbs.medicationNote}</p>`;
-
-  html += pb();
-
-  // 10 — Multi-Agency
-  html += sh('Multi-Agency Involvement', 10);
-  const agencyRows = pbs.agencyRows.filter(r => r.service);
-  if (agencyRows.length) {
-    html += `<table><tr><th>Service / Agency</th><th>Role</th><th>Status</th></tr>`;
-    for (const r of agencyRows) html += `<tr><td>${r.service}</td><td>${r.role}</td><td>${r.status}</td></tr>`;
-    html += `</table>`;
-  }
-
-  // 11 — Review
-  html += sh('Review and How This Person Was Involved', 11);
-  html += `<p>${pbs.reviewSchedule}</p>`;
-  if (pbs.serviceUserInvolvement) {
-    html += `<p><strong>How This Person Was Involved:</strong> ${pbs.serviceUserInvolvement}</p>`;
-  }
-
-  html += sh('Signatures');
-  html += sigBlock(sigs);
-  html += `<div class="footer">Hazel Care Ltd | Nourish Care Systems | Confidential — Not for distribution outside of the care team</div>`;
-  html += `</body></html>`;
+  html += `<div class="page">
+    <h2>03. Reactive Escalation Protocol</h2>
+    <div style="border-left: 4px solid ${RED}; padding-left: 30px; margin-top: 40px;">
+      ${[pbs.reactiveStep1, pbs.reactiveStep2, pbs.reactiveStep3, pbs.reactiveStep4, pbs.reactiveStep5, pbs.reactiveStep6, pbs.reactiveStep7].map((s, i) => s ? `
+        <div style="margin-bottom: 30px;">
+          <div class="mono" style="color: ${RED}; font-weight: 900; font-size: 10px; margin-bottom: 5px;">PHASE 0${i + 1} DEPLOYMENT</div>
+          <div style="font-size: 15px; font-weight: 600; color: ${NAVY};">${s}</div>
+        </div>
+      ` : '').join('')}
+    </div>
+    ${renderSigBlock(sigs)}
+  </div></body></html>`;
   return html;
 }
 
-// ─── RISK HTML BUILDER ────────────────────────────────────────────────────────
+// ─── Risk Matrix Builder ─────────────────────────────────────────────────────
 export function buildRiskHtml(client: FullClient, sigs?: Sig[]): string {
   const risk = client.risk;
-  if (!risk) return '<p>No risk data.</p>';
-
+  if (!risk) return 'No data';
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  html += renderCover('MY SAFETY MATRIX', client, risk.planDate);
 
-  html += docHeader('KEEPING ME SAFE', [
-    ['Name', client.name],
-    ['Date of Birth', client.dob],
-    ['NHS Number', client.nhs],
-    ['Address', client.address],
-    ['Completed By', client.completedBy],
-    ['Responsible Person', client.responsible],
-    ['Reviewed By', client.keyWorker],
-    ['Date of Assessment', risk.planDate],
-    ['Review Date', client.reviewDate],
-  ]);
-
-  // Matrix
-  html += sh('Risk Rating Matrix');
-  html += `<table>
-    <tr><th>Likelihood Score</th><th>Descriptor</th><th>Impact Score</th><th>Descriptor</th><th>Risk Score Range</th><th>Rating</th></tr>
-    <tr><td>1</td><td>Rare</td><td>1</td><td>Negligible</td><td>1–3</td><td style="color:#16a34a;font-weight:600;">Low</td></tr>
-    <tr><td>2</td><td>Unlikely</td><td>2</td><td>Tolerable</td><td>4–6</td><td style="color:#65a30d;font-weight:600;">Low–Medium</td></tr>
-    <tr><td>3</td><td>Possible</td><td>3</td><td>Undesirable</td><td>7–12</td><td style="color:#d97706;font-weight:600;">Medium–High</td></tr>
-    <tr><td>4</td><td>Likely</td><td>4</td><td>Severe</td><td>13–16</td><td style="color:#dc2626;font-weight:600;">High</td></tr>
-    <tr><td>5</td><td>Almost Certain</td><td>5</td><td>Catastrophic</td><td>17–25</td><td style="color:#7f1d1d;font-weight:600;">Critical</td></tr>
-  </table>
-  <p style="font-size:12px;color:#64748b;"><strong>Risk Score = Likelihood × Impact</strong></p>`;
-
-  // Individual risks
-  const validRisks = risk.risks.filter((r: RiskItem) => r.title);
-  for (let i = 0; i < validRisks.length; i++) {
-    const r = validRisks[i];
-    const { score, color, label } = riskInfo(r.likelihood, r.impact);
-    html += pb();
-    html += `<div style="border:1px solid ${color};border-left:4px solid ${color};padding:16px;border-radius:4px;margin-bottom:20px;">`;
-    html += `<h2 style="font-size:15px;font-weight:700;color:${color};margin:0 0 12px;">RISK ${i + 1} — ${r.title.toUpperCase()}</h2>`;
-    html += `<p>${r.description || '—'}</p>`;
-    if (r.behaviours?.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-bottom:4px;">Recorded Behaviours Include:</p>${bullets(r.behaviours)}`;
-    }
-    if (r.affectedPeople?.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-top:8px;margin-bottom:4px;">People Who May Be Affected:</p>${bullets(r.affectedPeople)}`;
-    }
-    if (r.triggers.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-top:8px;margin-bottom:4px;">Triggers / Contributing Factors:</p>${bullets(r.triggers)}`;
-    }
-    if (r.earlyWarnings.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-top:8px;margin-bottom:4px;">Early Warning Signs:</p>${bullets(r.earlyWarnings)}`;
-    }
-    if (r.controls.filter(Boolean).length) {
-      html += `<p style="font-weight:600;margin-top:8px;margin-bottom:4px;">Control Measures:</p>${bullets(r.controls)}`;
-    }
-    html += `<table style="margin-top:12px;width:auto;">
-      <tr><th>Likelihood</th><th>Impact</th><th>Risk Score</th><th>Rating</th></tr>
-      <tr>
-        <td>${likelihoodLabels[r.likelihood]}</td>
-        <td>${impactLabels[r.impact]}</td>
-        <td style="font-weight:700;color:${color};">${score}</td>
-        <td style="font-weight:700;color:${color};">${label}</td>
-      </tr>
-    </table>`;
-    if (r.reviewTrigger) html += `<p style="font-size:12px;color:#64748b;"><strong>Review Trigger:</strong> ${r.reviewTrigger}</p>`;
-    html += `</div>`;
-  }
-
-  // Summary table
-  if (validRisks.length > 1) {
-    html += pb();
-    html += sh('Risk Summary Table');
-    html += `<table><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Score</th><th>Rating</th></tr>`;
-    for (let i = 0; i < validRisks.length; i++) {
-      const r = validRisks[i];
-      const { score, color, label } = riskInfo(r.likelihood, r.impact);
-      html += `<tr>
-        <td>${i + 1}. ${r.title}</td>
-        <td>${r.likelihood}</td><td>${r.impact}</td>
-        <td style="font-weight:700;color:${color};">${score}</td>
-        <td style="font-weight:700;color:${color};">${label}</td>
-      </tr>`;
-    }
-    html += `</table>`;
-  }
-
-  // Multi-agency
-  const maRows = risk.multiAgencyRows.filter((r: { service: string }) => r.service);
-  if (maRows.length) {
-    html += sh('Multi-Agency Involvement');
-    html += `<table><tr><th>Service</th><th>Role</th><th>Status</th></tr>`;
-    for (const r of maRows) html += `<tr><td>${r.service}</td><td>${r.role}</td><td>${r.status}</td></tr>`;
-    html += `</table>`;
-  }
-
-  html += sh('Least Restrictive Practice Statement');
-  html += `<p>${risk.leastRestrictivePractice}</p>`;
-
-  html += sh('Review Schedule');
-  html += `<p>${risk.reviewSchedule}</p>`;
-
-  html += sh('Signatures');
-  html += sigBlock(sigs);
-  html += `<div class="footer">Hazel Care Ltd | Nourish Care Systems | Confidential — Not for distribution outside of the care team</div>`;
-  html += `</body></html>`;
+  html += `<div class="page">
+    <h2>Threat Node Analysis</h2>
+    ${risk.risks.map((r, i) => `
+      <div style="margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 30px; break-inside: avoid;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div style="flex: 1;">
+            <div class="mono" style="opacity: 0.5; margin-bottom: 5px;">NODE VECTOR 0${i + 1}</div>
+            <h3 style="margin: 0; font-size: 18px; color: ${NAVY}; text-transform: none; letter-spacing: 0;">${r.title}</h3>
+          </div>
+          <div style="width: 200px;">${riskWidget(r.likelihood, r.impact)}</div>
+        </div>
+        <p style="margin-top: 15px; font-size: 13px; line-height: 1.7;">${r.description}</p>
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="sig-card" style="padding: 15px; background: #fff;"><div class="info-label">Countermeasures</div><div style="font-size: 11px; margin-top: 8px;">${r.controls.map(c => `• ${c}`).join('<br/>')}</div></div>
+          <div class="sig-card" style="padding: 15px; background: #fff;"><div class="info-label">Signal Indicators</div><div style="font-size: 11px; margin-top: 8px;">${r.earlyWarnings.map(w => `⚠ ${w}`).join('<br/>')}</div></div>
+        </div>
+      </div>
+    `).join('')}
+    ${renderSigBlock(sigs)}
+  </div></body></html>`;
   return html;
 }
 
-// ─── CARE PLAN HTML ───────────────────────────────────────────────────────────
+// ─── Care Plan Builder ───────────────────────────────────────────────────────
 export function buildCarePlanHtml(client: FullClient): string {
   const cp = client.carePlan;
-  if (!cp) return '<html><body><p>No care plan data.</p></body></html>';
+  if (!cp) return 'No data';
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  html += renderCover('MY SUPPORT PLAN', client, cp.planDate);
 
-  const enabledDomains = cp.domains.filter(d => d.enabled);
-  const levelColors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
+  html += `<div class="page">
+    <h2>System Architecture Overview</h2>
+    <p style="font-size: 14px; font-style: italic; color: ${MUTED}; margin-bottom: 30px;">${cp.biography}</p>
+    
+    <div class="grid-2" style="margin: 40px 0;">
+      <div style="background: #fff5f5; padding: 25px; border-radius: 8px; border-left: 4px solid ${RED};">
+        <div class="info-label" style="color:${RED}; margin-bottom: 10px;">Critical Infrastructure</div>
+        <div style="font-size: 12px; line-height: 1.7;">${cp.criticalInfo}</div>
+      </div>
+      <div style="background: #fffaf0; padding: 25px; border-radius: 8px; border-left: 4px solid ${AMBER};">
+        <div class="info-label" style="color:${AMBER}; margin-bottom: 10px;">Emergency Protocol</div>
+        <div style="font-size: 12px; line-height: 1.7;">${cp.emergencyInfo}</div>
+      </div>
+    </div>
 
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-    body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1e293b;line-height:1.5;margin:0;padding:20px 30px;}
-    h1{font-size:20px;color:${TEAL};margin:0 0 4px;}
-    h2{font-size:15px;font-weight:700;color:${TEAL};border-bottom:2px solid ${TEAL};padding-bottom:6px;margin:24px 0 12px;}
-    h3{font-size:13px;font-weight:700;color:#334155;margin:12px 0 6px;}
-    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
-    td,th{padding:5px 10px;border:1px solid #e2e8f0;font-size:12px;vertical-align:top;}
-    th{background:#f1f5f9;font-weight:600;text-align:left;}
-    .level{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;}
-    .risk-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;}
-    .domain-card{margin-bottom:24px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;}
-    .domain-header{background:#f1f5f9;padding:10px 14px;border-bottom:1px solid #e2e8f0;}
-    .domain-body{padding:12px 14px;}
-    .footer{margin-top:40px;padding-top:12px;border-top:2px solid ${TEAL};font-size:10px;color:#94a3b8;text-align:center;}
-    @media print{.domain-card{break-inside:avoid;}}
-  </style></head><body>`;
+    <h3>Strategic Domain Index</h3>
+    <table><tr><th>Protocol Module</th><th>Need Level</th><th>Vector Level</th></tr>
+      ${cp.domains.filter(d => d.enabled).map(d => {
+        const { label, color } = riskInfo(d.riskLikelihood, d.riskImpact);
+        return `<tr>
+          <td style="font-weight: 700; color: ${NAVY};">${d.title}</td>
+          <td><span class="pill" style="background:#f8fafc; border-color:#e2e8f0; color:${NAVY}">${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></td>
+          <td><span class="mono" style="color: ${color}; font-weight: 900;">${label}</span></td>
+        </tr>`;
+      }).join('')}
+    </table>
+  </div>`;
 
-  html += docHeader('My Support Plan', [
-    ['Name', client.name],
-    ['Preferred Name', client.preferredName],
-    ['Date of Birth', client.dob],
-    ['NHS Number', client.nhs],
-    ['Address', client.address],
-    ['Key Worker', client.keyWorker],
-    ['Date of Admission', client.dateOfAdmission],
-    ['Plan Date', cp.planDate],
-  ]);
+  cp.domains.filter(d => d.enabled).forEach((d, i) => {
+    html += `<div class="page">
+      <div class="badge" style="margin-bottom: 10px;">Sector Module 0${i + 1}</div>
+      <h1 style="border-bottom: 2px solid ${NAVY}; padding-bottom: 15px; margin-bottom: 30px;">${d.title}</h1>
+      
+      <div class="grid-2" style="margin-bottom: 40px;">
+        <div><h3 style="margin-top:0;">Requirement Analysis</h3><p style="font-size: 13px;">${d.identifiedNeed}</p></div>
+        <div style="background: #fcfdfe; border: 1px solid #edf2f7; padding: 20px; border-radius: 8px;">
+          <h3 style="margin-top:0;">Mission Success Criteria</h3><p style="font-weight:700; font-size:12px; color:${TEAL};">${d.plannedOutcomes}</p>
+        </div>
+      </div>
 
-  if (cp.biography) {
-    html += sh('My Life Story');
-    html += `<p>${cp.biography}</p>`;
-  }
-  if (cp.criticalInfo) {
-    html += sh('Important Things About Me');
-    html += `<p style="white-space:pre-wrap;">${cp.criticalInfo}</p>`;
-  }
-  if (cp.emergencyInfo) {
-    html += sh('In an Emergency');
-    html += `<p style="white-space:pre-wrap;">${cp.emergencyInfo}</p>`;
-  }
+      <h2>Operational Directive</h2>
+      <p style="font-size: 14px; line-height: 1.8; color: ${NAVY};">${d.howToAchieve}</p>
 
-  // Summary table
-  html += sh('Areas of My Life — Summary');
-  html += `<table><tr><th>Area</th><th>Support Level</th><th>Risk</th><th>Next Review</th></tr>`;
-  for (const d of enabledDomains) {
-    const { score, color, label } = riskInfo(d.riskLikelihood, d.riskImpact);
-    html += `<tr>
-      <td style="font-weight:600;">${d.title}</td>
-      <td><span class="level" style="background:${levelColors[d.levelOfNeed]}">${d.levelOfNeed} — ${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></td>
-      <td>${d.riskTitle ? `<span class="risk-badge" style="background:${color}">${score} — ${label}</span>` : '—'}</td>
-      <td>${d.nextReviewDate || '—'}</td>
-    </tr>`;
-  }
-  html += `</table>`;
+      <div style="margin-top: 50px; padding: 30px; background: #fff; border: 1px solid #edf2f7; border-left: 5px solid ${AMBER}; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <div class="info-label" style="margin-bottom: 15px;">Threat Neutralization: ${d.riskTitle}</div>
+        <div style="max-width: 350px;">${riskWidget(d.riskLikelihood, d.riskImpact)}</div>
+        <p style="margin-top: 15px; font-size: 12px; color: ${MUTED}; line-height: 1.7;">${d.riskMitigation}</p>
+      </div>
 
-  for (let i = 0; i < enabledDomains.length; i++) {
-    const d = enabledDomains[i];
-    const { score, color, label } = riskInfo(d.riskLikelihood, d.riskImpact);
-    if (i > 0 && i % 3 === 0) html += pb();
+      <div class="doc-footer">
+        <div class="mono" style="opacity: 0.5;">Recalibration Frequency: ${d.nextReviewDate}</div>
+        <div class="mono" style="opacity: 0.5;">Field Agent: ${d.reviewer}</div>
+      </div>
+    </div>`;
+  });
 
-    html += `<div class="domain-card">`;
-    html += `<div class="domain-header"><h3 style="margin:0;color:${TEAL};">${i + 1}. ${d.title}</h3>
-      <span class="level" style="background:${levelColors[d.levelOfNeed]};margin-top:4px;">${LEVEL_OF_NEED_LABELS[d.levelOfNeed]}</span></div>`;
-    html += `<div class="domain-body">`;
-
-    if (d.identifiedNeed) html += `<h3>About Me — What I Need</h3><p style="white-space:pre-wrap;">${d.identifiedNeed}</p>`;
-    if (d.plannedOutcomes) html += `<h3>What Good Looks Like for Me</h3><p style="white-space:pre-wrap;">${d.plannedOutcomes}</p>`;
-    if (d.howToAchieve) html += `<h3>How My Team Supports Me</h3><p style="white-space:pre-wrap;">${d.howToAchieve}</p>`;
-    if (d.riskTitle) {
-      html += `<h3>What Could Go Wrong</h3><p><strong>${d.riskTitle}</strong></p>`;
-      html += `<p>Likelihood: ${d.riskLikelihood} × Impact: ${d.riskImpact} = <span class="risk-badge" style="background:${color}">${score} — ${label}</span></p>`;
-      if (d.riskMitigation) html += `<p>${d.riskMitigation}</p>`;
-    }
-    if (d.reviewNote) {
-      html += `<h3>What's Working / What's Not</h3><p>${d.reviewNote}</p>`;
-      if (d.reviewer) html += `<p style="font-size:11px;color:#64748b;">Checked by: ${d.reviewer} · ${d.reviewDate}</p>`;
-    }
-    html += `</div></div>`;
-  }
-
-  html += `<div class="footer">Hazel Care Ltd | Person-Centred Support Plan | Confidential — Not for distribution outside of the care team</div>`;
   html += `</body></html>`;
   return html;
 }

@@ -68,7 +68,6 @@ export function ClientDocsPage() {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        // Reconstruct line breaks using Y-position of each text item
         let lastY: number | null = null;
         let pageText = '';
         for (const item of content.items as any[]) {
@@ -115,7 +114,6 @@ export function ClientDocsPage() {
     setImportResult(result.warnings);
 
     if (importTarget) {
-      // Import into existing person
       const all = loadClients();
       const existing = all.find(c => c.id === importTarget);
       if (existing) {
@@ -132,7 +130,6 @@ export function ClientDocsPage() {
         setSubView('list');
       }
     } else {
-      // Create new person from import
       const client = emptyClient();
       Object.assign(client, result.client);
       client.carePlan = result.carePlan;
@@ -159,28 +156,28 @@ export function ClientDocsPage() {
   if (subView === 'risk' && selectedId) return <RiskBuilder clientId={selectedId} onBack={goBack} />;
   if (subView === 'careplan' && selectedId) return <CarePlanBuilder clientId={selectedId} onBack={goBack} />;
 
-  // Import view
   if (subView === 'import') {
     return (
-      <div className="p-4 lg:p-6 max-w-3xl">
+      <div className="p-6 lg:p-10 max-w-4xl mx-auto animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium mb-6">
-          ← Back to People
+          className="group flex items-center gap-2 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] mb-8 transition-all">
+          <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
+          Return to Registry
         </button>
 
-        <h1 className="text-xl font-bold text-white mb-1">Import Data</h1>
-        <p className="text-sm text-gray-500 mb-4">
-          Upload a PDF from Nourish or paste text manually. We'll detect the format and create a person-centred support plan automatically.
+        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Intelligence Ingestion</h1>
+        <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium opacity-80 leading-relaxed">
+          Upload person-centred "Emergency Admission Pack" PDF from Nourish. ArbiFlow will map all 21 domains of care and construct a digital support plan blueprint automatically.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isExtracting}
-            className="flex-1 flex items-center justify-center gap-2 btn-gradient disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-lg shadow-teal-900/20"
+            className="flex-1 flex items-center justify-center gap-3 btn-gradient disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:scale-[1.02]"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-            {isExtracting ? 'Extracting text...' : 'Upload Nourish PDF'}
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+            {isExtracting ? 'Synthesizing...' : 'Transmit Nourish PDF'}
           </button>
           <input
             type="file"
@@ -191,73 +188,99 @@ export function ClientDocsPage() {
           />
         </div>
 
-        <div className="glass border border-hc-border rounded-lg px-4 py-3 mb-6">
-          <p className="text-xs text-teal-400 font-medium mb-1">Mobile Tip:</p>
-          <p className="text-xs text-gray-400">
-            Tap the button above and select your "Emergency Admission Pack" PDF. No need to copy-paste.
-          </p>
+        <div className="glass-light border border-hc-teal/20 rounded-2xl px-6 py-4 mb-8 flex items-center gap-4 group">
+          <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0">
+            <span className="text-xl">💡</span>
+          </div>
+          <div>
+            <p className="text-[10px] text-hc-teal-light font-black uppercase tracking-widest mb-0.5">Tactical Tip</p>
+            <p className="text-[11px] text-hc-muted font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+              Mobile deployment active: Tap upload and select the PDF from your device storage. No manual stream required.
+            </p>
+          </div>
         </div>
 
         {importTarget && (
-          <div className="bg-teal-900/20 border border-teal-800 rounded-lg px-4 py-3 mb-4">
-            <span className="text-xs text-teal-400 font-medium">
-              Importing into: {clients.find(c => c.id === importTarget)?.name || 'Unknown'}
-            </span>
+          <div className="pill pill-teal text-[10px] font-black px-4 py-2 mb-6 shadow-lg inline-flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+            TARGET OVERWRITE: {clients.find(c => c.id === importTarget)?.name || 'Unknown'}
           </div>
         )}
 
-        <textarea
-          value={importText}
-          onChange={e => setImportText(e.target.value)}
-          rows={12}
-          placeholder="Or paste the full text from the Nourish PDF here…"
-          className="w-full bg-hc-dark border border-hc-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600 resize-y mb-4 font-mono"
-        />
+        <div className="relative rounded-2xl border border-white/5 glass p-1 shadow-2xl mb-6 overflow-hidden">
+          <textarea
+            value={importText}
+            onChange={e => setImportText(e.target.value)}
+            rows={12}
+            placeholder="Or drop manual stream content here…"
+            className="w-full bg-transparent p-6 text-hc-text font-mono text-xs leading-relaxed resize-y placeholder:text-hc-muted/30 focus:outline-none scrollbar-thin"
+          />
+        </div>
 
         {importResult.length > 0 && (
-          <div className="glass border border-hc-border rounded-lg px-4 py-3 mb-4">
+          <div className="glass-light border border-white/5 rounded-2xl px-6 py-4 mb-6 space-y-1">
             {importResult.map((w, i) => (
-              <p key={i} className="text-xs text-gray-400">{w}</p>
+              <p key={i} className="text-[10px] font-bold text-hc-muted/80 uppercase tracking-widest leading-relaxed flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-hc-teal/40" /> {w}
+              </p>
             ))}
           </div>
         )}
 
         {importPreview && (
-          <div className="bg-teal-900/20 border border-teal-800 rounded-xl px-5 py-4 mb-4">
-            <p className="text-sm font-semibold text-teal-400 mb-3">Preview — What we found</p>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div><span className="text-gray-500">Name:</span> <span className="text-white font-medium">{importPreview.name}</span></div>
-              <div><span className="text-gray-500">DOB:</span> <span className="text-white font-medium">{importPreview.dob}</span></div>
-              <div><span className="text-gray-500">NHS:</span> <span className="text-white font-medium">{importPreview.nhs}</span></div>
-              <div><span className="text-gray-500">Areas detected:</span> <span className="text-white font-medium">{importPreview.domainsDetected} of 21</span></div>
-            </div>
-            <div className="flex gap-3 mt-4">
-              <button onClick={handleImport}
-                className="btn-gradient text-white text-sm font-semibold px-6 py-2 rounded-lg">
-                Confirm & Import
-              </button>
-              <button onClick={() => setImportPreview(null)}
-                className="border border-hc-border text-gray-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg">
-                Go Back
-              </button>
+          <div className="glass border-2 border-hc-teal/30 rounded-[2rem] p-8 mb-8 animate-in zoom-in-95 duration-500 shadow-2xl glow-teal relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+            <div className="relative z-10">
+              <p className="section-header text-[10px] mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-hc-teal animate-pulse" />
+                Stream Preview — Intelligence Mapping
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                  <div className="section-header text-[8px] opacity-60 mb-1">DESIGNATION</div>
+                  <div className="text-sm font-black text-white truncate">{importPreview.name}</div>
+                </div>
+                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                  <div className="section-header text-[8px] opacity-60 mb-1">TEMPORAL ID</div>
+                  <div className="text-sm font-black text-white tabular-nums">{importPreview.dob}</div>
+                </div>
+                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                  <div className="section-header text-[8px] opacity-60 mb-1">NET ID</div>
+                  <div className="text-sm font-black text-white tabular-nums">{importPreview.nhs}</div>
+                </div>
+                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                  <div className="section-header text-[8px] opacity-60 mb-1">DOMAINS</div>
+                  <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <button onClick={handleImport}
+                  className="flex-1 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">
+                  Confirm & Sync Profile
+                </button>
+                <button onClick={() => setImportPreview(null)}
+                  className="px-8 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
+                  Abort
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {!importPreview && (
-          <div className="flex gap-3">
+          <div className="flex flex-col md:flex-row items-center gap-6">
             <button onClick={handlePreview} disabled={!importText.trim()}
-              className="btn-gradient disabled:opacity-40 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
-              Preview Import
+              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all">
+              Initiate Preview
             </button>
             {!importTarget && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Or import into existing person:</span>
+              <div className="flex items-center gap-4 glass-light border border-white/5 px-5 py-3 rounded-2xl shadow-xl">
+                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Target Mapping:</span>
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
-                  className="bg-hc-dark border border-hc-border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
-                  <option value="">New person</option>
+                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  <option value="">Create New Node</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -277,58 +300,62 @@ export function ClientDocsPage() {
   const cpCount = clients.filter(c => c.carePlan && c.carePlan.domains.some(d => d.enabled)).length;
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6 lg:p-10 max-w-[1200px] mx-auto animate-in fade-in duration-700">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-xl font-bold text-white">People & Plans</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {clients.length} {clients.length !== 1 ? 'people' : 'person'} · {pbsCount} PBS · {riskCount} Risk · {cpCount} Support Plan{cpCount !== 1 ? 's' : ''}
-          </p>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">People & Strategic Plans</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest">{clients.length} Tactical Nodes</span>
+            <span className="pill pill-teal text-[9px] font-black uppercase tracking-widest">{pbsCount} PBS Profiles</span>
+            <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest">{riskCount} Risk Matrices</span>
+            <span className="pill pill-purple text-[9px] font-black uppercase tracking-widest">{cpCount} Support Blueprints</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2 glass hover:bg-hc-card-hover border border-hc-border text-gray-300 text-sm font-medium px-3 py-2 rounded-lg">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
+            <svg className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             Import
           </button>
           <button onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 btn-gradient text-sm px-3 py-2 rounded-lg">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            New Person
+            Add Person
           </button>
         </div>
       </div>
 
       {/* Search filter */}
       {clients.length > 2 && (
-        <div className="mb-4">
+        <div className="mb-8 relative group max-w-md">
           <input
             type="text"
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
-            placeholder="Find someone…"
-            className="w-full max-w-sm bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600"
+            placeholder="Search tactical registry…"
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-10 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
           />
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+            <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
         </div>
       )}
 
       {/* Client cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-4xl mb-3">📋</div>
-          <p className="text-gray-400 font-medium">{filterText ? 'No matching people' : 'No people yet'}</p>
-          <p className="text-sm text-gray-600 mt-1">
-            {filterText ? 'Try a different search.' : 'Click "New Person" or "Import Data" to get started.'}
-          </p>
+        <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+          <div className="text-5xl mb-6 opacity-20">👥</div>
+          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">{filterText ? 'Zero Matches in Network' : 'Fleet Status: Empty'}</div>
+          <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">{filterText ? 'Adjust search frequency' : 'Initiate "Add Person" to begin registry'}</div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map(client => {
+        <div className="grid grid-cols-1 gap-6">
+          {filtered.map((client, idx) => {
             const hasPBS = !!(client.pbs && client.pbs.aboutText);
             const hasRisk = !!(client.risk && client.risk.risks.some(r => r.title));
             const hasCarePlan = !!(client.carePlan && client.carePlan.domains.some(d => d.enabled));
@@ -343,161 +370,164 @@ export function ClientDocsPage() {
               }, 0) ?? 0;
             const { color: riskColor, label: riskLabel } = topRisk > 0
               ? riskInfo(Math.ceil(Math.sqrt(topRisk)), Math.floor(Math.sqrt(topRisk)) || 1)
-              : { color: '#5a7a9a', label: 'No data' };
+              : { color: '#5a7a9a', label: 'STABLE' };
 
             return (
               <div key={client.id}
-                className="glass border border-hc-border rounded-xl overflow-hidden hover:border-hc-border-light transition-colors card-glow">
+                className="glass border border-white/10 rounded-[2rem] overflow-hidden transition-all duration-500 card-glow group animate-in slide-in-from-bottom-4"
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
                 {/* Client header */}
-                <div className="px-4 sm:px-5 py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-teal-900/40 border border-teal-800 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-teal-400">
-                        {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                <div className="px-8 py-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: riskColor }} />
+                  <div className="flex flex-col md:flex-row md:items-center gap-6 relative z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-white/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                      <span className="text-xl font-black text-hc-teal-light">
+                        {client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-base font-bold text-white">{client.name}</span>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <h2 className="text-2xl font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{client.name}</h2>
+                        {topRisk > 0 && (
+                          <span className="pill text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse-soft"
+                            style={{ background: riskColor + '22', color: riskColor, border: `1px solid ${riskColor}44` }}>
+                            STRAT-LEVEL {topRisk}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4">
                         {client.dob && (
-                          <span className="text-xs text-gray-500">DOB: {client.dob}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">TEMPORAL:</span>
+                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.dob}</span>
+                          </div>
                         )}
                         {client.nhs && (
-                          <span className="text-xs text-gray-500">NHS: {client.nhs}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">NETWORK:</span>
+                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.nhs}</span>
+                          </div>
                         )}
+                        <div className="h-3 w-px bg-white/10 hidden md:block" />
+                        <div className="flex items-center gap-2">
+                          {client.diagnoses.slice(0, 3).map((d, i) => (
+                            <span key={i} className="text-[9px] font-black bg-black/40 border border-white/5 px-2.5 py-0.5 rounded-lg text-hc-muted/80 uppercase tracking-tighter truncate max-w-[140px]">
+                              {d}
+                            </span>
+                          ))}
+                          {client.diagnoses.length > 3 && (
+                            <span className="text-[9px] font-black text-hc-teal-light/60">+{client.diagnoses.length - 3}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {topRisk > 0 && (
-                      <div className="flex-shrink-0 text-right hidden sm:block">
-                        <div className="text-[10px] text-gray-500 mb-0.5">Highest risk</div>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
-                          style={{ background: riskColor + '30', color: riskColor, border: `1px solid ${riskColor}` }}>
-                          {topRisk} — {riskLabel}
-                        </span>
+                      <div className="hidden lg:flex flex-col items-end shrink-0 pl-6 border-l border-white/5">
+                        <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Matrix Status</span>
+                        <span className="text-[13px] font-black uppercase tracking-widest" style={{ color: riskColor }}>{riskLabel}</span>
                       </div>
-                    )}
-                  </div>
-                  {/* Diagnoses + mobile risk badge */}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {client.diagnoses.slice(0, 2).map((d, i) => (
-                      <span key={i} className="text-[10px] bg-hc-darker border border-hc-border px-2 py-0.5 rounded-full text-gray-400 truncate max-w-[140px]">
-                        {d}
-                      </span>
-                    ))}
-                    {client.diagnoses.length > 2 && (
-                      <span className="text-[10px] text-gray-600">+{client.diagnoses.length - 2}</span>
-                    )}
-                    {topRisk > 0 && (
-                      <span className="sm:hidden ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: riskColor + '30', color: riskColor, border: `1px solid ${riskColor}` }}>
-                        {topRisk} — {riskLabel}
-                      </span>
                     )}
                   </div>
                 </div>
 
                 {/* Document actions */}
-                <div className="border-t border-hc-border px-4 sm:px-5 py-3 bg-hc-darker">
-                  <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
-                    {/* PBS */}
-                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${hasPBS ? 'bg-teal-500' : 'bg-gray-600'}`} />
-                        <span className="text-[11px] sm:text-xs text-gray-400">PBS</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openPBS(client.id)}
-                          className="text-[11px] sm:text-xs bg-teal-900/40 hover:bg-teal-800/50 border border-teal-800 text-teal-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
-                          {hasPBS ? 'Edit' : 'Create'}
-                        </button>
-                        {hasPBS && (
-                          <button onClick={() => printDoc(client, 'pbs')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
-                            PDF
+                <div className="border-t border-white/5 px-8 py-5 bg-black/20 backdrop-blur-md">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex flex-wrap items-center gap-8">
+                      {/* PBS */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasPBS ? 'bg-hc-teal glow-teal' : 'bg-white/10'}`} />
+                          <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">PBS</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => openPBS(client.id)}
+                            className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
+                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                            {hasPBS ? 'Edit' : 'Deploy'}
                           </button>
-                        )}
+                          {hasPBS && (
+                            <button onClick={() => printDoc(client, 'pbs')}
+                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Risk */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasRisk ? 'bg-flag-amber glow-amber' : 'bg-white/10'}`} />
+                          <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Risk</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => openRisk(client.id)}
+                            className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
+                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                            {hasRisk ? 'Edit' : 'Deploy'}
+                          </button>
+                          {hasRisk && (
+                            <button onClick={() => printDoc(client, 'risk')}
+                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Support Plan */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasCarePlan ? 'bg-hc-blue glow-blue' : 'bg-white/10'}`} />
+                          <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Plan</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => openCarePlan(client.id)}
+                            className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
+                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                            {hasCarePlan ? `Update (${cpFilled}/${cpDomains.length})` : 'Deploy'}
+                          </button>
+                          {hasCarePlan && (
+                            <button onClick={() => printDoc(client, 'careplan')}
+                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Risk */}
-                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${hasRisk ? 'bg-amber-500' : 'bg-gray-600'}`} />
-                        <span className="text-[11px] sm:text-xs text-gray-400">Risk</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openRisk(client.id)}
-                          className="text-[11px] sm:text-xs bg-amber-900/30 hover:bg-amber-800/40 border border-amber-800 text-amber-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
-                          {hasRisk ? 'Edit' : 'Create'}
-                        </button>
-                        {hasRisk && (
-                          <button onClick={() => printDoc(client, 'risk')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
-                            PDF
-                          </button>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-4 ml-auto">
+                      <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
+                        className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:text-white transition-colors">
+                        Re-Sync
+                      </button>
+                      <div className="h-4 w-px bg-white/10" />
+                      <button onClick={() => handleDelete(client.id, client.name)}
+                        className="text-[10px] font-black text-white/20 hover:text-flag-red transition-colors uppercase tracking-widest">
+                        Purge
+                      </button>
                     </div>
-
-                    {/* Support Plan */}
-                    <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${hasCarePlan ? 'bg-blue-500' : 'bg-gray-600'}`} />
-                        <span className="text-[11px] sm:text-xs text-gray-400">Plan</span>
-                        {hasCarePlan && (
-                          <span className="text-[9px] sm:text-[10px] text-gray-600">({cpFilled}/{cpDomains.length})</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openCarePlan(client.id)}
-                          className="text-[11px] sm:text-xs bg-blue-900/30 hover:bg-blue-800/40 border border-blue-800 text-blue-400 px-2.5 sm:px-3 py-1 rounded-lg font-medium">
-                          {hasCarePlan ? 'Edit' : 'Create'}
-                        </button>
-                        {hasCarePlan && (
-                          <button onClick={() => printDoc(client, 'careplan')}
-                            className="text-[11px] sm:text-xs text-gray-400 hover:text-white border border-hc-border hover:border-hc-border-light px-2 py-1 rounded-lg">
-                            PDF
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom row: Import + meta */}
-                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-hc-border/50">
-                    <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
-                      className="text-[11px] text-gray-500 hover:text-teal-400 font-medium">
-                      Import
-                    </button>
-                    <div className="flex-1" />
-                    {client.keyWorker && (
-                      <span className="text-[11px] text-gray-600 truncate max-w-[180px]">Key Worker: {client.keyWorker}</span>
-                    )}
-                    <button onClick={() => handleDelete(client.id, client.name)}
-                      className="text-[11px] text-gray-600 hover:text-red-400">
-                      Delete
-                    </button>
                   </div>
                 </div>
 
                 {/* Care plan domains preview */}
                 {hasCarePlan && cpDomains.length > 0 && (
-                  <div className="border-t border-hc-border px-5 py-2.5 bg-[#080e1a]">
-                    <div className="flex flex-wrap gap-1.5">
-                      {cpDomains.map((d, i) => {
-                        const levelColors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
+                  <div className="border-t border-white/5 px-8 py-4 bg-hc-dark/40 overflow-hidden relative">
+                    <div className="flex flex-wrap gap-2 relative z-10">
+                      {cpDomains.slice(0, 12).map((d, i) => {
+                        const colors = ['pill-green', 'pill-blue', 'pill-amber', 'pill-red', 'pill-red'];
                         return (
-                          <span key={i}
-                            className="text-[10px] px-2 py-0.5 rounded-full border"
-                            style={{
-                              color: levelColors[d.levelOfNeed],
-                              borderColor: levelColors[d.levelOfNeed] + '40',
-                              background: levelColors[d.levelOfNeed] + '15',
-                            }}>
-                            {d.title.length > 25 ? d.title.slice(0, 25) + '…' : d.title}
+                          <span key={i} className={`pill ${colors[d.levelOfNeed] || 'pill-teal'} text-[8px] font-black uppercase tracking-tighter py-0.5`}>
+                            {d.title.length > 30 ? d.title.slice(0, 30) + '…' : d.title}
                           </span>
                         );
                       })}
+                      {cpDomains.length > 12 && (
+                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center">+{cpDomains.length - 12} more protocol areas</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -509,31 +539,44 @@ export function ClientDocsPage() {
 
       {/* New Person Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="glass border border-hc-border rounded-2xl p-6 w-full max-w-sm">
-            <h2 className="text-base font-bold text-white mb-4">New Person</h2>
-            <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">What is their full name?</label>
-            <input
-              autoFocus
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              placeholder="e.g. Jamie Morton"
-              className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 mb-4 placeholder-gray-600"
-            />
-            <p className="text-xs text-gray-500 mb-5">
-              You'll start by building their Positive Behaviour Support plan.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => { setShowNewModal(false); setNewName(''); }}
-                className="flex-1 border border-hc-border text-gray-400 hover:text-white text-sm font-medium py-2 rounded-lg">
-                Cancel
-              </button>
-              <button onClick={handleCreate} disabled={!newName.trim()}
-                className="flex-1 btn-gradient disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg">
-                Start Building
-              </button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="glass border border-white/10 rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="relative z-10">
+              <h2 className="text-3xl font-black text-white mb-2 tracking-tighter text-shimmer">Deploy New Node</h2>
+              <p className="text-hc-muted text-sm mb-8 font-medium opacity-80 leading-relaxed">
+                Initialize a new profile in the tactical registry. You will be redirected to the PBS blueprint generator immediately after deployment.
+              </p>
+              
+              <div className="mb-10">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Designation / Full Name</label>
+                <div className="relative group">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleCreate()}
+                    placeholder="e.g. Agent Alpha"
+                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-lg font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-hc-teal/10 flex items-center justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <button onClick={() => { setShowNewModal(false); setNewName(''); }}
+                  className="flex-1 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
+                  Cancel
+                </button>
+                <button onClick={handleCreate} disabled={!newName.trim()}
+                  className="flex-[2] btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
+                  Initiate Deployment
+                </button>
+              </div>
             </div>
           </div>
         </div>

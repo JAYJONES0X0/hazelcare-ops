@@ -144,177 +144,203 @@ export function HandoverPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Shift Handover</h1>
-        <p className="text-hc-muted text-sm">Build a structured handover that carries forward unresolved items automatically.</p>
+    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+      <div className="mb-10">
+        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Shift Handover Protocol</h1>
+        <div className="flex items-center gap-3">
+          <span className="pill pill-blue text-[10px] uppercase tracking-wider font-black shadow-lg">Continuity Engine</span>
+          <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+            Constructing tactical intelligence for upcoming deployment cycles
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
         {/* Left — Input */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-6">
           {/* Meta */}
-          <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-hc-teal-light">
+          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl backdrop-blur-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
+                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Shift</label>
-                <div className="flex gap-1">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Cycle Transition</label>
+                <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {['Day → Night', 'Night → Day'].map(s => {
                     const [from, to] = s.split(' → ');
                     const active = shiftFrom === from;
                     return (
-                      <button key={s} onClick={() => { setShiftFrom(from); setShiftTo(to); }} className={`flex-1 text-xs py-2 rounded-lg border transition-all ${active ? 'bg-hc-teal/15 border-hc-teal/30 text-hc-teal-light' : 'border-hc-border text-hc-muted hover:text-white'}`}>
+                      <button key={s} onClick={() => { setShiftFrom(from); setShiftTo(to); }} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition-all duration-500 active:scale-95 ${active ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
                         {s}
                       </button>
                     );
                   })}
                 </div>
               </div>
-              <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Outgoing Staff</label>
-                <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Name" className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light" />
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Outgoing Lead</label>
+                <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Agent ID" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
-              <div>
-                <label className="text-[10px] text-hc-muted uppercase tracking-wider font-semibold mb-1 block">Incoming Staff</label>
-                <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Name" className="w-full bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light" />
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Incoming Lead</label>
+                <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Agent ID" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
             </div>
           </div>
 
           {/* Add item */}
-          <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-            <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="glass-light border border-hc-teal/20 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex flex-wrap gap-2.5 mb-8 relative z-10">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setNewCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] border transition-all ${
+                  className={`flex items-center gap-3 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500 active:scale-90 ${
                     newCategory === cat.id
-                      ? 'font-semibold'
-                      : 'border-hc-border text-hc-muted hover:text-white'
+                      ? 'shadow-xl bg-hc-teal/10 border-hc-teal/30 scale-110 z-10'
+                      : 'border-white/5 text-hc-muted hover:text-white hover:bg-white/5'
                   }`}
-                  style={newCategory === cat.id ? { color: cat.color, borderColor: `${cat.color}40`, background: `${cat.color}10` } : {}}
+                  style={newCategory === cat.id ? { color: cat.color, borderColor: `${cat.color}40`, background: `${cat.color}15` } : {}}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} /></svg>
+                  <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} /></svg>
                   {cat.label}
                 </button>
               ))}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-6 relative z-10">
               <textarea
                 value={newText}
                 onChange={e => setNewText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addItem(); } }}
-                placeholder="Type handover item... (Enter to add)"
-                className="flex-1 bg-hc-dark border border-hc-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light resize-none"
-                rows={2}
+                placeholder="Compose handover intelligence... (Enter to deploy)"
+                className="flex-1 bg-hc-dark/60 border border-white/10 rounded-3xl p-6 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none scrollbar-thin font-medium italic"
+                rows={3}
               />
-              <div className="flex flex-col gap-1.5">
-                <div className="flex gap-1">
+              <div className="flex flex-row md:flex-col justify-between gap-4 shrink-0">
+                <div className="flex md:flex-col gap-3 p-2 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
                   {(['none', 'amber', 'red'] as const).map(s => (
                     <button
                       key={s}
                       onClick={() => setNewSeverity(s)}
-                      className={`w-6 h-6 rounded-md border transition-all ${
-                        newSeverity === s ? 'scale-110' : 'opacity-40 hover:opacity-70'
+                      className={`w-12 h-12 rounded-xl border-2 transition-all duration-500 shadow-xl flex items-center justify-center active:scale-75 ${
+                        newSeverity === s ? 'scale-110' : 'opacity-20 hover:opacity-100 grayscale hover:grayscale-0'
                       }`}
                       style={{
-                        borderColor: s === 'red' ? '#ef4444' : s === 'amber' ? '#f59e0b' : '#334155',
-                        background: s === 'red' ? 'rgba(239,68,68,0.2)' : s === 'amber' ? 'rgba(245,158,11,0.2)' : 'rgba(51,65,85,0.2)',
+                        borderColor: s === 'red' ? '#ef4444' : s === 'amber' ? '#f59e0b' : 'rgba(255,255,255,0.1)',
+                        background: s === 'red' ? 'rgba(239,68,68,0.2)' : s === 'amber' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
                       }}
-                      title={s === 'none' ? 'No flag' : s.charAt(0).toUpperCase() + s.slice(1)}
-                    />
+                      title={s === 'none' ? 'No priority' : s.toUpperCase()}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-full ${s === 'red' ? 'bg-flag-red animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]' : s === 'amber' ? 'bg-flag-amber shadow-[0_0_15px_rgba(245,158,11,0.8)]' : 'bg-white/20'}`} />
+                    </button>
                   ))}
                 </div>
-                <button onClick={addItem} disabled={!newText.trim()} className="px-3 py-2 bg-hc-teal text-white text-xs font-semibold rounded-lg hover:bg-hc-teal-light disabled:opacity-40 transition-all">
-                  Add
+                <button onClick={addItem} disabled={!newText.trim()} className="flex-1 md:flex-none px-10 py-5 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-20 transition-all">
+                  DEPLOY
                 </button>
               </div>
             </div>
           </div>
 
           {/* Items list */}
-          {items.length > 0 && (
-            <div className="space-y-1.5">
-              {items.map(item => {
-                const cat = CATEGORIES.find(c => c.id === item.category);
-                return (
-                  <div
-                    key={item.id}
-                    className={`bg-hc-card border rounded-xl p-3 flex items-start gap-3 transition-all ${
-                      item.severity === 'red' ? 'border-flag-red/25' : item.severity === 'amber' ? 'border-flag-amber/25' : 'border-hc-border'
-                    } ${item.resolved ? 'opacity-50' : ''}`}
-                  >
-                    <button onClick={() => toggleResolved(item.id)} className={`mt-0.5 w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center ${item.resolved ? 'bg-flag-green border-flag-green' : 'border-hc-muted'}`}>
-                      {item.resolved && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-semibold" style={{ color: cat?.color }}>{cat?.label}</span>
-                        {item.severity !== 'none' && (
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                            item.severity === 'red' ? 'bg-flag-red/15 text-flag-red' : 'bg-flag-amber/15 text-flag-amber'
-                          }`}>{item.severity.toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className={`text-xs text-hc-text ${item.resolved ? 'line-through' : ''}`}>{item.text}</div>
+          <div className="space-y-3">
+            {items.length > 0 && <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">ACTIVE INTELLIGENCE LOG — {items.length} ITEMS</div>}
+            {items.map((item, idx) => {
+              const cat = CATEGORIES.find(c => c.id === item.category);
+              const isRed = item.severity === 'red';
+              const isAmber = item.severity === 'amber';
+              return (
+                <div
+                  key={item.id}
+                  className={`glass-light border transition-all duration-500 rounded-2xl p-5 flex items-start gap-5 card-glow group interactive-row animate-in slide-in-from-left-4
+                    ${isRed ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : isAmber ? 'border-flag-amber/25 bg-flag-amber/[0.01] glow-amber' : 'border-white/5'} ${item.resolved ? 'opacity-40 grayscale pointer-events-none' : ''}`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  <button onClick={() => toggleResolved(item.id)} className={`mt-1.5 w-6 h-6 rounded-lg border-2 shrink-0 flex items-center justify-center transition-all duration-500 shadow-xl group-hover:scale-110 ${item.resolved ? 'bg-flag-green border-flag-green' : 'border-white/10 hover:border-hc-teal-light'}`}>
+                    {item.resolved && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap transition-transform duration-500 group-hover:translate-x-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest transition-colors group-hover:text-hc-teal-light" style={{ color: cat?.color }}>{cat?.label}</span>
+                      {item.severity !== 'none' && (
+                        <span className={`pill text-[8px] font-black uppercase tracking-tighter px-2
+                          ${isRed ? 'pill-red animate-pulse-soft' : 'pill-amber'}`}>{item.severity} ALERT</span>
+                      )}
                     </div>
-                    <button onClick={() => removeItem(item.id)} className="text-hc-muted hover:text-flag-red shrink-0">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                    <div className={`text-[14px] text-hc-text font-medium leading-relaxed transition-all duration-500 group-hover:translate-x-1 ${item.resolved ? 'line-through opacity-60' : ''}`}>{item.text}</div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <button onClick={() => removeItem(item.id)} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:border-flag-red/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              );
+            })}
+            
+            {items.length === 0 && (
+              <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
+                <div className="text-5xl mb-6 opacity-20">📡</div>
+                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Intelligence Feed Empty</div>
+                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Initiate handover components to populate stream</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right — Preview */}
         <div className="lg:col-span-2">
-          <div className="sticky top-6">
-            <div className="bg-hc-card border border-hc-border rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-hc-border flex items-center justify-between">
+          <div className="sticky top-10 space-y-6">
+            <div className="glass border-2 border-hc-teal/30 rounded-[2.5rem] overflow-hidden shadow-2xl glow-teal animate-in slide-in-from-right-4 duration-700">
+              <div className="p-8 border-b border-white/10 bg-hc-teal/[0.02] flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-white">Handover Preview</div>
-                  <div className="text-[10px] text-hc-muted">{items.length} items · {items.filter(i => !i.resolved).length} unresolved</div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tighter text-shimmer">Protocol Preview</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{items.length} Points · {items.filter(i => !i.resolved).length} Unresolved</span>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={copyToClipboard} className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${copied ? 'bg-flag-green text-white' : 'bg-hc-teal text-white hover:bg-hc-teal-light'}`}>
-                    {copied ? 'Copied!' : 'Copy'}
+                <div className="flex gap-3">
+                  <button onClick={copyToClipboard} className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 shadow-2xl hover:scale-105 active:scale-90 ${copied ? 'bg-flag-green text-white shadow-flag-green/30' : 'btn-gradient text-white'}`}>
+                    {copied ? 'SYNCHRONIZED' : 'TRANSMIT'}
                   </button>
-                  <button onClick={saveHandover} disabled={items.length === 0} className="px-3 py-1.5 bg-hc-card border border-hc-border text-xs text-hc-muted rounded-lg hover:text-white disabled:opacity-40">
-                    Save
+                  <button onClick={saveHandover} disabled={items.length === 0} className="px-6 py-3.5 glass-light border border-white/10 text-[10px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-500 hover:bg-white/5 active:scale-90 disabled:opacity-20 disabled:grayscale">
+                    LOG
                   </button>
                 </div>
               </div>
-              <pre className="p-4 text-[11px] text-hc-text font-mono leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto">
-                {items.length > 0 ? generateHandoverText() : 'Add handover items to see preview...'}
-              </pre>
+              <div className="p-8">
+                <pre className="text-[12px] text-hc-text/90 font-mono leading-loose whitespace-pre-wrap max-h-[600px] overflow-y-auto scrollbar-thin italic">
+                  {items.length > 0 ? generateHandoverText() : '// Compose intelligence payload to see encrypted preview...'}
+                </pre>
+              </div>
             </div>
 
             {/* History */}
             {history.length > 0 && (
-              <div className="mt-3">
-                <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-xs text-hc-muted hover:text-white w-full">
-                  <svg className={`w-3 h-3 transition-transform ${showHistory ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  Recent Handovers ({history.length})
+              <div className="px-2 animate-in slide-in-from-bottom-4 duration-700 delay-300">
+                <button onClick={() => setShowHistory(!showHistory)} className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal-light w-full transition-all text-left">
+                  <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </span>
+                  ARCHIVE REPOSITORY ({history.length})
                 </button>
                 {showHistory && (
-                  <div className="mt-2 space-y-1.5 max-h-[200px] overflow-y-auto">
-                    {history.slice(0, 10).map(h => (
-                      <div key={h.id} className="bg-hc-card border border-hc-border rounded-lg p-2.5 text-[10px]">
-                        <div className="flex items-center justify-between">
-                          <span className="text-white font-semibold">{h.house}</span>
-                          <span className="text-hc-muted">{h.date}</span>
+                  <div className="mt-6 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-700">
+                    {history.slice(0, 15).map((h) => (
+                      <div key={h.id} className="glass-light border border-white/5 rounded-2xl p-5 transition-all duration-500 hover:bg-white/[0.03] hover:border-hc-teal/20 group/archive cursor-default active:scale-[0.98]">
+                        <div className="flex items-center justify-between mb-2.5 transition-transform duration-500 group-hover/archive:translate-x-1">
+                          <span className="text-[12px] font-black text-white group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight">{h.house}</span>
+                          <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40 tabular-nums">{h.date}</span>
                         </div>
-                        <div className="text-hc-muted">{h.shiftFrom} → {h.shiftTo} · {h.items.length} items</div>
+                        <div className="flex items-center gap-4 transition-transform duration-500 group-hover/archive:translate-x-1">
+                          <span className="pill pill-blue text-[8px] font-black py-0 px-2 shadow-sm">{h.shiftFrom} → {h.shiftTo}</span>
+                          <span className="text-[9px] font-black text-hc-muted/60 uppercase tracking-[0.3em] tabular-nums">{h.items.length} UNITS</span>
+                        </div>
                       </div>
                     ))}
                   </div>

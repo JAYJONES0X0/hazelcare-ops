@@ -78,71 +78,94 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
   }
 
   const warning = (
-    <div className="bg-red-950/60 border border-red-500/50 rounded-lg px-4 py-3 text-center">
-      <div className="text-red-400 text-xs font-bold uppercase tracking-wide mb-1">Restricted Access</div>
-      <div className="text-red-300/80 text-[11px] leading-snug">This system is private, secured, and monitored. Unauthorised access is strictly prohibited and may be subject to legal action under the Computer Misuse Act 1990.</div>
+    <div className="bg-flag-red/5 border border-flag-red/30 rounded-2xl px-6 py-4 text-center mb-4 animate-in shake duration-500 shadow-2xl glow-red">
+      <div className="text-flag-red text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 flex items-center justify-center gap-2">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+        Restricted Access
+      </div>
+      <div className="text-hc-text text-[11px] font-medium leading-relaxed opacity-80 italic">"This terminal is secured. Unauthorized deployment is prohibited and subject to legal intervention under the Computer Misuse Act 1990."</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center mesh-bg relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center mesh-bg relative overflow-hidden p-6">
       {/* Ambient orbs */}
-      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-hc-teal/5 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-hc-blue/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] bg-hc-teal/5 rounded-full blur-[120px] animate-float" />
+      <div className="absolute bottom-1/4 -right-32 w-[500px] h-[500px] bg-hc-blue/5 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
+      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-hc-purple/5 rounded-full blur-[100px]" />
 
-      <div className="flex flex-col gap-4 w-full max-w-xs relative z-10">
+      <div className="flex flex-col gap-6 w-full max-sm relative z-10 animate-in zoom-in-95 duration-1000">
         <div className="text-center mb-2">
-          <div className="flex justify-center mb-3">
-            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-12 w-12 rounded-xl glow-breathe" />
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center shadow-2xl glow-teal animate-float">
+              <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-12 w-12 rounded-xl" />
+            </div>
           </div>
-          <div className="text-shimmer text-2xl font-bold tracking-tight">HazelCare Ops</div>
-          <div className="text-slate-400 text-sm mt-1">
-            {step === 'password' && 'Enter your access password'}
-            {step === 'email' && 'Enter the email you were granted access with'}
-            {step === 'code' && `Check your access code — it's been sent for approval`}
-          </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter text-shimmer leading-none mb-2 uppercase">HazelCare Ops</h1>
+          <p className="text-hc-muted text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
+            {step === 'password' && 'Initialize Terminal Access'}
+            {step === 'email' && 'Personnel Verification'}
+            {step === 'code' && `Transmission Verification`}
+          </p>
         </div>
 
         {warning}
 
-        {step === 'password' && (
-          <form onSubmit={handlePassword} className="flex flex-col gap-3">
-            <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
-              placeholder="Password" autoFocus
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-hc-teal/50 text-sm" />
-            {error && <div className="text-red-400 text-xs text-center">{error}</div>}
-            <button type="submit" className="btn-gradient py-3 rounded-lg text-sm">Continue</button>
-          </form>
-        )}
+        <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden backdrop-blur-3xl">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-hc-teal/40 to-transparent" />
+          
+          {step === 'password' && (
+            <form onSubmit={handlePassword} className="flex flex-col gap-6">
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PROTOCOL KEY</label>
+                <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
+                  placeholder="Enter Key..." autoFocus
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-black tracking-widest" />
+              </div>
+              {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
+              <button type="submit" className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">Continue to Uplink</button>
+            </form>
+          )}
 
-        {step === 'email' && (
-          <form onSubmit={handleEmail} className="flex flex-col gap-3">
-            <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-              placeholder="your@email.com" autoFocus
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-hc-teal/50 text-sm" />
-            {error && <div className="text-red-400 text-xs text-center">{error}</div>}
-            <button type="submit" disabled={loading} className="btn-gradient py-3 rounded-lg text-sm disabled:opacity-50">
-              {loading ? 'Sending...' : 'Request Access Code'}
-            </button>
-            <button type="button" onClick={() => setStep('password')} className="text-slate-500 text-xs text-center hover:text-slate-300">← Back</button>
-          </form>
-        )}
+          {step === 'email' && (
+            <form onSubmit={handleEmail} className="flex flex-col gap-6">
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PERSONNEL IDENTIFIER</label>
+                <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
+                  placeholder="agent@hazelcare.co.uk" autoFocus
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-bold" />
+              </div>
+              {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
+              <button type="submit" disabled={loading} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
+                {loading ? 'SYNCHRONIZING...' : 'Request Verification Code'}
+              </button>
+              <button type="button" onClick={() => setStep('password')} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Abort</button>
+            </form>
+          )}
 
-        {step === 'code' && (
-          <form onSubmit={handleCode} className="flex flex-col gap-3">
-            <div className="bg-hc-teal/10 border border-hc-teal/20 rounded-lg px-4 py-3 text-center">
-              <div className="text-hc-teal-light text-xs">Code sent for approval. Once you receive it, enter it below.</div>
-            </div>
-            <input type="text" value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-              placeholder="6-digit code" autoFocus inputMode="numeric" maxLength={6}
-              className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-hc-teal/50 text-sm tracking-widest text-center text-lg" />
-            {error && <div className="text-red-400 text-xs text-center">{error}</div>}
-            <button type="submit" disabled={loading || code.length < 6} className="btn-gradient py-3 rounded-lg text-sm disabled:opacity-50">
-              {loading ? 'Verifying...' : 'Verify Code'}
-            </button>
-            <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); }} className="text-slate-500 text-xs text-center hover:text-slate-300">← Resend code</button>
-          </form>
-        )}
+          {step === 'code' && (
+            <form onSubmit={handleCode} className="flex flex-col gap-6">
+              <div className="bg-hc-teal/5 border border-hc-teal/20 rounded-2xl px-5 py-3 text-center mb-2">
+                <div className="text-hc-teal-light text-[10px] font-black uppercase tracking-widest leading-relaxed">Verification pulse transmitted. Enter signal code below.</div>
+              </div>
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">6-DIGIT SYNC CODE</label>
+                <input type="text" value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                  placeholder="000000" autoFocus inputMode="numeric" maxLength={6}
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-hc-teal/50 shadow-inner tracking-[0.5em] text-center text-2xl font-black" />
+              </div>
+              {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
+              <button type="submit" disabled={loading || code.length < 6} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
+                {loading ? 'VERIFYING...' : 'Authorize Terminal'}
+              </button>
+              <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); }} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Resend Signal</button>
+            </form>
+          )}
+        </div>
+        
+        <div className="text-center opacity-40">
+          <p className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em]">ArbiFlow v4.6 Operational OS</p>
+        </div>
       </div>
     </div>
   );
@@ -206,13 +229,19 @@ export default function App() {
 
   // Staff standalone mode — minimal layout, just the tool
   if (staffLinkActive && staffMode) {
-    return <StaffStandaloneView page={staffMode} generateStaffLink={generateStaffLink} onClose={() => { window.location.hash = ''; setStaffLinkActive(false); }} />;
+    return (
+      <StaffStandaloneView 
+        page={staffMode} 
+        generateStaffLink={generateStaffLink} 
+        onClose={() => { window.location.hash = ''; setStaffLinkActive(false); }} 
+      />
+    );
   }
 
   return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} />;
 }
 
-function StaffStandaloneView({ page, generateStaffLink: _gen, onClose }: { page: Page; generateStaffLink: (id: string) => string; onClose: () => void }) {
+function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink: (id: string) => string; onClose: () => void }) {
   const [actions, setActions] = useState<Action[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
 
@@ -229,23 +258,26 @@ function StaffStandaloneView({ page, generateStaffLink: _gen, onClose }: { page:
   };
 
   return (
-    <div className="min-h-screen mesh-bg">
+    <div className="min-h-screen mesh-bg flex flex-col">
       {/* Minimal header */}
-      <div className="border-b border-hc-border/50 px-4 py-3 flex items-center justify-between" style={{ background: 'linear-gradient(180deg, rgba(10, 16, 32, 0.95), rgba(6, 11, 20, 0.95))' }}>
-        <div className="flex items-center gap-3">
-          <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-7 w-7 rounded-md" />
+      <div className="glass border-b border-white/10 px-6 py-4 flex items-center justify-between z-20 shadow-2xl backdrop-blur-3xl">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg glow-teal">
+            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-6 w-6 rounded-md" />
+          </div>
           <div>
-            <div className="text-sm font-bold text-white">{TOOL_LABELS[page] || 'Staff Tool'}</div>
-            <div className="text-[10px] text-hc-muted">HazelCare Ops — Staff Access</div>
+            <div className="text-base font-black text-white tracking-tighter uppercase text-shimmer">{TOOL_LABELS[page] || 'Staff Tool'}</div>
+            <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">HazelCare Ops — Limited Staff Channel</div>
           </div>
         </div>
-        <button onClick={onClose} className="text-[11px] text-hc-muted hover:text-white px-3 py-1.5 rounded-lg border border-hc-border hover:border-hc-teal/30 transition-all">
+        <button onClick={onClose}
+          className="group flex items-center gap-2.5 px-5 py-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl">
           Exit Staff View
         </button>
       </div>
 
       {/* Tool content */}
-      <div className="p-0">
+      <div className="flex-1 overflow-y-auto">
         {page === 'notes' && <StaffNotePage />}
         {page === 'handover' && <HandoverPage />}
         {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
@@ -263,6 +295,16 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
   const [isDemo, setIsDemo] = useState(false);
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
 
+  const loadDemoData = useCallback(() => {
+    const entries = generateMockEntries();
+    const summary = buildWeekSummary(entries);
+    setWeekData(summary);
+    setActions(generateMockActions());
+    setIncidents(generateMockIncidents());
+    setStaff(generateMockStaff());
+    setIsDemo(true);
+  }, []);
+
   useEffect(() => {
     const saved = loadWeekData();
     const savedActions = loadActions();
@@ -274,17 +316,7 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
     } else {
       loadDemoData();
     }
-  }, []);
-
-  function loadDemoData() {
-    const entries = generateMockEntries();
-    const summary = buildWeekSummary(entries);
-    setWeekData(summary);
-    setActions(generateMockActions());
-    setIncidents(generateMockIncidents());
-    setStaff(generateMockStaff());
-    setIsDemo(true);
-  }
+  }, [loadDemoData]);
 
   function handleDataParsed(data: WeekSummary) {
     setWeekData(data);
@@ -312,7 +344,7 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
   }
 
   return (
-    <div className="flex min-h-screen bg-hc-darker">
+    <div className="flex h-screen overflow-hidden bg-hc-darker">
       <Sidebar
         page={page}
         setPage={setPage}
@@ -322,45 +354,49 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
         isDemo={isDemo}
         onLoadDemo={loadDemoData}
       />
-      <main className="flex-1 overflow-y-auto pt-[52px] lg:pt-0 mesh-bg">
+      <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin">
         {isDemo && (
-          <div className="bg-hc-teal/10 border-b border-hc-teal/20 px-4 lg:px-6 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-hc-teal-light dot-pulse" />
-              <span className="text-[11px] lg:text-xs text-hc-teal-light font-medium">Demo Mode — Sample data from 10 houses</span>
+          <div className="sticky top-0 z-30 glass border-b border-hc-teal/30 bg-hc-teal/[0.05] px-6 py-2.5 flex items-center justify-between shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-hc-teal-light animate-pulse shadow-[0_0_10px_#14b8a6]" />
+              <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em]">Simulation Mode — Pattern Synthesis from 10 Sector Nodes</span>
             </div>
-            <button onClick={() => setPage('upload')} className="text-[11px] lg:text-xs text-hc-teal-light hover:text-white font-medium">Import real data</button>
+            <button onClick={() => setPage('upload')} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-[0.2em] underline decoration-hc-teal/30 underline-offset-4 transition-all">
+              Initialize Live Transmission
+            </button>
           </div>
         )}
 
         {/* Staff share buttons on Staff Tools pages */}
         {(page === 'notes' || page === 'handover') && (
-          <div className="px-4 lg:px-6 pt-3 flex justify-end">
+          <div className="px-8 pt-6 flex justify-end animate-in fade-in duration-1000">
             <button
               onClick={() => copyStaffLink(page)}
-              className="flex items-center gap-1.5 text-[11px] text-hc-muted hover:text-hc-teal-light px-3 py-1.5 rounded-lg border border-hc-border hover:border-hc-teal/30 transition-all"
+              className="group flex items-center gap-3 px-6 py-3 glass-light border border-white/10 text-hc-muted hover:text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-              {showShareModal === page ? 'Copied!' : 'Share with Staff'}
+              <svg className={`w-4 h-4 transition-transform ${showShareModal === page ? 'scale-125 text-flag-green' : 'group-hover:rotate-12'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+              {showShareModal === page ? 'LINK SYNCHRONIZED' : 'SECURE PERSONNEL UPLINK'}
             </button>
           </div>
         )}
 
-        {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} />}
-        {page === 'dashboard' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
-        {page === 'upload' && <UploadPage onDataParsed={handleDataParsed} />}
-        {page === 'templates' && <TemplatesPage weekData={weekData} />}
-        {page === 'actions' && <ActionsPage actions={actions} onUpdate={handleUpdateActions} />}
-        {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} />}
-        {page === 'staff' && <StaffPage staff={staff} />}
-        {page === 'notes' && <StaffNotePage />}
-        {page === 'handover' && <HandoverPage />}
-        {page === 'compliance' && <CompliancePage />}
-        {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
-        {page === 'risk' && <RiskScoresPage weekData={weekData} />}
-        {page === 'client-docs' && <ClientDocsPage />}
-        {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} />}
-        {page === 'agency' && <AgencyPortalPage />}
+        <div className="relative z-10 min-h-[calc(100vh-100px)]">
+          {page === 'briefing' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
+          {page === 'dashboard' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} /></div>}
+          {page === 'upload' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} /></div>}
+          {page === 'templates' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
+          {page === 'actions' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
+          {page === 'incidents' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
+          {page === 'staff' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} /></div>}
+          {page === 'notes' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
+          {page === 'handover' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage /></div>}
+          {page === 'compliance' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage /></div>}
+          {page === 'reports' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><ReportsPage weekData={weekData} setPage={setPage} /></div>}
+          {page === 'risk' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><RiskScoresPage weekData={weekData} /></div>}
+          {page === 'client-docs' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDocsPage /></div>}
+          {page === 'client-diary' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDiaryPage weekData={weekData} setPage={setPage} /></div>}
+          {page === 'agency' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-700"><AgencyPortalPage /></div>}
+        </div>
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { loadClients, saveClient, emptyCarePlan, LEVEL_OF_NEED_LABELS } from '../lib/client-store';
 import { buildCarePlanHtml } from '../lib/doc-renderer';
 import type { FullClient, CarePlanDomain } from '../lib/client-store';
@@ -36,31 +36,33 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600';
+  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
-    <div className="mb-4">
-      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</label>
+    <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
+      <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
       {area
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y'} />
-        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls} />}
+        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin font-medium italic'} />
+        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls + ' font-bold'} />}
     </div>
   );
 }
 
 function NeedLevelSelector({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const colors = ['#16a34a', '#65a30d', '#d97706', '#ea580c', '#dc2626'];
+  const colors = ['#16a34a', '#3b82f6', '#f59e0b', '#ef4444', '#ef4444'];
+  const pills = ['pill-green', 'pill-blue', 'pill-amber', 'pill-red', 'pill-red'];
+  
   return (
-    <div className="mb-4">
-      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">How Much Support I Need</label>
-      <div className="flex gap-2">
+    <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <label className="section-header text-[9px] mb-4 ml-1 block opacity-60 tracking-[0.2em] uppercase">Support Stratification Level</label>
+      <div className="flex flex-wrap gap-2">
         {LEVEL_OF_NEED_LABELS.map((label, i) => (
           <button key={i} onClick={() => onChange(i)}
-            className={`flex-1 text-[11px] font-semibold py-2 px-1 rounded-lg border transition-all ${
-              value === i
-                ? 'text-white border-transparent'
-                : 'text-gray-500 border-[#1e3050] hover:border-[#2a4060]'
+            className={`flex-1 text-[10px] font-black uppercase tracking-widest py-3 px-2 rounded-xl border transition-all duration-500 shadow-lg active:scale-95
+              ${value === i
+                ? `${pills[i]} scale-105 z-10 border-transparent shadow-xl`
+                : 'glass-light border-white/5 text-hc-muted hover:border-white/20 hover:text-white'
             }`}
-            style={value === i ? { background: colors[i], borderColor: colors[i] } : {}}>
+            style={value === i ? { boxShadow: `0 0 20px ${colors[i]}40` } : {}}>
             {label}
           </button>
         ))}
@@ -76,34 +78,43 @@ function RiskScoreWidget({ likelihood, impact, onLikelihood, onImpact }: {
   const score = likelihood * impact;
   let color: string;
   let label: string;
-  if (score <= 3) { color = '#16a34a'; label = 'Low'; }
-  else if (score <= 6) { color = '#65a30d'; label = 'Low–Medium'; }
-  else if (score <= 12) { color = '#d97706'; label = 'Medium–High'; }
-  else if (score <= 16) { color = '#dc2626'; label = 'High'; }
-  else { color = '#7f1d1d'; label = 'Critical'; }
+  let pill: string;
+  if (score <= 3) { color = '#16a34a'; label = 'STABLE'; pill = 'pill-green'; }
+  else if (score <= 6) { color = '#3b82f6'; label = 'MONITOR'; pill = 'pill-blue'; }
+  else if (score <= 12) { color = '#f59e0b'; label = 'ALERT'; pill = 'pill-amber'; }
+  else if (score <= 16) { color = '#ef4444'; label = 'CRITICAL'; pill = 'pill-red'; }
+  else { color = '#ef4444'; label = 'BREACH'; pill = 'pill-red animate-pulse-soft'; }
 
-  const likelihoodLabels = ['', 'Very Low', 'Low', 'Medium', 'High', 'Very High'];
-  const impactLabels = ['', 'Insignificant', 'Tolerable', 'Undesirable', 'Major', 'Catastrophic'];
+  const likelihoodLabels = ['', 'Rare', 'Unlikely', 'Possible', 'Likely', 'Certain'];
+  const impactLabels = ['', 'Insignificant', 'Tolerable', 'Undesirable', 'Severe', 'Catastrophic'];
 
   return (
-    <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4 mb-4">
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">How We Measure This Risk</p>
-      <div className="grid grid-cols-2 gap-4 mb-3">
-        <div>
-          <label className="text-[10px] text-gray-500 mb-1 block">Likelihood: {likelihood} — {likelihoodLabels[likelihood]}</label>
+    <div className="glass border border-white/5 rounded-[2rem] p-8 mb-8 shadow-2xl relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.03] blur-3xl group-hover:opacity-[0.08] transition-opacity" style={{ background: color }} />
+      <p className="section-header text-[9px] font-black uppercase tracking-[0.3em] mb-8 text-shimmer">Local Vector Analysis</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="group/slider">
+          <div className="flex items-center justify-between mb-3 px-1 transition-transform group-hover/slider:translate-x-1">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Probability: {likelihoodLabels[likelihood].toUpperCase()}</label>
+            <span className="text-[10px] font-black text-white tabular-nums">{likelihood}</span>
+          </div>
           <input type="range" min={1} max={5} value={likelihood} onChange={e => onLikelihood(Number(e.target.value))}
-            className="w-full accent-teal-500" />
+            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
         </div>
-        <div>
-          <label className="text-[10px] text-gray-500 mb-1 block">Impact: {impact} — {impactLabels[impact]}</label>
+        <div className="group/slider">
+          <div className="flex items-center justify-between mb-3 px-1 transition-transform group-hover/slider:translate-x-1">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Impact: {impactLabels[impact].toUpperCase()}</label>
+            <span className="text-[10px] font-black text-white tabular-nums">{impact}</span>
+          </div>
           <input type="range" min={1} max={5} value={impact} onChange={e => onImpact(Number(e.target.value))}
-            className="w-full accent-teal-500" />
+            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
         </div>
       </div>
-      <div className="flex items-center gap-3 pt-3 border-t border-[#1e3050]">
-        <span className="text-sm text-gray-400">Risk Score:</span>
-        <span className="text-xl font-black" style={{ color }}>{score}</span>
-        <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: color }}>{label}</span>
+      <div className="flex items-center gap-6 pt-6 border-t border-white/5 relative z-10">
+        <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Risk Score:</span>
+        <span className="text-4xl font-black tabular-nums tracking-tighter" style={{ color, textShadow: `0 0 30px ${color}40` }}>{score}</span>
+        <span className={`pill ${pill} text-[10px] font-black uppercase tracking-[0.2em] px-6 py-1.5 shadow-xl shadow-black/20 animate-shimmer`}>{label}</span>
+        <span className="text-[10px] font-bold text-hc-muted/40 uppercase tracking-widest ml-auto tabular-nums">{likelihood} × {impact} MATRIX</span>
       </div>
     </div>
   );
@@ -116,52 +127,67 @@ function DomainEditor({ domain, onChange }: {
   const up = (patch: Partial<CarePlanDomain>) => onChange({ ...domain, ...patch });
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-2xl">{DOMAIN_ICONS[domain.title] || '📄'}</span>
+    <div className="animate-in slide-in-from-right-4 duration-700">
+      <div className="flex items-center gap-6 mb-10 group">
+        <div className="w-16 h-16 rounded-2xl glass border-2 border-white/10 flex items-center justify-center text-3xl shadow-2xl transition-transform group-hover:scale-110 duration-500">
+          {DOMAIN_ICONS[domain.title] || '📄'}
+        </div>
         <div>
-          <h2 className="text-base font-bold text-white">{domain.title}</h2>
-          <p className="text-xs text-gray-500">Tell us about this area of {domain.title.toLowerCase()}.</p>
+          <h2 className="text-3xl font-black text-white tracking-tighter uppercase text-shimmer">{domain.title}</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
+            <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Configuring domain specific intelligence</p>
+          </div>
         </div>
       </div>
 
       <NeedLevelSelector value={domain.levelOfNeed} onChange={v => up({ levelOfNeed: v })} />
 
-      <Field label="About Me — What I Need" value={domain.identifiedNeed} onChange={v => up({ identifiedNeed: v })}
-        area rows={5} placeholder="In their own words where possible — what challenges do they face in this area?" />
+      <Field label="Subject Intelligence — Primary Needs" value={domain.identifiedNeed} onChange={v => up({ identifiedNeed: v })}
+        area rows={5} placeholder="Synthesize the challenges and needs in this area — use the subject's own narrative where possible..." />
 
-      <Field label="What Good Looks Like for Me" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
-        area rows={4} placeholder="What would they say 'good' looks like? Use their words." />
+      <Field label="Target Objectives — Success Definition" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
+        area rows={4} placeholder="Map the positive outcomes — what does 'mission accomplished' look like for this node?" />
 
-      <Field label="How My Team Supports Me" value={domain.howToAchieve} onChange={v => up({ howToAchieve: v })}
-        area rows={6} placeholder="How should the team support them day-to-day? Include routines, preferences, and what to do if things change." />
+      <Field label="Operational Protocol — Support Methodology" value={domain.howToAchieve} onChange={v => up({ howToAchieve: v })}
+        area rows={6} placeholder="Define day-to-day agent routines, preferences, and change-management protocols..." />
 
-      <Field label="What Could Go Wrong" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
-        placeholder="e.g. Risk of falls if mobility support isn't provided" />
+      <div className="h-8" />
+      <div className="section-header text-[9px] mb-6 ml-1 opacity-60 tracking-[0.3em] uppercase">Safeguarding & Threat Neutralization</div>
+      
+      <Field label="Tactical Threat Node" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
+        placeholder="e.g. Mobility instability vector resulting in physical compromise" />
 
       <RiskScoreWidget
         likelihood={domain.riskLikelihood} impact={domain.riskImpact}
         onLikelihood={v => up({ riskLikelihood: v })} onImpact={v => up({ riskImpact: v })} />
 
-      <Field label="How We Keep Me Safe" value={domain.riskMitigation} onChange={v => up({ riskMitigation: v })}
-        area rows={3} placeholder="What does the team do to reduce this risk? What should they watch for?" />
+      <Field label="Neutralization Protocol — Countermeasures" value={domain.riskMitigation} onChange={v => up({ riskMitigation: v })}
+        area rows={4} placeholder="Define specific agent actions to neutralize this risk node and surveillance signs to monitor..." />
 
-      <div className="border-t border-[#1e3050] pt-4 mt-4">
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Review</p>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="When We Check Again" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
-          <Field label="Who Checked" value={domain.reviewer} onChange={v => up({ reviewer: v })} />
+      <div className="border-t border-white/10 pt-10 mt-16 space-y-8">
+        <p className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Intelligence Recalibration</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Field label="Next Temporal Scan" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
+          <Field label="Reporting Agent" value={domain.reviewer} onChange={v => up({ reviewer: v })} />
         </div>
-        <Field label="What's Working / What's Not" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
-          area rows={3} placeholder="What's working well? What needs to change? Include their own views." />
-        <Field label="When They Checked" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
+        <Field label="Recalibration Notes — Historical Pattern Sync" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
+          area rows={4} placeholder="Review current effectiveness — incorporate subject feedback and pattern shifts..." />
+        <Field label="Temporal ID of Last Scan" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
           placeholder="DD/MM/YYYY" />
       </div>
     </div>
   );
 }
 
+function getDates() {
+  const today = new Date().toLocaleDateString('en-GB');
+  const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+  return { today, reviewDate };
+}
+
 export function CarePlanBuilder({ clientId, onBack }: Props) {
+  const { today, reviewDate } = useMemo(() => getDates(), []);
   const [client, setClient] = useState<FullClient>(() => {
     const all = loadClients();
     return all.find(c => c.id === clientId) || all[0];
@@ -171,8 +197,6 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
   const [showOverview, setShowOverview] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const today = new Date().toLocaleDateString('en-GB');
-  const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
   const carePlan = client.carePlan || emptyCarePlan(today, reviewDate);
 
   const persist = useCallback((next: FullClient) => {
@@ -223,80 +247,118 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
   const filledCount = carePlan.domains.filter(d => d.enabled && d.identifiedNeed).length;
 
   return (
-    <div className="flex flex-col h-full min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1e3050] bg-[#060b14] sticky top-0 z-10">
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
         <button onClick={onBack}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium">
-          ← Back
+          className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
+          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </span>
+          Abort
         </button>
-        <div className="w-px h-5 bg-[#1e3050]" />
-        <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
-          <span className="text-xs text-gray-500 ml-2">Support Plan</span>
+        
+        <div className="h-8 w-px bg-white/10 hidden md:block" />
+        
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+            <span className="text-shimmer">{client.name || 'UNINITIALIZED NODE'}</span>
+            <span className="pill pill-purple text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">SUPPORT BLUEPRINT DESIGNER</span>
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Full-Spectrum Operational Care Architecture</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
+              {saved ? '✓ DATA SYNCHRONIZED' : '● BUFFERING CHANGES'}
+            </span>
+          </div>
         </div>
-        <div className="flex-1" />
-        <span className="text-[11px] text-gray-500">{filledCount}/{enabledCount} areas complete</span>
-        <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
-          {saved ? '✓ Saved' : '● Unsaved'}
-        </span>
-        <button onClick={generatePDF}
-          className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Create My Document
-        </button>
+
+        <div className="flex items-center gap-6">
+          <div className="hidden lg:flex flex-col items-end">
+            <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-50">COMPLETION STATUS</span>
+            <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg">{filledCount}/{enabledCount} MODULES COMPLETE</span>
+          </div>
+          <button onClick={generatePDF}
+            className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Transmit Document
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mesh-bg">
         {/* Domain sidebar */}
-        <div className="w-56 flex-shrink-0 border-r border-[#1e3050] overflow-y-auto bg-[#060b14]">
-          {/* Overview button */}
-          <button onClick={() => { setShowOverview(true); setActiveDomain(null); }}
-            className={`w-full text-left px-4 py-2.5 text-[12px] font-medium flex items-center gap-2 transition-colors border-b border-[#1e3050]
-              ${showOverview && activeDomain === null ? 'bg-teal-900/40 text-teal-400 border-r-2 border-teal-500' : 'text-gray-400 hover:text-white hover:bg-[#111b2e]'}`}>
-            📊 Overview & Bio
-          </button>
+        <div className="w-72 flex-shrink-0 border-r border-white/5 overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
+          <div className="p-6 border-b border-white/5 bg-black/20">
+            <p className="section-header text-[9px] tracking-[0.3em] opacity-40 uppercase">Architecture Modules</p>
+          </div>
+          <div className="py-2">
+            <button onClick={() => { setShowOverview(true); setActiveDomain(null); }}
+              className={`w-full text-left px-6 py-5 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden border-b border-white/5 active:scale-95
+                ${showOverview && activeDomain === null ? 'bg-hc-teal/10 text-hc-teal-light shadow-[inset_0_0_20px_rgba(20,184,166,0.05)]' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+              {showOverview && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#14b8a6] z-10" />}
+              <span className="text-xl group-hover:scale-110 transition-transform duration-500 relative z-10">📊</span>
+              <span className="flex-1 relative z-10 group-hover:translate-x-1 transition-transform duration-500">System Overview & Bio</span>
+            </button>
 
-          {carePlan.domains.map((domain, i) => {
-            const hasContent = domain.enabled && domain.identifiedNeed;
-            const isActive = activeDomain === i;
-            return (
-              <button key={i} onClick={() => { setActiveDomain(i); setShowOverview(false); }}
-                className={`w-full text-left px-3 py-2 text-[11px] font-medium flex items-center gap-2 transition-colors
-                  ${isActive ? 'bg-teal-900/40 text-teal-400 border-r-2 border-teal-500' : 'text-gray-400 hover:text-white hover:bg-[#111b2e]'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                  hasContent ? 'bg-teal-500' : domain.enabled ? 'bg-amber-500' : 'bg-[#1e3050]'
-                }`} />
-                <span className="truncate">{domain.title}</span>
-              </button>
-            );
-          })}
+            {carePlan.domains.map((domain, i) => {
+              const hasContent = domain.enabled && domain.identifiedNeed;
+              const isActive = activeDomain === i;
+              return (
+                <button key={i} onClick={() => { setActiveDomain(i); setShowOverview(false); }}
+                  className={`w-full text-left px-6 py-4 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden active:scale-95
+                    ${isActive ? 'bg-hc-teal/10 text-hc-teal-light shadow-[inset_0_0_20px_rgba(20,184,166,0.05)]' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+                  {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#14b8a6] z-10" />}
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-700 relative z-10
+                    ${hasContent ? 'bg-hc-teal glow-teal scale-110' : domain.enabled ? 'bg-flag-amber glow-amber shadow-lg shadow-amber-950/20' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                  <span className="flex-1 truncate relative z-10 group-hover:translate-x-1 transition-transform duration-500">{domain.title}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-2xl">
+        <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
+          <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700 pb-24">
 
             {/* Overview mode */}
             {(showOverview || activeDomain === null) && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-1">My Support Plan</h2>
-                <p className="text-xs text-gray-500 mb-5">Toggle on the areas that apply to this person. Click any area to edit.</p>
+              <div className="animate-in fade-in duration-700">
+                <div className="mb-12 flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
+                    📊
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">Blueprint Architecture</h2>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
+                      <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Initializing global node telemetry & bio-mapping</p>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Bio + Emergency */}
-                <Field label="My Life Story" value={carePlan.biography} onChange={v => updateMeta({ biography: v })}
-                  area rows={4} placeholder="A brief personal history — who is this person, what is their background?" />
-                <Field label="Important Things About Me" value={carePlan.criticalInfo} onChange={v => updateMeta({ criticalInfo: v })}
-                  area rows={3} placeholder="Mobility aids, diet type, allergies, medical conditions…" />
-                <Field label="In an Emergency" value={carePlan.emergencyInfo} onChange={v => updateMeta({ emergencyInfo: v })}
-                  area rows={3} placeholder="Emergency contacts, evacuation plan, rescue medication…" />
+                <div className="space-y-4">
+                  <Field label="Subject Narrative — Historical Background" value={carePlan.biography} onChange={v => updateMeta({ biography: v })}
+                    area rows={6} placeholder="A brief tactical history — synthesis of who this person is, their background, and journey to current deployment..." />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
+                    <Field label="Primary Critical Infrastructure" value={carePlan.criticalInfo} onChange={v => updateMeta({ criticalInfo: v })}
+                      area rows={4} placeholder="Mobility protocols, clinical diet loadouts, primary allergies, and medical conditions..." />
+                    <Field label="Emergency Fail-Safe Protocols" value={carePlan.emergencyInfo} onChange={v => updateMeta({ emergencyInfo: v })}
+                      area rows={4} placeholder="Evacuation vectors, rescue pharmacological loadout, and emergency command contacts..." />
+                  </div>
+                </div>
 
-                <div className="border-t border-[#1e3050] mt-6 pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-white">Areas of My Life ({enabledCount} active)</h3>
-                    <div className="flex gap-2">
+                <div className="mt-16 pt-10 border-t border-white/10">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-2">
+                    <div>
+                      <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Intelligence Modules</h3>
+                      <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">{enabledCount} of 21 tactical nodes currently active</p>
+                    </div>
+                    <div className="flex gap-3">
                       <button onClick={() => {
                         setClient(prev => {
                           const cp = prev.carePlan || emptyCarePlan(today, reviewDate);
@@ -305,8 +367,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                           persist(next);
                           return next;
                         });
-                      }} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">Enable All</button>
-                      <span className="text-gray-600">|</span>
+                      }} className="px-5 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-white transition-all shadow-lg active:scale-95">Activate All Nodes</button>
                       <button onClick={() => {
                         setClient(prev => {
                           const cp = prev.carePlan || emptyCarePlan(today, reviewDate);
@@ -315,57 +376,62 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                           persist(next);
                           return next;
                         });
-                      }} className="text-[11px] text-gray-500 hover:text-gray-400 font-medium">Disable All</button>
+                      }} className="px-5 py-2.5 glass-light border border-white/10 text-hc-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:text-white transition-all active:scale-95">Deactivate Entire Grid</button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {carePlan.domains.map((domain, i) => {
                       const hasContent = domain.identifiedNeed;
                       const score = domain.riskLikelihood * domain.riskImpact;
-                      let riskColor = '#1e3050';
+                      let riskColor = 'transparent';
                       if (domain.enabled && domain.riskTitle) {
                         if (score <= 3) riskColor = '#16a34a';
-                        else if (score <= 6) riskColor = '#65a30d';
-                        else if (score <= 12) riskColor = '#d97706';
-                        else if (score <= 16) riskColor = '#dc2626';
-                        else riskColor = '#7f1d1d';
+                        else if (score <= 6) riskColor = '#3b82f6';
+                        else if (score <= 12) riskColor = '#f59e0b';
+                        else riskColor = '#ef4444';
                       }
 
                       return (
                         <div key={i}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer ${
-                            domain.enabled ? 'bg-[#111b2e] border-[#1e3050] hover:border-[#2a4060]' : 'bg-[#080e1a] border-[#111b2e] opacity-60'
-                          }`}
+                          className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] border transition-all duration-500 cursor-pointer card-glow group/node animate-in slide-in-from-bottom-2 active:scale-[0.98]
+                            ${domain.enabled 
+                              ? 'glass-light border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-hc-teal/40' 
+                              : 'border-white/5 bg-hc-dark/40 opacity-40 hover:opacity-60'
+                            }`}
+                          style={{ animationDelay: `${i * 30}ms` }}
                           onClick={() => { setActiveDomain(i); setShowOverview(false); }}>
-                          {/* Toggle */}
+                          
+                          {/* Node Toggle */}
                           <button onClick={e => { e.stopPropagation(); toggleDomain(i); }}
-                            className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border ${
-                              domain.enabled ? 'bg-teal-700 border-teal-600' : 'border-[#2a4060]'
-                            }`}>
-                            {domain.enabled && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>}
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 border-2 transition-all duration-500 shadow-xl group-hover/node:scale-110
+                              ${domain.enabled ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light' : 'border-white/10 bg-black/20 text-transparent'}`}>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
                           </button>
 
-                          <span className="text-base">{DOMAIN_ICONS[domain.title] || '📄'}</span>
+                          <span className="text-2xl transition-transform group-hover/node:scale-125 duration-500 select-none">{DOMAIN_ICONS[domain.title] || '📄'}</span>
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium text-white block truncate">{domain.title}</span>
-                            {domain.enabled && hasContent && (
-                              <span className="text-[10px] text-gray-500">
-                                Level {domain.levelOfNeed} — {LEVEL_OF_NEED_LABELS[domain.levelOfNeed]}
-                                {domain.riskTitle && ` · Risk: ${score}`}
-                              </span>
+                            <span className="text-[13px] font-black text-white uppercase tracking-tight block truncate group-hover/node:text-hc-teal-light transition-colors">{domain.title}</span>
+                            {domain.enabled && (
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${hasContent ? 'text-hc-teal-light' : 'text-flag-amber animate-pulse'}`}>
+                                  {hasContent ? 'PROTOCOL CONFIGURED' : 'AWAITING DATA'}
+                                </span>
+                                {domain.riskTitle && (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full shadow-lg" style={{ background: riskColor, boxShadow: `0 0 8px ${riskColor}` }} />
+                                    <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em]">VECTOR LEVEL: {score}</span>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
 
-                          {domain.enabled && domain.riskTitle && (
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: riskColor }} />
-                          )}
-
-                          {domain.enabled && (
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${hasContent ? 'bg-teal-500' : 'bg-amber-500'}`} />
-                          )}
+                          <div className={`w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted opacity-0 group-hover/node:opacity-100 group-hover/node:translate-x-1 transition-all duration-500`}>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                          </div>
                         </div>
                       );
                     })}
@@ -384,20 +450,27 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
 
             {/* Navigation */}
             {activeDomain !== null && !showOverview && (
-              <div className="flex justify-between mt-8 pt-6 border-t border-[#1e3050]">
+              <div className="flex justify-between mt-16 pt-8 border-t border-white/5 relative z-10">
                 <button onClick={() => {
                   if (activeDomain > 0) setActiveDomain(activeDomain - 1);
                   else { setShowOverview(true); setActiveDomain(null); }
                 }}
-                  className="text-sm text-gray-400 hover:text-white font-medium">← Previous</button>
+                  className="flex items-center gap-3 px-8 py-4 glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-white/[0.03] active:scale-90 shadow-xl">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                  Previous Module
+                </button>
                 {activeDomain < carePlan.domains.length - 1
                   ? <button onClick={() => setActiveDomain(activeDomain + 1)}
-                      className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                      Next Domain →
+                      className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                      Next Module
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                     </button>
                   : <button onClick={generatePDF}
-                      className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                      Create My Document
+                      className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all group/btn">
+                      <svg className="w-5 h-5 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                      Transmit Blueprint
                     </button>}
               </div>
             )}

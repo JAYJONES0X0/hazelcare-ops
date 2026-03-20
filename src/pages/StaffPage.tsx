@@ -5,13 +5,6 @@ interface Props {
   staff: StaffMember[];
 }
 
-const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  active: { label: 'Active', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-  sickness: { label: 'Sickness', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-  leave: { label: 'Leave', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  suspended: { label: 'Suspended', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-};
-
 export function StaffPage({ staff }: Props) {
   const [search, setSearch] = useState('');
   const [houseFilter, setHouseFilter] = useState('all');
@@ -34,118 +27,166 @@ export function StaffPage({ staff }: Props) {
     (byHouse[s.house] ??= []).push(s);
   }
 
+  const getStatusPill = (status: string) => {
+    switch (status) {
+      case 'active': return 'pill-green';
+      case 'sickness': return 'pill-red animate-pulse-soft';
+      case 'leave': return 'pill-amber';
+      case 'suspended': return 'pill-purple shadow-lg shadow-hc-purple/20';
+      default: return 'pill-blue';
+    }
+  };
+
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      <div className="flex items-start justify-between mb-6">
+    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Staff Overview</h1>
-          <p className="text-hc-muted text-sm">{staff.length} staff across {houses.length} houses</p>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Human Intelligence Roster</h1>
+          <div className="flex items-center gap-3">
+            <span className="pill pill-blue text-[10px] uppercase tracking-wider font-bold shadow-lg">Workforce Logistics</span>
+            <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+              {staff.length} agents deployed across {houses.length} tactical nodes
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Active Staff', value: totalActive, color: '#22c55e' },
-          { label: 'On Sickness', value: totalSickness, color: '#ef4444' },
-          { label: 'Sickness Events', value: totalSicknessEvents, sub: 'This month', color: '#f59e0b' },
-          { label: 'Lateness Events', value: totalLatenessEvents, sub: 'This month', color: '#3b82f6' },
+          { label: 'Active Personnel', value: totalActive, color: '#22c55e', pill: 'pill-green' },
+          { label: 'Off-Line (Sick)', value: totalSickness, color: '#ef4444', pill: 'pill-red' },
+          { label: 'Monthly Sickness', value: totalSicknessEvents, sub: 'Events', color: '#f59e0b', pill: 'pill-amber' },
+          { label: 'Latency Issues', value: totalLatenessEvents, sub: 'Events', color: '#3b82f6', pill: 'pill-blue' },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-hc-card border border-hc-border rounded-xl p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-[0.05]" style={{ background: kpi.color, filter: 'blur(20px)', transform: 'translate(30%, -30%)' }} />
-            <div className="text-[11px] text-hc-muted mb-1">{kpi.label}</div>
-            <div className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+          <div key={kpi.label} className="glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default">
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: kpi.color }} />
+            <div className="section-header text-[9px] mb-2 opacity-60 uppercase tracking-[0.2em]">{kpi.label}</div>
+            <div className="flex items-baseline gap-2 relative z-10">
+              <div className="text-3xl font-black text-white tabular-nums tracking-tighter group-hover:scale-110 transition-transform duration-500" style={{ textShadow: `0 0 20px ${kpi.color}44` }}>{kpi.value}</div>
+              {kpi.sub && <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-40">{kpi.sub}</span>}
+            </div>
+            <div className={`h-1 w-8 rounded-full mt-4 opacity-30 group-hover:opacity-100 group-hover:w-12 transition-all duration-700 ${kpi.pill.replace('pill', 'bg')}`} />
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1 max-w-xs">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      <div className="flex flex-col md:flex-row gap-4 mb-10 glass-light border border-white/5 p-5 rounded-[2rem] shadow-2xl backdrop-blur-xl">
+        <div className="relative group flex-1 max-w-md">
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search staff..."
-            className="w-full pl-9 pr-4 py-2 bg-hc-card border border-hc-border rounded-xl text-sm text-white placeholder:text-hc-muted/50 focus:outline-none focus:border-hc-teal-light"
+            placeholder="Search agents by name or designation..."
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/20 focus:bg-hc-dark"
           />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+            <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
         </div>
-        <select
-          value={houseFilter}
-          onChange={e => setHouseFilter(e.target.value)}
-          className="bg-hc-card border border-hc-border rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-hc-teal-light"
-        >
-          <option value="all">All Houses</option>
-          {houses.map(h => <option key={h} value={h}>{h}</option>)}
-        </select>
+        
+        <div className="flex items-center gap-4">
+          <span className="section-header text-[9px] tracking-[0.3em] opacity-60">Sector Node:</span>
+          <select
+            value={houseFilter}
+            onChange={e => setHouseFilter(e.target.value)}
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]"
+          >
+            <option value="all">Entire Network Fleet</option>
+            {houses.map(h => <option key={h} value={h}>{h}</option>)}
+          </select>
+        </div>
+        
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] tabular-nums">
+            Registry Nodes: {filtered.length} Agents
+          </span>
+        </div>
       </div>
 
       {/* Staff by house */}
-      <div className="space-y-6">
-        {Object.entries(byHouse).sort(([a], [b]) => a.localeCompare(b)).map(([house, members]) => (
-          <div key={house}>
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-sm font-semibold text-white">{house}</h2>
-              <span className="text-[10px] text-hc-muted bg-hc-dark px-2 py-0.5 rounded-full">{members.length} staff</span>
+      <div className="space-y-12">
+        {Object.entries(byHouse).sort(([a], [b]) => a.localeCompare(b)).map(([house, members], hIdx) => (
+          <div key={house} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${hIdx * 100}ms` }}>
+            <div className="flex items-center gap-4 mb-6 px-2 group cursor-default">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase group-hover:text-shimmer group-hover:translate-x-1 transition-all duration-500">{house}</h2>
+              <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg opacity-80">{members.length} Personnel</span>
               {members.some(m => m.status === 'sickness') && (
-                <span className="text-[10px] text-flag-red bg-flag-red/10 px-2 py-0.5 rounded-full border border-flag-red/20">
-                  {members.filter(m => m.status === 'sickness').length} off sick
+                <span className="pill pill-red text-[10px] font-black px-3 py-0.5 shadow-xl shadow-red-950/20 animate-pulse">
+                  {members.filter(m => m.status === 'sickness').length} OFF-LINE
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {members.map(member => {
-                const sb = STATUS_BADGE[member.status];
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {members.map((member, idx) => {
+                const isSick = member.status === 'sickness';
                 return (
-                  <div key={member.id} className="bg-hc-card border border-hc-border rounded-xl p-4 hover:bg-hc-card-hover hover:border-hc-border-light transition-all">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="text-sm font-semibold text-white">{member.name}</div>
-                        <div className="text-[11px] text-hc-muted">{member.role}</div>
+                  <div key={member.id} className={`glass-light border transition-all duration-500 rounded-[2rem] p-6 card-glow group/card interactive-row active:scale-95 animate-in slide-in-from-bottom-4
+                    ${isSick ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red shadow-flag-red/5' : 'border-white/5 hover:border-hc-teal/20'}`}
+                    style={{ animationDelay: `${idx * 50}ms` }}>
+                    <div className="flex items-start justify-between mb-5 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl glass border border-white/10 flex items-center justify-center text-lg font-black text-hc-teal-light shadow-xl transition-transform group-hover/card:scale-110 duration-500">
+                          {member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-[15px] font-black text-white group-hover/card:text-hc-teal-light transition-colors tracking-tight leading-none mb-1">{member.name}</div>
+                          <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest opacity-60">{member.role}</div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ color: sb.color, background: sb.bg }}>
-                        {sb.label}
+                      <span className={`pill text-[9px] font-black uppercase tracking-widest shadow-2xl shadow-black/40 px-3 py-1 ${getStatusPill(member.status)}`}>
+                        {member.status}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center mt-3 pt-3 border-t border-hc-border">
-                      <div>
-                        <div className={`text-sm font-bold ${member.sicknessThisMonth > 2 ? 'text-flag-red' : member.sicknessThisMonth > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
+                    <div className="grid grid-cols-3 gap-3 text-center mb-6 p-4 bg-black/20 rounded-2xl border border-white/5 shadow-inner relative z-10">
+                      <div className="group/stat cursor-default">
+                        <div className={`text-xl font-black transition-transform duration-500 group-hover/stat:scale-110 tabular-nums ${member.sicknessThisMonth > 2 ? 'text-flag-red' : member.sicknessThisMonth > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
                           {member.sicknessThisMonth}
                         </div>
-                        <div className="text-[9px] text-hc-muted">Sickness</div>
+                        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">SICK</div>
                       </div>
-                      <div>
-                        <div className={`text-sm font-bold ${member.latenessThisMonth > 2 ? 'text-flag-red' : member.latenessThisMonth > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
+                      <div className="group/stat cursor-default">
+                        <div className={`text-xl font-black transition-transform duration-500 group-hover/stat:scale-110 tabular-nums ${member.latenessThisMonth > 2 ? 'text-flag-red' : member.latenessThisMonth > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
                           {member.latenessThisMonth}
                         </div>
-                        <div className="text-[9px] text-hc-muted">Lateness</div>
+                        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">LATE</div>
                       </div>
-                      <div>
-                        <div className="text-sm font-bold text-hc-blue">
+                      <div className="group/stat cursor-default">
+                        <div className="text-[11px] font-black text-hc-blue h-7 flex items-center justify-center transition-transform duration-500 group-hover/stat:scale-110 uppercase tracking-tighter">
                           {member.nextSupervision || '—'}
                         </div>
-                        <div className="text-[9px] text-hc-muted">Next Sup.</div>
+                        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">SUP.</div>
                       </div>
                     </div>
 
                     {/* Expiry warnings */}
                     {(member.dbsExpiry || member.trainingExpiry) && (
-                      <div className="mt-2 pt-2 border-t border-hc-border space-y-1">
+                      <div className="space-y-2.5 mt-5 pt-5 border-t border-white/5 relative z-10">
                         {member.dbsExpiry && (
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-hc-muted">DBS Expiry</span>
-                            <span className="text-hc-text">{member.dbsExpiry}</span>
+                          <div className="flex items-center justify-between group/line">
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60 group-hover/line:text-hc-text group-hover/line:opacity-100 transition-all">DBS EXPIRY</span>
+                            <span className="text-[10px] font-black text-white/80 tabular-nums tracking-widest">{member.dbsExpiry}</span>
                           </div>
                         )}
                         {member.trainingExpiry && (
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-hc-muted">Training Expiry</span>
-                            <span className="text-hc-text">{member.trainingExpiry}</span>
+                          <div className="flex items-center justify-between group/line">
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60 group-hover/line:text-hc-text group-hover/line:opacity-100 transition-all">TRAINING CYCLE</span>
+                            <span className="text-[10px] font-black text-white/80 tabular-nums tracking-widest">{member.trainingExpiry}</span>
                           </div>
                         )}
                       </div>
                     )}
+                    
+                    <div className="mt-6 flex items-center justify-between opacity-0 group-hover/card:opacity-100 transition-all -translate-y-2 group-hover/card:translate-y-0 relative z-10">
+                      <span className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.3em] flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-hc-teal shadow-[0_0_5px_#14b8a6]" />
+                        Management Protocol
+                      </span>
+                      <div className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg group-hover/card:bg-hc-teal/10 transition-colors">
+                        <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -155,8 +196,10 @@ export function StaffPage({ staff }: Props) {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-hc-muted">
-          <div className="text-sm">No staff matching your filters</div>
+        <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+          <div className="text-5xl mb-6 opacity-20">👥</div>
+          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Zero Personnel Detected</div>
+          <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to restore fleet visibility</div>
         </div>
       )}
     </div>

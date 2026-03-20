@@ -17,40 +17,44 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600';
+  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
-    <div className="mb-4">
-      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</label>
+    <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
+      <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
       {area
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y'} />
-        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls} />}
+        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin font-medium italic'} />
+        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls + ' font-bold'} />}
     </div>
   );
 }
 
-function ListField({ label, items, onChange, placeholder = 'Enter item…' }: {
+function ListField({ label, items, onChange, placeholder = 'Enter objective…' }: {
   label: string; items: string[]; onChange: (items: string[]) => void; placeholder?: string;
 }) {
   const update = (i: number, v: string) => { const a = [...items]; a[i] = v; onChange(a); };
   const add = () => onChange([...items, '']);
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</label>
-        <button onClick={add} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">+ Add</button>
+    <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Strategy Node</button>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-3">
         {items.map((item, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="flex gap-3 items-center group">
             <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-              className="flex-1 bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600" />
-            <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-lg leading-none px-1">×</button>
+              className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />
+            <button onClick={() => remove(i)} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
         ))}
         {items.length === 0 && (
-          <button onClick={add} className="w-full border border-dashed border-[#1e3050] rounded-lg py-2 text-xs text-gray-500 hover:text-teal-400">
-            + Add item
+          <button onClick={add}
+            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Initialize Tactical List
           </button>
         )}
       </div>
@@ -62,15 +66,19 @@ function ScoreSlider({ label, value, onChange, max = 5, labelArr }: {
   label: string; value: number; onChange: (v: number) => void; max?: number; labelArr: string[];
 }) {
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</label>
-        <span className="text-sm font-bold text-white">{value} — {labelArr[value]}</span>
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <label className="section-header text-[9px] font-black uppercase tracking-[0.2em] opacity-60">{label}</label>
+        <span className="pill pill-teal text-[10px] font-black tracking-widest px-3 py-1 shadow-lg">{value} — {labelArr[value].toUpperCase()}</span>
       </div>
-      <input type="range" min={1} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
-        className="w-full accent-teal-500" />
-      <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-        {Array.from({ length: max }, (_, i) => <span key={i}>{i + 1}</span>)}
+      <div className="relative pt-1 px-1">
+        <input type="range" min={1} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
+          className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
+        <div className="flex justify-between px-1 mt-3">
+          {Array.from({ length: max }, (_, i) => (
+            <span key={i} className={`text-[9px] font-black tabular-nums transition-all ${value === i + 1 ? 'text-hc-teal-light scale-125' : 'text-hc-muted/30'}`}>{i + 1}</span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -85,69 +93,97 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
   const up = (patch: Partial<RiskItem>) => onUpdate({ ...risk, ...patch });
 
   return (
-    <div className={`border rounded-xl mb-3 overflow-hidden`} style={{ borderColor: open ? color : '#1e3050' }}>
+    <div className={`glass-light border transition-all duration-500 rounded-[2.5rem] mb-6 overflow-hidden card-glow group
+      ${open ? 'shadow-2xl z-10' : 'hover:border-hc-teal/30'}`} style={{ borderColor: open ? color + '60' : 'rgba(255,255,255,0.05)' }}>
       {/* Card header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#0a1120] cursor-pointer" onClick={() => setOpen(o => !o)}>
-        <div className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold text-white flex-shrink-0"
-          style={{ background: color }}>
-          {index + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-white truncate block">
-            {risk.title || <span className="text-gray-500 italic">New risk — click to describe</span>}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {risk.title && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
-              style={{ background: color }}>
-              {score} — {label}
+      <div className={`flex flex-col md:flex-row md:items-center gap-4 px-8 py-6 cursor-pointer relative overflow-hidden transition-all
+        ${open ? 'bg-black/20' : 'bg-transparent'}`} onClick={() => setOpen(o => !o)}>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: color }} />
+        
+        <div className="flex items-center gap-5 flex-1 min-w-0 relative z-10">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl transition-transform group-hover:scale-110 duration-500 border border-white/10"
+            style={{ background: color }}>
+            {index + 1}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className={`text-xl font-black tracking-tighter uppercase transition-colors
+              ${risk.title ? 'text-white group-hover:text-hc-teal-light' : 'text-hc-muted italic opacity-40'}`}>
+              {risk.title || 'UNNAMED RISK VECTOR — CONFIGURE DATA'}
             </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 relative z-10 shrink-0 md:pl-8 md:border-l md:border-white/5">
+          {risk.title && (
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-50">SCORE: {risk.likelihood}×{risk.impact}</span>
+              <span className="pill text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1 shadow-xl animate-pulse-soft"
+                style={{ background: color + '22', color, border: `1px solid ${color}44` }}>
+                {score} — {label}
+              </span>
+            </div>
           )}
-          <button onClick={e => { e.stopPropagation(); onRemove(); }}
-            className="text-gray-600 hover:text-red-400 text-lg leading-none px-1">×</button>
-          <svg className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <div className="flex items-center gap-3">
+            <button onClick={e => { e.stopPropagation(); onRemove(); }}
+              className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all shadow-lg opacity-40 hover:opacity-100 group/del">
+              <svg className="w-4 h-4 group-hover/del:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+            <div className={`w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted group-hover:text-white transition-all duration-500 shadow-lg ${open ? 'rotate-180 bg-white/5' : ''}`}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Card body */}
       {open && (
-        <div className="px-4 py-4 border-t border-[#1e3050] space-y-1">
-          <Field label="What Could Go Wrong" value={risk.title} onChange={v => up({ title: v })}
-            placeholder="e.g. Emotional Dysregulation Resulting in Unsafe Behaviour" />
-          <Field label="Description" value={risk.description} onChange={v => up({ description: v })} area rows={3}
-            placeholder="Describe the nature of this risk and when it occurs…" />
-          <ListField label="Recorded Behaviours (optional)" items={risk.behaviours}
-            onChange={v => up({ behaviours: v })} placeholder="e.g. Verbal aggression towards staff" />
-          <ListField label="People Who May Be Affected" items={risk.affectedPeople}
-            onChange={v => up({ affectedPeople: v })} placeholder="e.g. Support staff" />
-          <ListField label="Triggers / Contributing Factors" items={risk.triggers}
-            onChange={v => up({ triggers: v })} placeholder="e.g. Changes to routine without warning" />
-          <ListField label="Early Warning Signs" items={risk.earlyWarnings}
-            onChange={v => up({ earlyWarnings: v })} placeholder="e.g. Raised voice or increased agitation" />
-          <ListField label="Control Measures" items={risk.controls}
-            onChange={v => up({ controls: v })} placeholder="e.g. PBS plan in place — all staff must follow it" />
-          <Field label="Review Trigger" value={risk.reviewTrigger}
+        <div className="px-8 py-10 border-t border-white/5 space-y-2 animate-in slide-in-from-top-4 duration-500 bg-black/10 backdrop-blur-3xl">
+          <Field label="Tactical Threat Definition" value={risk.title} onChange={v => up({ title: v })}
+            placeholder="e.g. EMOTIONAL DYSREGULATION — PROTOCOL BREACH" />
+          <Field label="Intelligence Summary" value={risk.description} onChange={v => up({ description: v })} area rows={4}
+            placeholder="Synthesize the nature of this threat node and temporal triggers..." />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+            <ListField label="Recorded Signal Patterns" items={risk.behaviours}
+              onChange={v => up({ behaviours: v })} placeholder="e.g. Vocal escalation detected" />
+            <ListField label="Exposed Command Nodes" items={risk.affectedPeople}
+              onChange={v => up({ affectedPeople: v })} placeholder="e.g. Deployment agents" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6">
+            <ListField label="Threat Triggers / Vector Factors" items={risk.triggers}
+              onChange={v => up({ triggers: v })} placeholder="e.g. Asynchronous structure cycle" />
+            <ListField label="Anomalous Signal Warnings" items={risk.earlyWarnings}
+              onChange={v => up({ earlyWarnings: v })} placeholder="e.g. Latency in processing instructions" />
+          </div>
+
+          <ListField label="Intervention & Control Countermeasures" items={risk.controls}
+            onChange={v => up({ controls: v })} placeholder="e.g. Activate PBS de-escalation cycle" />
+          
+          <Field label="Recalibration Protocol Trigger" value={risk.reviewTrigger}
             onChange={v => up({ reviewTrigger: v })}
-            placeholder="e.g. Following any significant incident or change in presentation" />
+            placeholder="e.g. Following any high-intensity incident or baseline shift" />
 
           {/* Score */}
-          <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4 mt-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-4">How We Measure This Risk</p>
-            <ScoreSlider label="Likelihood" value={risk.likelihood} onChange={v => up({ likelihood: v })}
-              labelArr={LIKELIHOOD_LABELS} />
-            <ScoreSlider label="Impact" value={risk.impact} onChange={v => up({ impact: v })}
-              labelArr={IMPACT_LABELS} />
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#1e3050]">
-              <span className="text-sm text-gray-400">Risk Level:</span>
-              <span className="text-xl font-black" style={{ color }}>{score}</span>
-              <span className="text-sm font-bold px-3 py-1 rounded-full text-white" style={{ background: color }}>
+          <div className="glass border-2 border-white/5 rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover/score:opacity-100 transition-opacity duration-1000" />
+            <div className="section-header text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-shimmer flex items-center gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+              Strategic Risk Quantization
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <ScoreSlider label="Probability Matrix" value={risk.likelihood} onChange={v => up({ likelihood: v })}
+                labelArr={LIKELIHOOD_LABELS} />
+              <ScoreSlider label="Operational Impact" value={risk.impact} onChange={v => up({ impact: v })}
+                labelArr={IMPACT_LABELS} />
+            </div>
+            <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/5 relative z-10">
+              <div className="text-sm font-black text-hc-muted uppercase tracking-[0.2em]">Matrix Level:</div>
+              <div className="text-4xl font-black tabular-nums tracking-tighter shadow-2xl" style={{ color, textShadow: `0 0 30px ${color}40` }}>{score}</div>
+              <div className="pill text-[11px] font-black uppercase tracking-[0.2em] px-6 py-2 shadow-2xl animate-shimmer" style={{ background: color + '33', color, border: `1px solid ${color}60` }}>
                 {label}
-              </span>
-              <span className="text-xs text-gray-500">({risk.likelihood} × {risk.impact})</span>
+              </div>
+              <span className="text-[10px] font-bold text-hc-muted/40 uppercase tracking-widest ml-auto tabular-nums">DATA SYNC: {risk.likelihood} × {risk.impact} CALCULATION</span>
             </div>
           </div>
         </div>
@@ -160,28 +196,37 @@ function AgencyTable({ rows, onChange }: { rows: AgencyRow[]; onChange: (r: Agen
   const update = (i: number, key: keyof AgencyRow, v: string) => {
     const a = [...rows]; a[i] = { ...a[i], [key]: v }; onChange(a);
   };
-  const add = () => onChange([...rows, { service: '', role: '', status: 'Active' }]);
+  const add = () => onChange([...rows, { service: '', role: '', status: 'ACTIVE' }]);
   const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Multi-Agency Involvement</label>
-        <button onClick={add} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">+ Add Row</button>
+    <div className="mb-8 animate-in fade-in duration-700">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <label className="section-header text-[10px] font-black uppercase tracking-[0.3em] opacity-60">HUB REPOSITORY — MULTI-AGENCY GRID</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Network Node</button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {rows.map((row, i) => (
-          <div key={i} className="grid grid-cols-3 gap-2 items-center">
-            <input value={row.service} onChange={e => update(i, 'service', e.target.value)} placeholder="Service"
-              className="bg-[#0c1525] border border-[#1e3050] rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500" />
-            <input value={row.role} onChange={e => update(i, 'role', e.target.value)} placeholder="Role"
-              className="bg-[#0c1525] border border-[#1e3050] rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500" />
-            <div className="flex gap-2">
-              <input value={row.status} onChange={e => update(i, 'status', e.target.value)} placeholder="Status"
-                className="flex-1 bg-[#0c1525] border border-[#1e3050] rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500" />
-              <button onClick={() => remove(i)} className="text-gray-600 hover:text-red-400 text-lg leading-none px-1">×</button>
+          <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center group">
+            <input value={row.service} onChange={e => update(i, 'service', e.target.value)} placeholder="Sector Hub / Agency"
+              className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
+            <input value={row.role} onChange={e => update(i, 'role', e.target.value)} placeholder="Tactical Role"
+              className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
+            <div className="flex gap-3">
+              <input value={row.status} onChange={e => update(i, 'status', e.target.value)} placeholder="Sync Status"
+                className="flex-1 bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-hc-teal-light focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <button onClick={() => remove(i)} className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100 shadow-lg">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
           </div>
         ))}
+        {rows.length === 0 && (
+          <button onClick={add}
+            className="w-full glass-light border-2 border-dashed border-white/5 rounded-2xl py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Initialize Network Matrix
+          </button>
+        )}
       </div>
     </div>
   );
@@ -240,90 +285,131 @@ export function RiskBuilder({ clientId, onBack }: Props) {
   const risk = client.risk || emptyRisk(today);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1e3050] bg-[#060b14] sticky top-0 z-10">
-        <button onClick={onBack} className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium">
-          ← Back
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
+        <button onClick={onBack}
+          className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
+          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </span>
+          Abort
         </button>
-        <div className="w-px h-5 bg-[#1e3050]" />
-        <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
-          <span className="text-xs text-gray-500 ml-2">Keeping Me Safe</span>
+        
+        <div className="h-8 w-px bg-white/10 hidden md:block" />
+        
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+            <span className="text-shimmer">{client.name || 'UNINITIALIZED NODE'}</span>
+            <span className="pill pill-amber text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">RISK MATRIX ARCHITECT</span>
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Comprehensive Safeguarding Blueprint</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
+              {saved ? '✓ DATA SYNCHRONIZED' : '● BUFFERING CHANGES'}
+            </span>
+          </div>
         </div>
-        <div className="flex-1" />
-        <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
-          {saved ? '✓ Saved' : '● Unsaved'}
-        </span>
-        <button onClick={generatePDF}
-          className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Create My Document
-        </button>
+
+        <div className="flex items-center gap-4">
+          <button onClick={generatePDF}
+            className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Transmit Document
+          </button>
+        </div>
       </div>
 
-      <div className="p-6 max-w-3xl mx-auto w-full">
-        {/* Risk summary bar */}
-        {risk.risks.filter(r => r.title).length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {risk.risks.filter(r => r.title).map((r, i) => {
-              const { score, color, label } = riskInfo(r.likelihood, r.impact);
-              return (
-                <span key={i} className="text-[11px] font-semibold px-2.5 py-1 rounded-full text-white"
-                  style={{ background: color + '33', color, border: `1px solid ${color}` }}>
-                  {i + 1}. {r.title.length > 30 ? r.title.slice(0, 30) + '…' : r.title} — {score} ({label})
-                </span>
-              );
-            })}
+      <div className="flex-1 overflow-y-auto mesh-bg p-10 scrollbar-thin">
+        <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-700 pb-24">
+          
+          {/* Risk summary bar */}
+          {risk.risks.filter(r => r.title).length > 0 && (
+            <div className="flex flex-wrap gap-2.5 mb-12 animate-in fade-in zoom-in-95 duration-700">
+              {risk.risks.filter(r => r.title).map((r, i) => {
+                const { score, color, label } = riskInfo(r.likelihood, r.impact);
+                return (
+                  <span key={i} className="pill text-[9px] font-black uppercase tracking-[0.15em] px-4 py-2 shadow-xl transition-all duration-500 hover:scale-110 active:scale-95 cursor-default"
+                    style={{ background: color + '22', color, border: `1px solid ${color}44` }}>
+                    {i + 1}. {r.title.length > 30 ? r.title.slice(0, 30) + '…' : r.title} — {score} ({label})
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-8 px-3">
+            <div className="transition-transform duration-500 hover:translate-x-1">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Strategic Threat Nodes</h2>
+              <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Mapping {risk.risks.filter(r => r.title).length} confirmed vectors</p>
+            </div>
+            <button onClick={addRisk}
+              className="flex items-center gap-3 px-8 py-3.5 glass-light border border-hc-teal/30 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-hc-teal/10 hover:border-hc-teal/60 hover:text-white transition-all shadow-2xl active:scale-95 group/add">
+              <svg className="w-4 h-4 group-hover/add:scale-110 group-hover/add:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Deploy Risk Node
+            </button>
           </div>
-        )}
 
-        {/* Risk cards */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-white">
-            Things That Could Affect Me ({risk.risks.filter(r => r.title).length} of {risk.risks.length})
-          </h2>
-          <button onClick={addRisk}
-            className="bg-teal-900/40 hover:bg-teal-800/40 border border-teal-800 text-teal-400 text-sm font-semibold px-4 py-1.5 rounded-lg">
-            + Add a Risk
-          </button>
-        </div>
-
-        {risk.risks.map((r, i) => (
-          <RiskCard key={r.id} risk={r} index={i}
-            onUpdate={item => updateRiskItem(i, item)}
-            onRemove={() => removeRisk(i)}
-            defaultOpen={i === 0 && !r.title} />
-        ))}
-
-        {/* Global fields */}
-        <div className="mt-8 pt-6 border-t border-[#1e3050]">
-          <h3 className="text-sm font-bold text-white mb-4">My Support Network & Safeguards</h3>
-          <AgencyTable rows={risk.multiAgencyRows} onChange={v => updateRisk({ multiAgencyRows: v })} />
-          <Field label="Respecting My Freedom" value={risk.leastRestrictivePractice}
-            onChange={v => updateRisk({ leastRestrictivePractice: v })} area rows={4} />
-          <Field label="When We Review This" value={risk.reviewSchedule}
-            onChange={v => updateRisk({ reviewSchedule: v })} area rows={3} />
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date of Assessment" value={risk.planDate}
-              onChange={v => updateRisk({ planDate: v })} />
-            <Field label="Review Date" value={client.reviewDate}
-              onChange={v => setClient(prev => { const n = { ...prev, reviewDate: v }; persist(n); return n; })} />
+          <div className="space-y-4">
+            {risk.risks.map((r, i) => (
+              <RiskCard key={r.id} risk={r} index={i}
+                onUpdate={item => updateRiskItem(i, item)}
+                onRemove={() => removeRisk(i)}
+                defaultOpen={i === 0 && !r.title} />
+            ))}
+            
+            {risk.risks.length === 0 && (
+              <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
+                <div className="text-5xl mb-6 opacity-20">🛡️</div>
+                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Threat Grid Clear</div>
+                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Initiate risk nodes to populate matrix</div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Signatures */}
-        <div className="mt-8 pt-6 border-t border-[#1e3050]">
-          <SignaturePanel sigs={sigs} onChange={setSigs} />
-        </div>
+          {/* Global fields */}
+          <div className="mt-16 pt-10 border-t border-white/10 space-y-10">
+            <div className="px-2">
+              <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">Global Safeguards</h3>
+              <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">System-wide infrastructure & multi-agency sync</p>
+            </div>
+            
+            <AgencyTable rows={risk.multiAgencyRows} onChange={v => updateRisk({ multiAgencyRows: v })} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Field label="Autonomous Freedom & Ethics" value={risk.leastRestrictivePractice}
+                onChange={v => updateRisk({ leastRestrictivePractice: v })} area rows={5}
+                placeholder="Synthesize least restrictive practice protocols..." />
+              <Field label="Recalibration Frequency" value={risk.reviewSchedule}
+                onChange={v => updateRisk({ reviewSchedule: v })} area rows={5}
+                placeholder="Define review temporal cycles..." />
+            </div>
 
-        <div className="mt-6 flex justify-end">
-          <button onClick={generatePDF}
-            className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
-            Create My Document
-          </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/20 p-8 rounded-[2rem] border border-white/5">
+              <Field label="Tactical Assessment Date" value={risk.planDate}
+                onChange={v => updateRisk({ planDate: v })} />
+              <Field label="Temporal Re-Scan Date" value={client.reviewDate}
+                onChange={v => { const n = { ...client, reviewDate: v }; persist(n); setClient(n); }} />
+            </div>
+          </div>
+
+          {/* Signatures */}
+          <div className="mt-16 pt-10 border-t border-white/10 animate-in zoom-in-95 duration-1000">
+            <SignaturePanel sigs={sigs} onChange={setSigs} />
+          </div>
+
+          <div className="mt-16 flex justify-center">
+            <button onClick={generatePDF}
+              className="px-12 py-5 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[1.5rem] shadow-2xl hover:scale-105 active:scale-95 transition-all duration-500 group/btn-transmit">
+              <svg className="w-6 h-6 inline-block mr-4 group-hover/btn-transmit:scale-110 group-hover/btn-transmit:rotate-3 transition-transform align-middle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Transmit Completed Matrix
+            </button>
+          </div>
         </div>
       </div>
 

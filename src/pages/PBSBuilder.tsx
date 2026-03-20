@@ -13,16 +13,16 @@ interface Props {
 const SECTIONS = [
   'About Me',
   'Who I Am',
-  'My Diagnoses & How They Affect Me',
-  'What My Behaviour Is Telling You',
-  'How to Help Me Every Day',
-  'Signs I Might Be Struggling',
-  'What to Do When Things Escalate',
-  'After a Difficult Moment',
-  'What Works for Me / What Doesn\'t',
-  'My Medication',
-  'My Support Network & Reviews',
-  'Sign-Off',
+  'Diagnoses & Presentation',
+  'Behaviour Communication',
+  'Proactive Strategies',
+  'Early Warning Signs',
+  'Reactive Response',
+  'Post-Incident Protocol',
+  'Preferences & Triggers',
+  'Medication Stream',
+  'Network & Reviews',
+  'Verification & Sign-Off',
 ];
 
 // ─── SHARED FIELD COMPONENTS ─────────────────────────────────────────────────
@@ -31,18 +31,18 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600';
+  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
-    <div className="mb-4">
-      <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</label>
+    <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
+      <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
       {area
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y'} />
-        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls} />}
+        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin font-medium italic'} />
+        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls + ' font-bold'} />}
     </div>
   );
 }
 
-function ListField({ label, items, onChange, placeholder = 'Enter item…', rows = 1 }: {
+function ListField({ label, items, onChange, placeholder = 'Enter objective…', rows = 1 }: {
   label: string; items: string[]; onChange: (items: string[]) => void;
   placeholder?: string; rows?: number;
 }) {
@@ -50,26 +50,29 @@ function ListField({ label, items, onChange, placeholder = 'Enter item…', rows
   const add = () => onChange([...items, '']);
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</label>
-        <button onClick={add} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">+ Add</button>
+    <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Entry</button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item, i) => (
-          <div key={i} className="flex gap-2 items-start">
+          <div key={i} className="flex gap-3 items-start group">
             {rows > 1
               ? <textarea value={item} onChange={e => update(i, e.target.value)} rows={rows} placeholder={placeholder}
-                  className="flex-1 bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 resize-y placeholder-gray-600" />
+                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-y placeholder:text-hc-muted/20 shadow-inner transition-all font-medium italic" />
               : <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-                  className="flex-1 bg-[#0c1525] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500 placeholder-gray-600" />}
-            <button onClick={() => remove(i)} className="mt-2 text-gray-600 hover:text-red-400 text-lg leading-none px-1">×</button>
+                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />}
+            <button onClick={() => remove(i)} className="mt-2 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
         ))}
         {items.length === 0 && (
           <button onClick={add}
-            className="w-full border border-dashed border-[#1e3050] rounded-lg py-2 text-xs text-gray-500 hover:text-teal-400 hover:border-teal-800">
-            + Add item
+            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Initialize Tactical List
           </button>
         )}
       </div>
@@ -77,7 +80,6 @@ function ListField({ label, items, onChange, placeholder = 'Enter item…', rows
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function TableEditor({ label, rows, onChange, cols, addRow }: {
   label: string;
   rows: Record<string, string>[];
@@ -93,25 +95,27 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
   const add = () => onChange([...rows, addRow()]);
   const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</label>
-        <button onClick={add} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">+ Add Row</button>
+    <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Strategy Node</button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {rows.map((row, i) => (
-          <div key={i} className="bg-[#0a1120] border border-[#1e3050] rounded-lg p-3 relative">
+          <div key={i} className="glass-light border border-white/5 rounded-[2rem] p-6 relative card-glow group active:scale-[0.99] transition-all">
             <button onClick={() => remove(i)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-red-400 text-sm">×</button>
-            <div className={`grid gap-3 ${cols.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              className="absolute top-4 right-4 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-0 group-hover:opacity-100 shadow-xl z-10">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className={`grid gap-6 ${cols.length >= 2 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
               {cols.map(col => (
-                <div key={col.key}>
-                  <label className="block text-[10px] text-gray-500 mb-1">{col.label}</label>
+                <div key={col.key} className={col.area && cols.length === 1 ? 'w-full' : ''}>
+                  <label className="section-header text-[8px] mb-2 ml-1 block opacity-40 uppercase tracking-[0.2em]">{col.label}</label>
                   {col.area
                     ? <textarea value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        rows={2} className="w-full bg-[#0c1525] border border-[#1e3050] rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500 resize-y" />
+                        rows={3} className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none font-medium italic" />
                     : <input type="text" value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        className="w-full bg-[#0c1525] border border-[#1e3050] rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500" />}
+                        className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />}
                 </div>
               ))}
             </div>
@@ -119,8 +123,9 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
         ))}
         {rows.length === 0 && (
           <button onClick={add}
-            className="w-full border border-dashed border-[#1e3050] rounded-lg py-2 text-xs text-gray-500 hover:text-teal-400 hover:border-teal-800">
-            + Add row
+            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[2rem] py-10 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Construct Protocol Grid
           </button>
         )}
       </div>
@@ -193,269 +198,310 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1e3050] bg-[#060b14] sticky top-0 z-10">
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
         <button onClick={onBack}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium">
-          ← Back
+          className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
+          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </span>
+          Abort
         </button>
-        <div className="w-px h-5 bg-[#1e3050]" />
-        <div>
-          <span className="text-sm font-semibold text-white">{client.name || 'New Person'}</span>
-          <span className="text-xs text-gray-500 ml-2">My Positive Support Plan</span>
+        
+        <div className="h-8 w-px bg-white/10 hidden md:block" />
+        
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+            <span className="text-shimmer">{client.name || 'UNINITIALIZED NODE'}</span>
+            <span className="pill pill-teal text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">PBS BLUEPRINT BUILDER</span>
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Strategic Intervention Protocol</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
+              {saved ? '✓ DATA SYNCHRONIZED' : '● BUFFERING CHANGES'}
+            </span>
+          </div>
         </div>
-        <div className="flex-1" />
-        <span className={`text-[11px] font-medium ${saved ? 'text-teal-500' : 'text-amber-400'}`}>
-          {saved ? '✓ Saved' : '● Unsaved'}
-        </span>
-        <button onClick={generatePDF}
-          className="flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-4 py-1.5 rounded-lg">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Create My Document
-        </button>
+
+        <div className="flex items-center gap-4">
+          <button onClick={generatePDF}
+            className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
+            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Transmit Document
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mesh-bg">
         {/* Section nav */}
-        <div className="w-48 flex-shrink-0 border-r border-[#1e3050] overflow-y-auto bg-[#060b14]">
-          {SECTIONS.map((name, i) => (
-            <button key={i} onClick={() => setSection(i)}
-              className={`w-full text-left px-4 py-2.5 text-[12px] font-medium flex items-center gap-2 transition-colors
-                ${section === i ? 'bg-teal-900/40 text-teal-400 border-r-2 border-teal-500' : 'text-gray-400 hover:text-white hover:bg-[#111b2e]'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sectionComplete(i) ? 'bg-teal-500' : 'bg-[#1e3050]'}`} />
-              {name}
-            </button>
-          ))}
+        <div className="w-72 flex-shrink-0 border-r border-white/5 overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
+          <div className="p-6 border-b border-white/5 bg-black/20">
+            <p className="section-header text-[9px] tracking-[0.3em] opacity-40 uppercase">Module Architecture</p>
+          </div>
+          <div className="py-4">
+            {SECTIONS.map((name, i) => (
+              <button key={i} onClick={() => setSection(i)}
+                className={`w-full text-left px-6 py-4 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden active:scale-95
+                  ${section === i ? 'bg-hc-teal/10 text-hc-teal-light shadow-[inset_0_0_20px_rgba(20,184,166,0.05)]' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+                {section === i && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#14b8a6] z-10" />}
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-700 relative z-10 ${sectionComplete(i) ? 'bg-hc-teal glow-teal scale-110' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                <span className="flex-1 truncate relative z-10 group-hover:translate-x-1 transition-transform duration-500">{name}</span>
+                {sectionComplete(i) && (
+                  <svg className="w-3.5 h-3.5 text-hc-teal-light/60 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Section content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-2xl">
-
-            {/* 0 — About Me */}
-            {section === 0 && (
+        <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
+          <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+            
+            <div className="mb-12 flex items-center gap-6">
+              <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
+                {section + 1}
+              </div>
               <div>
-                <h2 className="text-base font-bold text-white mb-5">About Me</h2>
-                <div className="grid grid-cols-2 gap-x-4">
-                  <Field label="Full Name" value={client.name} onChange={v => update({ name: v })} />
-                  <Field label="Preferred Name" value={client.preferredName} onChange={v => update({ preferredName: v })} />
-                  <Field label="Date of Birth (DD/MM/YYYY)" value={client.dob} onChange={v => update({ dob: v })} />
-                  <Field label="NHS Number" value={client.nhs} onChange={v => update({ nhs: v })} />
-                  <Field label="Phone" value={client.phone} onChange={v => update({ phone: v })} />
-                  <Field label="Date of Admission" value={client.dateOfAdmission} onChange={v => update({ dateOfAdmission: v })} />
-                  <Field label="Review Date" value={client.reviewDate} onChange={v => update({ reviewDate: v })} />
-                </div>
-                <Field label="Address" value={client.address} onChange={v => update({ address: v })} />
-                <ListField label="Diagnoses" items={client.diagnoses} onChange={v => update({ diagnoses: v })} placeholder="e.g. Autism Spectrum Disorder (ASD)" />
-                <div className="grid grid-cols-2 gap-x-4">
-                  <Field label="Key Worker" value={client.keyWorker} onChange={v => update({ keyWorker: v })} />
-                  <Field label="Responsible Person" value={client.responsible} onChange={v => update({ responsible: v })} />
-                  <Field label="Completed By" value={client.completedBy} onChange={v => update({ completedBy: v })} />
-                  <Field label="Plan Date" value={pbs.planDate} onChange={v => updatePBS({ planDate: v })} />
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">{SECTIONS[section]}</h2>
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
+                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Configuring Strategic Data Module {section + 1} of 12</p>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* 1 — About */}
-            {section === 1 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">Who I Am</h2>
-                <Field label="About (main paragraph)" value={pbs.aboutText}
-                  onChange={v => updatePBS({ aboutText: v })} area rows={5}
-                  placeholder="Write a positive introduction to this person — strengths, personality, interests…" />
-                <ListField label="What Matters Most to Them" items={pbs.whatMatters}
-                  onChange={v => updatePBS({ whatMatters: v })} placeholder="e.g. Their bedroom — their private safe space" />
-                <ListField label="Communicates Best When…" items={pbs.communicatesBest}
-                  onChange={v => updatePBS({ communicatesBest: v })} placeholder="e.g. Spoken to calmly with time to process" />
-                <ListField label="Finds It Difficult To…" items={pbs.findsDifficult}
-                  onChange={v => updatePBS({ findsDifficult: v })} placeholder="e.g. Managing frustration in the moment" />
-              </div>
-            )}
+            <div className="space-y-2">
+              {/* 0 — About Me */}
+              {section === 0 && (
+                <div className="animate-in fade-in duration-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                    <Field label="Personnel Designation" value={client.name} onChange={v => update({ name: v })} />
+                    <Field label="Tactical Callsign" value={client.preferredName} onChange={v => update({ preferredName: v })} />
+                    <Field label="Temporal ID (DOB)" value={client.dob} onChange={v => update({ dob: v })} />
+                    <Field label="Network ID (NHS)" value={client.nhs} onChange={v => update({ nhs: v })} />
+                    <Field label="Signal Line (Phone)" value={client.phone} onChange={v => update({ phone: v })} />
+                    <Field label="Registry Date" value={client.dateOfAdmission} onChange={v => update({ dateOfAdmission: v })} />
+                    <Field label="Recalibration Date" value={client.reviewDate} onChange={v => update({ reviewDate: v })} />
+                  </div>
+                  <Field label="Operational Sector (Address)" value={client.address} onChange={v => update({ address: v })} area rows={2} />
+                  <ListField label="Clinical Classifications" items={client.diagnoses} onChange={v => update({ diagnoses: v })} placeholder="e.g. Spectrum Optimization Protocol" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-8 pt-8 border-t border-white/5">
+                    <Field label="Primary Agent" value={client.keyWorker} onChange={v => update({ keyWorker: v })} />
+                    <Field label="Command Lead" value={client.responsible} onChange={v => update({ responsible: v })} />
+                    <Field label="Intel Specialist" value={client.completedBy} onChange={v => update({ completedBy: v })} />
+                    <Field label="Blueprint Version" value={pbs.planDate} onChange={v => updatePBS({ planDate: v })} />
+                  </div>
+                </div>
+              )}
 
-            {/* 2 — Diagnoses */}
-            {section === 2 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-1">My Diagnoses & How They Affect Me</h2>
-                <p className="text-xs text-gray-500 mb-5">Describe how each diagnosis presents for this specific person.</p>
-                <TableEditor
-                  label="Diagnosis Rows"
-                  rows={pbs.diagnosisRows as unknown as Record<string, string>[]}
-                  onChange={v => updatePBS({ diagnosisRows: v as unknown as typeof pbs.diagnosisRows })}
-                  cols={[
-                    { key: 'diagnosis', label: 'Diagnosis' },
-                    { key: 'presentation', label: 'How it presents', area: true },
-                  ]}
-                  addRow={() => ({ diagnosis: '', presentation: '' })}
-                />
-                <Field label="Key Principle (shown below the table)" value={pbs.keyPrinciple}
-                  onChange={v => updatePBS({ keyPrinciple: v })} area rows={3} />
-              </div>
-            )}
+              {/* 1 — Who I Am */}
+              {section === 1 && (
+                <div className="animate-in fade-in duration-700">
+                  <Field label="Strategic Intro (Persona Narrative)" value={pbs.aboutText}
+                    onChange={v => updatePBS({ aboutText: v })} area rows={8}
+                    placeholder="Synthesize a positive intelligence summary — core strengths, behavioral personality, and operational interests..." />
+                  <div className="h-8" />
+                  <ListField label="Priority Values" items={pbs.whatMatters}
+                    onChange={v => updatePBS({ whatMatters: v })} placeholder="e.g. Autonomous zone — private sanctuary" />
+                  <ListField label="Transmission Optimization" items={pbs.communicatesBest}
+                    onChange={v => updatePBS({ communicatesBest: v })} placeholder="e.g. Low-latency, calm directive cycles" />
+                  <ListField label="Friction Vectors" items={pbs.findsDifficult}
+                    onChange={v => updatePBS({ findsDifficult: v })} placeholder="e.g. Real-time frustration management" />
+                </div>
+              )}
 
-            {/* 3 — Function */}
-            {section === 3 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-1">What My Behaviour Is Telling You</h2>
-                <p className="text-xs text-gray-500 mb-5">What is each behaviour communicating? What unmet need does it express?</p>
-                <TableEditor
-                  label="Behaviour / Function Rows"
-                  rows={pbs.functionRows as unknown as Record<string, string>[]}
-                  onChange={v => updatePBS({ functionRows: v as unknown as typeof pbs.functionRows })}
-                  cols={[
-                    { key: 'behaviour', label: 'Behaviour' },
-                    { key: 'func', label: 'Function / Unmet Need', area: true },
-                  ]}
-                  addRow={() => ({ behaviour: '', func: '' })}
-                />
-              </div>
-            )}
+              {/* 2 — Diagnoses */}
+              {section === 2 && (
+                <div className="animate-in fade-in duration-700">
+                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Analyze how each clinical classification translates into real-time operational behavior for this specific node."</p>
+                  <TableEditor
+                    label="Intelligence Matrix — Diagnosis Mapping"
+                    rows={pbs.diagnosisRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ diagnosisRows: v as unknown as typeof pbs.diagnosisRows })}
+                    cols={[
+                      { key: 'diagnosis', label: 'Classification' },
+                      { key: 'presentation', label: 'Tactical Presentation', area: true },
+                    ]}
+                    addRow={() => ({ diagnosis: '', presentation: '' })}
+                  />
+                  <Field label="Universal Operating Principle" value={pbs.keyPrinciple}
+                    onChange={v => updatePBS({ keyPrinciple: v })} area rows={4} placeholder="Summarize the core philosophical approach for this node..." />
+                </div>
+              )}
 
-            {/* 4 — Proactive Strategies */}
-            {section === 4 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">How to Help Me Every Day</h2>
-                <ListField label="Environmental Strategies" items={pbs.envStrategies}
-                  onChange={v => updatePBS({ envStrategies: v })} />
-                <ListField label="Routine & Structure Strategies" items={pbs.routineStrategies}
-                  onChange={v => updatePBS({ routineStrategies: v })} />
-                <ListField label="Relationship Strategies" items={pbs.relationshipStrategies}
-                  onChange={v => updatePBS({ relationshipStrategies: v })} />
-                <ListField label="Communication Strategies" items={pbs.communicationStrategies}
-                  onChange={v => updatePBS({ communicationStrategies: v })} />
-                <ListField label="Online Safety Strategies (optional)" items={pbs.onlineSafetyStrategies || []}
-                  onChange={v => updatePBS({ onlineSafetyStrategies: v })} />
-              </div>
-            )}
+              {/* 3 — Function */}
+              {section === 3 && (
+                <div className="animate-in fade-in duration-700">
+                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Decode the behavioral telemetry. Map each action to its underlying unmet signal or communicative function."</p>
+                  <TableEditor
+                    label="Signal Analysis — Behavioural Mapping"
+                    rows={pbs.functionRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ functionRows: v as unknown as typeof pbs.functionRows })}
+                    cols={[
+                      { key: 'behaviour', label: 'Telemetry Signal' },
+                      { key: 'func', label: 'Decoded Unmet Need', area: true },
+                    ]}
+                    addRow={() => ({ behaviour: '', func: '' })}
+                  />
+                </div>
+              )}
 
-            {/* 5 — Early Warning Signs */}
-            {section === 5 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-1">Signs I Might Be Struggling</h2>
-                <p className="text-xs text-gray-500 mb-5">Signs that the person is becoming dysregulated — and what staff should do.</p>
-                <TableEditor
-                  label="Warning Sign Rows"
-                  rows={pbs.warningSignRows as unknown as Record<string, string>[]}
-                  onChange={v => updatePBS({ warningSignRows: v as unknown as typeof pbs.warningSignRows })}
-                  cols={[
-                    { key: 'sign', label: 'Early Warning Sign', area: true },
-                    { key: 'staffAction', label: 'Recommended Staff Response', area: true },
-                  ]}
-                  addRow={() => ({ sign: '', staffAction: '' })}
-                />
-              </div>
-            )}
+              {/* 4 — Proactive Strategies */}
+              {section === 4 && (
+                <div className="animate-in fade-in duration-700 space-y-4">
+                  <ListField label="Sector Environment Optimization" items={pbs.envStrategies}
+                    onChange={v => updatePBS({ envStrategies: v })} />
+                  <ListField label="Temporal Structure & Routine" items={pbs.routineStrategies}
+                    onChange={v => updatePBS({ routineStrategies: v })} />
+                  <ListField label="Human Connection Protocols" items={pbs.relationshipStrategies}
+                    onChange={v => updatePBS({ relationshipStrategies: v })} />
+                  <ListField label="Signal Transmission Rules" items={pbs.communicationStrategies}
+                    onChange={v => updatePBS({ communicationStrategies: v })} />
+                  <ListField label="Digital Safety Layer (Optional)" items={pbs.onlineSafetyStrategies || []}
+                    onChange={v => updatePBS({ onlineSafetyStrategies: v })} />
+                </div>
+              )}
 
-            {/* 6 — Reactive Strategies */}
-            {section === 6 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-1">What to Do When Things Escalate</h2>
-                <p className="text-xs text-gray-500 mb-5">De-escalation steps in order — from early response to emergency contact.</p>
-                {[
-                  ['Step 1 — Lower voice and body language', pbs.reactiveStep1, (v: string) => updatePBS({ reactiveStep1: v })],
-                  ['Step 2 — Give physical space', pbs.reactiveStep2, (v: string) => updatePBS({ reactiveStep2: v })],
-                  ['Step 3 — Remove demands', pbs.reactiveStep3, (v: string) => updatePBS({ reactiveStep3: v })],
-                  ['Step 4 — Offer coping options (exact words)', pbs.reactiveStep4, (v: string) => updatePBS({ reactiveStep4: v })],
-                  ['Step 5 — Validate feelings', pbs.reactiveStep5, (v: string) => updatePBS({ reactiveStep5: v })],
-                  ['Step 6 — Avoid physical confrontation', pbs.reactiveStep6, (v: string) => updatePBS({ reactiveStep6: v })],
-                  ['Step 7 — Escalate / Emergency', pbs.reactiveStep7, (v: string) => updatePBS({ reactiveStep7: v })],
-                ].map(([label, value, onChange], i) => (
-                  <Field key={i} label={label as string} value={value as string} onChange={onChange as (v: string) => void} area rows={2} />
-                ))}
-                <Field label="Note on Self-Regulation / Walks (optional info box)" value={pbs.walksNote}
-                  onChange={v => updatePBS({ walksNote: v })} area rows={2} />
-              </div>
-            )}
+              {/* 5 — Early Warning Signs */}
+              {section === 5 && (
+                <div className="animate-in fade-in duration-700">
+                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Identify pre-incident telemetry patterns and define the immediate neutralizing agent response."</p>
+                  <TableEditor
+                    label="Surveillance Matrix — Early Warning Signs"
+                    rows={pbs.warningSignRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ warningSignRows: v as unknown as typeof pbs.warningSignRows })}
+                    cols={[
+                      { key: 'sign', label: 'Anomaly Detected', area: true },
+                      { key: 'staffAction', label: 'Agent Response Protocol', area: true },
+                    ]}
+                    addRow={() => ({ sign: '', staffAction: '' })}
+                  />
+                </div>
+              )}
 
-            {/* 7 — Post-Incident */}
-            {section === 7 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">After a Difficult Moment</h2>
-                <ListField label="Immediate Post-Incident Actions" items={pbs.postImmediate}
-                  onChange={v => updatePBS({ postImmediate: v })} rows={2} />
-                <ListField label="Debrief (When Calm)" items={pbs.postDebrief}
-                  onChange={v => updatePBS({ postDebrief: v })} rows={2} />
-                <ListField label="Staff Responsibilities" items={pbs.staffResponsibilities}
-                  onChange={v => updatePBS({ staffResponsibilities: v })} />
-              </div>
-            )}
+              {/* 6 — Reactive Strategies */}
+              {section === 6 && (
+                <div className="animate-in fade-in duration-700">
+                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-flag-red pl-4 py-1">"Tiered de-escalation cycles in execution order — from initial signal response to emergency backup deployment."</p>
+                  <div className="space-y-2">
+                    {[
+                      ['Phase 1 — Signal Neutralization (Voice/Body)', pbs.reactiveStep1, (v: string) => updatePBS({ reactiveStep1: v })],
+                      ['Phase 2 — Tactical Distance (Space)', pbs.reactiveStep2, (v: string) => updatePBS({ reactiveStep2: v })],
+                      ['Phase 3 — Demand Shedding', pbs.reactiveStep3, (v: string) => updatePBS({ reactiveStep3: v })],
+                      ['Phase 4 — Tactical Redirection (Exact Phrases)', pbs.reactiveStep4, (v: string) => updatePBS({ reactiveStep4: v })],
+                      ['Phase 5 — Affective Validation', pbs.reactiveStep5, (v: string) => updatePBS({ reactiveStep5: v })],
+                      ['Phase 6 — Conflict Avoidance Protocol', pbs.reactiveStep6, (v: string) => updatePBS({ reactiveStep6: v })],
+                      ['Phase 7 — Emergency Escalation / Signal 999', pbs.reactiveStep7, (v: string) => updatePBS({ reactiveStep7: v })],
+                    ].map(([label, value, onChange], i) => (
+                      <Field key={i} label={label as string} value={value as string} onChange={onChange as (v: string) => void} area rows={2} />
+                    ))}
+                  </div>
+                  <div className="mt-8">
+                    <Field label="Self-Regulation Protocols (Optional)" value={pbs.walksNote}
+                      onChange={v => updatePBS({ walksNote: v })} area rows={3} placeholder="Define protocols for autonomous regulation cycles..." />
+                  </div>
+                </div>
+              )}
 
-            {/* 8 — What Works */}
-            {section === 8 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">What Works for Me / What Doesn't</h2>
-                <ListField label="✓ What Works Well" items={pbs.whatWorks}
-                  onChange={v => updatePBS({ whatWorks: v })} placeholder="e.g. Calm, quiet voice from staff" />
-                <ListField label="✗ What Does Not Work" items={pbs.doesntWork}
-                  onChange={v => updatePBS({ doesntWork: v })} placeholder="e.g. Raising voices or matching their agitation" />
-              </div>
-            )}
+              {/* 7 — Post-Incident */}
+              {section === 7 && (
+                <div className="animate-in fade-in duration-700 space-y-6">
+                  <ListField label="Immediate Post-Event Synthesis" items={pbs.postImmediate}
+                    onChange={v => updatePBS({ postImmediate: v })} rows={2} />
+                  <ListField label="Deep-Calm Intelligence Debrief" items={pbs.postDebrief}
+                    onChange={v => updatePBS({ postDebrief: v })} rows={2} />
+                  <ListField label="Agent Responsibilities" items={pbs.staffResponsibilities}
+                    onChange={v => updatePBS({ staffResponsibilities: v })} />
+                </div>
+              )}
 
-            {/* 9 — Medication */}
-            {section === 9 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">My Medication</h2>
-                <TableEditor
-                  label="Medication Rows"
-                  rows={pbs.medicationRows as unknown as Record<string, string>[]}
-                  onChange={v => updatePBS({ medicationRows: v as unknown as typeof pbs.medicationRows })}
-                  cols={[
-                    { key: 'name', label: 'Medication Name' },
-                    { key: 'dose', label: 'Dose' },
-                    { key: 'when', label: 'When' },
-                    { key: 'purpose', label: 'Purpose' },
-                    { key: 'notes', label: 'Notes' },
-                  ]}
-                  addRow={() => ({ name: '', dose: '', when: 'Morning', purpose: '', notes: '' })}
-                />
-                <Field label="Medication Notes (administration preferences, refusal protocol, side effects to monitor)"
-                  value={pbs.medicationNote} onChange={v => updatePBS({ medicationNote: v })} area rows={4} />
-              </div>
-            )}
+              {/* 8 — What Works */}
+              {section === 8 && (
+                <div className="animate-in fade-in duration-700 grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <ListField label="✓ High-Compatibility Factors" items={pbs.whatWorks}
+                    onChange={v => updatePBS({ whatWorks: v })} placeholder="e.g. Low-frequency agent vocalization" />
+                  <ListField label="✗ System Rejection Vectors" items={pbs.doesntWork}
+                    onChange={v => updatePBS({ doesntWork: v })} placeholder="e.g. Escalating vocal pitch or volume" />
+                </div>
+              )}
 
-            {/* 10 — Multi-Agency & Review */}
-            {section === 10 && (
-              <div>
-                <h2 className="text-base font-bold text-white mb-5">My Support Network & Reviews</h2>
-                <TableEditor
-                  label="Multi-Agency Rows"
-                  rows={pbs.agencyRows as unknown as Record<string, string>[]}
-                  onChange={v => updatePBS({ agencyRows: v as unknown as typeof pbs.agencyRows })}
-                  cols={[
-                    { key: 'service', label: 'Service / Agency' },
-                    { key: 'role', label: 'Role' },
-                    { key: 'status', label: 'Status' },
-                  ]}
-                  addRow={() => ({ service: '', role: '', status: 'Active' })}
-                />
-                <Field label="Review Schedule" value={pbs.reviewSchedule}
-                  onChange={v => updatePBS({ reviewSchedule: v })} area rows={3} />
-                <Field label="How This Person Was Involved" value={pbs.serviceUserInvolvement}
-                  onChange={v => updatePBS({ serviceUserInvolvement: v })} area rows={2} />
-              </div>
-            )}
+              {/* 9 — Medication */}
+              {section === 9 && (
+                <div className="animate-in fade-in duration-700">
+                  <TableEditor
+                    label="Pharmacological Stream"
+                    rows={pbs.medicationRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ medicationRows: v as unknown as typeof pbs.medicationRows })}
+                    cols={[
+                      { key: 'name', label: 'Payload Name' },
+                      { key: 'dose', label: 'Loadout' },
+                      { key: 'when', label: 'Cycle' },
+                      { key: 'purpose', label: 'Objective' },
+                      { key: 'notes', label: 'Detail' },
+                    ]}
+                    addRow={() => ({ name: '', dose: '', when: 'AM', purpose: '', notes: '' })}
+                  />
+                  <div className="mt-8">
+                    <Field label="Medication Protocol Notes"
+                      value={pbs.medicationNote} onChange={v => updatePBS({ medicationNote: v })} area rows={5}
+                      placeholder="Refusal protocols, side-effect telemetry monitoring, and administration preferences..." />
+                  </div>
+                </div>
+              )}
 
-            {/* 11 — Signatures */}
-            {section === 11 && (
-              <SignaturePanel sigs={sigs} onChange={setSigs} />
-            )}
+              {/* 10 — Multi-Agency & Review */}
+              {section === 10 && (
+                <div className="animate-in fade-in duration-700">
+                  <TableEditor
+                    label="Command Infrastructure (Multi-Agency)"
+                    rows={pbs.agencyRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ agencyRows: v as unknown as typeof pbs.agencyRows })}
+                    cols={[
+                      { key: 'service', label: 'Hub / Agency' },
+                      { key: 'role', label: 'Objective Role' },
+                      { key: 'status', label: 'Sync Status' },
+                    ]}
+                    addRow={() => ({ service: '', role: '', status: 'ACTIVE' })}
+                  />
+                  <div className="h-8" />
+                  <Field label="Intelligence Recalibration Schedule" value={pbs.reviewSchedule}
+                    onChange={v => updatePBS({ reviewSchedule: v })} area rows={3} />
+                  <Field label="Subject Participation Narrative" value={pbs.serviceUserInvolvement}
+                    onChange={v => updatePBS({ serviceUserInvolvement: v })} area rows={2} />
+                </div>
+              )}
+
+              {/* 11 — Signatures */}
+              {section === 11 && (
+                <div className="animate-in zoom-in-95 duration-700">
+                  <SignaturePanel sigs={sigs} onChange={setSigs} />
+                </div>
+              )}
+            </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-[#1e3050]">
+            <div className="flex justify-between mt-16 pt-8 border-t border-white/5 relative z-10">
               {section > 0
                 ? <button onClick={() => setSection(s => s - 1)}
-                    className="text-sm text-gray-400 hover:text-white font-medium">← Previous</button>
+                    className="flex items-center gap-3 px-8 py-4 glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-white/[0.03] active:scale-90 shadow-xl">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    Previous Module
+                  </button>
                 : <div />}
               {section < SECTIONS.length - 1
                 ? <button onClick={() => setSection(s => s + 1)}
-                    className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                    Next →
+                    className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                    Next Module
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 : <button onClick={generatePDF}
-                    className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-                    Create My Document
+                    className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all group/btn">
+                    <svg className="w-5 h-5 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    Transmit Blueprint
                   </button>}
             </div>
           </div>

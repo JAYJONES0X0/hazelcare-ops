@@ -19,58 +19,64 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
   const set = (k: keyof ComplianceStaff, v: string | number) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#0c1525] border border-[#1e3050] rounded-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#1e3050]">
-          <h3 className="text-sm font-bold text-white">{staff.id && staff.name ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+      <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+        <div className="p-8 border-b border-white/5 relative z-10">
+          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">{staff.id && staff.name ? 'Refine Personnel Node' : 'Initialize New Node'}</h3>
+          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Compliance & Roster Protocol</p>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Full Name *</label>
-              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Amy Rogers"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+        <div className="p-8 space-y-6 relative z-10">
+          <div className="space-y-4">
+            <div className="group">
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Personnel Designation (Full Name)</label>
+              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Agent Alpha"
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
             </div>
-            <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Role</label>
-              <select value={form.role} onChange={e => set('role', e.target.value)}
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">House</label>
-              <select value={form.house} onChange={e => set('house', e.target.value)}
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
-                {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Operational Role</label>
+                <select value={form.role} onChange={e => set('role', e.target.value)}
+                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
+                <select value={form.house} onChange={e => set('house', e.target.value)}
+                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                  {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">DBS Expiry</label>
+              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">DBS EXPIRY</label>
               <input value={form.dbsExpiry} onChange={e => set('dbsExpiry', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Training Expiry</label>
+              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TRAIN EXPIRY</label>
               <input value={form.trainingExpiry} onChange={e => set('trainingExpiry', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Next Supervision</label>
+              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">NEXT SUP.</label>
               <input value={form.nextSupervision} onChange={e => set('nextSupervision', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
           </div>
-          <div className="flex gap-2 pt-2">
+          
+          <div className="flex gap-4 pt-4">
             <button onClick={() => { if (form.name.trim()) onSave(form); }}
               disabled={!form.name.trim()}
-              className="flex-1 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-40">
-              Save
+              className="flex-[2] btn-gradient disabled:opacity-20 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
+              Commit Protocol
             </button>
-            <button onClick={onClose} className="px-5 py-2.5 bg-[#0a1120] border border-[#1e3050] text-sm text-gray-400 rounded-xl hover:text-white">
-              Cancel
+            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-2xl transition-all">
+              Abort
             </button>
           </div>
         </div>
@@ -91,51 +97,53 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
   const set = (k: keyof ComplianceAudit, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#0c1525] border border-[#1e3050] rounded-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#1e3050]">
-          <h3 className="text-sm font-bold text-white">Add Audit Record</h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+      <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-blue/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+        <div className="p-8 border-b border-white/5 relative z-10">
+          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Operational Audit</h3>
+          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Strategic Quality Control Scan</p>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="p-8 space-y-6 relative z-10">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">House</label>
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Sector Node</label>
               <select value={form.house} onChange={e => set('house', e.target.value)}
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Audit Type</label>
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Audit Type</label>
               <select value={form.type} onChange={e => set('type', e.target.value as ComplianceAudit['type'])}
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {AUDIT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Last Completed</label>
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">LAST COMPLETED</label>
               <input value={form.lastCompleted} onChange={e => set('lastCompleted', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Next Due</label>
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">NEXT DUE</label>
               <input value={form.dueDate} onChange={e => set('dueDate', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Completed By</label>
-              <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Staff name"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500" />
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Investigating Lead</label>
+              <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Agent ID"
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="text-[10px] text-gray-500 uppercase tracking-wide mb-1 block">Notes</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Any findings or actions"
-                className="w-full bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-teal-500 resize-none" rows={2} />
+              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Findings & Data Notes</label>
+              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Intelligence summary..."
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
             </div>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button onClick={() => onSave(form)} className="flex-1 bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold py-2.5 rounded-xl">Save</button>
-            <button onClick={onClose} className="px-5 py-2.5 bg-[#0a1120] border border-[#1e3050] text-sm text-gray-400 rounded-xl hover:text-white">Cancel</button>
+          <div className="flex gap-4 pt-2">
+            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Store Audit Result</button>
+            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-xl transition-all">Abort</button>
           </div>
         </div>
       </div>
@@ -147,17 +155,17 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
 // STATUS BADGE
 // ============================================================
 function StatusBadge({ status }: { status: 'ok' | 'due_soon' | 'overdue' }) {
-  if (status === 'overdue') return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-900/60 text-red-400">OVERDUE</span>;
-  if (status === 'due_soon') return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-400">DUE SOON</span>;
-  return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-400">OK</span>;
+  if (status === 'overdue') return <span className="pill pill-red text-[9px] font-black px-2 shadow-lg animate-pulse-soft">CRITICAL OVERDUE</span>;
+  if (status === 'due_soon') return <span className="pill pill-amber text-[9px] font-black px-2 shadow-lg">SCAN PENDING</span>;
+  return <span className="pill pill-green text-[9px] font-black px-2 opacity-60">STATUS NOMINAL</span>;
 }
 
 function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: number }) {
-  if (!dateStr) return <span className="text-[10px] text-gray-600">No date set</span>;
+  if (!dateStr) return <span className="text-[10px] text-hc-muted/40 font-bold uppercase italic tracking-widest">IDLE</span>;
   const d = daysUntil(dateStr);
-  if (d < 0) return <span className="text-[10px] text-red-400">{Math.abs(d)}d overdue</span>;
-  if (d < warnDays) return <span className="text-[10px] text-amber-400">{d}d left</span>;
-  return <span className="text-[10px] text-gray-500">{dateStr}</span>;
+  if (d < 0) return <span className="text-[10px] text-flag-red font-black tabular-nums">{Math.abs(d)}D DELAY</span>;
+  if (d < warnDays) return <span className="text-[10px] text-flag-amber font-black tabular-nums">{d}D REMAINING</span>;
+  return <span className="text-[10px] text-hc-text font-black tabular-nums tracking-widest">{dateStr}</span>;
 }
 
 // ============================================================
@@ -210,14 +218,14 @@ export function CompliancePage() {
     const out: { label: string; house: string; person: string; date: string; type: string; status: 'ok' | 'due_soon' | 'overdue'; notes?: string }[] = [];
 
     for (const s of staffList) {
-      if (s.dbsExpiry) out.push({ label: `DBS — ${s.name}`, house: s.house, person: s.name, date: s.dbsExpiry, type: 'DBS', status: staffStatus(s.dbsExpiry, 60) });
-      if (s.trainingExpiry) out.push({ label: `Training — ${s.name}`, house: s.house, person: s.name, date: s.trainingExpiry, type: 'Training', status: staffStatus(s.trainingExpiry, 30) });
-      if (s.nextSupervision) out.push({ label: `Supervision — ${s.name}`, house: s.house, person: s.name, date: s.nextSupervision, type: 'Supervision', status: staffStatus(s.nextSupervision, 7) });
+      if (s.dbsExpiry) out.push({ label: `DBS Protocol — ${s.name}`, house: s.house, person: s.name, date: s.dbsExpiry, type: 'DBS', status: staffStatus(s.dbsExpiry, 60) });
+      if (s.trainingExpiry) out.push({ label: `Tactical Training — ${s.name}`, house: s.house, person: s.name, date: s.trainingExpiry, type: 'Training', status: staffStatus(s.trainingExpiry, 30) });
+      if (s.nextSupervision) out.push({ label: `Leadership Supervision — ${s.name}`, house: s.house, person: s.name, date: s.nextSupervision, type: 'Supervision', status: staffStatus(s.nextSupervision, 7) });
     }
 
     for (const a of audits) {
       const cfg = AUDIT_TYPES.find(t => t.id === a.type);
-      out.push({ label: `${cfg?.label || a.type} — ${a.house}`, house: a.house, person: a.completedBy, date: a.dueDate, type: cfg?.label || a.type, status: staffStatus(a.dueDate, 14), notes: a.notes });
+      out.push({ label: `${cfg?.label || a.type} Scan — ${a.house}`, house: a.house, person: a.completedBy, date: a.dueDate, type: cfg?.label || a.type, status: staffStatus(a.dueDate, 14), notes: a.notes });
     }
 
     return out;
@@ -234,87 +242,91 @@ export function CompliancePage() {
   const housesInAudits = [...new Set(audits.map(a => a.house))].sort();
 
   return (
-    <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-white mb-1">Compliance Hub</h1>
-          <p className="text-sm text-gray-500">DBS · Training · Supervisions · Audits · {staffList.length} staff tracked</p>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Compliance Tactical Hub</h1>
+          <div className="flex items-center gap-3">
+            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Integrity Matrix</span>
+            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+              DBS · Tactical Training · Personnel Supervision · System Audits
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setEditStaff(emptyStaff())}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-600 text-white text-xs font-semibold rounded-xl">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Add Staff
-          </button>
+        <div className="flex items-center gap-3">
           <button onClick={() => setEditAudit(emptyAudit())}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#0a1120] border border-[#1e3050] text-xs text-gray-400 rounded-xl hover:text-white hover:border-teal-700">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-blue/30 group shadow-xl">
+            <svg className="w-4 h-4 text-hc-blue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             Add Audit
+          </button>
+          <button onClick={() => setEditStaff(emptyStaff())}
+            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Personnel
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4">
-          <div className="text-[10px] text-gray-500 mb-1">Compliance Rate</div>
-          <div className="text-2xl font-black" style={{ color: compColor }}>{compRate}%</div>
-          <div className="text-[10px] text-gray-600">{items.length} items tracked</div>
-        </div>
-        <div className="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
-          <div className="text-[10px] text-red-400 mb-1">Overdue</div>
-          <div className="text-2xl font-black text-red-400">{overdue.length}</div>
-          <div className="text-[10px] text-gray-600">Need action now</div>
-        </div>
-        <div className="bg-amber-950/20 border border-amber-900/30 rounded-xl p-4">
-          <div className="text-[10px] text-amber-400 mb-1">Due Soon</div>
-          <div className="text-2xl font-black text-amber-400">{dueSoon.length}</div>
-          <div className="text-[10px] text-gray-600">Within 30 days</div>
-        </div>
-        <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-xl p-4">
-          <div className="text-[10px] text-emerald-400 mb-1">Compliant</div>
-          <div className="text-2xl font-black text-emerald-400">{ok.length}</div>
-          <div className="text-[10px] text-gray-600">Up to date</div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {[
+          { label: 'FLEET READINESS', value: `${compRate}%`, color: compColor, sub: `${items.length} Vector points tracked` },
+          { label: 'OVERDUE VECTORS', value: overdue.length, color: '#ef4444', sub: 'Critical intervention required', glow: 'glow-red' },
+          { label: 'UPCOMING EXPIRIES', value: dueSoon.length, color: '#f59e0b', sub: 'Next 30-day window', glow: 'glow-amber' },
+          { label: 'SECURE NODES', value: ok.length, color: '#22c55e', sub: 'Operational status nominal' },
+        ].map(s => (
+          <div key={s.label} className={`glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
+            <div className="section-header text-[9px] mb-3 opacity-60 tracking-[0.2em]">{s.label}</div>
+            <div className="text-4xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 30px ${s.color}40` }}>{s.value}</div>
+            <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-2 opacity-40 group-hover:opacity-100 transition-opacity">{s.sub}</div>
+          </div>
+        ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[#0a1120] border border-[#1e3050] rounded-xl p-1 mb-5 w-fit">
-        {([['overview', 'Overview'], ['staff', 'Staff Register'], ['audits', 'Audit Log']] as [Tab, string][]).map(([id, label]) => (
+      <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-2xl mb-10 w-fit mx-auto md:mx-0">
+        {(['overview', 'staff', 'audits'] as const).map(id => (
           <button key={id} onClick={() => setTab(id)}
-            className={`px-4 py-2 text-xs rounded-lg font-medium transition-all ${tab === id ? 'bg-teal-800/60 text-teal-300 border border-teal-700/40' : 'text-gray-500 hover:text-white'}`}>
-            {label}
+            className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.25rem] transition-all duration-500 ease-out active:scale-95
+              ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+            {id === 'overview' ? 'Command Overview' : id === 'staff' ? 'Personnel Registry' : 'Audit Repository'}
           </button>
         ))}
       </div>
 
       {/* === OVERVIEW TAB === */}
       {tab === 'overview' && (
-        <div className="space-y-5">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
           {staffList.length === 0 && audits.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#0a1120] border border-[#1e3050] flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <div className="flex flex-col items-center justify-center py-32 text-center glass border border-white/5 rounded-[2.5rem]">
+              <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 group">
+                <svg className="w-10 h-10 text-hc-muted group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <p className="text-gray-400 font-semibold mb-1">No compliance records yet</p>
-              <p className="text-sm text-gray-600 max-w-sm mb-5">Add staff members with their DBS, training, and supervision dates. Add audit records to track medication, fire safety, and CQC checks.</p>
-              <button onClick={() => setEditStaff(emptyStaff())} className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Add First Staff Member</button>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Compliance Telemetry</h2>
+              <p className="text-sm text-hc-muted max-w-sm mb-10 font-medium leading-relaxed opacity-80">Initialize personnel registry and audit scans to populate the integrity matrix.</p>
+              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Initialize Personnel</button>
             </div>
           )}
 
           {overdue.length > 0 && (
-            <div>
-              <h2 className="text-xs font-bold text-red-400 uppercase tracking-wide mb-2">Overdue — {overdue.length} items</h2>
-              <div className="space-y-1.5">
+            <div className="animate-in slide-in-from-left-4 duration-700">
+              <div className="flex items-center gap-3 mb-5 px-2">
+                <div className="w-2 h-6 rounded-full bg-flag-red glow-red animate-pulse" />
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Critical Breaches — {overdue.length} Vectors</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {overdue.map((item, i) => (
-                  <div key={i} className="bg-red-950/20 border border-red-900/30 rounded-xl px-4 py-3 flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-white">{item.label}</div>
-                      <div className="text-[10px] text-gray-500">{item.house} · <DaysChip dateStr={item.date} /></div>
+                  <div key={i} className="glass-light border border-flag-red/30 bg-flag-red/[0.03] rounded-2xl px-6 py-5 flex items-center gap-5 shadow-xl group card-glow interactive-row">
+                    <div className="w-10 h-10 rounded-xl bg-flag-red/10 border border-flag-red/20 flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-900/60 text-red-400">OVERDUE</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-black text-white group-hover:text-flag-red transition-colors truncate tracking-tight">{item.label}</div>
+                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-60">{item.house} · <DaysChip dateStr={item.date} /></div>
+                    </div>
+                    <StatusBadge status="overdue" />
                   </div>
                 ))}
               </div>
@@ -322,17 +334,22 @@ export function CompliancePage() {
           )}
 
           {dueSoon.length > 0 && (
-            <div>
-              <h2 className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-2">Due Soon — {dueSoon.length} items</h2>
-              <div className="space-y-1.5">
+            <div className="animate-in slide-in-from-left-4 duration-700 delay-150">
+              <div className="flex items-center gap-3 mb-5 px-2">
+                <div className="w-2 h-6 rounded-full bg-flag-amber glow-amber" />
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Incoming Deadlines — {dueSoon.length} Vectors</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {dueSoon.map((item, i) => (
-                  <div key={i} className="bg-amber-950/10 border border-amber-900/20 rounded-xl px-4 py-3 flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-white">{item.label}</div>
-                      <div className="text-[10px] text-gray-500">{item.house} · <DaysChip dateStr={item.date} /></div>
+                  <div key={i} className="glass-light border border-flag-amber/20 bg-flag-amber/[0.01] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-lg group card-glow interactive-row">
+                    <div className="w-8 h-8 rounded-lg bg-flag-amber/10 border border-flag-amber/20 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-12 0 9 9 0 0112 0z" /></svg>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-400">DUE SOON</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-black text-white group-hover:text-flag-amber transition-colors truncate tracking-tight">{item.label}</div>
+                      <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-0.5 opacity-60">{item.house} · <DaysChip dateStr={item.date} /></div>
+                    </div>
+                    <StatusBadge status="due_soon" />
                   </div>
                 ))}
               </div>
@@ -340,10 +357,22 @@ export function CompliancePage() {
           )}
 
           {ok.length > 0 && (
-            <div>
-              <h2 className="text-xs font-bold text-emerald-400 uppercase tracking-wide mb-2">Compliant — {ok.length} items</h2>
-              <div className="bg-[#0a1120] border border-[#1e3050] rounded-xl px-4 py-3 text-sm text-gray-500">
-                {ok.length} items up to date across all houses.
+            <div className="animate-in slide-in-from-left-4 duration-700 delay-300">
+              <div className="flex items-center gap-3 mb-5 px-2">
+                <div className="w-2 h-6 rounded-full bg-flag-green shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Nominal Infrastructure — {ok.length} Vectors</h2>
+              </div>
+              <div className="glass-light border border-white/5 rounded-[2rem] px-8 py-6 text-sm text-hc-muted font-medium flex items-center justify-between shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-flag-green/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <div>
+                    <span className="text-white font-black uppercase tracking-widest block mb-0.5">Secure Vector Matrix</span>
+                    <span>All other compliance vectors are current across the entire fleet.</span>
+                  </div>
+                </div>
+                <div className="pill pill-teal text-[10px] font-black px-4 py-1 animate-pulse-soft shadow-lg">SYSTEMS NOMINAL</div>
               </div>
             </div>
           )}
@@ -352,69 +381,96 @@ export function CompliancePage() {
 
       {/* === STAFF REGISTER TAB === */}
       {tab === 'staff' && (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
-              className="bg-[#0a1120] border border-[#1e3050] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500">
-              <option value="all">All Houses ({staffList.length})</option>
-              {HAZELCARE_HOUSES.map(h => {
-                const c = staffList.filter(s => s.house === h).length;
-                return c > 0 ? <option key={h} value={h}>{h} ({c})</option> : null;
-              })}
-            </select>
-            <span className="text-xs text-gray-600">{filteredStaff.length} staff member{filteredStaff.length !== 1 ? 's' : ''}</span>
+        <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+          <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-white/5 p-5 rounded-[2rem] shadow-xl backdrop-blur-xl">
+            <div className="flex items-center gap-4">
+              <span className="section-header text-[10px] tracking-[0.2em]">Registry Filter</span>
+              <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
+                className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]">
+                <option value="all">Entire Personnel Fleet ({staffList.length})</option>
+                {HAZELCARE_HOUSES.map(h => {
+                  const c = staffList.filter(s => s.house === h).length;
+                  return c > 0 ? <option key={h} value={h}>{h} ({c})</option> : null;
+                })}
+              </select>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] tabular-nums">Registry Nodes: {filteredStaff.length} Agents</span>
+            </div>
           </div>
 
           {filteredStaff.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-sm mb-4">No staff added yet.</p>
-              <button onClick={() => setEditStaff(emptyStaff())} className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Add Staff Member</button>
+            <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem]">
+              <div className="text-5xl mb-6 opacity-20 grayscale">👥</div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Zero Personnel Found</h2>
+              <p className="text-sm text-hc-muted max-w-sm mx-auto mb-10 font-medium leading-relaxed opacity-80">Adjust filter parameters or initialize new personnel nodes.</p>
+              <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Deploy Agent</button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {filteredStaff.map(s => {
+            <div className="grid grid-cols-1 gap-4">
+              {filteredStaff.map((s, idx) => {
                 const dbsS = staffStatus(s.dbsExpiry, 60);
                 const trainS = staffStatus(s.trainingExpiry, 30);
                 const supS = staffStatus(s.nextSupervision, 7);
                 const worst = [dbsS, trainS, supS].includes('overdue') ? 'overdue' : [dbsS, trainS, supS].includes('due_soon') ? 'due_soon' : 'ok';
                 return (
-                  <div key={s.id} className={`bg-[#0a1120] border rounded-xl px-4 py-3 ${worst === 'overdue' ? 'border-red-900/40' : worst === 'due_soon' ? 'border-amber-900/30' : 'border-[#1e3050]'}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="w-9 h-9 rounded-full bg-teal-900/40 flex items-center justify-center text-[11px] font-bold text-teal-400 shrink-0">
+                  <div key={s.id} className={`glass-light border transition-all duration-500 rounded-[2rem] overflow-hidden card-glow group animate-in slide-in-from-bottom-4
+                    ${worst === 'overdue' ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : worst === 'due_soon' ? 'border-flag-amber/25 bg-flag-amber/[0.01] glow-amber' : 'border-white/5 hover:border-white/10'}`}
+                    style={{ animationDelay: `${idx * 50}ms` }}>
+                    <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: worst === 'overdue' ? '#ef4444' : worst === 'due_soon' ? '#f59e0b' : '#14b8a6' }} />
+                      
+                      <div className="flex items-center gap-6 flex-1 min-w-0 relative z-10">
+                        <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center text-xl font-black text-hc-teal-light shrink-0 shadow-xl transition-transform group-hover:scale-110 duration-500">
                           {s.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-white">{s.name}</div>
-                          <div className="text-[10px] text-gray-500">{s.role} · {s.house}</div>
-                          <div className="flex flex-wrap gap-3 mt-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-gray-500">DBS</span>
-                              <DaysChip dateStr={s.dbsExpiry} warnDays={60} />
-                              <StatusBadge status={dbsS} />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-gray-500">Training</span>
-                              <DaysChip dateStr={s.trainingExpiry} />
-                              <StatusBadge status={trainS} />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-gray-500">Supervision</span>
-                              <DaysChip dateStr={s.nextSupervision} warnDays={7} />
-                              <StatusBadge status={supS} />
-                            </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xl font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1.5">{s.name}</div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{s.role}</span>
+                            <span className="w-1 h-1 rounded-full bg-white/10" />
+                            <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{s.house} Node</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        <button onClick={() => setEditStaff(s)} className="text-[10px] text-gray-500 hover:text-white border border-[#1e3050] px-2.5 py-1 rounded-lg hover:border-teal-700">Edit</button>
+
+                      <div className="flex flex-wrap items-center gap-8 relative z-10 md:px-10 md:border-x md:border-white/5">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">DBS STATUS</span>
+                          <div className="flex items-center gap-2">
+                            <DaysChip dateStr={s.dbsExpiry} warnDays={60} />
+                            <StatusBadge status={dbsS} />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">TRAINING CYCLE</span>
+                          <div className="flex items-center gap-2">
+                            <DaysChip dateStr={s.trainingExpiry} />
+                            <StatusBadge status={trainS} />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LEADERSHIP SUP.</span>
+                          <div className="flex items-center gap-2">
+                            <DaysChip dateStr={s.nextSupervision} warnDays={7} />
+                            <StatusBadge status={supS} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 relative z-10 shrink-0 ml-auto">
+                        <button onClick={() => setEditStaff(s)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-white hover:bg-hc-teal/10 hover:border-hc-teal/30 transition-all shadow-lg group/btn">
+                          <svg className="w-4 h-4 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
                         {deleteConfirm === s.id ? (
-                          <div className="flex gap-1">
-                            <button onClick={() => deleteStaff(s.id)} className="text-[10px] text-red-400 border border-red-900/40 px-2.5 py-1 rounded-lg">Confirm</button>
-                            <button onClick={() => setDeleteConfirm(null)} className="text-[10px] text-gray-500 border border-[#1e3050] px-2.5 py-1 rounded-lg">Cancel</button>
+                          <div className="flex gap-2 animate-in slide-in-from-right-4 duration-300">
+                            <button onClick={() => deleteStaff(s.id)} className="px-4 py-2 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-flag-red/30 shadow-lg">PURGE</button>
+                            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 glass-light border border-white/10 text-hc-muted text-[10px] font-black uppercase tracking-widest rounded-xl hover:text-white">ABORT</button>
                           </div>
                         ) : (
-                          <button onClick={() => setDeleteConfirm(s.id)} className="text-[10px] text-gray-600 hover:text-red-400 border border-[#1e3050] px-2.5 py-1 rounded-lg">Delete</button>
+                          <button onClick={() => setDeleteConfirm(s.id)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/30 transition-all shadow-lg group/btn">
+                            <svg className="w-4 h-4 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -428,39 +484,72 @@ export function CompliancePage() {
 
       {/* === AUDIT LOG TAB === */}
       {tab === 'audits' && (
-        <div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           {audits.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-sm mb-4">No audit records yet. Track medication audits, fire safety, CQC checks and more.</p>
-              <button onClick={() => setEditAudit(emptyAudit())} className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Add Audit Record</button>
+            <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem]">
+              <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 mx-auto">
+                <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              </div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Audit Repository Empty</h2>
+              <p className="text-sm text-hc-muted max-w-md mx-auto mb-10 font-medium leading-relaxed opacity-80">System audits for medication, fire safety, and CQC requirements are pending initialization.</p>
+              <button onClick={() => setEditAudit(emptyAudit())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Initiate Scan</button>
             </div>
           ) : (
-            <div>
-              {/* Group by type */}
-              {AUDIT_TYPES.map(atype => {
+            <div className="space-y-12">
+              {AUDIT_TYPES.map((atype, groupIdx) => {
                 const typeAudits = audits.filter(a => a.type === atype.id).sort((a, b) => a.house.localeCompare(b.house));
                 if (typeAudits.length === 0) return null;
                 return (
-                  <div key={atype.id} className="mb-5">
-                    <h2 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: atype.color }}>{atype.label}</h2>
-                    <div className="space-y-1.5">
+                  <div key={atype.id} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${groupIdx * 100}ms` }}>
+                    <div className="flex items-center gap-4 mb-5 px-2">
+                      <h3 className="text-lg font-black uppercase tracking-tight text-white transition-all" style={{ color: atype.color }}>
+                        {atype.label} Protocol
+                      </h3>
+                      <span className="pill pill-teal text-[10px] font-black px-3">{typeAudits.length} Records</span>
+                      <div className="flex-1 h-px bg-white/5" />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {typeAudits.map(a => {
                         const s = staffStatus(a.dueDate, 14);
                         return (
-                          <div key={a.id} className={`bg-[#0a1120] border rounded-xl px-4 py-3 flex items-center gap-3 ${s === 'overdue' ? 'border-red-900/40' : s === 'due_soon' ? 'border-amber-900/30' : 'border-[#1e3050]'}`}>
-                            <div className="flex-1">
-                              <div className="text-xs font-semibold text-white">{a.house}</div>
-                              <div className="flex items-center gap-3 mt-0.5">
-                                {a.lastCompleted && <span className="text-[10px] text-gray-500">Last: {a.lastCompleted}</span>}
-                                {a.dueDate && <span className="text-[10px] text-gray-500">Due: <DaysChip dateStr={a.dueDate} warnDays={14} /></span>}
-                                {a.completedBy && <span className="text-[10px] text-gray-600">by {a.completedBy}</span>}
+                          <div key={a.id} className={`glass-light border transition-all duration-500 rounded-[1.5rem] p-6 flex flex-col card-glow interactive-row
+                            ${s === 'overdue' ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : s === 'due_soon' ? 'border-flag-amber/25 bg-flag-amber/[0.01] glow-amber' : 'border-white/5 hover:border-white/10'}`}>
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <div className="text-[15px] font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tight leading-none mb-1.5">{a.house}</div>
+                                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Node Integrity Scan</div>
                               </div>
-                              {a.notes && <div className="text-[10px] text-gray-500 mt-1 italic">{a.notes}</div>}
+                              <StatusBadge status={s} />
                             </div>
-                            <StatusBadge status={s} />
-                            <button onClick={() => deleteAudit(a.id)} className="text-gray-600 hover:text-red-400 ml-1">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
+                            
+                            <div className="flex flex-wrap items-center gap-6 mb-6 pb-5 border-b border-white/5">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LAST SCAN</span>
+                                <span className="text-[11px] font-bold text-white/80 tabular-nums tracking-widest">{a.lastCompleted || 'PENDING'}</span>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">NEXT SCAN</span>
+                                <DaysChip dateStr={a.dueDate} warnDays={14} />
+                              </div>
+                              <div className="flex flex-col gap-1 ml-auto text-right">
+                                <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">SCAN LEAD</span>
+                                <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{a.completedBy || 'UNASSIGNED'}</span>
+                              </div>
+                            </div>
+                            
+                            {a.notes && (
+                              <div className="mb-6 p-4 bg-black/20 rounded-xl border border-white/5">
+                                <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-50">Telemetry Analysis</div>
+                                <p className="text-[11px] font-medium text-hc-text leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">"{a.notes}"</p>
+                              </div>
+                            )}
+                            
+                            <div className="mt-auto flex items-center justify-end gap-3 pt-2">
+                              <button onClick={() => deleteAudit(a.id)} className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -471,9 +560,25 @@ export function CompliancePage() {
 
               {/* Houses with no audits */}
               {HAZELCARE_HOUSES.filter(h => !housesInAudits.includes(h)).length > 0 && (
-                <div className="mt-4 p-4 bg-amber-950/10 border border-amber-900/20 rounded-xl">
-                  <p className="text-xs text-amber-400 font-semibold mb-1">Houses with no audit records:</p>
-                  <p className="text-xs text-gray-500">{HAZELCARE_HOUSES.filter(h => !housesInAudits.includes(h)).join(' · ')}</p>
+                <div className="animate-in slide-in-from-bottom-4 duration-700 delay-500">
+                  <div className="glass border border-flag-amber/30 bg-flag-amber/[0.02] rounded-[2rem] p-8 shadow-2xl glow-amber relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-flag-amber/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
+                      <div className="w-16 h-16 rounded-2xl bg-flag-amber/10 border border-flag-amber/20 flex items-center justify-center shrink-0">
+                        <svg className="w-8 h-8 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Incomplete Coverage</h3>
+                        <p className="text-sm text-flag-amber/70 font-medium leading-relaxed mb-4">The following nodes have zero documented audit activity. Security and quality coverage is missing.</p>
+                        <div className="flex flex-wrap gap-2">
+                          {HAZELCARE_HOUSES.filter(h => !housesInAudits.includes(h)).map(h => (
+                            <span key={h} className="pill pill-amber text-[10px] font-black px-3 py-1 shadow-lg">{h}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <button onClick={() => setEditAudit(emptyAudit())} className="ml-auto btn-gradient px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Resolve Gaps</button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

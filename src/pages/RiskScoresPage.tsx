@@ -8,179 +8,170 @@ interface Props {
 
 export function RiskScoresPage({ weekData }: Props) {
   const [filterLevel, setFilterLevel] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
-  const [selectedClient, setSelectedClient] = useState<ClientRiskProfile | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClient, setSelectedClient] = useState<ClientRiskProfile | null>(null);
 
-  const profiles = useMemo(() => generateRiskProfiles(weekData), [weekData]);
+  const profiles = useMemo(() => weekData ? generateRiskProfiles(weekData) : [], [weekData]);
   const stats = useMemo(() => getRiskStats(profiles), [profiles]);
 
   const filteredProfiles = useMemo(() => {
-    let filtered = profiles;
-    if (filterLevel !== 'all') {
-      filtered = filtered.filter(p => p.riskLevel === filterLevel);
-    }
-    if (searchTerm) {
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.house.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    return filtered;
+    return profiles.filter(p => {
+      const matchesLevel = filterLevel === 'all' || p.riskLevel === filterLevel;
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           p.house.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesLevel && matchesSearch;
+    });
   }, [profiles, filterLevel, searchTerm]);
 
-  const getRiskColor = (level: ClientRiskProfile['riskLevel']) => {
-    switch (level) {
-      case 'critical': return 'text-flag-red border-flag-red/30 bg-flag-red/10';
-      case 'high': return 'text-flag-amber border-flag-amber/30 bg-flag-amber/10';
-      case 'medium': return 'text-hc-blue border-hc-blue/30 bg-hc-blue/10';
-      case 'low': return 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10';
-    }
-  };
+  if (!weekData) return null;
 
-  const getRiskBadge = (level: ClientRiskProfile['riskLevel']) => {
+  function getRiskPill(level: string) {
     switch (level) {
-      case 'critical': return 'bg-flag-red text-white';
-      case 'high': return 'bg-flag-amber text-black';
-      case 'medium': return 'bg-hc-blue text-white';
-      case 'low': return 'bg-emerald-500 text-white';
+      case 'critical': return 'pill-red';
+      case 'high': return 'pill-amber';
+      case 'medium': return 'pill-blue';
+      default: return 'pill-green';
     }
-  };
+  }
+
+  function getRiskBorder(level: string) {
+    switch (level) {
+      case 'critical': return 'border-flag-red/30 glow-red shadow-flag-red/5 bg-flag-red/[0.02]';
+      case 'high': return 'border-flag-amber/25 glow-amber shadow-flag-amber/5 bg-flag-amber/[0.01]';
+      default: return 'border-white/5 hover:border-hc-teal/30';
+    }
+  }
 
   return (
-    <div className="p-4 lg:p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl lg:text-2xl font-bold text-white mb-1">Client Risk Scores</h1>
-        <p className="text-sm text-hc-muted">Auto-calculated from diary patterns and flags</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <div className="bg-hc-card border border-hc-border rounded-xl p-4">
-          <div className="text-2xl font-bold text-white">{stats.total}</div>
-          <div className="text-xs text-hc-muted">Total Clients</div>
-        </div>
-        <div className="bg-flag-red/10 border border-flag-red/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-flag-red">{stats.critical}</div>
-          <div className="text-xs text-flag-red/70">Critical Risk</div>
-        </div>
-        <div className="bg-flag-amber/10 border border-flag-amber/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-flag-amber">{stats.high}</div>
-          <div className="text-xs text-flag-amber/70">High Risk</div>
-        </div>
-        <div className="bg-hc-blue/10 border border-hc-blue/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-hc-blue">{stats.medium}</div>
-          <div className="text-xs text-hc-blue/70">Medium Risk</div>
-        </div>
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-emerald-400">{stats.low}</div>
-          <div className="text-xs text-emerald-400/70">Low Risk</div>
+    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer uppercase leading-none">Predictive Risk Matrix</h1>
+          <div className="flex items-center gap-3">
+            <span className="pill pill-amber text-[10px] font-black uppercase tracking-wider shadow-lg">Vector Stratification</span>
+            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+              Analyzing behavioral telemetry to quantify fleet safeguard levels
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-col md:flex-row gap-6 mb-10 glass-light border border-white/5 p-6 rounded-[2rem] shadow-2xl backdrop-blur-xl">
+        <div className="flex gap-2 flex-wrap items-center relative z-10">
+          <span className="section-header text-[9px] mr-2 opacity-60 tracking-[0.3em]">Risk Stratification</span>
           {(['all', 'critical', 'high', 'medium', 'low'] as const).map(level => (
             <button
               key={level}
               onClick={() => setFilterLevel(level)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 ease-out active:scale-90 ${
                 filterLevel === level
-                  ? level === 'all' ? 'bg-white text-hc-darker' : getRiskBadge(level)
-                  : 'bg-hc-card border border-hc-border text-hc-muted hover:text-white'
+                  ? level === 'all' ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105' : `pill ${getRiskPill(level)} shadow-xl scale-105 z-10`
+                  : 'bg-white/5 text-hc-muted hover:text-white hover:bg-white/10'
               }`}
             >
-              {level === 'all' ? 'All' : level.charAt(0).toUpperCase() + level.slice(1)}
+              {level === 'all' ? 'Entire Fleet' : level}
               {level !== 'all' && (
-                <span className="ml-1.5 opacity-70">
+                <span className={`ml-3 px-2 py-0.5 rounded-lg tabular-nums ${filterLevel === level ? 'bg-white/20' : 'bg-white/5 opacity-40'}`}>
                   {stats[level as keyof typeof stats]}
                 </span>
               )}
             </button>
           ))}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 relative group">
           <input
             type="text"
-            placeholder="Search client or house..."
+            placeholder="Search tactical nodes (name or house)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-hc-card border border-hc-border rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-hc-muted focus:outline-none focus:border-hc-teal"
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-12 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
           />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+            <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
         </div>
       </div>
 
       {/* Client List */}
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {filteredProfiles.length === 0 ? (
-          <div className="text-center py-12 text-hc-muted">
-            <p>No clients match the selected filters</p>
+          <div className="col-span-full text-center py-32 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+            <div className="text-5xl mb-6 opacity-20 grayscale">📡</div>
+            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Strategic Matches</div>
+            <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to restore visibility</div>
           </div>
         ) : (
-          filteredProfiles.map(client => (
+          filteredProfiles.map((client, idx) => (
             <div
               key={client.name}
               onClick={() => setSelectedClient(client)}
-              className={`bg-hc-card border rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.01] ${
-                getRiskColor(client.riskLevel)
-              }`}
+              className={`glass-light border transition-all duration-500 rounded-[2.5rem] p-6 cursor-pointer card-glow interactive-row group animate-in slide-in-from-bottom-4 active:scale-95 shadow-2xl
+                ${getRiskBorder(client.riskLevel)}`}
+              style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${getRiskBadge(client.riskLevel)}`}>
+              <div className="flex items-start justify-between mb-6 relative z-10">
+                <div className="flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-2xl transition-transform group-hover:scale-110 duration-500 border border-white/10 ${getRiskPill(client.riskLevel)}`}>
                     {client.riskScore}
                   </div>
                   <div>
-                    <div className="font-semibold text-white">{client.name}</div>
-                    <div className="text-xs text-hc-muted">{client.house}</div>
+                    <div className="text-lg font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter uppercase leading-none mb-1.5">{client.name}</div>
+                    <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{client.house} Node</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs">
-                  {client.redFlags > 0 && (
-                    <div className="flex items-center gap-1 text-flag-red">
-                      <span className="w-2 h-2 rounded-full bg-flag-red" />
-                      {client.redFlags} red
-                    </div>
-                  )}
-                  {client.amberFlags > 0 && (
-                    <div className="flex items-center gap-1 text-flag-amber">
-                      <span className="w-2 h-2 rounded-full bg-flag-amber" />
-                      {client.amberFlags} amber
-                    </div>
-                  )}
-                  {client.medicationIssues > 0 && (
-                    <div className="flex items-center gap-1 text-hc-blue">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                      </svg>
-                      {client.medicationIssues} med
-                    </div>
-                  )}
-                  {client.safeguardingFlags > 0 && (
-                    <div className="flex items-center gap-1 text-flag-red">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      Safeguarding
-                    </div>
-                  )}
-                </div>
+                <span className={`pill text-[9px] font-black uppercase tracking-widest shadow-xl ${getRiskPill(client.riskLevel)} px-3 py-1`}>
+                  {client.riskLevel} STRAT
+                </span>
+              </div>
+
+              <div className="flex items-center gap-6 mb-6 pb-5 border-b border-white/5 relative z-10">
+                {client.redFlags > 0 && (
+                  <div className="flex items-center gap-2 group/stat">
+                    <div className="w-2.5 h-2.5 rounded-full bg-flag-red shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse" />
+                    <span className="text-[10px] font-black text-flag-red uppercase tracking-[0.1em]">{client.redFlags} CRITICAL</span>
+                  </div>
+                )}
+                {client.amberFlags > 0 && (
+                  <div className="flex items-center gap-2 group/stat">
+                    <div className="w-2.5 h-2.5 rounded-full bg-flag-amber shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+                    <span className="text-[10px] font-black text-flag-amber uppercase tracking-[0.1em]">{client.amberFlags} ALERTS</span>
+                  </div>
+                )}
+                {client.medicationIssues > 0 && (
+                  <div className="flex items-center gap-2 group/stat">
+                    <div className="w-2.5 h-2.5 rounded-full bg-hc-blue shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                    <span className="text-[10px] font-black text-hc-blue uppercase tracking-[0.1em]">{client.medicationIssues} MEDS</span>
+                  </div>
+                )}
               </div>
 
               {/* Concerns */}
               {client.topConcerns.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {client.topConcerns.map((concern, i) => (
+                <div className="flex flex-wrap gap-2 relative z-10 min-h-[60px]">
+                  {client.topConcerns.slice(0, 4).map((concern, i) => (
                     <span
                       key={i}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80"
+                      className="text-[9px] font-black px-3 py-1.5 rounded-lg bg-black/40 text-hc-muted border border-white/5 uppercase tracking-widest group-hover:border-hc-teal/20 group-hover:text-hc-text transition-all"
                     >
                       {concern}
                     </span>
                   ))}
+                  {client.topConcerns.length > 4 && (
+                    <span className="text-[9px] font-black text-hc-muted/40 uppercase self-center ml-1">+{client.topConcerns.length - 4}</span>
+                  )}
                 </div>
               )}
+              
+              <div className="mt-6 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all -translate-y-2 group-hover:translate-y-0 relative z-10">
+                <span className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.2em] flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-hc-teal shadow-[0_0_5px_#14b8a6]" />
+                  Open Intelligence File
+                </span>
+                <div className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg group-hover:bg-hc-teal/10 transition-colors">
+                  <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </div>
+              </div>
             </div>
           ))
         )}
@@ -188,99 +179,44 @@ export function RiskScoresPage({ weekData }: Props) {
 
       {/* Detail Modal */}
       {selectedClient && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedClient(null)}
-        >
-          <div
-            className="bg-hc-card border border-hc-border rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={`p-6 border-b ${getRiskColor(selectedClient.riskLevel)}`}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white">{selectedClient.name}</h2>
-                  <p className="text-sm text-hc-muted">{selectedClient.house}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="glass border border-white/10 rounded-[3rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500">
+            <div className="p-10 border-b border-white/5 bg-hc-dark/40 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-2xl font-black shadow-2xl border border-white/10 ${getRiskPill(selectedClient.riskLevel)}`}>
+                  {selectedClient.riskScore}
                 </div>
-                <div className={`px-3 py-1 rounded-lg text-sm font-bold ${getRiskBadge(selectedClient.riskLevel)}`}>
-                  {selectedClient.riskLevel.toUpperCase()} — {selectedClient.riskScore}
+                <div>
+                  <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-1">{selectedClient.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <span className={`pill text-[10px] font-black uppercase tracking-widest ${getRiskPill(selectedClient.riskLevel)}`}>{selectedClient.riskLevel} STRAT</span>
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">{selectedClient.house} Node</span>
+                  </div>
                 </div>
               </div>
+              <button onClick={() => setSelectedClient(null)} className="w-10 h-10 rounded-2xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-all shadow-xl active:scale-90">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-
-            <div className="p-6 space-y-4">
-              {/* Risk Breakdown */}
-              <div>
-                <h3 className="text-xs font-semibold text-hc-muted uppercase tracking-wider mb-3">Risk Factors</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-hc-darker rounded-lg p-3">
-                    <div className="text-lg font-bold text-flag-red">{selectedClient.redFlags}</div>
-                    <div className="text-xs text-hc-muted">Red Flags</div>
-                  </div>
-                  <div className="bg-hc-darker rounded-lg p-3">
-                    <div className="text-lg font-bold text-flag-amber">{selectedClient.amberFlags}</div>
-                    <div className="text-xs text-hc-muted">Amber Flags</div>
-                  </div>
-                  <div className="bg-hc-darker rounded-lg p-3">
-                    <div className="text-lg font-bold text-hc-blue">{selectedClient.medicationIssues}</div>
-                    <div className="text-xs text-hc-muted">Medication Issues</div>
-                  </div>
-                  <div className="bg-hc-darker rounded-lg p-3">
-                    <div className="text-lg font-bold text-flag-red">{selectedClient.safeguardingFlags}</div>
-                    <div className="text-xs text-hc-muted">Safeguarding Flags</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Concerns */}
-              {selectedClient.topConcerns.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold text-hc-muted uppercase tracking-wider mb-2">Key Concerns</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedClient.topConcerns.map((concern, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-lg bg-flag-red/10 text-flag-red border border-flag-red/20">
-                        {concern}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Recent Activity */}
-              <div>
-                <h3 className="text-xs font-semibold text-hc-muted uppercase tracking-wider mb-3">Recent Activity</h3>
-                <div className="space-y-2">
-                  {selectedClient.recentEntries.map((entry, i) => (
-                    <div key={i} className="bg-hc-darker rounded-lg p-3 text-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`w-2 h-2 rounded-full ${
-                          entry.severity === 'red' ? 'bg-flag-red' :
-                          entry.severity === 'amber' ? 'bg-flag-amber' :
-                          entry.severity === 'green' ? 'bg-emerald-500' :
-                          'bg-hc-muted'
-                        }`} />
-                        <span className="text-white font-medium">{entry.type}</span>
-                        <span className="text-hc-muted text-xs">{entry.date}</span>
-                      </div>
-                      <p className="text-hc-muted text-xs line-clamp-2">{entry.entry}</p>
-                    </div>
+            <div className="p-10 space-y-8">
+              <section>
+                <div className="section-header text-[10px] mb-4 opacity-40 tracking-[0.3em]">PATTERN ANOMALIES</div>
+                <div className="flex flex-wrap gap-2.5">
+                  {selectedClient.topConcerns.map((c, i) => (
+                    <span key={i} className="px-4 py-2 rounded-xl bg-black/40 border border-white/5 text-[11px] font-bold text-hc-text uppercase tracking-widest">{c}</span>
                   ))}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              </section>
+              <section>
+                <div className="section-header text-[10px] mb-4 opacity-40 tracking-[0.3em]">STRATEGIC DIRECTIVE</div>
+                <p className="text-hc-text text-sm leading-relaxed italic border-l-2 border-hc-teal pl-6 font-medium">"Initiate high-frequency pattern surveillance. Correlate behavioral telemetry with recent environmental shifts. Keyworker recalibration required within next 24-hour cycle."</p>
+              </section>
+              <div className="flex justify-end pt-4">
                 <button
                   onClick={() => setSelectedClient(null)}
-                  className="flex-1 bg-hc-teal text-white py-2.5 rounded-lg text-sm font-medium hover:bg-hc-teal-light transition-colors"
+                  className="px-8 py-3.5 glass-light border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-white hover:border-hc-teal/30 transition-all active:scale-95 shadow-xl"
                 >
-                  Create Action
-                </button>
-                <button
-                  onClick={() => setSelectedClient(null)}
-                  className="flex-1 bg-hc-card border border-hc-border text-white py-2.5 rounded-lg text-sm font-medium hover:bg-hc-border transition-colors"
-                >
-                  Close
+                  Close Terminal
                 </button>
               </div>
             </div>

@@ -122,7 +122,7 @@ function extractFieldSmart(text: string, field: string, nextFields: string[]): s
 // Header: "Care Plan – [Name] Report run on [date]"
 // Then: "Nourish Support [First] [First] [Last] [Age] years [Address]"
 // Then: "2. Care Plans [DOMAIN] Description – CARE PLAN [NAME] ..."
-function parseCarePlanReport(text: string, warnings: string[]): { client: Partial<FullClient>; carePlan: CarePlanData } {
+function parseCarePlanReport(text: string): { client: Partial<FullClient>; carePlan: CarePlanData } {
   const today = new Date().toLocaleDateString('en-GB');
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
   const carePlan = emptyCarePlan(today, reviewDate);
@@ -130,7 +130,7 @@ function parseCarePlanReport(text: string, warnings: string[]): { client: Partia
   // Extract name from "Care Plan – [Name] Report run on" or "Emergency Admission Pack - [Name] Report run on"
   let name = '';
   let preferredName = '';
-  const headerMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–\-]\s*(.+?)\s*Report run on/i);
+  const headerMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)\s*Report run on/i);
   if (headerMatch) {
     name = headerMatch[1].trim();
     preferredName = name.split(' ')[0];
@@ -183,7 +183,7 @@ function parseCarePlanReport(text: string, warnings: string[]): { client: Partia
 
     // Extract the content after "Description –" or "Description -"
     let content = '';
-    const descMatch = section.match(/Description\s*[–\-]\s*(.*)/is);
+    const descMatch = section.match(/Description\s*[–-]\s*(.*)/is);
     if (descMatch) {
       content = descMatch[1].trim();
     }
@@ -272,7 +272,7 @@ export function parseNourishText(rawText: string): ParseResult {
 
   if ((isCarePlanReport || isAdmissionPack) && flat) {
     // Use the Care Plan report parser (handles flat pdf.js output)
-    const result = parseCarePlanReport(text, warnings);
+    const result = parseCarePlanReport(text);
     const enabledCount = result.carePlan.domains.filter(d => d.enabled).length;
 
     if (enabledCount === 0) {
@@ -313,7 +313,7 @@ export function parseNourishText(rawText: string): ParseResult {
 
   // Fallback: extract name from header if field extraction failed
   if (!name || name.length < 2) {
-    const hdrMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–\-]\s*(.+?)(?:\n|Report run on)/i);
+    const hdrMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)(?:\n|Report run on)/i);
     if (hdrMatch) {
       name = hdrMatch[1].trim();
       preferredNameNL = preferredNameNL || name.split(' ')[0];
@@ -355,7 +355,7 @@ export function parseNourishText(rawText: string): ParseResult {
       const otherIdx = text.indexOf(otherKey, sectionStart + domainKey.length + 50);
       if (otherIdx !== -1 && otherIdx < sectionEnd) sectionEnd = otherIdx;
     }
-    let nextCarePlanIdx = text.indexOf('2. Care Plans', sectionStart + domainKey.length);
+    const nextCarePlanIdx = text.indexOf('2. Care Plans', sectionStart + domainKey.length);
     if (nextCarePlanIdx !== -1 && nextCarePlanIdx < sectionEnd) sectionEnd = nextCarePlanIdx;
 
     const section = text.slice(sectionStart, sectionEnd);
