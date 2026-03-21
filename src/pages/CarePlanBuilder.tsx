@@ -243,6 +243,45 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
     setTimeout(() => iframeRef.current?.contentWindow?.print(), 400);
   };
 
+  const handleAutoFill = () => {
+    const weekData = loadWeekData();
+    if (!weekData || !weekData.clientDiary[client.name]) {
+      alert(`No intelligence data found for ${client.name}. Ensure you have imported a diary CSV first.`);
+      return;
+    }
+
+    if (!confirm(`Found ${weekData.clientDiary[client.name].length} entries for ${client.name}. Automatically map these to the 21 care domains?`)) return;
+
+    setClient(prev => {
+      const cp = prev.carePlan || emptyCarePlan(today, reviewDate);
+      const domains = [...cp.domains];
+      const entries = weekData.clientDiary[client.name];
+
+      // Intelligent Mapping Logic
+      entries.forEach(e => {
+        const text = e.entry.toLowerCase();
+        let domainIdx = -1;
+
+        if (text.includes('medication') || text.includes('tablet') || text.includes('prescribed')) domainIdx = 13;
+        else if (text.includes('finance') || text.includes('money') || text.includes('shopping')) domainIdx = 10;
+        else if (text.includes('mood') || text.includes('anxious') || text.includes('mental')) domainIdx = 14;
+        else if (text.includes('walking') || text.includes('mobility') || text.includes('hoist')) domainIdx = 15;
+        else if (text.includes('food') || text.includes('eat') || text.includes('drink') || text.includes('fluid')) domainIdx = 5;
+        else if (text.includes('shower') || text.includes('wash') || text.includes('shave')) domainIdx = 17;
+        else if (text.includes('sleep') || text.includes('night') || text.includes('woke')) domainIdx = 19;
+        
+        if (domainIdx !== -1) {
+          domains[domainIdx].enabled = true;
+          domains[domainIdx].identifiedNeed = (domains[domainIdx].identifiedNeed ? domains[domainIdx].identifiedNeed + '\n' : '') + e.entry;
+        }
+      });
+
+      const next = { ...prev, carePlan: { ...cp, domains } };
+      persist(next);
+      return next;
+    });
+  };
+
   const enabledCount = carePlan.domains.filter(d => d.enabled).length;
   const filledCount = carePlan.domains.filter(d => d.enabled && d.identifiedNeed).length;
 
@@ -274,6 +313,12 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
         </div>
 
         <div className="flex items-center gap-6">
+          {loadWeekData()?.clientDiary[client.name] && (
+            <button onClick={handleAutoFill}
+              className="hidden md:flex items-center gap-2 px-5 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-white transition-all shadow-lg active:scale-95 animate-shimmer">
+              <span className="text-sm">🧠</span> Synthesise from Intelligence
+            </button>
+          )}
           <div className="hidden lg:flex flex-col items-end">
             <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-50">COMPLETION STATUS</span>
             <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg">{filledCount}/{enabledCount} AREAS COMPLETE</span>
