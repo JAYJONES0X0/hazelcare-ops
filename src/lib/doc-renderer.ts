@@ -383,7 +383,6 @@ export function buildEasyReadHtml(client: FullClient): string {
           <td>${d.howToAchieve || 'Staff will support me as needed.'}</td>
         </tr>
       </table>
-      <div style="margin-top: auto; font-size: 12px; color: #94a3b8;">This is my Easy Read plan.</div>
     </div>`;
   });
 

@@ -113,7 +113,7 @@ function generateQualityMeeting(data: WeekSummary): string {
     <tr><td style="padding: 15px 10px; border: 1px solid #e2e8f0;">2</td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0; font-weight: 700; color: #94a3b8;">OPEN</td></tr>
   </table>
   <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD | CLASSIFIED OPERATIONAL DATA | PROPRIETARY & CONFIDENTIAL
+    HAZEL CARE LTD
   </div>
 </div>`;
   return html;
@@ -141,7 +141,7 @@ function generateIncidentReport(data: WeekSummary): string {
     html += `
     <div style="border: 1px solid ${e.severity === 'red' ? '#fecaca' : '#fde68a'}; border-radius: 12px; padding: 20px; margin-bottom: 16px; page-break-inside: avoid; background: #fff;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <strong style="font-size: 15px; font-weight: 900; text-transform: uppercase;">${i + 1}. ${e.house} NODE</strong>
+        <strong style="font-size: 15px; font-weight: 900; text-transform: uppercase;">${i + 1}. ${e.house}</strong>
         <span style="background: ${e.severity === 'red' ? '#ef4444' : '#f59e0b'}; color: white; font-size: 10px; font-weight: 900; padding: 3px 12px; border-radius: 99px; text-transform: uppercase;">${e.severity === 'red' ? 'CRITICAL' : 'MONITOR'}</span>
       </div>
       <div style="padding: 16px; background: #f8fafc; border-radius: 8px; font-size: 13px; line-height: 1.7; border: 1px solid #e2e8f0; color: #334155;">
@@ -149,7 +149,11 @@ function generateIncidentReport(data: WeekSummary): string {
       </div>
     </div>`;
   }
-  html += `</div>`;
+  html += `
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
+</div>`;
   return html;
 }
 
@@ -247,7 +251,11 @@ function generateMedicationAudit(data: WeekSummary): string {
   for (const e of medEntries) {
     html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
   }
-  html += `</table></div>`;
+  html += `</table>
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
+</div>`;
   return html;
 }
 
@@ -282,7 +290,11 @@ function generateHandoverReport(data: WeekSummary): string {
       </div>
     </div>`;
   }
-  html += `</div>`;
+  html += `
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
+</div>`;
   return html;
 }
 
@@ -307,6 +319,9 @@ function generateSupervisionReport(data: WeekSummary): string {
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">3. Health & Wellbeing</h2><div style="height: 100px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-top: 40px; display: flex; justify-content: space-between;"><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Supervisor Signature</div><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Staff Signature</div></div>
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
 </div>`;
   return html;
 }
@@ -339,7 +354,11 @@ function generateSafeguardingReport(data: WeekSummary): string {
       <div style="padding: 15px; font-size: 13px; line-height: 1.6; color: #334155;">${e.entry}</div>
     </div>`;
   }
-  html += `</div>`;
+  html += `
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
+</div>`;
   return html;
 }
 
