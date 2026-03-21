@@ -205,11 +205,154 @@ function generateDailyQuality(data: WeekSummary): string {
   return html;
 }
 
+function generateFinanceReport(data: WeekSummary): string {
+  const financeEntries = Object.values(data.houses).flatMap(h => h.entries.filter(e => e.flags.some(f => f.toLowerCase().includes('finance') || f.toLowerCase().includes('money') || f.toLowerCase().includes('shopping'))));
+  let html = `
+<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #059669; padding-bottom: 16px; margin-bottom: 24px;">
+    <div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #059669; text-transform: uppercase; letter-spacing: -0.02em;">Finance & Petty Cash Audit</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #059669; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
+    <tr style="background: #f0fdf4;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Transaction Details</th></tr>`;
+  for (const e of financeEntries) {
+    html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
+  }
+  html += `</table></div>`;
+  return html;
+}
+
+function generateMedicationAudit(data: WeekSummary): string {
+  const medEntries = Object.values(data.houses).flatMap(h => h.medication);
+  let html = `
+<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #0891b2; padding-bottom: 16px; margin-bottom: 24px;">
+    <div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #0891b2; text-transform: uppercase; letter-spacing: -0.02em;">Medication Administration Audit</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #0891b2; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
+    <tr style="background: #ecfeff;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Admin Details</th></tr>`;
+  for (const e of medEntries) {
+    html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
+  }
+  html += `</table></div>`;
+  return html;
+}
+
+function generateHandoverReport(data: WeekSummary): string {
+  const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
+  let html = `
+<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #d97706; padding-bottom: 16px; margin-bottom: 24px;">
+    <div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #d97706; text-transform: uppercase; letter-spacing: -0.02em;">Shift Handover Report</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">DATE: ${new Date().toLocaleDateString('en-GB')} · ALL HOUSES</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #d97706; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
+  </div>`;
+
+  for (const house of houses) {
+    const concerns = [...house.incidents, ...house.safeguarding, ...house.flags.red > 0 ? house.entries.filter(e => e.severity === 'red') : []];
+    html += `
+    <div style="margin-bottom: 30px; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+      <div style="background: #fffbeb; padding: 12px 20px; border-bottom: 1px solid #fde68a; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">${house.name}</div>
+      <div style="padding: 20px;">
+        <div style="margin-bottom: 15px;"><strong style="font-size: 10px; color: #d97706; text-transform: uppercase;">Key Concerns:</strong>
+          ${concerns.length > 0 ? concerns.slice(0, 5).map(c => `<div style="margin-top: 8px; font-size: 12px; border-left: 3px solid #fde68a; padding-left: 12px; color: #475569;">${c.client ? `<strong>${c.client}:</strong> ` : ''}${truncate(c.entry, 200)}</div>`).join('') : '<div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">No critical concerns flagged for this period.</div>'}
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+          <div><strong style="font-size: 10px; color: #64748b; text-transform: uppercase;">Medication:</strong><div style="font-size: 11px; margin-top: 5px;">${house.medication.length} updates logged</div></div>
+          <div><strong style="font-size: 10px; color: #64748b; text-transform: uppercase;">Logs:</strong><div style="font-size: 11px; margin-top: 5px;">${house.entries.length} total entries</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function generateSupervisionReport(data: WeekSummary): string {
+  let html = `
+<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #7c3aed; padding-bottom: 16px; margin-bottom: 24px;">
+    <div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: -0.02em;">Staff Supervision Record</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">CONFIDENTIAL PERSONNEL DOCUMENT</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #7c3aed; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px;">
+    <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Staff Name</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Supervisor</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
+    <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Date</td><td style="padding: 12px; border: 1px solid #e2e8f0;">${new Date().toLocaleDateString('en-GB')}</td><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Location</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
+  </table>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">1. Performance Review</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">3. Health & Wellbeing</h2><div style="height: 100px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-top: 40px; display: flex; justify-content: space-between;"><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Supervisor Signature</div><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Staff Signature</div></div>
+</div>`;
+  return html;
+}
+
+function generateSafeguardingReport(data: WeekSummary): string {
+  const safeguarding = Object.values(data.houses).flatMap(h => h.safeguarding);
+  let html = `
+<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #be185d; padding-bottom: 16px; margin-bottom: 24px;">
+    <div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #be185d; text-transform: uppercase; letter-spacing: -0.02em;">Safeguarding Concern Audit</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">STRICTLY CONFIDENTIAL · PROTECTED DATA</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #be185d; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
+  </div>
+  <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; color: #9d174d; font-size: 13px; font-weight: 700;">
+    ${safeguarding.length} SAFEGUARDING CONCERNS IDENTIFIED IN THIS PERIOD
+  </div>`;
+
+  for (const e of safeguarding) {
+    html += `
+    <div style="border: 1px solid #fbcfe8; border-radius: 12px; margin-bottom: 15px; overflow: hidden; page-break-inside: avoid;">
+      <div style="background: #fdf2f8; padding: 10px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #fbcfe8;">
+        <span style="font-weight: 900; font-size: 11px;">${e.house} · ${e.client}</span>
+        <span style="font-weight: 900; font-size: 11px;">${e.date}</span>
+      </div>
+      <div style="padding: 15px; font-size: 13px; line-height: 1.6; color: #334155;">${e.entry}</div>
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 function generateTemplate(type: TemplateType, data: WeekSummary): string {
   switch (type) {
     case 'quality_meeting':   return generateQualityMeeting(data);
-    case 'incident_report':   return generateIncidentReport(data);
     case 'daily_quality':     return generateDailyQuality(data);
+    case 'incident_report':   return generateIncidentReport(data);
+    case 'handover':          return generateHandoverReport(data);
+    case 'supervision':       return generateSupervisionReport(data);
+    case 'safeguarding':      return generateSafeguardingReport(data);
+    case 'medication_audit':  return generateMedicationAudit(data);
+    case 'finance':           return generateFinanceReport(data);
     default: return generateQualityMeeting(data);
   }
 }

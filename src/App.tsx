@@ -12,7 +12,18 @@ const STAFF_PAGES: Record<string, Page> = {
 
 function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequired?: boolean }) {
   const [step, setStep] = useState<'password' | 'email' | 'code' | 'sac'>(sacRequired ? 'sac' : 'password');
-  const [sac, setSac] = useState('');
+  const [sac, setSac] = useState(() => {
+    const pending = sessionStorage.getItem('hc-sac-pending');
+    if (!pending) return '';
+    // Format if found
+    const val = pending.toUpperCase().replace(/[^A-Z2-9]/g, '');
+    let formatted = '';
+    for(let i=0; i<val.length && i<12; i++) {
+      if(i > 0 && i % 4 === 0) formatted += '-';
+      formatted += val[i];
+    }
+    return formatted;
+  });
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -261,14 +272,12 @@ export default function App() {
         setStaffMode(STAFF_PAGES[match[1]]);
         setStaffLinkActive(true);
         
-        // Verify SAC exists in sessionStorage or URL
-        const storedSac = sessionStorage.getItem(`hc-sac-${match[1]}`);
-        if (sac || storedSac) {
-          if (sac) sessionStorage.setItem(`hc-sac-${match[1]}`, sac);
-          setSacVerified(true);
-        } else {
-          setSacVerified(false);
+        // Auto-auth is gone — must always go through gate
+        // But we store the SAC if provided in the URL to help the LoginGate
+        if (sac) {
+          sessionStorage.setItem(`hc-sac-pending`, sac);
         }
+        setSacVerified(false); 
       } else {
         setStaffMode(null);
         setStaffLinkActive(false);
