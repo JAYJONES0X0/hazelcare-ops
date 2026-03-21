@@ -290,7 +290,7 @@ function generateHandoverReport(data: WeekSummary): string {
   return html;
 }
 
-function generateSupervisionReport(data: WeekSummary): string {
+function generateSupervisionReport(): string {
   let html = `
 <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #7c3aed; padding-bottom: 16px; margin-bottom: 24px;">
@@ -353,7 +353,7 @@ function generateTemplate(type: TemplateType, data: WeekSummary): string {
     case 'daily_quality':     return generateDailyQuality(data);
     case 'incident_report':   return generateIncidentReport(data);
     case 'handover':          return generateHandoverReport(data);
-    case 'supervision':       return generateSupervisionReport(data);
+    case 'supervision':       return generateSupervisionReport();
     case 'safeguarding':      return generateSafeguardingReport(data);
     case 'medication_audit':  return generateMedicationAudit(data);
     case 'finance':           return generateFinanceReport(data);

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { loadClients, saveClient, emptyCarePlan, LEVEL_OF_NEED_LABELS } from '../lib/client-store';
 import { buildCarePlanHtml } from '../lib/doc-renderer';
+import { loadWeekData } from '../lib/storage';
 import type { FullClient, CarePlanDomain } from '../lib/client-store';
 
 interface Props {

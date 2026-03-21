@@ -1,7 +1,7 @@
 // ============================================================
 // HAZEL CARE UNIVERSAL IMPORT — Intelligent Data Mapping
 // ============================================================
-import type { FullClient, CarePlanDomain, CarePlanData, SupportPlanData, SupportPlanNeed } from './client-store';
+import type { FullClient, CarePlanData, SupportPlanData, SupportPlanNeed } from './client-store';
 import { emptyCarePlan, CARE_PLAN_DOMAINS } from './client-store';
 
 // Maps legacy industry jargon to Premium Hazel Care Domains
