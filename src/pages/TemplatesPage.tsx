@@ -411,7 +411,7 @@ export function TemplatesPage({ weekData }: Props) {
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Report Templates</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Auto-Generated</span>
+          <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Report Generator</span>
           <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1 tabular-nums">
             Processing {weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses
           </p>
@@ -437,7 +437,7 @@ export function TemplatesPage({ weekData }: Props) {
             <div className="text-sm font-black text-white mb-2 group-hover:text-hc-teal-light transition-colors tracking-tight leading-tight uppercase">{tpl.name}</div>
             <div className="text-[10px] font-medium text-hc-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity mb-6">{tpl.desc}</div>
             <div className="mt-auto text-[9px] font-black flex items-center gap-2 uppercase tracking-[0.2em] transition-all group-hover:gap-3" style={{ color: tpl.color }}>
-              Initiate <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              Generate Report <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </div>
           </button>
         ))}
@@ -451,10 +451,10 @@ export function TemplatesPage({ weekData }: Props) {
                 <span className="text-2xl">📄</span>
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Payload Synthesized</h2>
+                <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Report Ready</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Review the report before printing</p>
+                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Review the document below before printing</p>
                 </div>
               </div>
             </div>
