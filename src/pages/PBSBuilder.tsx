@@ -191,7 +191,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
     if (i === 6) return !!(pbs.reactiveStep1);
     if (i === 7) return pbs.postImmediate.some(Boolean);
     if (i === 8) return pbs.whatWorks.some(Boolean);
-    if (i === 9) return pbs.Medication Management & SafetyRows.some(r => r.name);
+    if (i === 9) return pbs.medicationRows?.some(r => r.name);
     if (i === 10) return !!(pbs.reviewSchedule);
     if (i === 11) return sigs.some(s => s.data);
     return false;
@@ -434,10 +434,10 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                 <div className="animate-in fade-in duration-700">
                   <TableEditor
                     label="Medication Management & Safety Record"
-                    rows={pbs.Medication Management & SafetyRows as unknown as Record<string, string>[]}
-                    onChange={v => updatePBS({ Medication Management & SafetyRows: v as unknown as typeof pbs.Medication Management & SafetyRows })}
+                    rows={pbs.medicationRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ medicationRows: v as unknown as typeof pbs.medicationRows })}
                     cols={[
-                      { key: 'name', label: 'Medication Management & Safety Name' },
+                      { key: 'name', label: 'Medication Name' },
                       { key: 'dose', label: 'Dosage' },
                       { key: 'when', label: 'When to take' },
                       { key: 'purpose', label: 'Purpose' },
@@ -447,7 +447,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   />
                   <div className="mt-8">
                     <Field label="Administration & Preference Notes"
-                      value={pbs.Medication Management & SafetyNote} onChange={v => updatePBS({ Medication Management & SafetyNote: v })} area rows={5}
+                      value={pbs.medicationNote} onChange={v => updatePBS({ medicationNote: v })} area rows={5}
                       placeholder="Refusal protocols, side-effect monitoring, and specific preferences for taking Medication Management & Safety..." />
                   </div>
                 </div>
