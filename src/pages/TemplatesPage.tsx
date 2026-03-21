@@ -11,6 +11,12 @@ function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + '...' : s;
 }
 
+const FOOTER_HTML = `
+  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
+`;
+
 function generateQualityMeeting(data: WeekSummary): string {
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
   const redFlags = data.allFlags.red;
@@ -112,9 +118,7 @@ function generateQualityMeeting(data: WeekSummary): string {
     <tr><td style="padding: 15px 10px; border: 1px solid #e2e8f0;">1</td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0; font-weight: 700; color: #94a3b8;">OPEN</td></tr>
     <tr><td style="padding: 15px 10px; border: 1px solid #e2e8f0;">2</td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0; font-weight: 700; color: #94a3b8;">OPEN</td></tr>
   </table>
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
+  ${FOOTER_HTML}
 </div>`;
   return html;
 }
@@ -149,11 +153,7 @@ function generateIncidentReport(data: WeekSummary): string {
       </div>
     </div>`;
   }
-  html += `
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
-</div>`;
+  html += FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -205,7 +205,7 @@ function generateDailyQuality(data: WeekSummary): string {
       </div>`;
     }
   }
-  html += `</div>`;
+  html += FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -228,7 +228,7 @@ function generateFinanceReport(data: WeekSummary): string {
   for (const e of financeEntries) {
     html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
   }
-  html += `</table></div>`;
+  html += `</table>` + FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -251,11 +251,7 @@ function generateMedicationAudit(data: WeekSummary): string {
   for (const e of medEntries) {
     html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
   }
-  html += `</table>
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
-</div>`;
+  html += `</table>` + FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -275,7 +271,7 @@ function generateHandoverReport(data: WeekSummary): string {
   </div>`;
 
   for (const house of houses) {
-    const concerns = [...house.incidents, ...house.safeguarding, ...house.flags.red > 0 ? house.entries.filter(e => e.severity === 'red') : []];
+    const concerns = [...house.incidents, ...house.safeguarding, ...(house.flags.red > 0 ? house.entries.filter(e => e.severity === 'red') : [])];
     html += `
     <div style="margin-bottom: 30px; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
       <div style="background: #fffbeb; padding: 12px 20px; border-bottom: 1px solid #fde68a; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">${house.name}</div>
@@ -290,11 +286,7 @@ function generateHandoverReport(data: WeekSummary): string {
       </div>
     </div>`;
   }
-  html += `
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
-</div>`;
+  html += FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -319,10 +311,7 @@ function generateSupervisionReport(data: WeekSummary): string {
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">3. Health & Wellbeing</h2><div style="height: 100px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-top: 40px; display: flex; justify-content: space-between;"><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Supervisor Signature</div><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Staff Signature</div></div>
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
-</div>`;
+  ` + FOOTER_HTML + `</div>`;
   return html;
 }
 
@@ -354,11 +343,7 @@ function generateSafeguardingReport(data: WeekSummary): string {
       <div style="padding: 15px; font-size: 13px; line-height: 1.6; color: #334155;">${e.entry}</div>
     </div>`;
   }
-  html += `
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
-  </div>
-</div>`;
+  html += FOOTER_HTML + `</div>`;
   return html;
 }
 
