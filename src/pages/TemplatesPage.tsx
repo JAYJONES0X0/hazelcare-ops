@@ -444,7 +444,9 @@ export function TemplatesPage({ weekData }: Props) {
               </div>
             </div>
             <button onClick={handlePrint} className="w-full md:w-auto flex items-center justify-center gap-3 px-10 py-4 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-[1.02] transition-all group">
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.821V21m0 0h10.56m-10.56 0V13.821m10.56 7.179V13.821M17.28 21h3.36V13.821m-3.36 7.179H17.28m-10.56 0H3.36V13.821m0 7.179h3.36m13.92-7.179a1.44 1.44 0 00-1.44-1.44h-15.84a1.44 1.44 0 00-1.44 1.44v5.76a1.44 1.44 0 001.44 1.44h15.84a1.44 1.44 0 001.44-1.44v-5.76zm-13.92-3.6h12.48a1.44 1.44 0 001.44-1.44V4.8a1.44 1.44 0 00-1.44-1.44H6.72a1.44 1.44 0 00-1.44 1.44v4.32a1.44 1.44 0 001.44 1.44z" />
+              </svg>
               Print / Save as PDF
             </button>
           </div>
