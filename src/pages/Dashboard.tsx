@@ -16,7 +16,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           <svg className="w-12 h-12 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" /></svg>
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Dashboard</h2>
-        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import your Nourish data to see the weekly overview, flags, and house summaries.</p>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import your care data to see the weekly overview, flags, and house summaries.</p>
         <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Import Data</button>
       </div>
     );

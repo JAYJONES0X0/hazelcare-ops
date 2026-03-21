@@ -147,7 +147,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
             <ListField label="Behaviors or Signs" items={risk.behaviours}
               onChange={v => up({ behaviours: v })} placeholder="e.g. Unsteady walking" />
             <ListField label="People Affected" items={risk.affectedPeople}
-              onChange={v => up({ affectedPeople: v })} placeholder="e.g. Staff supporting with mobility" />
+              onChange={v => up({ affectedPeople: v })} placeholder="e.g. Staff supporting with Mobility, Movement & Exercise" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6">
@@ -162,7 +162,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
           
           <Field label="Review Trigger" value={risk.reviewTrigger}
             onChange={v => up({ reviewTrigger: v })}
-            placeholder="e.g. Following any fall or change in mobility" />
+            placeholder="e.g. Following any fall or change in Mobility, Movement & Exercise" />
 
           {/* Score */}
           <div className="glass border-2 border-white/5 rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">

@@ -152,8 +152,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
       {/* Quick links */}
       <div className="px-3 pb-4 hidden lg:block">
         <div className="flex gap-2">
-          <a href="https://hazelcare.nourishcare.com/user/login?destination=reporting/clientdiary" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Nourish</a>
-          <a href="https://org.nourishcare.co.uk/hazel-care-ltd+nc-hazelcare#/" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
+          <a href="https://hazelcare.Hazel Carecare.com/user/login?destination=reporting/clientdiary" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Hazel Care</a>
+          <a href="https://org.Hazel Carecare.co.uk/hazel-care-ltd+nc-hazelcare#/" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
         </div>
       </div>
     </>

@@ -1,4 +1,4 @@
-import type { NourishEntry, WeekSummary } from './types';
+import type { CareEntry, WeekSummary } from './types';
 
 export interface ClientRiskProfile {
   name: string;
@@ -10,7 +10,7 @@ export interface ClientRiskProfile {
   medicationIssues: number;
   safeguardingFlags: number;
   incidentCount: number;
-  recentEntries: NourishEntry[];
+  recentEntries: CareEntry[];
   topConcerns: string[];
   lastActivity: string;
 }
@@ -27,7 +27,7 @@ const RISK_WEIGHTS = {
 
 export function calculateClientRisk(
   clientName: string,
-  entries: NourishEntry[],
+  entries: CareEntry[],
   house: string
 ): ClientRiskProfile {
   const clientEntries = entries.filter(e => e.client === clientName).sort(
@@ -111,7 +111,7 @@ export function calculateClientRisk(
   };
 }
 
-function extractConcerns(entries: NourishEntry[]): string[] {
+function extractConcerns(entries: CareEntry[]): string[] {
   const concerns: string[] = [];
   const entriesText = entries.map(e => e.entry.toLowerCase()).join(' ');
 

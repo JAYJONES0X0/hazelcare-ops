@@ -1,4 +1,4 @@
-import type { NourishEntry, Action, Incident, StaffMember } from './types';
+import type { CareEntry, Action, Incident, StaffMember } from './types';
 import { uid } from './storage';
 
 // ============================================================
@@ -82,8 +82,8 @@ const GREEN_ENTRIES: { type: string; entry: string }[] = [
   { type: 'Supervision', entry: 'Supervision completed with support worker. Discussed workload, training needs, and client progress. Next supervision booked for 4 weeks.' },
 ];
 
-export function generateMockEntries(): NourishEntry[] {
-  const entries: NourishEntry[] = [];
+export function generateMockEntries(): CareEntry[] {
+  const entries: CareEntry[] = [];
 
   // Generate ~280 entries across houses over 7 days
   for (const house of HOUSES) {

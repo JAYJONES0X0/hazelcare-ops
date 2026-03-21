@@ -52,6 +52,12 @@ export function clearIncidents() {
   save({ incidents: [] });
 }
 
+export function clearSelectedData(type: 'diary' | 'actions' | 'incidents') {
+  if (type === 'diary') save({ weekData: null });
+  else if (type === 'actions') save({ actions: [] });
+  else if (type === 'incidents') save({ incidents: [] });
+}
+
 export function clearAllData() {
   localStorage.removeItem(STORAGE_KEY);
 }

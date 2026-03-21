@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, deleteClient, emptyClient, purgeSystemData } from '../lib/client-store';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
-import { parseNourishText } from '../lib/nourish-import';
+import { parseUniversalText } from '../lib/universal-import';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
@@ -98,7 +98,7 @@ export function ClientDocsPage() {
 
   const handlePreview = () => {
     if (!importText.trim()) return;
-    const result = parseNourishText(importText);
+    const result = parseUniversalText(importText);
     setImportResult(result.warnings);
     const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
     setImportPreview({
@@ -111,7 +111,7 @@ export function ClientDocsPage() {
 
   const handleImport = () => {
     if (!importText.trim()) return;
-    const result = parseNourishText(importText);
+    const result = parseUniversalText(importText);
     setImportResult(result.warnings);
 
     if (importTarget) {
@@ -169,7 +169,7 @@ export function ClientDocsPage() {
 
         <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Import Data</h1>
         <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium opacity-80 leading-relaxed">
-          Upload person-centred "Emergency Admission Pack" PDF from Nourish. The system will map all 21 domains of care and build a support plan automatically.
+          Upload person-centred "Emergency Admission Pack" PDF. The system will map all 21 premium domains of care and build a support plan automatically.
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -179,7 +179,7 @@ export function ClientDocsPage() {
             className="flex-1 flex items-center justify-center gap-3 btn-gradient disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:scale-[1.02]"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-            {isExtracting ? 'Processing...' : 'Upload Nourish PDF'}
+            {isExtracting ? 'Processing...' : 'Upload Care Plan PDF'}
           </button>
           <input
             type="file"

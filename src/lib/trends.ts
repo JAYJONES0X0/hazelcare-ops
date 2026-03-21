@@ -1,4 +1,4 @@
-import type { NourishEntry, Category } from './types';
+import type { CareEntry, Category } from './types';
 
 export interface Trend {
   id: string;
@@ -9,7 +9,7 @@ export interface Trend {
   metric?: string;
 }
 
-export function detectTrends(entries: NourishEntry[]): Trend[] {
+export function detectTrends(entries: CareEntry[]): Trend[] {
   if (!entries.length) return [];
 
   const trends: Trend[] = [];
@@ -18,7 +18,7 @@ export function detectTrends(entries: NourishEntry[]): Trend[] {
 
   // -- Helpers --
   const houses = [...new Set(entries.map(e => e.house))];
-  const entriesByHouse: Record<string, NourishEntry[]> = {};
+  const entriesByHouse: Record<string, CareEntry[]> = {};
   for (const e of entries) {
     (entriesByHouse[e.house] ??= []).push(e);
   }
@@ -122,7 +122,7 @@ export function detectTrends(entries: NourishEntry[]): Trend[] {
   // -- 4. Client Risk --
   const redEntries = entries.filter(e => e.severity === 'red');
   if (redEntries.length >= 2) {
-    const clientRedCounts: Record<string, NourishEntry[]> = {};
+    const clientRedCounts: Record<string, CareEntry[]> = {};
     for (const e of redEntries) {
       if (!e.client) continue;
       (clientRedCounts[e.client] ??= []).push(e);

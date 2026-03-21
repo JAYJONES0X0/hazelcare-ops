@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import type { WeekSummary, NourishEntry, TemplateType } from '../lib/types';
+import type { WeekSummary, CareEntry, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
 
 interface Props {
@@ -89,7 +89,7 @@ function generateQualityMeeting(data: WeekSummary): string {
       </div>
       <div style="padding: 16px 20px; font-size: 12px;">`;
 
-    const sections: [string, NourishEntry[]][] = [
+    const sections: [string, CareEntry[]][] = [
       ['Incidents & Safety', house.incidents],
       ['Safeguarding', house.safeguarding],
       ['Medication Management', house.medication],
@@ -385,7 +385,7 @@ export function TemplatesPage({ weekData }: Props) {
           <span className="text-4xl">📋</span>
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Template Generator</h2>
-        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import Nourish data to auto-fill templates with up-to-date care information.</p>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import care data to auto-fill templates with up-to-date care information.</p>
         <button onClick={() => window.location.reload()} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Import Data</button>
       </div>
     );

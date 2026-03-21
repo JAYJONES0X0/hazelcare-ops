@@ -1,7 +1,7 @@
 // ============================================================
 // CORE DATA TYPES
 // ============================================================
-export interface NourishEntry {
+export interface CareEntry {
   id: string;
   date: string;
   time?: string;
@@ -93,14 +93,14 @@ export interface StaffMember {
 export interface HouseSummary {
   name: string;
   coordinator: string;
-  entries: NourishEntry[];
-  incidents: NourishEntry[];
-  safeguarding: NourishEntry[];
-  medication: NourishEntry[];
-  staffPerformance: NourishEntry[];
-  healthSafety: NourishEntry[];
-  handovers: NourishEntry[];
-  dailySupport: NourishEntry[];
+  entries: CareEntry[];
+  incidents: CareEntry[];
+  safeguarding: CareEntry[];
+  medication: CareEntry[];
+  staffPerformance: CareEntry[];
+  healthSafety: CareEntry[];
+  handovers: CareEntry[];
+  dailySupport: CareEntry[];
   flags: { red: number; amber: number; green: number };
 }
 
@@ -109,11 +109,11 @@ export interface WeekSummary {
   dateTo: string;
   totalEntries: number;
   houses: Record<string, HouseSummary>;
-  allFlags: { red: NourishEntry[]; amber: NourishEntry[]; green: NourishEntry[] };
+  allFlags: { red: CareEntry[]; amber: CareEntry[]; green: CareEntry[] };
   entryTypes: Record<string, number>;
   clients: string[];
   carers: string[];
-  clientDiary: Record<string, NourishEntry[]>;  // per-client diary entries
+  clientDiary: Record<string, CareEntry[]>;  // per-client diary entries
 }
 
 // ============================================================

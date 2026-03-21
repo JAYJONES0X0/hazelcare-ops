@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { WeekSummary, NourishEntry } from '../lib/types';
+import type { WeekSummary, CareEntry } from '../lib/types';
 import { loadClients } from '../lib/client-store';
 import type { Page } from '../App';
 
@@ -18,7 +18,7 @@ function typeColor(type: string) {
   return '#7a95b0';
 }
 
-function ClientStats({ entries }: { entries: NourishEntry[] }) {
+function ClientStats({ entries }: { entries: CareEntry[] }) {
   const byType = useMemo(() => {
     const m: Record<string, number> = {};
     entries.forEach(e => { m[e.type] = (m[e.type] || 0) + 1; });
@@ -126,7 +126,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">No diary data loaded</h2>
         <p className="text-hc-muted text-sm mb-8 max-w-xs leading-relaxed">
-          Drop a Nourish CSV export to see all client diaries with care insights.
+          Drop a CSV export to see all client diaries with care insights.
         </p>
         <button onClick={() => setPage('upload')}
           className="px-8 py-3 btn-gradient rounded-xl shadow-lg hover:shadow-hc-teal/20 transition-all">

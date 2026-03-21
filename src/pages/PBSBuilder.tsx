@@ -20,7 +20,7 @@ const SECTIONS = [
   'Reactive Strategies',
   'Post-Incident Support',
   'Preferences & Triggers',
-  'Medication Support',
+  'Medication Management & Safety Support',
   'Reviews & Professionals',
   'Sign-Off',
 ];
@@ -191,7 +191,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
     if (i === 6) return !!(pbs.reactiveStep1);
     if (i === 7) return pbs.postImmediate.some(Boolean);
     if (i === 8) return pbs.whatWorks.some(Boolean);
-    if (i === 9) return pbs.medicationRows.some(r => r.name);
+    if (i === 9) return pbs.Medication Management & SafetyRows.some(r => r.name);
     if (i === 10) return !!(pbs.reviewSchedule);
     if (i === 11) return sigs.some(s => s.data);
     return false;
@@ -310,7 +310,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   <ListField label="How I Communicate Best" items={pbs.communicatesBest}
                     onChange={v => updatePBS({ communicatesBest: v })} placeholder="e.g. Short, clear sentences and visual aids" />
                   <ListField label="What I Find Difficult" items={pbs.findsDifficult}
-                    onChange={v => updatePBS({ findsDifficult: v })} placeholder="e.g. Sudden changes to my daily routine" />
+                    onChange={v => updatePBS({ findsDifficult: v })} placeholder="e.g. Sudden changes to my Life Skills & Daily Routine" />
                 </div>
               )}
 
@@ -353,9 +353,9 @@ export function PBSBuilder({ clientId, onBack }: Props) {
               {/* 4 — Proactive Support */}
               {section === 4 && (
                 <div className="animate-in fade-in duration-700 space-y-4">
-                  <ListField label="Environment & Surroundings" items={pbs.envStrategies}
+                  <ListField label="Adaptive Living Environment & Surroundings" items={pbs.envStrategies}
                     onChange={v => updatePBS({ envStrategies: v })} />
-                  <ListField label="Structure & Daily Routine" items={pbs.routineStrategies}
+                  <ListField label="Structure & Life Skills & Daily Routine" items={pbs.routineStrategies}
                     onChange={v => updatePBS({ routineStrategies: v })} />
                   <ListField label="Relationships & Interaction" items={pbs.relationshipStrategies}
                     onChange={v => updatePBS({ relationshipStrategies: v })} />
@@ -429,15 +429,15 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                 </div>
               )}
 
-              {/* 9 — Medication */}
+              {/* 9 — Medication Management & Safety */}
               {section === 9 && (
                 <div className="animate-in fade-in duration-700">
                   <TableEditor
-                    label="Medication Record"
-                    rows={pbs.medicationRows as unknown as Record<string, string>[]}
-                    onChange={v => updatePBS({ medicationRows: v as unknown as typeof pbs.medicationRows })}
+                    label="Medication Management & Safety Record"
+                    rows={pbs.Medication Management & SafetyRows as unknown as Record<string, string>[]}
+                    onChange={v => updatePBS({ Medication Management & SafetyRows: v as unknown as typeof pbs.Medication Management & SafetyRows })}
                     cols={[
-                      { key: 'name', label: 'Medication Name' },
+                      { key: 'name', label: 'Medication Management & Safety Name' },
                       { key: 'dose', label: 'Dosage' },
                       { key: 'when', label: 'When to take' },
                       { key: 'purpose', label: 'Purpose' },
@@ -447,8 +447,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   />
                   <div className="mt-8">
                     <Field label="Administration & Preference Notes"
-                      value={pbs.medicationNote} onChange={v => updatePBS({ medicationNote: v })} area rows={5}
-                      placeholder="Refusal protocols, side-effect monitoring, and specific preferences for taking medication..." />
+                      value={pbs.Medication Management & SafetyNote} onChange={v => updatePBS({ Medication Management & SafetyNote: v })} area rows={5}
+                      placeholder="Refusal protocols, side-effect monitoring, and specific preferences for taking Medication Management & Safety..." />
                   </div>
                 </div>
               )}

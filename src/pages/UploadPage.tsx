@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
-import { parseNourishData, buildWeekSummary } from '../lib/nourish-parser';
-import { parseNourishText, parseSupportPlanText } from '../lib/nourish-import';
+import { parseUniversalData, buildWeekSummary } from '../lib/universal-parser';
+import { parseUniversalText, parseSupportPlanText } from '../lib/universal-import';
 import { saveClient, emptyClient, findExistingClient, loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
 import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents } from '../lib/storage';
 import type { WeekSummary } from '../lib/types';
@@ -116,7 +116,7 @@ function buildPreview(rawText: string, type: ImportType, fileName: string): Prev
   const base: PreviewData = { type, fileName, rawText, warnings: [] };
 
   if (type === 'diary') {
-    const entries = parseNourishData(rawText);
+    const entries = parseUniversalData(rawText);
     if (entries.length === 0) {
       base.warnings = ['No diary entries detected. Check the file format.'];
       return base;
@@ -132,7 +132,7 @@ function buildPreview(rawText: string, type: ImportType, fileName: string): Prev
   }
 
   if (type === 'admission') {
-    const result = parseNourishText(rawText);
+    const result = parseUniversalText(rawText);
     base.clientName = result.client.name || 'Not detected';
     base.dob = result.client.dob || 'Not detected';
     base.nhs = result.client.nhs || 'Not detected';
@@ -160,18 +160,18 @@ function buildPreview(rawText: string, type: ImportType, fileName: string): Prev
 const TYPE_INFO: Record<ImportType, { label: string; desc: string; icon: string; accepts: string; help: string; destination: string }> = {
   diary: {
     label: 'Weekly Diary',
-    desc: 'Nourish diary export — populates dashboard, briefing, and all house views',
+    desc: 'Universal diary export — populates dashboard, briefing, and all house views',
     icon: '📊',
     accepts: '.csv,.txt,.pdf',
-    help: 'Nourish → Client Diary → Export CSV',
+    help: 'Export CSV from CarePlanner or similar',
     destination: 'Briefing',
   },
   admission: {
     label: 'Person Import',
-    desc: 'Nourish Emergency Admission Pack or Care Plan — creates a new client profile with all 21 care plan domains',
+    desc: 'Emergency Admission Pack or Care Plan — creates a new client profile with all 21 premium care domains',
     icon: '👤',
     accepts: '.pdf,.txt',
-    help: 'Nourish → Reports → Emergency Admission Pack → PDF',
+    help: 'Reports → Emergency Admission Pack → PDF',
     destination: 'Client Documents',
   },
   'support-plan': {
@@ -184,54 +184,52 @@ const TYPE_INFO: Record<ImportType, { label: string; desc: string; icon: string;
   },
 };
 
-function DataManager() {
-  const weekData = loadWeekData();
+function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: {
+  weekData: WeekSummary | null;
+  clients: FullClient[];
+  onClearEverything: () => void;
+  onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
+}) {
   const actions = loadActions();
   const incidents = loadIncidents();
-  const clients = loadClients();
   const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
 
   const datasets = [
-    { key: 'diary', label: 'Diary / Briefing Data', count: weekData?.totalEntries || 0, present: !!weekData, clear: () => { clearWeekData(); window.location.reload(); }, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'No data loaded' },
-    { key: 'clients', label: 'People & Support Plans', count: clients.length, present: clients.length > 0, clear: () => { clearClientData(); window.location.reload(); }, desc: clients.length > 0 ? `${clients.length} people` : 'No people added' },
-    { key: 'actions', label: 'Actions', count: actions.length, present: actions.length > 0, clear: () => { clearActions(); window.location.reload(); }, desc: actions.length > 0 ? `${actions.length} actions` : 'No actions' },
-    { key: 'incidents', label: 'Incidents', count: incidents.length, present: incidents.length > 0, clear: () => { clearIncidents(); window.location.reload(); }, desc: incidents.length > 0 ? `${incidents.length} incidents` : 'No incidents' },
-    { key: 'notes', label: 'Staff Notes', count: notes.length, present: notes.length > 0, clear: () => { clearStaffNotes(); window.location.reload(); }, desc: notes.length > 0 ? `${notes.length} saved notes` : 'No notes saved' },
+    { key: 'diary', label: 'Diary & Briefing', present: !!weekData, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'Local registry empty' },
+    { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
+    { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
+    { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },
+    { key: 'notes', label: 'Staff Notes', present: notes.length > 0, desc: notes.length > 0 ? `${notes.length} saved notes` : 'Local registry empty' },
   ];
 
-  const hasAnyData = datasets.some(d => d.present);
-
   return (
-    <div className="glass-light border border-white/5 rounded-2xl p-6 mb-8">
-      <div className="flex items-center justify-between mb-5">
+    <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden mt-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm font-black text-white uppercase tracking-tight">Stored Data</div>
-          <div className="text-[10px] text-hc-muted/60">Clear specific datasets or everything at once.</div>
+          <h2 className="text-xl font-black text-white tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
+          <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Manage local care datasets and privacy</p>
         </div>
-        {hasAnyData && (
-          <button
-            onClick={() => { if (confirm('Delete ALL data from this device? This cannot be undone.')) purgeSystemData(); }}
-            className="px-4 py-2 text-[9px] font-bold uppercase tracking-wider rounded-xl border border-flag-red/20 text-flag-red/60 hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/40 transition-all">
-            Clear Everything
+        {datasets.some(d => d.present) && (
+          <button onClick={() => { if (confirm('Delete ALL data from this device?')) onClearEverything(); }}
+            className="text-[9px] font-black text-flag-red hover:text-white uppercase tracking-[0.2em] px-4 py-2 glass-light border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
+            Purge All Data
           </button>
         )}
       </div>
-      <div className="space-y-2">
+
+      <div className="space-y-3">
         {datasets.map(d => (
-          <div key={d.key} className={`flex items-center justify-between py-3 px-4 rounded-xl border transition-all ${d.present ? 'border-white/5 bg-white/[0.02]' : 'border-white/[0.02] opacity-40'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${d.present ? 'bg-flag-green shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-white/10'}`} />
+          <div key={d.key} className={`glass-light border border-white/5 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all ${!d.present && 'opacity-40'}`}>
+            <div className="flex items-center gap-4">
+              <div className={`w-3 h-3 rounded-full ${d.present ? 'bg-flag-green glow-green' : 'bg-white/5'}`} />
               <div>
-                <div className="text-[11px] font-bold text-white">{d.label}</div>
-                <div className="text-[10px] text-hc-muted/50">{d.desc}</div>
+                <div className="text-xs font-black text-white uppercase tracking-tight">{d.label}</div>
+                <div className="text-[10px] text-hc-muted">{d.desc}</div>
               </div>
             </div>
             {d.present && (
-              <button
-                onClick={() => { if (confirm(`Clear all ${d.label.toLowerCase()}? This cannot be undone.`)) d.clear(); }}
-                className="text-[9px] font-bold uppercase tracking-wider text-hc-muted/40 hover:text-flag-red transition-colors px-3 py-1">
-                Clear
-              </button>
+              <button onClick={() => { if (confirm(`Clear ${d.label}?`)) onClearType(d.key as any); }} 
+                className="text-[9px] font-black text-hc-muted hover:text-flag-red uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Clear</button>
             )}
           </div>
         ))}
@@ -250,6 +248,23 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const [resultMsg, setResultMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const weekData = loadWeekData();
+  const clients = loadClients();
+
+  const handleClearEverything = () => {
+    purgeSystemData();
+    window.location.reload();
+  };
+
+  const handleClearType = (type: any) => {
+    if (type === 'diary') clearWeekData();
+    else if (type === 'clients') clearClientData();
+    else if (type === 'actions') clearActions();
+    else if (type === 'incidents') clearIncidents();
+    else if (type === 'notes') clearStaffNotes();
+    window.location.reload();
+  };
 
   // ─── Handle file drop or select ──────────────────────────────────────────────
   const handleFile = async (file: File) => {
@@ -277,7 +292,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
       const type = detectType(rawText, file.name);
       if (!type) {
-        setErrorMsg(`Could not identify this file. Supported formats:\n- Nourish Client Diary CSV\n- Emergency Admission Pack PDF\n- Support Plan DOCX\n\nTry exporting from Nourish as CSV, or paste the text below.`);
+        setErrorMsg(`Could not identify this file. Supported formats:\n- Hazel Care Client Diary CSV\n- Emergency Admission Pack PDF\n- Support Plan DOCX\n\nTry exporting from your provider as CSV, or paste the text below.`);
         setStep('error');
         return;
       }
@@ -300,7 +315,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
     const type = detectType(pasteText, 'paste.txt');
     if (!type) {
-      setErrorMsg('Could not identify this text. Make sure you\'re pasting a Nourish export, admission pack, or support plan.');
+      setErrorMsg('Could not identify this text. Make sure you\'re pasting a diary export, admission pack, or support plan.');
       setStep('error');
       return;
     }
@@ -312,14 +327,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
   // ─── Confirm and process ─────────────────────────────────────────────────────
   const [goTo, setGoTo] = useState<Page | null>(null);
+  const [targetClient, setImportTargetClient] = useState<string | null>(null);
 
   const handleConfirm = (destination?: Page) => {
     if (!preview) return;
 
     if (preview.type === 'diary') {
-      const entries = parseNourishData(preview.rawText);
+      const entries = parseUniversalData(preview.rawText);
       if (entries.length === 0) {
-        setErrorMsg('No entries could be parsed. Try exporting as CSV from Nourish.');
+        setErrorMsg('No entries could be parsed. Try exporting as CSV from your provider.');
         setStep('error');
         return;
       }
@@ -333,8 +349,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     }
 
     if (preview.type === 'admission') {
-      const result = parseNourishText(preview.rawText);
-      const existing = findExistingClient(result.client.name || '', result.client.nhs || '');
+      const result = parseUniversalText(preview.rawText);
+      const existing = targetClient ? loadClients().find(c => c.id === targetClient) : findExistingClient(result.client.name || '', result.client.nhs || '');
       const client = existing ? { ...existing } : emptyClient();
       Object.assign(client, result.client);
       if (existing) {
@@ -353,7 +369,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (preview.type === 'support-plan') {
       const spResult = parseSupportPlanText(preview.rawText);
       const clientName = preview.clientName || 'Imported Client';
-      const existing = findExistingClient(clientName, '');
+      const existing = targetClient ? loadClients().find(c => c.id === targetClient) : findExistingClient(clientName, '');
       const client = existing ? { ...existing } : emptyClient();
       if (!existing) {
         client.name = clientName;
@@ -388,7 +404,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
-        <p className="text-hc-muted text-sm font-medium">Upload data from Nourish or your local authority. We'll detect the format and route it to the right place.</p>
+        <p className="text-hc-muted text-sm font-medium">Upload data from your provider or your local authority. We'll detect the format and route it to the right place.</p>
       </div>
 
       {/* ─── STEP: CHOOSE ─────────────────────────────────────────────────────── */}
@@ -442,7 +458,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <textarea
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
-                placeholder="Paste Nourish export, admission pack text, or support plan here..."
+                placeholder="Paste diary export, admission pack text, or support plan here..."
                 className="w-full min-h-[200px] glass border border-white/10 rounded-2xl p-6 text-sm text-white font-mono leading-relaxed resize-y placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/40 scrollbar-thin"
               />
               <div className="flex justify-end mt-4">
@@ -477,137 +493,125 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       {/* ─── STEP: PREVIEW ────────────────────────────────────────────────────── */}
       {step === 'preview' && preview && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {/* Detected type banner */}
-          <div className="glass border border-hc-teal/30 rounded-2xl p-6 mb-6 flex items-center gap-5">
-            <div className="text-4xl">{TYPE_INFO[preview.type].icon}</div>
-            <div className="flex-1">
-              <div className="text-lg font-black text-white mb-0.5">{TYPE_INFO[preview.type].label} Detected</div>
-              <div className="text-[11px] text-hc-muted">{preview.fileName}</div>
-            </div>
-            <div className="pill pill-teal text-[10px] font-bold uppercase tracking-wider">
-              → {TYPE_INFO[preview.type].destination}
+          {/* Intelligence Layer: Decision Matrix */}
+          <div className="glass border border-hc-teal/30 rounded-[2.5rem] p-8 mb-8 relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-5 mb-8">
+                <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shadow-lg glow-teal text-4xl">
+                  {TYPE_INFO[preview.type].icon}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">{TYPE_INFO[preview.type].label} Identified</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+                    <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Intelligence layer active — Select guided action</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                {/* Decision Row 1: Target Mapping */}
+                <div className="space-y-3">
+                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Target Mapping</label>
+                  <div className="glass-light border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-hc-teal/30 transition-all">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">👤</span>
+                      <div>
+                        <div className="text-[11px] font-black text-white uppercase">Link to Profile</div>
+                        <div className="text-[9px] text-hc-muted">Associate data with a specific person</div>
+                      </div>
+                    </div>
+                    <select
+                      value={targetClient || ''}
+                      onChange={e => setImportTargetClient(e.target.value || null)}
+                      className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                      <option value="">Global Import</option>
+                      {loadClients().map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Decision Row 2: Landing Page */}
+                <div className="space-y-3">
+                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Landing Destination</label>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { page: 'briefing' as Page, icon: '☀️' },
+                      { page: 'dashboard' as Page, icon: '📊' },
+                      { page: 'client-docs' as Page, icon: '📋' },
+                      { page: 'templates' as Page, icon: '📄' },
+                    ]).map(opt => (
+                      <button key={opt.page} onClick={() => setGoTo(opt.page)}
+                        className={`w-12 h-12 flex items-center justify-center rounded-xl border transition-all active:scale-95 text-xl ${
+                          (goTo || (preview.type === 'diary' ? 'briefing' : 'client-docs')) === opt.page
+                            ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal shadow-lg'
+                            : 'border-white/5 bg-white/[0.02] hover:bg-white/5'
+                        }`} title={opt.page}>
+                        {opt.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button onClick={() => handleConfirm()}
+                  className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.3em] py-5 rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                  Confirm Intelligence Mapping
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                </button>
+                <button onClick={reset}
+                  className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-5 rounded-2xl transition-all">
+                  Discard
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Preview details */}
-          <div className="glass-light border border-white/5 rounded-2xl p-6 mb-6">
+          {/* Stats Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {preview.type === 'diary' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Entries</div>
-                  <div className="text-2xl font-black text-white">{preview.entryCount || 0}</div>
+              <>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Entry Volume</div>
+                  <div className="text-3xl font-black text-white tabular-nums">{preview.entryCount || 0}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Date Range</div>
-                  <div className="text-sm font-bold text-white">{preview.dateRange}</div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Timeline</div>
+                  <div className="text-sm font-black text-white uppercase">{preview.dateRange}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Houses</div>
-                  <div className="text-2xl font-black text-white">{preview.houseCount || 0}</div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Houses Active</div>
+                  <div className="text-3xl font-black text-hc-teal-light tabular-nums">{preview.houseCount || 0}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">People</div>
-                  <div className="text-2xl font-black text-white">{preview.clientCount || 0}</div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">High Priority</div>
+                  <div className="text-3xl font-black text-flag-red tabular-nums">{preview.redFlags || 0}</div>
                 </div>
-                {(preview.redFlags || 0) > 0 && (
-                  <div>
-                    <div className="text-[10px] font-bold text-flag-red uppercase tracking-wider mb-1">Red Flags</div>
-                    <div className="text-2xl font-black text-flag-red">{preview.redFlags}</div>
-                  </div>
-                )}
-                {(preview.amberFlags || 0) > 0 && (
-                  <div>
-                    <div className="text-[10px] font-bold text-flag-amber uppercase tracking-wider mb-1">Amber Flags</div>
-                    <div className="text-2xl font-black text-flag-amber">{preview.amberFlags}</div>
-                  </div>
-                )}
-              </div>
+              </>
             )}
-
             {preview.type === 'admission' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Name</div>
-                  <div className="text-lg font-black text-white">{preview.clientName}</div>
+              <>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Identified Name</div>
+                  <div className="text-lg font-black text-white truncate">{preview.clientName}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Date of Birth</div>
-                  <div className="text-sm font-bold text-white">{preview.dob}</div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Temporal ID</div>
+                  <div className="text-sm font-black text-white tabular-nums">{preview.dob}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">NHS Number</div>
-                  <div className="text-sm font-bold text-white">{preview.nhs}</div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Net ID</div>
+                  <div className="text-sm font-black text-white tabular-nums">{preview.nhs}</div>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Care Domains</div>
-                  <div className="text-2xl font-black text-hc-teal-light">{preview.domainsDetected}<span className="text-sm text-hc-muted font-normal"> / 21</span></div>
+                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                  <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Premium Domains</div>
+                  <div className="text-3xl font-black text-hc-teal-light tabular-nums">{preview.domainsDetected} / 21</div>
                 </div>
-              </div>
+              </>
             )}
-
-            {preview.type === 'support-plan' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Name</div>
-                  <div className="text-lg font-black text-white">{preview.clientName}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">Support Areas</div>
-                  <div className="text-2xl font-black text-hc-teal-light">{preview.supportNeeds}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Warnings */}
-          {preview.warnings && preview.warnings.length > 0 && (
-            <div className="glass-light border border-flag-amber/20 rounded-2xl p-4 mb-6">
-              {preview.warnings.map((w, i) => (
-                <div key={i} className="text-[11px] text-flag-amber flex items-start gap-2 mb-1 last:mb-0">
-                  <span className="mt-0.5">!</span>
-                  <span>{w}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Where to go after import */}
-          {preview.type === 'diary' && (
-            <div className="glass-light border border-white/5 rounded-2xl p-5 mb-6">
-              <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-3">After import, go to:</div>
-              <div className="flex flex-wrap gap-2">
-                {([
-                  { page: 'briefing' as Page, label: 'Briefing' },
-                  { page: 'dashboard' as Page, label: 'Dashboard' },
-                  { page: 'reports' as Page, label: 'Reports' },
-                  { page: 'client-diary' as Page, label: 'Client Diary' },
-                  { page: 'risk' as Page, label: 'Risk Scores' },
-                  { page: 'templates' as Page, label: 'Templates' },
-                ]).map(opt => (
-                  <button key={opt.page} onClick={() => setGoTo(opt.page)}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl border transition-all active:scale-95 ${
-                      (goTo || 'briefing') === opt.page
-                        ? 'border-hc-teal/40 bg-hc-teal/10 text-hc-teal-light shadow-lg'
-                        : 'border-white/5 text-hc-muted hover:text-white hover:bg-white/5'
-                    }`}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-hc-muted/60 mt-3 italic">Your data will be available on ALL pages — this just controls where you land.</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-4">
-            <button onClick={() => handleConfirm()}
-              className="flex-[2] btn-gradient text-white text-sm font-bold py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-              Import Data
-            </button>
-            <button onClick={reset}
-              className="flex-1 glass-light border border-white/10 text-sm font-bold text-hc-muted hover:text-white py-4 rounded-2xl transition-all">
-              Cancel
-            </button>
           </div>
         </div>
       )}
@@ -644,7 +648,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       )}
 
       {/* ─── DATA MANAGEMENT ─────────────────────────────────────────────────── */}
-      {step === 'choose' && <DataManager />}
+      {step === 'choose' && <DataManagerProp weekData={weekData} clients={clients} onClearEverything={handleClearEverything} onClearType={handleClearType} />}
 
       {/* Footer */}
       <div className="mt-auto pt-16 pb-6 flex justify-center">

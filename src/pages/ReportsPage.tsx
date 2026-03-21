@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import type { WeekSummary, NourishEntry } from '../lib/types';
+import type { WeekSummary, CareEntry } from '../lib/types';
 import type { Page } from '../App';
 
 interface Props {
@@ -17,7 +17,7 @@ const REPORT_TYPES: { id: ReportType; label: string; desc: string; color: string
   { id: 'staff_activity', label: 'Staff Activity', desc: 'Staff activity and contributions', color: '#f59e0b', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z' },
 ];
 
-function EntryRow({ entry }: { entry: NourishEntry }) {
+function EntryRow({ entry }: { entry: CareEntry }) {
   const [open, setOpen] = useState(false);
   const isRed = entry.severity === 'red';
   const isAmber = entry.severity === 'amber';
@@ -188,7 +188,7 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
   const [selected, setSelected] = useState(houses[0] || '');
   const house = weekData.houses[selected];
 
-  const sections: { label: string; entries: NourishEntry[]; color: string; pill: string }[] = house ? [
+  const sections: { label: string; entries: CareEntry[]; color: string; pill: string }[] = house ? [
     { label: 'Incidents & Alerts', entries: house.incidents, color: '#ef4444', pill: 'pill-red' },
     { label: 'Safeguarding', entries: house.safeguarding, color: '#be185d', pill: 'pill-red shadow-lg shadow-red-900/20' },
     { label: 'Medication Management', entries: house.medication, color: '#0891b2', pill: 'pill-teal' },
@@ -340,7 +340,7 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
   const allEntries = useMemo(() => Object.values(weekData.houses).flatMap(h => h.entries), [weekData]);
 
   const byStaff = useMemo(() => {
-    const m: Record<string, { entries: NourishEntry[]; houses: Set<string>; red: number; amber: number }> = {};
+    const m: Record<string, { entries: CareEntry[]; houses: Set<string>; red: number; amber: number }> = {};
     for (const e of allEntries) {
       const name = e.carer && e.carer !== 'Staff' ? e.carer : 'Unknown / Auto-Gen';
       if (!m[name]) m[name] = { entries: [], houses: new Set(), red: 0, amber: 0 };
@@ -446,7 +446,7 @@ export function ReportsPage({ weekData, setPage }: Props) {
           <svg className="w-12 h-12 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
         </div>
         <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Report</h2>
-        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import Nourish data to generate weekly care reports.</p>
+        <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import care data to generate weekly care reports.</p>
         <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl shadow-lg transition-all">Import Data</button>
       </div>
     );
