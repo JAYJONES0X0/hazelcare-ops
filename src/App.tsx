@@ -40,7 +40,13 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
     e.preventDefault();
     if (password === PASSWORD) {
       setError('');
-      setStep('email');
+      if (sacRequired) {
+        // SAC + Password is enough for staff tool access
+        sessionStorage.setItem('hc-auth', '1');
+        onUnlock();
+      } else {
+        setStep('email');
+      }
     } else {
       setError('Incorrect password');
       setPassword('');
@@ -332,7 +338,7 @@ function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink:
   };
 
   return (
-    <div className="min-h-screen mesh-bg flex flex-col">
+    <div className="min-h-screen mesh-bg flex flex-col overflow-hidden">
       {/* Minimal header */}
       <div className="glass border-b border-white/10 px-6 py-4 flex items-center justify-between z-20 shadow-2xl backdrop-blur-3xl">
         <div className="flex items-center gap-4">
@@ -350,12 +356,14 @@ function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink:
         </button>
       </div>
 
-      {/* Tool content */}
-      <div className="flex-1 overflow-y-auto">
-        {page === 'notes' && <StaffNotePage />}
-        {page === 'handover' && <HandoverPage />}
-        {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
-        {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
+      {/* Tool content with responsive sizing fix */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 scrollbar-thin">
+        <div className="max-w-6xl mx-auto">
+          {page === 'notes' && <StaffNotePage />}
+          {page === 'handover' && <HandoverPage />}
+          {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
+          {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
+        </div>
       </div>
     </div>
   );
