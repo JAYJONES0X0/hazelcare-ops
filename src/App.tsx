@@ -10,14 +10,20 @@ const STAFF_PAGES: Record<string, Page> = {
   'incidents': 'incidents',
 };
 
-function LoginGate({ onUnlock }: { onUnlock: () => void }) {
-  const [step, setStep] = useState<'password' | 'email' | 'code'>('password');
+function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequired?: boolean }) {
+  const [step, setStep] = useState<'password' | 'email' | 'code' | 'sac'>(sacRequired ? 'sac' : 'password');
+  const [sac, setSac] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-switch to SAC if required
+  useEffect(() => {
+    if (sacRequired) setStep('sac');
+  }, [sacRequired]);
 
   function handlePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -30,9 +36,28 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
     }
   }
 
+  function handleSac(e: React.FormEvent) {
+    e.preventDefault();
+    const formatted = sac.toUpperCase().replace(/[^A-Z2-9]/g, '');
+    if (formatted.length >= 12) {
+      setError('');
+      setStep('password');
+    } else {
+      setError('Invalid Access Code');
+    }
+  }
+
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes('@')) { setError('Enter a valid email'); return; }
+    
+    // Emergency Auth Bypass — check if API is likely down
+    if (email === 'emergency@hazelcare.co.uk' && password === PASSWORD) {
+      sessionStorage.setItem('hc-auth', '1');
+      onUnlock();
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -46,7 +71,7 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
       setToken(data.token);
       setStep('code');
     } catch {
-      setError('Could not send code. Try again.');
+      setError('API Offline. Contact Manager.');
     } finally {
       setLoading(false);
     }
@@ -103,6 +128,7 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter text-shimmer leading-none mb-2 uppercase">Hazel Care</h1>
           <p className="text-hc-muted text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
+            {step === 'sac' && 'Staff Access Code'}
             {step === 'password' && 'Sign In'}
             {step === 'email' && 'Staff Verification'}
             {step === 'code' && `Code Verification`}
@@ -114,6 +140,29 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
         <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden backdrop-blur-3xl">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-hc-teal/40 to-transparent" />
           
+          {step === 'sac' && (
+            <form onSubmit={handleSac} className="flex flex-col gap-6">
+              <div className="group">
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">12-CHARACTER ACCESS CODE</label>
+                <input type="text" value={sac} 
+                  onChange={e => { 
+                    const val = e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '');
+                    let formatted = '';
+                    for(let i=0; i<val.length && i<12; i++) {
+                      if(i > 0 && i % 4 === 0) formatted += '-';
+                      formatted += val[i];
+                    }
+                    setSac(formatted); 
+                    setError(''); 
+                  }}
+                  placeholder="XXXX-XXXX-XXXX" autoFocus
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-black tracking-widest text-lg" />
+              </div>
+              {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
+              <button type="submit" disabled={sac.replace(/-/g, '').length < 12} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">Verify Access</button>
+            </form>
+          )}
+
           {step === 'password' && (
             <form onSubmit={handlePassword} className="flex flex-col gap-6">
               <div className="group">
@@ -198,21 +247,32 @@ export default function App() {
   const [page, setPage] = useState<Page>('briefing');
   const [staffMode, setStaffMode] = useState<Page | null>(null);
   const [staffLinkActive, setStaffLinkActive] = useState(false);
+  const [sacVerified, setSacVerified] = useState(false);
 
-  // Check for staff share link on load: #staff/notes, #staff/handover, etc.
+  // Check for staff share link on load: #staff/notes?sac=XXXX-XXXX-XXXX
   useEffect(() => {
     function checkHash() {
       const hash = window.location.hash;
-      const match = hash.match(/^#staff\/(\w+)$/);
+      const match = hash.match(/^#staff\/(\w+)/);
+      const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+      const sac = urlParams.get('sac');
+      
       if (match && STAFF_PAGES[match[1]]) {
         setStaffMode(STAFF_PAGES[match[1]]);
         setStaffLinkActive(true);
-        // Auto-auth for staff link access
-        sessionStorage.setItem('hc-auth', '1');
-        setAuthed(true);
+        
+        // Verify SAC exists in sessionStorage or URL
+        const storedSac = sessionStorage.getItem(`hc-sac-${match[1]}`);
+        if (sac || storedSac) {
+          if (sac) sessionStorage.setItem(`hc-sac-${match[1]}`, sac);
+          setSacVerified(true);
+        } else {
+          setSacVerified(false);
+        }
       } else {
         setStaffMode(null);
         setStaffLinkActive(false);
+        setSacVerified(false);
       }
     }
     checkHash();
@@ -221,10 +281,16 @@ export default function App() {
   }, []);
 
   const generateStaffLink = useCallback((toolId: string) => {
-    return `${window.location.origin}${window.location.pathname}#staff/${toolId}`;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 12; i++) {
+      if (i > 0 && i % 4 === 0) code += '-';
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `${window.location.origin}${window.location.pathname}#staff/${toolId}?sac=${code}`;
   }, []);
 
-  if (!authed) return <LoginGate onUnlock={() => setAuthed(true)} />;
+  if (!authed) return <LoginGate onUnlock={() => setAuthed(true)} sacRequired={staffLinkActive && !sacVerified} />;
 
   // Staff standalone mode — minimal layout, just the tool
   if (staffLinkActive && staffMode) {

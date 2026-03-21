@@ -23,7 +23,10 @@ function generateQualityMeeting(data: WeekSummary): string {
       <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #0f766e; text-transform: uppercase; letter-spacing: -0.02em;">Quality & Performance Meeting</h1>
       <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">WEEK: ${data.dateFrom || '___'} — ${data.dateTo || '___'} · ${data.totalEntries} ENTRIES ANALYSED</p>
     </div>
-    <img src="/hazelcare-logo.png" style="height: 50px;" />
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #0f766e; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
   </div>
 
   <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
@@ -125,7 +128,10 @@ function generateIncidentReport(data: WeekSummary): string {
       <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.02em;">Incident Report</h1>
       <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
     </div>
-    <img src="/hazelcare-logo.png" style="height: 50px;" />
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: #dc2626; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
   </div>
   <p style="font-size: 13px; font-weight: 600; margin-bottom: 24px; background: #fef2f2; color: #b91c1c; padding: 12px 20px; border-radius: 8px; border: 1px solid #fecaca;">
     ${incidents.length} CRITICAL INCIDENTS IDENTIFIED FROM ${data.totalEntries} REGISTRY ENTRIES
@@ -161,7 +167,10 @@ function generateDailyQuality(data: WeekSummary): string {
       <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: ${COLOR}; text-transform: uppercase; letter-spacing: -0.02em;">Daily Quality Briefing</h1>
       <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()}</p>
     </div>
-    <img src="/hazelcare-logo.png" style="height: 50px;" />
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="font-weight: 900; font-size: 12px; color: ${COLOR}; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
+      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
+    </div>
   </div>
 
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">

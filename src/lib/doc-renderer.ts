@@ -49,16 +49,22 @@ const BASE_STYLES = `
     background: #fff;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
   }
 
-  /* Fix for blank pages */
-  .page:not(:first-child) {
-    page-break-before: always;
-  }
-
+  /* Fix for blank pages and scaling */
   @media print {
-    body { background: none; }
-    .page { margin: 0; padding: 15mm; width: 100%; border: none; min-height: 297mm; }
+    html, body { height: auto; }
+    .page { 
+      margin: 0 !important; 
+      padding: 15mm !important; 
+      width: 210mm !important; 
+      height: 297mm !important;
+      border: none !important; 
+      box-shadow: none !important;
+      page-break-after: always !important;
+      overflow: hidden;
+    }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
   }
