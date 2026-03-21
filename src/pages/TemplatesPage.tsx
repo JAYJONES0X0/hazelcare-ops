@@ -51,7 +51,9 @@ function generateQualityMeeting(data: WeekSummary): string {
     </div>
     <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 16px; text-align: center;">
       <div style="font-size: 32px; font-weight: 900; color: #0f766e; line-height: 1;">${houses.length}</div>
-      <div style="font-size: 9px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Houses</div>
+      <div style="font-size: 9px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
+    HAZEL CARE LTD
+  </div>
     </div>
   </div>`;
 
