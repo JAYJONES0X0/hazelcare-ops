@@ -99,6 +99,25 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {/* Intelligence Sync — Global Access */}
+        <div className="px-1.5 mb-2">
+          <button 
+            onClick={() => handleNav('upload')}
+            className={`w-full group flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-500 shadow-2xl active:scale-95 ${
+              page === 'upload' 
+                ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal translate-x-1' 
+                : 'border-white/5 glass-light hover:border-hc-teal/30 hover:bg-white/5'
+            }`}>
+            <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <span className="text-xl">🧠</span>
+            </div>
+            <div className="text-left">
+              <div className="text-[10px] font-black text-white uppercase tracking-tighter group-hover:text-hc-teal-light transition-colors">Sync Intelligence</div>
+              <div className="text-[8px] font-bold text-hc-muted uppercase tracking-widest opacity-40">Global Data Import</div>
+            </div>
+          </button>
+        </div>
+
         {navSections.map((section, si) => (
           <div key={si}>
             {section.heading && (

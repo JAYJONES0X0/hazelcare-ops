@@ -20,17 +20,17 @@ const FOOTER_HTML = `
 
 function renderHeader(title: string, subtitle: string, color: string) {
   return `
-  <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 4px solid ${color}; padding-bottom: 20px; margin-bottom: 30px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid ${color}; padding-bottom: 20px; margin-bottom: 30px;">
     <div>
-      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: ${color}; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1;">${title}</h1>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: ${color}; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1.1;">${title}</h1>
       <p style="margin: 8px 0 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${subtitle}</p>
     </div>
-    <div style="display: flex; align-items: center; gap: 14px;">
-      <div style="text-align: right;">
-        <div style="font-weight: 900; font-size: 14px; color: ${color}; line-height: 1; letter-spacing: -0.02em;">HAZEL CARE</div>
-        <div style="font-weight: 800; font-size: 8px; color: ${color}; opacity: 0.6; letter-spacing: 0.2em; margin-top: 3px;">OPERATIONS</div>
+    <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+      <img src="/logo-icon-dark.png" style="height: 38px; width: 38px; border-radius: 8px; object-fit: contain;" />
+      <div style="text-align: left;">
+        <div style="font-weight: 900; font-size: 13px; color: ${color}; line-height: 1; letter-spacing: -0.02em;">HAZEL CARE</div>
+        <div style="font-weight: 800; font-size: 7px; color: ${color}; opacity: 0.6; letter-spacing: 0.2em; margin-top: 3px;">OPERATIONS</div>
       </div>
-      <img src="/logo-icon-dark.png" style="height: 42px; width: 42px; border-radius: 10px;" />
     </div>
   </div>`;
 }

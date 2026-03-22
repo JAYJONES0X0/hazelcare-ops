@@ -333,59 +333,143 @@ export function buildEasyReadHtml(client: FullClient): string {
   if (!cp) return 'No care plan data';
 
   const name = client.preferredName || client.name.split(' ')[0] || client.name;
+  
+  const domainIcons: Record<string, string> = {
+    'Environment & Physical Safety': '🛡️',
+    'Respiratory Health & Support': '🫁',
+    'Communication & Sensory Integration': '💬',
+    'Social Engagement & Relationships': '🤝',
+    'Life Skills & Daily Routine': '📋',
+    'Nutrition, Hydration & Diet': '🍽️',
+    'Continence & Personal Hygiene': '🚻',
+    'Adaptive Living Environment': '🌿',
+    'Rights, Choice & Inclusion': '⚖️',
+    'Intimacy & Personal Expression': '❤️',
+    'Financial Management & Autonomy': '💷',
+    'Holistic Health & Vitality': '🩺',
+    'Infection Control & Public Health': '🧴',
+    'Medication Management & Safety': '💊',
+    'Mental Health & Emotional Wellbeing': '🧠',
+    'Mobility, Movement & Exercise': '🏃',
+    'Pain Management & Comfort': '⚡',
+    'Personal Care & Physical Presentation': '🪥',
+    'Skin Integrity & Pressure Care': '🩹',
+    'Rest & Sleep Patterns': '😴',
+    'Cultural, Spiritual & Personal Beliefs': '🕊️',
+  };
+
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     @page { margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
-    body { font-family: 'Inter', sans-serif; color: #1a1a2e; line-height: 1.6; margin: 0; padding: 0; font-size: 16px; }
-    .page { width: 210mm; min-height: 297mm; padding: 18mm; margin: 0 auto; background: #fff; display: flex; flex-direction: column; }
+    body { font-family: 'Inter', sans-serif; color: #1a1a2e; line-height: 1.6; margin: 0; padding: 0; font-size: 18px; background: #f8fafc; }
+    .page { width: 210mm; min-height: 297mm; padding: 25mm; margin: 0 auto; background: #fff; display: flex; flex-direction: column; position: relative; }
     .page:not(:first-child) { page-break-before: always; }
-    @media print { body { padding: 10mm; } .page { margin: 0; padding: 0; width: 100%; min-height: 297mm; } }
-    h1 { font-size: 32px; font-weight: 800; color: #0f766e; margin: 0 0 10px; }
-    h2 { font-size: 24px; font-weight: 800; color: #0f766e; margin: 30px 0 15px; border-bottom: 3px solid #0f766e; }
-    .card { background: #f0fdfa; border: 2px solid #0f766e; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
-    table { width: 100%; border-collapse: collapse; border: 2px solid #e2e8f0; margin: 20px 0; }
-    th { background: #0f766e; color: #fff; padding: 12px; font-size: 14px; text-align: left; }
-    td { padding: 15px; border: 1px solid #e2e8f0; font-size: 16px; vertical-align: top; }
+    @media print { body { background: #fff; } .page { margin: 0; padding: 15mm; width: 100%; min-height: 297mm; border: none; box-shadow: none; } }
+    
+    .logo-box { display: flex; align-items: center; gap: 20px; margin-bottom: 40px; border-bottom: 4px solid #0f766e; padding-bottom: 20px; }
+    .logo-img { height: 60px; width: 60px; border-radius: 12px; object-fit: contain; }
+    .brand-text { font-weight: 900; font-size: 20px; color: #0c1829; letter-spacing: -0.02em; }
+    
+    h1 { font-size: 48px; font-weight: 800; color: #0f766e; margin: 40px 0 10px; letter-spacing: -0.04em; line-height: 1; }
+    h2 { font-size: 28px; font-weight: 800; color: #0f766e; margin: 0 0 20px; border-bottom: 3px solid #f1f5f9; padding-bottom: 10px; }
+    
+    .intro-card { background: #f0fdfa; border: 3px solid #0f766e; border-radius: 24px; padding: 30px; margin-bottom: 30px; font-size: 22px; font-weight: 600; color: #0f766e; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+    .info-pill { background: #fff; border: 2px solid #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; }
+    .info-label { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+    
+    .domain-header { display: flex; align-items: center; gap: 20px; margin-bottom: 25px; }
+    .domain-icon { font-size: 50px; background: #f0fdfa; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; border-radius: 24px; border: 3px solid #0f766e; }
+    .domain-title { font-size: 32px; font-weight: 900; color: #0c1829; line-height: 1.1; }
+    
+    .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .content-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 20px; padding: 20px; height: 100%; }
+    .card-label { font-size: 14px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .card-text { font-size: 18px; font-weight: 500; color: #1e293b; line-height: 1.5; }
+    
+    .footer { margin-top: auto; padding-top: 20px; border-top: 2px solid #f1f5f9; text-align: center; font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; }
   </style></head><body>`;
 
-  // Cover
-  html += `<div class="page" style="justify-content: center; text-align: center;">
-    <img src="/logo-icon-dark.png" style="height: 80px; margin-bottom: 30px;" onerror="this.style.display='none'"/>
-    <h1 style="font-size: 42px;">My Support Plan</h1>
-    <p style="font-size: 24px; color: #64748b; font-weight: 600;">This plan is for ${client.name}</p>
-    <div style="margin-top: 40px; font-size: 18px; color: #94a3b8;">Date: ${cp.planDate}</div>
+  // Cover Page
+  html += `<div class="page">
+    <div class="logo-box">
+      <img src="/logo-icon-dark.png" class="logo-img" onerror="this.style.display='none'"/>
+      <div class="brand-text">HAZEL CARE OPERATIONS</div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+      <div style="font-size: 120px; margin-bottom: 20px;">👋</div>
+      <h1>Hello ${name}</h1>
+      <p style="font-size: 24px; color: #64748b; font-weight: 600; margin-bottom: 60px;">This is your Support Plan.</p>
+      
+      <div class="intro-card">It helps staff know how to support you best.</div>
+      
+      <div class="info-grid" style="width: 100%; max-width: 500px;">
+        <div class="info-pill"><div class="info-label">Today's Date</div><div style="font-weight: 800;">${new Date().toLocaleDateString('en-GB')}</div></div>
+        <div class="info-pill"><div class="info-label">Plan Version</div><div style="font-weight: 800;">${cp.planDate}</div></div>
+      </div>
+    </div>
+    <div class="footer">Hazel Care Ltd</div>
   </div>`;
 
-  // About Me
+  // About Me Page
   html += `<div class="page">
     <h2>About Me</h2>
-    <div class="card"><p>${cp.biography || 'Information about me will be here.'}</p></div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-      <div class="card"><strong>My Name:</strong><br/>${client.name}</div>
-      <div class="card"><strong>I like to be called:</strong><br/>${name}</div>
+    <div class="content-card" style="margin-bottom: 30px; border-color: #0f766e; border-width: 3px;">
+      <div class="card-label">My Story</div>
+      <div class="card-text" style="font-size: 20px;">${cp.biography || 'Information about me will be here.'}</div>
     </div>
-    ${cp.criticalInfo ? `<div class="card" style="background:#fef2f2; border-color:#ef4444;"><strong>Important for staff to know:</strong><br/>${cp.criticalInfo}</div>` : ''}
+    
+    <div class="grid-box">
+      <div class="content-card">
+        <div class="card-label">My Full Name</div>
+        <div class="card-text">${client.name}</div>
+      </div>
+      <div class="content-card">
+        <div class="card-label">Call Me</div>
+        <div class="card-text">${name}</div>
+      </div>
+    </div>
+
+    ${cp.criticalInfo ? `
+    <div class="content-card" style="background: #fef2f2; border-color: #ef4444; margin-top: 20px;">
+      <div class="card-label" style="color: #ef4444;">⚠️ Important for staff to know</div>
+      <div class="card-text" style="font-weight: 700; color: #b91c1c;">${cp.criticalInfo}</div>
+    </div>` : ''}
+    <div class="footer">Hazel Care Ltd</div>
   </div>`;
 
-  // Domains
+  // Domain Pages
   cp.domains.filter(d => d.enabled).forEach(d => {
     html += `<div class="page">
-      <h1 style="border-bottom: 4px solid #0f766e; padding-bottom: 10px;">${d.title}</h1>
-      <table>
-        <tr>
-          <th style="width: 25%;">What I need help with</th>
-          <th style="width: 25%;">What I can do myself</th>
-          <th style="width: 25%;">Risks to watch for</th>
-          <th style="width: 25%;">How staff can help me</th>
-        </tr>
-        <tr>
-          <td>${d.identifiedNeed || '—'}</td>
-          <td>I can do some things on my own and staff help me with the rest.</td>
-          <td>${d.riskTitle || 'No big risks here.'}</td>
-          <td>${d.howToAchieve || 'Staff will support me as needed.'}</td>
-        </tr>
-      </table>
+      <div class="domain-header">
+        <div class="domain-icon">${domainIcons[d.title] || '📄'}</div>
+        <div class="domain-title">${d.title}</div>
+      </div>
+      
+      <div class="grid-box">
+        <div class="content-card" style="border-left: 8px solid #0f766e;">
+          <div class="card-label">🟢 What I can do</div>
+          <div class="card-text">I can do some things on my own and staff help me with the rest.</div>
+        </div>
+        <div class="content-card" style="border-left: 8px solid #f59e0b;">
+          <div class="card-label">🟡 What I need help with</div>
+          <div class="card-text">${d.identifiedNeed || '—'}</div>
+        </div>
+      </div>
+
+      <div class="content-card" style="border-top: 8px solid #0f766e; margin-bottom: 30px;">
+        <div class="card-label">🤝 How staff can help me</div>
+        <div class="card-text" style="font-size: 20px; font-weight: 600;">${d.howToAchieve || 'Staff will support me as needed.'}</div>
+      </div>
+
+      ${d.riskTitle ? `
+      <div class="content-card" style="background: #fffbeb; border-color: #f59e0b;">
+        <div class="card-label" style="color: #b45309;">⚠️ Risks to watch for</div>
+        <div class="card-text" style="font-weight: 700;">${d.riskTitle}</div>
+      </div>` : ''}
+      
+      <div class="footer">Hazel Care Ltd</div>
     </div>`;
   });
 
