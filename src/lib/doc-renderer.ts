@@ -108,17 +108,20 @@ const BASE_STYLES = `
 function renderCover(title: string, client: FullClient, planDate: string) {
   return `<div class="page"><div class="cover">
     <div>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img src="/logo-icon-dark.png" style="height: 48px; border-radius: 8px;" onerror="this.style.display='none'"/>
-          <div style="font-weight: 800; font-size: 14px; color: ${NAVY};">HAZEL CARE LTD</div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <img src="/logo-icon-dark.png" style="height: 50px; width: 50px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" onerror="this.style.display='none'"/>
+          <div>
+            <div style="font-weight: 900; font-size: 16px; color: ${NAVY}; letter-spacing: -0.02em; line-height: 1;">HAZEL CARE</div>
+            <div style="font-weight: 800; font-size: 9px; color: ${TEAL}; letter-spacing: 0.2em; margin-top: 4px; opacity: 0.8;">OPERATIONS</div>
+          </div>
         </div>
-        <div class="badge">Confidential</div>
+        <div class="badge" style="background: ${RED}15; color: ${RED}; border: 1px solid ${RED}30;">Confidential</div>
       </div>
-      <div style="margin-top: 80px;">
-        <div class="accent-bar"></div>
-        <h1>${title}</h1>
-        <p style="font-size: 16px; color: ${MUTED}; font-weight: 500; margin-top: 8px;">Prepared for ${client.name}</p>
+      <div style="margin-top: 100px;">
+        <div class="accent-bar" style="width: 80px; height: 8px;"></div>
+        <h1 style="font-size: 38px; line-height: 1.1;">${title}</h1>
+        <p style="font-size: 18px; color: ${MUTED}; font-weight: 600; margin-top: 12px; letter-spacing: -0.01em;">Prepared for ${client.name}</p>
       </div>
       <div class="info-grid">
         <div>

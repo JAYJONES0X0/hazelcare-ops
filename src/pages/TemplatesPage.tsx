@@ -12,37 +12,47 @@ function truncate(s: string, max: number): string {
 }
 
 const FOOTER_HTML = `
-  <div style="text-align: center; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-top: 40px; padding-top: 16px; border-top: 2px solid #f1f5f9; text-transform: uppercase;">
-    HAZEL CARE LTD
+  <div style="margin-top: auto; padding-top: 30px; text-align: center; border-top: 1px solid #f1f5f9;">
+    <div style="color: #94a3b8; font-size: 10px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase;">HAZEL CARE LTD</div>
+    <div style="color: #cbd5e1; font-size: 8px; font-weight: 600; margin-top: 4px; letter-spacing: 0.1em;">SECURE OPERATIONAL DOCUMENT</div>
   </div>
 `;
 
+function renderHeader(title: string, subtitle: string, color: string) {
+  return `
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 4px solid ${color}; padding-bottom: 20px; margin-bottom: 30px;">
+    <div>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: ${color}; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1;">${title}</h1>
+      <p style="margin: 8px 0 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${subtitle}</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="text-align: right;">
+        <div style="font-weight: 900; font-size: 14px; color: ${color}; line-height: 1; letter-spacing: -0.02em;">HAZEL CARE</div>
+        <div style="font-weight: 800; font-size: 8px; color: ${color}; opacity: 0.6; letter-spacing: 0.2em; margin-top: 3px;">OPERATIONS</div>
+      </div>
+      <img src="/logo-icon-dark.png" style="height: 42px; width: 42px; border-radius: 10px;" />
+    </div>
+  </div>`;
+}
+
 function generateQualityMeeting(data: WeekSummary): string {
+  const COLOR = '#0f766e';
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
   const redFlags = data.allFlags.red;
   const amberFlags = data.allFlags.amber;
 
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #0f766e; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #0f766e; text-transform: uppercase; letter-spacing: -0.02em;">Quality & Performance Meeting</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">WEEK: ${data.dateFrom || '___'} — ${data.dateTo || '___'} · ${data.totalEntries} ENTRIES ANALYSED</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #0f766e; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Quality & Performance Meeting', `WEEK: ${data.dateFrom || '___'} — ${data.dateTo || '___'} · ${data.totalEntries} ENTRIES`, COLOR);
 
+  html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
     <tr><td style="padding: 10px 15px; background: #f8fafc; font-weight: 700; width: 180px; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px;">Date</td><td style="padding: 10px 15px; border: 1px solid #e2e8f0;">${new Date().toLocaleDateString('en-GB')}</td></tr>
     <tr><td style="padding: 10px 15px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px;">Chair</td><td style="padding: 10px 15px; border: 1px solid #e2e8f0;"></td></tr>
     <tr><td style="padding: 10px 15px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px;">Attendees</td><td style="padding: 10px 15px; border: 1px solid #e2e8f0;">${data.carers.slice(0, 8).join(', ')}</td></tr>
   </table>
 
-  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Weekly Summary</h2>
-  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+  <h2 style="font-size: 15px; font-weight: 800; color: ${COLOR}; border-bottom: 2px solid ${COLOR}; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Weekly Summary</h2>
+  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px;">
     <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px; text-align: center;">
       <div style="font-size: 32px; font-weight: 900; color: #ef4444; line-height: 1;">${redFlags.length}</div>
       <div style="font-size: 9px; font-weight: 700; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Red Flags</div>
@@ -56,8 +66,8 @@ function generateQualityMeeting(data: WeekSummary): string {
       <div style="font-size: 9px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Routine</div>
     </div>
     <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 16px; text-align: center;">
-      <div style="font-size: 32px; font-weight: 900; color: #0f766e; line-height: 1;">${houses.length}</div>
-      <div style="font-size: 9px; font-weight: 700; color: #0f766e; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Houses</div>
+      <div style="font-size: 32px; font-weight: 900; color: ${COLOR}; line-height: 1;">${houses.length}</div>
+      <div style="font-size: 9px; font-weight: 700; color: ${COLOR}; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">Houses</div>
     </div>
   </div>`;
 
@@ -71,7 +81,7 @@ function generateQualityMeeting(data: WeekSummary): string {
     html += `</table>`;
   }
 
-  html += `<h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">House Breakdown</h2>`;
+  html += `<h2 style="font-size: 15px; font-weight: 800; color: ${COLOR}; border-bottom: 2px solid ${COLOR}; padding-bottom: 6px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">House Breakdown</h2>`;
   for (const house of houses) {
     const hasIssues = house.flags.red > 0 || house.flags.amber > 0;
     html += `
@@ -98,7 +108,7 @@ function generateQualityMeeting(data: WeekSummary): string {
 
     for (const [label, items] of sections) {
       if (items.length > 0) {
-        html += `<div style="margin-bottom: 12px;"><strong style="color: #0f766e; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">${label}:</strong>`;
+        html += `<div style="margin-bottom: 12px;"><strong style="color: ${COLOR}; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">${label}:</strong>`;
         for (const item of items.slice(0, 10)) {
           html += `<div style="margin-left: 12px; margin-top: 6px; color: #475569; line-height: 1.5; position: relative; padding-left: 12px;">
             <span style="position: absolute; left: 0; color: #94a3b8;">•</span>
@@ -112,7 +122,7 @@ function generateQualityMeeting(data: WeekSummary): string {
   }
 
   html += `
-  <h2 style="font-size: 15px; font-weight: 800; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-top: 32px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Decisions & Actions</h2>
+  <h2 style="font-size: 15px; font-weight: 800; color: ${COLOR}; border-bottom: 2px solid ${COLOR}; padding-bottom: 6px; margin-top: 32px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Decisions & Actions</h2>
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">
     <tr style="background: #f8fafc;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 40px;">ID</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Strategic Action</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 150px;">Owner</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 100px;">Deadline</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 80px;">Status</th></tr>
     <tr><td style="padding: 15px 10px; border: 1px solid #e2e8f0;">1</td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0;"></td><td style="padding: 15px 10px; border: 1px solid #e2e8f0; font-weight: 700; color: #94a3b8;">OPEN</td></tr>
@@ -124,19 +134,12 @@ function generateQualityMeeting(data: WeekSummary): string {
 }
 
 function generateIncidentReport(data: WeekSummary): string {
+  const COLOR = '#dc2626';
   const incidents = [...data.allFlags.red, ...data.allFlags.amber.filter(e => e.flags.some(f => f.includes('incident') || f.includes('police') || f.includes('ambulance')))];
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.02em;">Incident Report</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #dc2626; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Incident Report', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+
+  html += `
   <p style="font-size: 13px; font-weight: 600; margin-bottom: 24px; background: #fef2f2; color: #b91c1c; padding: 12px 20px; border-radius: 8px; border: 1px solid #fecaca;">
     ${incidents.length} CRITICAL INCIDENTS IDENTIFIED FROM ${data.totalEntries} REGISTRY ENTRIES
   </p>`;
@@ -164,19 +167,10 @@ function generateDailyQuality(data: WeekSummary): string {
   const amberFlags = data.allFlags.amber;
   const allFlagged = [...redFlags, ...amberFlags];
 
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid ${COLOR}; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: ${COLOR}; text-transform: uppercase; letter-spacing: -0.02em;">Daily Quality Briefing</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()}</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: ${COLOR}; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Daily Quality Briefing', `DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()}`, COLOR);
 
+  html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">
     <tr style="background: #eff6ff;">
       <th style="padding: 10px; text-align: left; border: 1px solid #bfdbfe; text-transform: uppercase;">House</th>
@@ -210,19 +204,12 @@ function generateDailyQuality(data: WeekSummary): string {
 }
 
 function generateFinanceReport(data: WeekSummary): string {
+  const COLOR = '#059669';
   const financeEntries = Object.values(data.houses).flatMap(h => h.entries.filter(e => e.flags.some(f => f.toLowerCase().includes('finance') || f.toLowerCase().includes('money') || f.toLowerCase().includes('shopping'))));
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #059669; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #059669; text-transform: uppercase; letter-spacing: -0.02em;">Finance & Petty Cash Audit</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #059669; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Finance & Petty Cash Audit', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+
+  html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
     <tr style="background: #f0fdf4;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Transaction Details</th></tr>`;
   for (const e of financeEntries) {
@@ -233,19 +220,12 @@ function generateFinanceReport(data: WeekSummary): string {
 }
 
 function generateMedicationAudit(data: WeekSummary): string {
+  const COLOR = '#0891b2';
   const medEntries = Object.values(data.houses).flatMap(h => h.medication);
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #0891b2; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #0891b2; text-transform: uppercase; letter-spacing: -0.02em;">Medication Administration Audit</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #0891b2; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Medication Administration Audit', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+
+  html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
     <tr style="background: #ecfeff;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Admin Details</th></tr>`;
   for (const e of medEntries) {
@@ -256,19 +236,10 @@ function generateMedicationAudit(data: WeekSummary): string {
 }
 
 function generateHandoverReport(data: WeekSummary): string {
+  const COLOR = '#d97706';
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #d97706; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #d97706; text-transform: uppercase; letter-spacing: -0.02em;">Shift Handover Report</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">DATE: ${new Date().toLocaleDateString('en-GB')} · ALL HOUSES</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #d97706; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>`;
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Shift Handover Report', `DATE: ${new Date().toLocaleDateString('en-GB')} · ALL HOUSES`, COLOR);
 
   for (const house of houses) {
     const concerns = [...house.incidents, ...house.safeguarding, ...(house.flags.red > 0 ? house.entries.filter(e => e.severity === 'red') : [])];
@@ -276,7 +247,7 @@ function generateHandoverReport(data: WeekSummary): string {
     <div style="margin-bottom: 30px; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
       <div style="background: #fffbeb; padding: 12px 20px; border-bottom: 1px solid #fde68a; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">${house.name}</div>
       <div style="padding: 20px;">
-        <div style="margin-bottom: 15px;"><strong style="font-size: 10px; color: #d97706; text-transform: uppercase;">Key Concerns:</strong>
+        <div style="margin-bottom: 15px;"><strong style="font-size: 10px; color: ${COLOR}; text-transform: uppercase;">Key Concerns:</strong>
           ${concerns.length > 0 ? concerns.slice(0, 5).map(c => `<div style="margin-top: 8px; font-size: 12px; border-left: 3px solid #fde68a; padding-left: 12px; color: #475569;">${c.client ? `<strong>${c.client}:</strong> ` : ''}${truncate(c.entry, 200)}</div>`).join('') : '<div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">No critical concerns flagged for this period.</div>'}
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
@@ -291,44 +262,30 @@ function generateHandoverReport(data: WeekSummary): string {
 }
 
 function generateSupervisionReport(): string {
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #7c3aed; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: -0.02em;">Staff Supervision Record</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">CONFIDENTIAL PERSONNEL DOCUMENT</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #7c3aed; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  const COLOR = '#7c3aed';
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Staff Supervision Record', `CONFIDENTIAL PERSONNEL DOCUMENT`, COLOR);
+
+  html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px;">
     <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Staff Name</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Supervisor</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
     <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Date</td><td style="padding: 12px; border: 1px solid #e2e8f0;">${new Date().toLocaleDateString('en-GB')}</td><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Location</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
   </table>
-  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">1. Performance Review</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
-  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
-  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: #7c3aed; border-bottom: 1px solid #ddd; padding-bottom: 5px;">3. Health & Wellbeing</h2><div style="height: 100px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: ${COLOR}; border-bottom: 1px solid #ddd; padding-bottom: 5px;">1. Performance Review</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: ${COLOR}; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
+  <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: ${COLOR}; border-bottom: 1px solid #ddd; padding-bottom: 5px;">3. Health & Wellbeing</h2><div style="height: 100px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-top: 40px; display: flex; justify-content: space-between;"><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Supervisor Signature</div><div style="width: 45%; border-top: 1px solid #334155; padding-top: 8px; font-size: 10px; font-weight: 700;">Staff Signature</div></div>
   ` + FOOTER_HTML + `</div>`;
   return html;
 }
 
 function generateSafeguardingReport(data: WeekSummary): string {
+  const COLOR = '#be185d';
   const safeguarding = Object.values(data.houses).flatMap(h => h.safeguarding);
-  let html = `
-<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff;">
-  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #be185d; padding-bottom: 16px; margin-bottom: 24px;">
-    <div>
-      <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #be185d; text-transform: uppercase; letter-spacing: -0.02em;">Safeguarding Concern Audit</h1>
-      <p style="margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #64748b;">STRICTLY CONFIDENTIAL · PROTECTED DATA</p>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="font-weight: 900; font-size: 12px; color: #be185d; text-align: right; line-height: 1;">HAZEL CARE<br/><span style="font-size: 8px; opacity: 0.6;">OPERATIONS</span></div>
-      <img src="/logo-icon-dark.png" style="height: 40px; border-radius: 8px;" />
-    </div>
-  </div>
+  let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
+  html += renderHeader('Safeguarding Concern Audit', `STRICTLY CONFIDENTIAL · PROTECTED DATA`, COLOR);
+
+  html += `
   <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; color: #9d174d; font-size: 13px; font-weight: 700;">
     ${safeguarding.length} SAFEGUARDING CONCERNS IDENTIFIED IN THIS PERIOD
   </div>`;
