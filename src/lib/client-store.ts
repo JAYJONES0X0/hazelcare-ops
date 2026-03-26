@@ -213,6 +213,76 @@ export function findExistingClient(name: string, nhs: string): FullClient | unde
   return undefined;
 }
 
+function normalizeName(v: string): string {
+  return (v || '')
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function scoreNameSimilarity(a: string, b: string): number {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const aParts = new Set(na.split(' '));
+  const bParts = new Set(nb.split(' '));
+  const overlap = [...aParts].filter(p => bParts.has(p)).length;
+  return overlap / Math.max(aParts.size, bParts.size, 1);
+}
+
+export interface ClientMatchCandidate {
+  client: FullClient;
+  score: number;
+  strategy: 'nhs' | 'name_dob' | 'name_fuzzy';
+}
+
+export interface ClientResolutionResult {
+  best: ClientMatchCandidate | null;
+  candidates: ClientMatchCandidate[];
+  requiresManualSelection: boolean;
+}
+
+export function resolveClientMatch(params: { name?: string; nhs?: string; dob?: string }): ClientResolutionResult {
+  const clients = loadClients();
+  const candidates: ClientMatchCandidate[] = [];
+  const nhs = (params.nhs || '').replace(/\s/g, '');
+  const name = params.name || '';
+  const dob = params.dob || '';
+
+  if (nhs.length > 3) {
+    for (const c of clients) {
+      const cNhs = (c.nhs || '').replace(/\s/g, '');
+      if (cNhs && cNhs === nhs) {
+        candidates.push({ client: c, score: 1, strategy: 'nhs' });
+      }
+    }
+  }
+
+  if (!candidates.length && name && dob) {
+    for (const c of clients) {
+      if ((c.dob || '').trim() && c.dob.trim() === dob.trim() && normalizeName(c.name) === normalizeName(name)) {
+        candidates.push({ client: c, score: 0.95, strategy: 'name_dob' });
+      }
+    }
+  }
+
+  if (!candidates.length && name) {
+    for (const c of clients) {
+      const score = scoreNameSimilarity(c.name, name);
+      if (score >= 0.6) {
+        candidates.push({ client: c, score, strategy: 'name_fuzzy' });
+      }
+    }
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0] || null;
+  const requiresManualSelection = !best || best.score < 0.75;
+  return { best, candidates: candidates.slice(0, 5), requiresManualSelection };
+}
+
 export function deleteClient(id: string) {
   const clients = loadClients().filter(c => c.id !== id);
   saveClients(clients);

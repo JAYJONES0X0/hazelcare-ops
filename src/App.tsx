@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const PASSWORD = 'hazelcare2026';
-
 // Staff share link pages — these can be opened standalone via hash
 const STAFF_PAGES: Record<string, Page> = {
   'notes': 'notes',
@@ -10,24 +8,15 @@ const STAFF_PAGES: Record<string, Page> = {
   'incidents': 'incidents',
 };
 
-function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequired?: boolean }) {
+function LoginGate({ onUnlock, sacRequired, staffToolId, staffToken }: { onUnlock: () => void; sacRequired?: boolean; staffToolId?: string | null; staffToken?: string | null }) {
   const [step, setStep] = useState<'password' | 'email' | 'code' | 'sac'>(sacRequired ? 'sac' : 'password');
-  const [sac, setSac] = useState(() => {
-    const pending = sessionStorage.getItem('hc-sac-pending');
-    if (!pending) return '';
-    // Format if found
-    const val = pending.toUpperCase().replace(/[^A-Z2-9]/g, '');
-    let formatted = '';
-    for(let i=0; i<val.length && i<12; i++) {
-      if(i > 0 && i % 4 === 0) formatted += '-';
-      formatted += val[i];
-    }
-    return formatted;
-  });
+  const [sac, setSac] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [token, setToken] = useState('');
+  const [codeMethod, setCodeMethod] = useState<'otp' | 'totp' | 'recovery'>('otp');
+  const [otpUnavailable, setOtpUnavailable] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -36,44 +25,61 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
     if (sacRequired) setStep('sac');
   }, [sacRequired]);
 
-  function handlePassword(e: React.FormEvent) {
+  async function handlePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (password === PASSWORD) {
-      setError('');
-      if (sacRequired) {
-        // SAC + Password is enough for staff tool access
-        sessionStorage.setItem('hc-auth', '1');
-        onUnlock();
-      } else {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setError('');
         setStep('email');
+      } else {
+        setError('Incorrect password');
+        setPassword('');
       }
-    } else {
-      setError('Incorrect password');
-      setPassword('');
+    } catch {
+      setError('Could not verify password');
+    } finally {
+      setLoading(false);
     }
   }
 
   function handleSac(e: React.FormEvent) {
     e.preventDefault();
-    const formatted = sac.toUpperCase().replace(/[^A-Z2-9]/g, '');
-    if (formatted.length >= 12) {
-      setError('');
-      setStep('password');
-    } else {
-      setError('Invalid Access Code');
+    const formatted = sac.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 12);
+    if (!staffToken || !staffToolId) {
+      setError('Invalid or expired staff link');
+      return;
     }
+    setLoading(true);
+    setError('');
+    fetch('/api/verify-staff-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: staffToken, code: formatted, toolId: staffToolId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (formatted.length === 12 && data.valid) {
+          sessionStorage.setItem('hc-sac-verified', '1');
+          setStep('email');
+        } else {
+          setError('Invalid or expired access code');
+        }
+      })
+      .catch(() => setError('Could not verify access code'))
+      .finally(() => setLoading(false));
   }
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes('@')) { setError('Enter a valid email'); return; }
-    
-    // Emergency Auth Bypass — check if API is likely down
-    if (email === 'emergency@hazelcare.co.uk' && password === PASSWORD) {
-      sessionStorage.setItem('hc-auth', '1');
-      onUnlock();
-      return;
-    }
 
     setLoading(true);
     setError('');
@@ -86,9 +92,14 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
       const data = await res.json();
       if (!res.ok || !data.token) throw new Error('Failed');
       setToken(data.token);
+      setCodeMethod('otp');
+      setOtpUnavailable(false);
       setStep('code');
     } catch {
-      setError('API Offline. Contact Manager.');
+      setOtpUnavailable(true);
+      setCodeMethod('totp');
+      setError('OTP delivery is unavailable. Use Authenticator or Emergency Code.');
+      setStep('code');
     } finally {
       setLoading(false);
     }
@@ -99,17 +110,29 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, token })
-      });
-      const data = await res.json();
-      if (data.valid) {
-        sessionStorage.setItem('hc-auth', '1');
+      let valid = false;
+      if (codeMethod === 'otp') {
+        const res = await fetch('/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, token })
+        });
+        const data = await res.json();
+        valid = !!data.valid;
+      } else {
+        const res = await fetch('/api/verify-backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, method: codeMethod })
+        });
+        const data = await res.json();
+        valid = !!data.valid;
+      }
+
+      if (valid) {
         onUnlock();
       } else {
-        setError('Invalid or expired code');
+        setError(codeMethod === 'otp' ? 'Invalid or expired code' : 'Invalid backup code');
         setCode('');
       }
     } catch {
@@ -148,7 +171,7 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
             {step === 'sac' && 'Staff Access Code'}
             {step === 'password' && 'Sign In'}
             {step === 'email' && 'Staff Verification'}
-            {step === 'code' && `Code Verification`}
+            {step === 'code' && `Verification`}
           </p>
         </div>
 
@@ -176,11 +199,11 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-black tracking-widest text-lg" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
-              <button type="submit" disabled={sac.replace(/-/g, '').length < 12} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">Verify Access</button>
+              <button type="submit" disabled={loading || sac.replace(/-/g, '').length < 12} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">{loading ? 'VERIFYING...' : 'Verify Access'}</button>
             </form>
           )}
 
-          {step === 'password' && (
+          {step === 'password' && !sacRequired && (
             <form onSubmit={handlePassword} className="flex flex-col gap-6">
               <div className="group">
                 <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">PASSWORD</label>
@@ -189,7 +212,9 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner text-center font-black tracking-widest" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
-              <button type="submit" className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all">Sign In</button>
+              <button type="submit" disabled={loading} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
+                {loading ? 'VERIFYING...' : 'Sign In'}
+              </button>
             </form>
           )}
 
@@ -212,19 +237,46 @@ function LoginGate({ onUnlock, sacRequired }: { onUnlock: () => void; sacRequire
           {step === 'code' && (
             <form onSubmit={handleCode} className="flex flex-col gap-6">
               <div className="bg-hc-teal/5 border border-hc-teal/20 rounded-2xl px-5 py-3 text-center mb-2">
-                <div className="text-hc-teal-light text-[10px] font-black uppercase tracking-widest leading-relaxed">Verification code sent. Enter it below.</div>
+                <div className="text-hc-teal-light text-[10px] font-black uppercase tracking-widest leading-relaxed">
+                  {codeMethod === 'otp' && 'Verification code sent. Enter it below.'}
+                  {codeMethod === 'totp' && 'Enter 6-digit Authenticator code.'}
+                  {codeMethod === 'recovery' && 'Enter your emergency recovery code.'}
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <button type="button" onClick={() => { setCodeMethod('otp'); setError(''); }} disabled={otpUnavailable}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border ${codeMethod === 'otp' ? 'border-hc-teal/50 text-white bg-hc-teal/10' : 'border-white/10 text-hc-muted'} ${otpUnavailable ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                  OTP
+                </button>
+                <button type="button" onClick={() => { setCodeMethod('totp'); setError(''); }}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border ${codeMethod === 'totp' ? 'border-hc-teal/50 text-white bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>
+                  Authenticator
+                </button>
+                <button type="button" onClick={() => { setCodeMethod('recovery'); setError(''); }}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] border ${codeMethod === 'recovery' ? 'border-hc-teal/50 text-white bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>
+                  Emergency
+                </button>
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">6-DIGIT CODE</label>
-                <input type="text" value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-                  placeholder="000000" autoFocus inputMode="numeric" maxLength={6}
+                <label className="section-header text-[9px] mb-2 ml-1 block opacity-40">
+                  {codeMethod === 'recovery' ? 'RECOVERY CODE' : '6-DIGIT CODE'}
+                </label>
+                <input type="text" value={code}
+                  onChange={e => {
+                    const next = codeMethod === 'recovery'
+                      ? e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24)
+                      : e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setCode(next);
+                    setError('');
+                  }}
+                  placeholder={codeMethod === 'recovery' ? 'XXXX-XXXX-XXXX' : '000000'} autoFocus inputMode={codeMethod === 'recovery' ? 'text' : 'numeric'} maxLength={codeMethod === 'recovery' ? 24 : 6}
                   className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-hc-teal/50 shadow-inner tracking-[0.5em] text-center text-2xl font-black" />
               </div>
               {error && <div className="text-flag-red text-[10px] font-black uppercase text-center animate-in shake duration-300">{error}</div>}
-              <button type="submit" disabled={loading || code.length < 6} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
+              <button type="submit" disabled={loading || (codeMethod === 'recovery' ? code.trim().length < 8 : code.length < 6)} className="btn-gradient py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
                 {loading ? 'VERIFYING...' : 'Verify'}
               </button>
-              <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); }} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Resend Code</button>
+              <button type="button" onClick={() => { setStep('email'); setCode(''); setError(''); setCodeMethod('otp'); }} className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] text-center hover:text-white transition-all">← Resend Code</button>
             </form>
           )}
         </div>
@@ -260,33 +312,40 @@ import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, sa
 export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency';
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('hc-auth') === '1');
+  const [authed, setAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
   const [staffMode, setStaffMode] = useState<Page | null>(null);
   const [staffLinkActive, setStaffLinkActive] = useState(false);
-  const [sacVerified, setSacVerified] = useState(false);
+  const [sacVerified, setSacVerified] = useState(() => sessionStorage.getItem('hc-sac-verified') === '1');
+  const [staffToken, setStaffToken] = useState<string | null>(null);
+  const [staffToolId, setStaffToolId] = useState<string | null>(null);
 
-  // Check for staff share link on load: #staff/notes?sac=XXXX-XXXX-XXXX
+  // Check for staff share link on load: #staff/notes?t=<signed_token>
   useEffect(() => {
     function checkHash() {
       const hash = window.location.hash;
       const match = hash.match(/^#staff\/(\w+)/);
       const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
-      const sac = urlParams.get('sac');
+      const token = urlParams.get('t');
       
       if (match && STAFF_PAGES[match[1]]) {
         setStaffMode(STAFF_PAGES[match[1]]);
         setStaffLinkActive(true);
+        setStaffToolId(match[1]);
         
-        // Auto-auth is gone — must always go through gate
-        // But we store the SAC if provided in the URL to help the LoginGate
-        if (sac) {
-          sessionStorage.setItem(`hc-sac-pending`, sac);
+        if (token) {
+          setStaffToken(token);
+          sessionStorage.removeItem('hc-sac-verified');
+          setSacVerified(false);
+        } else {
+          setStaffToken(null);
         }
-        setSacVerified(false); 
       } else {
         setStaffMode(null);
         setStaffLinkActive(false);
+        setStaffToken(null);
+        setStaffToolId(null);
+        sessionStorage.removeItem('hc-sac-verified');
         setSacVerified(false);
       }
     }
@@ -295,17 +354,18 @@ export default function App() {
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
-  const generateStaffLink = useCallback((toolId: string) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 12; i++) {
-      if (i > 0 && i % 4 === 0) code += '-';
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `${window.location.origin}${window.location.pathname}#staff/${toolId}?sac=${code}`;
+  const generateStaffLink = useCallback(async (toolId: string) => {
+    const res = await fetch('/api/issue-staff-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toolId }),
+    });
+    if (!res.ok) throw new Error('Failed to create secure staff link');
+    const data = await res.json();
+    return { link: data.link as string, code: data.code as string };
   }, []);
 
-  if (!authed) return <LoginGate onUnlock={() => setAuthed(true)} sacRequired={staffLinkActive && !sacVerified} />;
+  if (!authed) return <LoginGate onUnlock={() => setAuthed(true)} sacRequired={staffLinkActive && !sacVerified} staffToken={staffToken} staffToolId={staffToolId} />;
 
   // Staff standalone mode — minimal layout, just the tool
   if (staffLinkActive && staffMode) {
@@ -321,7 +381,7 @@ export default function App() {
   return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} />;
 }
 
-function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink: (id: string) => string; onClose: () => void }) {
+function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; onClose: () => void }) {
   const [actions, setActions] = useState<Action[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
 
@@ -369,7 +429,7 @@ function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink:
   );
 }
 
-function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p: Page) => void; generateStaffLink: (id: string) => string }) {
+function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p: Page) => void; generateStaffLink: (id: string) => Promise<{ link: string; code: string }> }) {
   const [weekData, setWeekData] = useState<WeekSummary | null>(null);
   const [actions, setActions] = useState<Action[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -403,12 +463,17 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
     saveIncidents(updated);
   }
 
-  function copyStaffLink(toolId: string) {
-    const link = generateStaffLink(toolId);
-    navigator.clipboard.writeText(link).then(() => {
+  async function copyStaffLink(toolId: string) {
+    try {
+      const { link, code } = await generateStaffLink(toolId);
+      const payload = `Hazel Care staff access\nLink: ${link}\nSecure Access Code: ${code}`;
+      await navigator.clipboard.writeText(payload);
       setShowShareModal(toolId);
       setTimeout(() => setShowShareModal(null), 2000);
-    });
+    } catch {
+      setShowShareModal('error');
+      setTimeout(() => setShowShareModal(null), 2000);
+    }
   }
 
   return (

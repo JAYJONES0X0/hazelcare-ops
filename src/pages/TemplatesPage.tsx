@@ -1,9 +1,15 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { WeekSummary, CareEntry, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
 
 interface Props {
   weekData: WeekSummary | null;
+}
+
+const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
+
+interface TemplateImportContext {
+  selectedTemplateIds?: TemplateType[];
 }
 
 function truncate(s: string, max: number): string {
@@ -321,7 +327,23 @@ function generateTemplate(type: TemplateType, data: WeekSummary): string {
 export function TemplatesPage({ weekData }: Props) {
   const [selected, setSelected] = useState<TemplateType | null>(null);
   const [generated, setGenerated] = useState('');
+  const [recommendedTemplateIds, setRecommendedTemplateIds] = useState<TemplateType[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TEMPLATE_CONTEXT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as TemplateImportContext;
+      const ids = parsed.selectedTemplateIds || [];
+      setRecommendedTemplateIds(ids);
+      if (ids.length > 0 && weekData) {
+        handleGenerate(ids[0]);
+      }
+    } catch {
+      setRecommendedTemplateIds([]);
+    }
+  }, [weekData]);
 
   function handleGenerate(type: TemplateType) {
     if (!weekData) return;
@@ -368,6 +390,8 @@ export function TemplatesPage({ weekData }: Props) {
             className={`text-left p-6 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden card-glow animate-in slide-in-from-bottom-4 ${
               selected === tpl.id
                 ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal'
+                : recommendedTemplateIds.includes(tpl.id)
+                ? 'border-hc-teal/20 glass-light hover:border-hc-teal/30 hover:bg-white/[0.02]'
                 : 'border-white/10 glass-light hover:border-hc-teal/30 hover:bg-white/[0.02]'
             }`}
             style={{ animationDelay: `${idx * 100}ms` }}
@@ -378,6 +402,11 @@ export function TemplatesPage({ weekData }: Props) {
             </div>
             <div className="text-sm font-black text-white mb-2 group-hover:text-hc-teal-light transition-colors tracking-tight leading-tight uppercase">{tpl.name}</div>
             <div className="text-[10px] font-medium text-hc-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity mb-6">{tpl.desc}</div>
+            {recommendedTemplateIds.includes(tpl.id) && (
+              <div className="mb-3 text-[9px] font-black text-hc-teal-light uppercase tracking-[0.2em]">
+                Recommended from import
+              </div>
+            )}
             <div className="mt-auto text-[9px] font-black flex items-center gap-2 uppercase tracking-[0.2em] transition-all group-hover:gap-3" style={{ color: tpl.color }}>
               Generate Report <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </div>

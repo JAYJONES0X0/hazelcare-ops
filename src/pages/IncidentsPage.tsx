@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Incident, IncidentStage } from '../lib/types';
 
 interface Props {
@@ -14,13 +15,23 @@ const STAGES: { id: IncidentStage; label: string; color: string; icon: string }[
 ];
 
 export function IncidentsPage({ incidents, onUpdate }: Props) {
+  const [lastTransition, setLastTransition] = useState<{ id: string; previous: IncidentStage } | null>(null);
+
   function advanceStage(incident: Incident) {
     const stageOrder: IncidentStage[] = ['logged', 'investigating', 'resolved', 'reported', 'closed'];
     const idx = stageOrder.indexOf(incident.stage);
     if (idx < stageOrder.length - 1) {
       const updated = incidents.map(i => i.id === incident.id ? { ...i, stage: stageOrder[idx + 1] } : i);
+      setLastTransition({ id: incident.id, previous: incident.stage });
       onUpdate(updated);
     }
+  }
+
+  function undoLastTransition() {
+    if (!lastTransition) return;
+    const updated = incidents.map(i => i.id === lastTransition.id ? { ...i, stage: lastTransition.previous } : i);
+    onUpdate(updated);
+    setLastTransition(null);
   }
 
   const byStage = STAGES.map(stage => ({
@@ -45,6 +56,14 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             </span>
           </div>
         </div>
+        {lastTransition && (
+          <button
+            onClick={undoLastTransition}
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
+          >
+            Undo Last Stage Change
+          </button>
+        )}
       </div>
 
       {/* Pipeline progress visualization */}
@@ -82,9 +101,8 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               {stage.items.map(incident => (
                 <div
                   key={incident.id}
-                  className={`glass-light border transition-all duration-500 rounded-2xl p-5 cursor-pointer card-glow interactive-row group/card active:scale-95 animate-in slide-in-from-bottom-4
+                  className={`glass-light border transition-all duration-500 rounded-2xl p-5 card-glow interactive-row group/card active:scale-95 animate-in slide-in-from-bottom-4
                     ${incident.severity === 'red' ? 'border-flag-red/30 glow-red shadow-flag-red/5 bg-flag-red/[0.02]' : 'border-flag-amber/20 bg-flag-amber/[0.01]'}`}
-                  onClick={() => advanceStage(incident)}
                 >
                   <div className="flex items-start justify-between gap-4 mb-3 relative z-10">
                     <span className="text-[13px] font-black text-white leading-tight group-hover/card:text-hc-teal-light transition-colors tracking-tight uppercase">{incident.title}</span>
@@ -123,10 +141,13 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                   <div className="flex items-center justify-between border-t border-white/5 pt-4">
                     <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40 tabular-nums">{incident.date}</span>
                     {incident.stage !== 'closed' && (
-                      <div className="flex items-center gap-2 opacity-0 group-hover/card:opacity-100 transition-all -translate-x-3 group-hover/card:translate-x-0">
-                        <span className="text-[8px] font-black text-hc-teal-light uppercase tracking-widest">ADVANCE</span>
+                      <button
+                        onClick={() => advanceStage(incident)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[8px] font-black text-hc-teal-light uppercase tracking-widest border border-hc-teal/30 hover:bg-hc-teal/10 transition-all"
+                      >
+                        Advance
                         <svg className="w-3.5 h-3.5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                      </div>
+                      </button>
                     )}
                   </div>
 

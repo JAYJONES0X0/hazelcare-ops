@@ -2,17 +2,51 @@ import crypto from 'crypto';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const SECRET = process.env.CODE_SECRET || 'hc-fallback-2026';
+const SECRET = process.env.CODE_SECRET;
+const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
+const sendBuckets = new Map();
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (typeof xff === 'string' && xff) return xff.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function setCors(req, res) {
+  const origin = req.headers.origin;
+  const allowed = !!origin && ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin);
+  if (allowed && origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return allowed;
+}
+
+function isRateLimited(key, max, windowMs) {
+  const now = Date.now();
+  const arr = sendBuckets.get(key) || [];
+  const next = arr.filter((t) => now - t < windowMs);
+  if (next.length >= max) {
+    sendBuckets.set(key, next);
+    return true;
+  }
+  next.push(now);
+  sendBuckets.set(key, next);
+  return false;
+}
+
+export default async function handler(req, res) {
+  if (!setCors(req, res)) return res.status(403).json({ error: 'Origin not allowed' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+  if (!SECRET || !BOT_TOKEN || !CHAT_ID) return res.status(500).json({ error: 'Auth service not configured' });
 
   const { email } = req.body || {};
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+  const ip = getClientIp(req);
+  if (isRateLimited(`send:${ip}`, 8, 10 * 60 * 1000) || isRateLimited(`send-email:${email.toLowerCase()}`, 4, 10 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Too many code requests. Wait and retry.' });
+  }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const bucket = Math.floor(Date.now() / 600000); // 10-min window
@@ -28,11 +62,15 @@ export default async function handler(req, res) {
   ].join('\n');
 
   try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const tg = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' })
     });
+    const body = await tg.json().catch(() => null);
+    if (!tg.ok || !body?.ok) {
+      return res.status(502).json({ error: 'Failed to send code' });
+    }
   } catch (e) {
     return res.status(500).json({ error: 'Failed to send code' });
   }

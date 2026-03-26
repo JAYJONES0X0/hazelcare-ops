@@ -1,17 +1,20 @@
 import { useState, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
-import { parseUniversalData, buildWeekSummary } from '../lib/universal-parser';
-import { parseUniversalText, parseSupportPlanText } from '../lib/universal-import';
-import { saveClient, emptyClient, findExistingClient, loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
-import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents } from '../lib/storage';
-import type { WeekSummary } from '../lib/types';
+import JSZip from 'jszip';
+import { loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
+import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
+import { TEMPLATES } from '../lib/types';
+import type { WeekSummary, TemplateType } from '../lib/types';
 import type { FullClient } from '../lib/client-store';
 import type { Page } from '../App';
+import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
+import { buildEnvelopeFromRaw } from '../lib/import-profiles';
+import { routeImport, type ClientMode } from '../lib/import-router';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-type ImportType = 'diary' | 'admission' | 'support-plan';
+type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
 
 interface Props {
@@ -20,8 +23,10 @@ interface Props {
 }
 
 interface PreviewData {
-  type: ImportType;
+  type: UploadDetectedType;
   fileName: string;
+  envelope: NormalizedImportEnvelope;
+  confidence: number;
   // diary
   entryCount?: number;
   dateRange?: string;
@@ -36,43 +41,7 @@ interface PreviewData {
   domainsDetected?: number;
   supportNeeds?: number;
   warnings?: string[];
-  // raw for processing
-  rawText: string;
-}
-
-// ─── Auto-detect what kind of file/text this is ───────────────────────────────
-function detectType(text: string, fileName: string): ImportType | null {
-  const lower = text.toLowerCase();
-  const ext = fileName.split('.').pop()?.toLowerCase();
-
-  if (ext === 'docx') return 'support-plan';
-
-  // Admission pack / Care plan PDF
-  if (/emergency admission pack/i.test(text) || /care plan\s*[–-]\s*.+report run on/i.test(text)) {
-    return 'admission';
-  }
-
-  // Support plan markers
-  if (lower.includes('my support plan') || (lower.includes('what i can do') && lower.includes('how to support'))) {
-    return 'support-plan';
-  }
-
-  // CSV diary export or pasted diary
-  if (ext === 'csv' || lower.includes('display from') || lower.includes('incident type') || lower.includes('diary entry')) {
-    return 'diary';
-  }
-
-  // PDF with diary table
-  if (lower.includes('diary for') && lower.includes('display')) {
-    return 'diary';
-  }
-
-  // Fallback: dates + separators = diary
-  if (/\d{2}\/\d{2}\/\d{4}/.test(text) && (text.includes(',') || text.includes('|') || text.includes('\t'))) {
-    return 'diary';
-  }
-
-  return null;
+  unmappedFields?: string[];
 }
 
 // ─── PDF text extraction with Y-position newline reconstruction ───────────────
@@ -111,53 +80,75 @@ async function extractDocxText(file: File): Promise<string> {
   return result.value;
 }
 
-// ─── Build preview data from raw text ─────────────────────────────────────────
-function buildPreview(rawText: string, type: ImportType, fileName: string): PreviewData {
-  const base: PreviewData = { type, fileName, rawText, warnings: [] };
+async function extractZipText(file: File, onProgress?: (p: number) => void): Promise<string> {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+  const supported = entries.filter((entry) => /\.(txt|csv|tsv|md|pdf|docx)$/i.test(entry.name));
+  if (!supported.length) {
+    return '';
+  }
 
-  if (type === 'diary') {
-    const entries = parseUniversalData(rawText);
-    if (entries.length === 0) {
-      base.warnings = ['No diary entries detected. Check the file format.'];
-      return base;
+  let combined = '';
+  for (let i = 0; i < supported.length; i += 1) {
+    const entry = supported[i];
+    const ext = entry.name.split('.').pop()?.toLowerCase();
+    let text = '';
+
+    if (ext === 'pdf' || ext === 'docx') {
+      const blob = await entry.async('blob');
+      const nestedFile = new File([blob], entry.name);
+      text = ext === 'pdf' ? await extractPdfText(nestedFile) : await extractDocxText(nestedFile);
+    } else {
+      text = await entry.async('text');
     }
-    const summary = buildWeekSummary(entries);
-    base.entryCount = summary.totalEntries;
-    base.dateRange = summary.dateFrom && summary.dateTo ? `${summary.dateFrom} to ${summary.dateTo}` : 'Dates not detected';
-    base.houseCount = Object.keys(summary.houses).length;
-    base.clientCount = summary.clients.length;
-    base.redFlags = summary.allFlags.red.length;
-    base.amberFlags = summary.allFlags.amber.length;
-    return base;
+
+    if (text.trim()) {
+      combined += `\n\n--- FILE: ${entry.name} ---\n${text}`;
+    }
+    if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
+  }
+  return combined.trim();
+}
+
+// ─── Build preview data from normalized envelope ──────────────────────────────
+function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
+  const base: PreviewData = {
+    type: envelope.source.detectedType,
+    fileName: envelope.source.fileName,
+    envelope,
+    confidence: envelope.source.confidence,
+    warnings: envelope.warnings,
+    unmappedFields: envelope.unmappedFields,
+  };
+
+  if (envelope.weekSummary) {
+    base.entryCount = envelope.weekSummary.totalEntries;
+    base.dateRange = envelope.weekSummary.dateFrom && envelope.weekSummary.dateTo
+      ? `${envelope.weekSummary.dateFrom} to ${envelope.weekSummary.dateTo}`
+      : 'Dates not detected';
+    base.houseCount = Object.keys(envelope.weekSummary.houses).length;
+    base.clientCount = envelope.weekSummary.clients.length;
+    base.redFlags = envelope.weekSummary.allFlags.red.length;
+    base.amberFlags = envelope.weekSummary.allFlags.amber.length;
   }
 
-  if (type === 'admission') {
-    const result = parseUniversalText(rawText);
-    base.clientName = result.client.name || 'Not detected';
-    base.dob = result.client.dob || 'Not detected';
-    base.nhs = result.client.nhs || 'Not detected';
-    base.domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
-    base.warnings = result.warnings;
-    return base;
+  if (envelope.admission) {
+    base.clientName = envelope.admission.client.name || 'Not detected';
+    base.dob = envelope.admission.client.dob || 'Not detected';
+    base.nhs = envelope.admission.client.nhs || 'Not detected';
+    base.domainsDetected = envelope.admission.carePlan.domains.filter(d => d.enabled).length;
   }
 
-  if (type === 'support-plan') {
-    const result = parseSupportPlanText(rawText);
-    base.supportNeeds = result.needs.length;
-    // Try to extract name from text
-    const nameMatch = rawText.match(/(?:support plan|my plan)\s*(?:for\s+)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i);
-    base.clientName = nameMatch ? nameMatch[1] : 'Not detected from text';
-    base.warnings = result.needs.length > 0
-      ? [`Found ${result.needs.length} support areas.`]
-      : ['No support areas detected. Check the document format.'];
-    return base;
+  if (envelope.supportPlan) {
+    base.supportNeeds = envelope.supportPlan.needs.length;
+    base.clientName = base.clientName || envelope.clientCandidates[0]?.name || 'Not detected from text';
   }
 
   return base;
 }
 
 // ─── TYPE CONFIG ──────────────────────────────────────────────────────────────
-const TYPE_INFO: Record<ImportType, { label: string; desc: string; icon: string; accepts: string; help: string; destination: string }> = {
+const TYPE_INFO: Record<Exclude<UploadDetectedType, 'unknown'>, { label: string; desc: string; icon: string; accepts: string; help: string; destination: string }> = {
   diary: {
     label: 'Weekly Diary',
     desc: 'Universal diary export — populates dashboard, briefing, and all house views',
@@ -190,9 +181,37 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
   onClearEverything: () => void;
   onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
 }) {
+  const restoreRef = useRef<HTMLInputElement>(null);
   const actions = loadActions();
   const incidents = loadIncidents();
   const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
+
+  function handleExportBackup() {
+    const snapshot = exportOpsSnapshot();
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hazelcare-ops-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleRestoreBackup(file: File) {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const result = importOpsSnapshot(parsed);
+      if (!result.ok) {
+        alert(`Restore failed: ${result.error}`);
+        return;
+      }
+      alert('Backup restored successfully. Reloading...');
+      window.location.reload();
+    } catch {
+      alert('Restore failed: Invalid backup file.');
+    }
+  }
 
   const datasets = [
     { key: 'diary', label: 'Diary & Briefing', present: !!weekData, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'Local registry empty' },
@@ -234,6 +253,32 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
           </div>
         ))}
       </div>
+
+      <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-3">
+        <button
+          onClick={handleExportBackup}
+          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
+        >
+          Export Full Backup
+        </button>
+        <button
+          onClick={() => restoreRef.current?.click()}
+          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-white/10 text-hc-muted hover:text-white rounded-xl transition-all hover:bg-white/5"
+        >
+          Restore Backup
+        </button>
+        <input
+          ref={restoreRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleRestoreBackup(file);
+            e.currentTarget.value = '';
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -247,6 +292,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [showPaste, setShowPaste] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [resultMsg, setResultMsg] = useState('');
+  const [selectedTargets, setSelectedTargets] = useState<ImportTarget[]>([]);
+  const [templateMode, setTemplateMode] = useState<'all' | 'specific'>('all');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<TemplateType[]>([]);
+  const [clientMode, setClientMode] = useState<ClientMode>('auto');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
@@ -280,24 +329,24 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         rawText = await extractPdfText(file, setProgress);
       } else if (ext === 'docx') {
         rawText = await extractDocxText(file);
+      } else if (ext === 'zip') {
+        rawText = await extractZipText(file, setProgress);
       } else {
         rawText = await file.text();
       }
 
       if (!rawText.trim()) {
-        setErrorMsg('File appears to be empty. Try a different export format.');
+        setErrorMsg('File appears empty or has no supported files. Use ZIP containing CSV/TXT/PDF/DOCX, or upload a direct export.');
         setStep('error');
         return;
       }
 
-      const type = detectType(rawText, file.name);
-      if (!type) {
-        setErrorMsg(`Could not identify this file. Supported formats:\n- Hazel Care Client Diary CSV\n- Emergency Admission Pack PDF\n- Support Plan DOCX\n\nTry exporting from your provider as CSV, or paste the text below.`);
-        setStep('error');
-        return;
-      }
-
-      const previewData = buildPreview(rawText, type, file.name);
+      const envelope = buildEnvelopeFromRaw(file.name, rawText);
+      const previewData = buildPreview(envelope);
+      setSelectedTargets(envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']);
+      setTemplateMode('all');
+      setSelectedTemplateIds([]);
+      setImportTargetClient(null);
       setPreview(previewData);
       setStep('preview');
     } catch (err: any) {
@@ -312,77 +361,62 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (!pasteText.trim()) return;
     setStep('extracting');
     setProgress(100);
-
-    const type = detectType(pasteText, 'paste.txt');
-    if (!type) {
-      setErrorMsg('Could not identify this text. Make sure you\'re pasting a diary export, admission pack, or support plan.');
+    try {
+      const envelope = buildEnvelopeFromRaw('Pasted text', pasteText);
+      const previewData = buildPreview(envelope);
+      setSelectedTargets(envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']);
+      setTemplateMode('all');
+      setSelectedTemplateIds([]);
+      setImportTargetClient(null);
+      setPreview(previewData);
+      setStep('preview');
+    } catch (err: any) {
+      setErrorMsg(`Failed to analyse pasted text: ${err?.message || 'Unknown error'}`);
       setStep('error');
-      return;
     }
-
-    const previewData = buildPreview(pasteText, type, 'Pasted text');
-    setPreview(previewData);
-    setStep('preview');
   };
 
   // ─── Confirm and process ─────────────────────────────────────────────────────
-  const [goTo, setGoTo] = useState<Page | null>(null);
   const [targetClient, setImportTargetClient] = useState<string | null>(null);
 
   const handleConfirm = (destination?: Page) => {
     if (!preview) return;
-
-    if (preview.type === 'diary') {
-      const entries = parseUniversalData(preview.rawText);
-      if (entries.length === 0) {
-        setErrorMsg('No entries could be parsed. Try exporting as CSV from your provider.');
-        setStep('error');
-        return;
-      }
-      const summary = buildWeekSummary(entries);
-      onDataParsed(summary);
-      const target = destination || goTo || 'briefing';
-      setResultMsg(`${summary.totalEntries} diary entries loaded across ${Object.keys(summary.houses).length} houses.`);
-      setStep('done');
-      setTimeout(() => setPage(target), 1500);
+    if (!selectedTargets.length) {
+      setErrorMsg('Select at least one output target.');
+      setStep('error');
+      return;
+    }
+    if (selectedTargets.includes('templates') && templateMode === 'specific' && selectedTemplateIds.length === 0) {
+      setErrorMsg('Select at least one template or switch to "all templates".');
+      setStep('error');
       return;
     }
 
-    if (preview.type === 'admission') {
-      const result = parseUniversalText(preview.rawText);
-      const existing = targetClient ? loadClients().find(c => c.id === targetClient) : findExistingClient(result.client.name || '', result.client.nhs || '');
-      const client = existing ? { ...existing } : emptyClient();
-      Object.assign(client, result.client);
-      if (existing) {
-        client.name = existing.name || result.client.name || '';
-      }
-      client.carePlan = result.carePlan;
-      saveClient(client);
-      const domains = result.carePlan.domains.filter(d => d.enabled).length;
-      const verb = existing ? 'updated' : 'created';
-      setResultMsg(`${client.name || 'Client'} ${verb} with ${domains} care plan domains.`);
-      setStep('done');
-      setTimeout(() => setPage(destination || goTo || 'client-docs'), 1500);
+    const result = routeImport(preview.envelope, {
+      targets: selectedTargets,
+      clientMode,
+      selectedClientId: targetClient,
+      selectedTemplateIds: selectedTargets.includes('templates')
+        ? (templateMode === 'all' ? [] : selectedTemplateIds)
+        : [],
+    });
+
+    if (!result.ok) {
+      setErrorMsg(result.warnings.join('\n') || 'Import failed.');
+      setStep('error');
       return;
     }
 
-    if (preview.type === 'support-plan') {
-      const spResult = parseSupportPlanText(preview.rawText);
-      const clientName = preview.clientName || 'Imported Client';
-      const existing = targetClient ? loadClients().find(c => c.id === targetClient) : findExistingClient(clientName, '');
-      const client = existing ? { ...existing } : emptyClient();
-      if (!existing) {
-        client.name = clientName;
-        client.preferredName = clientName.split(' ')[0] || 'Client';
-      }
-      (client as any).supportPlan = spResult;
-      saveClient(client as FullClient);
-      const verb = existing ? 'updated' : 'created';
-      setResultMsg(`${client.name} ${verb} with ${spResult.needs.length} support areas.`);
-      setStep('done');
-      setTimeout(() => setPage(destination || goTo || 'client-docs'), 1500);
-      return;
+    if (preview.envelope.weekSummary && selectedTargets.includes('reports')) {
+      onDataParsed(preview.envelope.weekSummary);
     }
+
+    const target = destination || result.page;
+    const warnings = result.warnings.length ? ` Warnings: ${result.warnings.join(' | ')}` : '';
+    const manual = result.requiresManualClientSelection ? ' Client confidence is low; verify selected client.' : '';
+    setResultMsg(`${result.messages.join(' ')}${manual}${warnings}`);
+    setStep('done');
+    setTimeout(() => setPage(target), 1500);
   };
 
   // ─── Reset ───────────────────────────────────────────────────────────────────
@@ -393,7 +427,16 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setErrorMsg('');
     setPasteText('');
     setResultMsg('');
+    setSelectedTargets([]);
+    setTemplateMode('all');
+    setSelectedTemplateIds([]);
+    setClientMode('auto');
+    setImportTargetClient(null);
   };
+
+  const detectedInfo = preview && preview.type !== 'unknown'
+    ? TYPE_INFO[preview.type]
+    : { icon: '🧠', label: 'Unknown Source', desc: 'Manual routing required' };
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -412,7 +455,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         <>
           {/* What can you import */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-            {(Object.entries(TYPE_INFO) as [ImportType, typeof TYPE_INFO['diary']][]).map(([key, info]) => (
+            {(Object.entries(TYPE_INFO) as [Exclude<UploadDetectedType, 'unknown'>, typeof TYPE_INFO['diary']][]).map(([key, info]) => (
               <div key={key} className="glass-light border border-white/5 rounded-2xl p-6 hover:border-hc-teal/30 transition-all group cursor-default">
                 <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{info.icon}</div>
                 <div className="text-sm font-black text-white mb-1 uppercase tracking-tight">{info.label}</div>
@@ -440,10 +483,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 <svg className="w-10 h-10 text-hc-teal-light/40 group-hover:text-hc-teal-light transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
               </div>
               <div className="text-sm font-bold text-white/80 group-hover:text-white mb-2">Drop any file here, or click to browse</div>
-              <div className="text-[11px] text-hc-muted/50">CSV, PDF, DOCX, or TXT — we'll auto-detect the format</div>
+              <div className="text-[11px] text-hc-muted/50">CSV, PDF, DOCX, TXT, or ZIP bundle — we'll auto-detect the format</div>
             </div>
           </div>
-          <input ref={fileRef} type="file" accept=".txt,.vtt,.csv,.tsv,.md,.pdf,.docx" className="hidden"
+          <input ref={fileRef} type="file" accept=".txt,.vtt,.csv,.tsv,.md,.pdf,.docx,.zip,application/zip" className="hidden"
             onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
 
           {/* Paste option */}
@@ -500,61 +543,111 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             <div className="relative z-10">
               <div className="flex items-center gap-5 mb-8">
                 <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shadow-lg glow-teal text-4xl">
-                  {TYPE_INFO[preview.type].icon}
+                  {detectedInfo.icon}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">{TYPE_INFO[preview.type].label} Identified</h2>
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                    <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Intelligence layer active — Select guided action</p>
+                    <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Decision Row 1: Target Mapping */}
                 <div className="space-y-3">
-                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Target Mapping</label>
-                  <div className="glass-light border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-hc-teal/30 transition-all">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">👤</span>
-                      <div>
-                        <div className="text-[11px] font-black text-white uppercase">Link to Profile</div>
-                        <div className="text-[9px] text-hc-muted">Associate data with a specific person</div>
-                      </div>
-                    </div>
-                    <select
-                      value={targetClient || ''}
-                      onChange={e => setImportTargetClient(e.target.value || null)}
-                      className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
-                      <option value="">Global Import</option>
-                      {loadClients().map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Decision Row 2: Landing Page */}
-                <div className="space-y-3">
-                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Landing Destination</label>
-                  <div className="flex flex-wrap gap-2">
-                    {([
-                      { page: 'briefing' as Page, icon: '☀️' },
-                      { page: 'dashboard' as Page, icon: '📊' },
-                      { page: 'client-docs' as Page, icon: '📋' },
-                      { page: 'templates' as Page, icon: '📄' },
-                    ]).map(opt => (
-                      <button key={opt.page} onClick={() => setGoTo(opt.page)}
-                        className={`w-12 h-12 flex items-center justify-center rounded-xl border transition-all active:scale-95 text-xl ${
-                          (goTo || (preview.type === 'diary' ? 'briefing' : 'client-docs')) === opt.page
-                            ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal shadow-lg'
-                            : 'border-white/5 bg-white/[0.02] hover:bg-white/5'
-                        }`} title={opt.page}>
-                        {opt.icon}
-                      </button>
+                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Output Targets</label>
+                  <div className="glass-light border border-white/10 rounded-2xl p-4 group hover:border-hc-teal/30 transition-all space-y-2">
+                    {(['templates', 'reports', 'client-docs'] as ImportTarget[]).map(target => (
+                      <label key={target} className="flex items-center gap-2 text-[11px] text-white font-bold uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedTargets.includes(target)}
+                          onChange={() =>
+                            setSelectedTargets(prev =>
+                              prev.includes(target) ? prev.filter(t => t !== target) : [...prev, target]
+                            )
+                          }
+                        />
+                        {target}
+                      </label>
                     ))}
                   </div>
                 </div>
+
+                <div className="space-y-3">
+                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Client Resolution</label>
+                  <div className="glass-light border border-white/10 rounded-2xl p-4 space-y-3 group hover:border-hc-teal/30 transition-all">
+                    <select
+                      value={clientMode}
+                      onChange={e => setClientMode(e.target.value as ClientMode)}
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
+                    >
+                      <option value="auto">Auto Match</option>
+                      <option value="specific">Specific Client</option>
+                      <option value="global">Global Import</option>
+                    </select>
+                    <select
+                      value={targetClient || ''}
+                      onChange={e => setImportTargetClient(e.target.value || null)}
+                      disabled={clientMode !== 'specific'}
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner disabled:opacity-40"
+                    >
+                      <option value="">Select client...</option>
+                      {loadClients().map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    {preview.clientName && (
+                      <div className="text-[10px] text-hc-muted">
+                        Detected candidate: <span className="text-white font-bold">{preview.clientName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
+
+              {selectedTargets.includes('templates') && (
+                <div className="mb-6 glass-light border border-white/10 rounded-2xl p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <label className="section-header text-[9px] opacity-60 uppercase tracking-[0.2em]">Template Inclusion</label>
+                    <select
+                      value={templateMode}
+                      onChange={(e) => setTemplateMode(e.target.value as 'all' | 'specific')}
+                      className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
+                    >
+                      <option value="all">Populate All Compatible Templates</option>
+                      <option value="specific">Choose Specific Templates</option>
+                    </select>
+                  </div>
+                  {templateMode === 'specific' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {TEMPLATES.map((tpl) => (
+                        <label key={tpl.id} className="flex items-center gap-2 text-[10px] text-white font-bold uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectedTemplateIds.includes(tpl.id)}
+                            onChange={() =>
+                              setSelectedTemplateIds((prev) =>
+                                prev.includes(tpl.id)
+                                  ? prev.filter((id) => id !== tpl.id)
+                                  : [...prev, tpl.id]
+                              )
+                            }
+                          />
+                          {tpl.name}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!!preview.warnings?.length && (
+                <div className="mb-6 text-[10px] text-flag-amber uppercase tracking-wider font-bold">
+                  Warnings: {preview.warnings.join(' | ')}
+                </div>
+              )}
 
               <div className="flex gap-4">
                 <button onClick={() => handleConfirm()}
