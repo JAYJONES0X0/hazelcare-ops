@@ -160,7 +160,7 @@ export function ClientDocsPage() {
 
   if (subView === 'import') {
     return (
-      <div className="p-6 lg:p-10 max-w-4xl mx-auto animate-in fade-in duration-700">
+      <div className="p-6 lg:p-10 max-w-6xl mx-auto animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
           className="group flex items-center gap-2 text-hc-muted hover:text-white text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
           <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
@@ -302,7 +302,7 @@ export function ClientDocsPage() {
   const cpCount = clients.filter(c => c.carePlan && c.carePlan.domains.some(d => d.enabled)).length;
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1200px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       {/* Page header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>

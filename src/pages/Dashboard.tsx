@@ -28,15 +28,15 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const activeIncidents = incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved');
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000">
+    <div className="p-6 lg:p-10 w-full max-w-[1700px] mx-auto animate-in fade-in duration-1000">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 lg:mb-8">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Service Hub</h1>
-          <p className="text-hc-muted text-xs font-bold uppercase tracking-[0.2em] mt-1">Service-Wide Overview</p>
+          <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] mt-1">Service-wide overview</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setPage('briefing')} className="glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl hover:text-white hover:border-hc-teal/40 transition-all shadow-xl active:scale-95">Morning Briefing</button>
-          <button onClick={() => setPage('upload')} className="btn-gradient px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95">Update Data</button>
+          <button onClick={() => setPage('briefing')} className="glass-light border border-white/10 text-xs font-black uppercase tracking-[0.08em] px-6 py-3 rounded-xl hover:text-white hover:border-hc-teal/40 transition-all shadow-xl active:scale-95">Morning Briefing</button>
+          <button onClick={() => setPage('upload')} className="btn-gradient px-6 py-3 rounded-xl text-xs font-black uppercase tracking-[0.08em] shadow-xl hover:scale-105 active:scale-95">Update Data</button>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
       {/* Navigation footer */}
       <div className="mt-20 pt-10 border-t border-white/5">
-        <h3 className="section-header text-[9px] mb-8 ml-2 opacity-40 tracking-[0.4em]">QUICK ACTIONS</h3>
+        <h3 className="section-header text-xs mb-8 ml-2 opacity-80 tracking-[0.08em]">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-10">
           {[
             { id: 'incidents', label: 'Monitor Incidents', desc: 'Active incident log', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z' },

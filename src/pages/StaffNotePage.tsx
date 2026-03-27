@@ -295,6 +295,7 @@ export function StaffNotePage() {
   const [copied, setCopied] = useState(false);
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>(loadNotes);
   const [showHistory, setShowHistory] = useState(false);
+  const [showCategoryPanel, setShowCategoryPanel] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [enhancedNote, setEnhancedNote] = useState('');
   const [enhanceError, setEnhanceError] = useState('');
@@ -404,7 +405,7 @@ export function StaffNotePage() {
   const currentLang = VOICE_LANGUAGES.find(l => l.code === voiceLang) ?? VOICE_LANGUAGES[0];
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
 
       {/* ── PAGE HEADER ───────────────────────────────────────── */}
       <div className="mb-6">
@@ -412,8 +413,8 @@ export function StaffNotePage() {
           <div>
             <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Notes Assistant</h1>
             <div className="flex items-center gap-3">
-              <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Daily Notes Log</span>
-              <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+              <span className="pill pill-teal text-xs font-black uppercase tracking-[0.08em] shadow-lg">Daily Notes Log</span>
+              <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
                 Guided prompts + voice dictation in any language
               </p>
             </div>
@@ -433,7 +434,7 @@ export function StaffNotePage() {
                 {currentLang.flag}
               </div>
               <div className="flex-1 text-left relative z-10">
-                <div className="text-[10px] text-hc-teal-light uppercase tracking-[0.2em] font-black mb-1">Voice Language — Tap to switch</div>
+                <div className="text-xs text-hc-teal-light uppercase tracking-[0.08em] font-black mb-1">Voice Language — Tap to switch</div>
                 <div className="text-sm md:text-base font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
               </div>
               <div className="text-hc-muted text-right hidden md:block relative z-10 pr-4">
@@ -448,7 +449,7 @@ export function StaffNotePage() {
             {/* Flag grid dropdown */}
             {showLangPicker && (
               <div className="absolute top-full left-0 right-0 mt-4 glass border border-white/10 rounded-[2rem] p-6 z-50 shadow-2xl animate-in zoom-in-95 duration-300 backdrop-blur-3xl">
-                <div className="section-header text-[10px] mb-6 ml-2 opacity-60 tracking-[0.3em]">Select Language</div>
+                <div className="section-header text-xs mb-6 ml-2 opacity-90 tracking-[0.08em]">Select Language</div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                   {VOICE_LANGUAGES.map(l => (
                     <button
@@ -483,7 +484,18 @@ export function StaffNotePage() {
 
           {/* Note type selector */}
           <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
-            <div className="section-header text-[9px] mb-5 ml-1 opacity-60 tracking-[0.2em]">Note Category</div>
+            <button
+              type="button"
+              onClick={() => setShowCategoryPanel((v) => !v)}
+              className="w-full flex items-center justify-between section-header text-xs mb-2 ml-1 opacity-90 tracking-[0.08em] hover:text-white transition-all"
+              title="Choose note category and prompt profile"
+            >
+              <span>Note Category</span>
+              <span className="text-hc-muted">{showCategoryPanel ? 'Hide' : 'Show'}</span>
+            </button>
+            <p className="text-xs text-hc-muted/80 mb-4">Selected: <span className="text-white font-semibold">{selectedType.label}</span></p>
+            {showCategoryPanel && (
+              <>
 
             {/* Search + group tabs */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -529,6 +541,8 @@ export function StaffNotePage() {
               <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ background: selectedType.color, boxShadow: `0 0 10px ${selectedType.color}` }} />
               <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Selected: <span className="text-white ml-1">{selectedType.label}</span></span>
             </div>
+              </>
+            )}
           </div>
 
           {/* Meta row */}

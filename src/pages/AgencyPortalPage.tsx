@@ -175,8 +175,8 @@ function ShiftBoard() {
           <div key={s.label} className={`glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
             <div className="text-2xl md:text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 20px ${s.color}40` }}>{s.value}</div>
-            <div className="section-header text-[9px] mt-2 opacity-60 tracking-[0.2em]">{s.label}</div>
-            <div className="text-hc-muted text-[9px] font-bold uppercase tracking-widest mt-2 opacity-40 group-hover:opacity-100 transition-opacity">{s.sub}</div>
+                  <div className="section-header text-xs mt-2 opacity-90 tracking-[0.08em]">{s.label}</div>
+                  <div className="text-hc-muted text-xs font-semibold uppercase tracking-[0.08em] mt-2 opacity-80 group-hover:opacity-100 transition-opacity">{s.sub}</div>
           </div>
         ))}
       </div>
@@ -185,7 +185,7 @@ function ShiftBoard() {
       <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 w-fit shadow-2xl mb-8">
         {(['all', 'open', 'submitted', 'confirmed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 ease-out active:scale-90
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] transition-all duration-500 ease-out active:scale-90
               ${filter === f ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
             {f === 'all' ? 'Entire Feed' : f}
           </button>
@@ -544,14 +544,14 @@ export function AgencyPortalPage() {
   ];
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter text-shimmer">Agency Staff</h1>
             {criticalShifts > 0 && (
-              <span className="pill pill-red animate-pulse-soft text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-950/20 px-4">
+              <span className="pill pill-red animate-pulse-soft text-xs font-black uppercase tracking-[0.08em] shadow-xl shadow-red-950/20 px-4">
                 {criticalShifts} Critical Gaps
               </span>
             )}

@@ -70,15 +70,15 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
   const scoreBorder = severityScore >= 80 ? 'border-emerald-500/20' : severityScore >= 50 ? 'border-amber-500/20' : 'border-red-500/20';
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000 scrollbar-thin">
+    <div className="p-6 lg:p-10 w-full max-w-[1700px] mx-auto animate-in fade-in duration-1000 scrollbar-thin">
       {/* ── Hero Header ────────────────────────────────────────────────────── */}
       <div className={`glass border-2 ${scoreBorder} ${scoreBg} rounded-[1.5rem] lg:rounded-[2.5rem] p-4 md:p-8 lg:p-10 mb-6 lg:mb-10 relative overflow-hidden shadow-2xl transition-all duration-700`}>
         <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full opacity-[0.05] blur-[140px] -translate-y-1/2 translate-x-1/2" style={{ background: scoreColor }} />
         <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6 lg:gap-10 relative z-10">
           <div className="flex-1 text-center lg:text-left">
             <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
-              <span className="text-[10px] font-black tracking-[0.3em] text-hc-muted uppercase">{dateStr}</span>
-              <span className="pill pill-teal text-[9px] uppercase tracking-widest font-black shadow-lg">{shift} Updates</span>
+              <span className="text-xs font-black tracking-[0.08em] text-hc-muted uppercase">{dateStr}</span>
+              <span className="pill pill-teal text-xs uppercase tracking-[0.08em] font-black shadow-lg">{shift} Updates</span>
             </div>
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tighter leading-none text-shimmer">
               {greeting}, Service Team
@@ -168,7 +168,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                       <p className="text-[16px] text-hc-text leading-relaxed font-medium transition-colors group-hover/alert:text-white line-clamp-2 italic italic-quote px-1">"{flag.entry}"</p>
                       <div className="flex flex-wrap gap-3 mt-6">
                         {flag.flags.map((f, fi) => (
-                          <span key={fi} className="pill pill-red text-[9px] font-black uppercase tracking-widest py-1 px-3 shadow-lg">{f}</span>
+                          <span key={fi} className="pill pill-red text-xs font-black uppercase tracking-[0.08em] py-1 px-3 shadow-lg">{f}</span>
                         ))}
                       </div>
                     </div>
@@ -178,7 +178,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                   </div>
                 ))}
                 {redFlags.length > 8 && (
-                  <button onClick={() => setPage('reports')} className="w-full text-center py-6 glass border border-white/5 rounded-3xl text-[11px] font-black text-hc-muted hover:text-flag-red hover:bg-white/[0.03] hover:border-flag-red/30 transition-all uppercase tracking-[0.5em] shadow-2xl active:scale-[0.99] group">
+                  <button onClick={() => setPage('reports')} className="w-full text-center py-6 glass border border-white/5 rounded-3xl text-sm font-black text-hc-muted hover:text-flag-red hover:bg-white/[0.03] hover:border-flag-red/30 transition-all uppercase tracking-[0.08em] shadow-2xl active:scale-[0.99] group">
                     View all {redFlags.length} Red Flag alerts <span className="inline-block group-hover:translate-x-4 transition-transform ml-4">→</span>
                   </button>
                 )}
@@ -219,7 +219,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
           <section className="animate-in slide-in-from-right-4 duration-700">
             <div className="flex items-center gap-3 mb-4 lg:mb-6 px-2 lg:px-4">
               <div className="w-2 h-8 rounded-full bg-hc-blue glow-blue" />
-              <h2 className="text-sm font-black text-white tracking-[0.3em] uppercase opacity-80">House Overview</h2>
+                  <h2 className="text-sm font-black text-white tracking-[0.08em] uppercase opacity-90">House Overview</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:gap-4">
               {houseList.map(house => {
@@ -254,7 +254,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
             <section className="animate-in slide-in-from-right-4 duration-700 delay-150">
               <div className="flex items-center gap-3 mb-4 lg:mb-6 px-2 lg:px-4">
                 <div className="w-2 h-8 rounded-full bg-hc-purple glow-purple" />
-                <h2 className="text-sm font-black text-white tracking-[0.3em] uppercase opacity-80">Care Patterns</h2>
+                  <h2 className="text-sm font-black text-white tracking-[0.08em] uppercase opacity-90">Care Patterns</h2>
               </div>
               <div className="space-y-4">
                 {trends.map(trend => {

@@ -396,7 +396,7 @@ export function TemplatesPage({ weekData }: Props) {
   }
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Report Templates</h1>
         <div className="flex items-center gap-3">

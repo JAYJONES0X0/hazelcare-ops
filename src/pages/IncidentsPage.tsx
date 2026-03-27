@@ -43,15 +43,15 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-8 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-red text-[10px] uppercase tracking-wider font-bold shadow-lg animate-pulse-soft">
+            <span className="pill pill-red text-xs uppercase tracking-[0.08em] font-bold shadow-lg animate-pulse-soft">
               {totalActive} Active Incidents
             </span>
-            <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+            <span className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
               {totalRed} Critical Red Alerts
             </span>
           </div>
@@ -59,7 +59,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
         {lastTransition && (
           <button
             onClick={undoLastTransition}
-            className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
+            className="px-4 py-2 text-xs font-black uppercase tracking-[0.08em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
           >
             Undo Last Stage Change
           </button>
@@ -73,7 +73,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
           return (
             <div key={stage.id} className="relative group cursor-default">
               <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] transition-colors group-hover:text-white" style={{ color: stage.color }}>{stage.label}</span>
+                <span className="text-xs font-black uppercase tracking-[0.08em] transition-colors group-hover:text-white" style={{ color: stage.color }}>{stage.label}</span>
                 <span className="text-[10px] font-bold text-white/40 group-hover:text-white transition-colors">{count}</span>
               </div>
               <div className="h-2 rounded-full bg-hc-dark/60 overflow-hidden shadow-inner border border-white/5">

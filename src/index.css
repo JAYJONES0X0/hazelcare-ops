@@ -14,7 +14,7 @@
   --color-hc-border: #2a3f5a;
   --color-hc-border-light: #365270;
   --color-hc-text: #d4dfe8;
-  --color-hc-muted: #7a95b0;
+  --color-hc-muted: #9bb3ca;
   --color-flag-red: #ef4444;
   --color-flag-red-soft: rgba(239, 68, 68, 0.15);
   --color-flag-amber: #f59e0b;
@@ -33,6 +33,8 @@ body {
   color: #d4dfe8;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 #root { min-height: 100vh; display: flex; }
@@ -62,6 +64,7 @@ body {
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: rgba(20, 184, 166, 0.1) transparent;
+  overscroll-behavior: contain;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -75,6 +78,11 @@ body {
 
 .scrollbar-thin:hover::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(20, 184, 166, 0.3), rgba(59, 130, 246, 0.3));
+}
+
+/* Prevent wheel events from bubbling to parent page at scroll boundaries. */
+.overflow-y-auto {
+  overscroll-behavior: contain;
 }
 
 html {
@@ -293,8 +301,22 @@ html {
   font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   color: #7a95b0;
+}
+
+/* Accessibility baseline: prevent unreadable micro text. */
+[class*="text-[8px]"],
+[class*="text-[9px]"],
+[class*="text-[10px]"],
+[class*="text-[11px]"] {
+  font-size: 12px !important;
+}
+
+/* Reduce extreme tracking that hurts readability on operational screens. */
+[class*="tracking-[0.2em]"],
+[class*="tracking-[0.3em]"] {
+  letter-spacing: 0.08em !important;
 }
 
 /* Accent bar — teal left border for cards */

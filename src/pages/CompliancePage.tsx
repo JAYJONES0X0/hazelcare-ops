@@ -24,25 +24,25 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
           <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">{staff.id && staff.name ? 'Edit Staff Member' : 'Add New Staff Member'}</h3>
-          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Compliance & Roster Details</p>
+          <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] mt-1">Compliance and roster details</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
           <div className="space-y-4">
             <div className="group">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Full Name</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Full Name</label>
               <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sarah Mitchell"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Job Role</label>
+                <label className="section-header mb-2 ml-1 block opacity-90">Job Role</label>
                 <select value={form.role} onChange={e => set('role', e.target.value)}
                   className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Primary House</label>
+                <label className="section-header mb-2 ml-1 block opacity-90">Primary House</label>
                 <select value={form.house} onChange={e => set('house', e.target.value)}
                   className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
@@ -53,17 +53,17 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
           
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">DBS EXPIRY</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">DBS Expiry</label>
               <input value={form.dbsExpiry} onChange={e => set('dbsExpiry', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">TRAINING EXPIRY</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Training Expiry</label>
               <input value={form.trainingExpiry} onChange={e => set('trainingExpiry', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[8px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">NEXT SUP.</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Next Supervision</label>
               <input value={form.nextSupervision} onChange={e => set('nextSupervision', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
@@ -102,41 +102,41 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-blue/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
           <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Service Audit</h3>
-          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1">Quality Control & Compliance Audit</p>
+          <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] mt-1">Quality control and compliance audit</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">House</label>
               <select value={form.house} onChange={e => set('house', e.target.value)}
                 className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
             </div>
             <div>
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Audit Type</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Audit Type</label>
               <select value={form.type} onChange={e => set('type', e.target.value as ComplianceAudit['type'])}
                 className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {AUDIT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">LAST COMPLETED</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Last Completed</label>
               <input value={form.lastCompleted} onChange={e => set('lastCompleted', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">NEXT DUE</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Next Due</label>
               <input value={form.dueDate} onChange={e => set('dueDate', e.target.value)} placeholder="DD/MM/YYYY"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Completed By</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Completed By</label>
               <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Name"
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
-              <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Findings & Observations</label>
+              <label className="section-header mb-2 ml-1 block opacity-90">Findings and Observations</label>
               <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Summary of findings..."
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
             </div>
@@ -155,9 +155,9 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
 // STATUS BADGE
 // ============================================================
 function StatusBadge({ status }: { status: 'ok' | 'due_soon' | 'overdue' }) {
-  if (status === 'overdue') return <span className="pill pill-red text-[9px] font-black px-2 shadow-lg animate-pulse-soft">OVERDUE</span>;
-  if (status === 'due_soon') return <span className="pill pill-amber text-[9px] font-black px-2 shadow-lg">DUE SOON</span>;
-  return <span className="pill pill-green text-[9px] font-black px-2 opacity-60">COMPLIANT</span>;
+  if (status === 'overdue') return <span className="pill pill-red text-xs font-black px-2 shadow-lg animate-pulse-soft">OVERDUE</span>;
+  if (status === 'due_soon') return <span className="pill pill-amber text-xs font-black px-2 shadow-lg">DUE SOON</span>;
+  return <span className="pill pill-green text-xs font-black px-2 opacity-80">COMPLIANT</span>;
 }
 
 function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: number }) {
@@ -242,7 +242,7 @@ export function CompliancePage() {
   const housesInAudits = [...new Set(audits.map(a => a.house))].sort();
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>

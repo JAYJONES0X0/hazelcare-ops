@@ -144,12 +144,12 @@ export function HandoverPage() {
   }
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Shift Handover Report</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-blue text-[10px] uppercase tracking-wider font-black shadow-lg">Shift Continuity</span>
-          <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+          <span className="pill pill-blue text-xs uppercase tracking-[0.08em] font-black shadow-lg">Shift Continuity</span>
+          <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
             Preparing information for the next shift team
           </p>
         </div>
@@ -162,13 +162,13 @@ export function HandoverPage() {
           <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
+                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">House</label>
                 <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Shift Transition</label>
+                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Shift Transition</label>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {['Day → Night', 'Night → Day'].map(s => {
                     const [from, to] = s.split(' → ');
@@ -182,11 +182,11 @@ export function HandoverPage() {
                 </div>
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Outgoing Staff</label>
+                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Outgoing Staff</label>
                 <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
               <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Incoming Staff</label>
+                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Incoming Staff</label>
                 <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
             </div>

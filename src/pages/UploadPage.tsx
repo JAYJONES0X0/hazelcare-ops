@@ -351,6 +351,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [zipBulkClientId, setZipBulkClientId] = useState<string>('');
   const [zipPendingCreateRows, setZipPendingCreateRows] = useState<ZipGuidanceRow[] | null>(null);
   const [zipRunSummary, setZipRunSummary] = useState<{ total: number; success: number; failed: number; failedIds: string[]; nextPage: Page } | null>(null);
+  const [showZipGuidance, setShowZipGuidance] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
@@ -602,6 +603,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setZipBulkClientId('');
     setZipPendingCreateRows(null);
     setZipRunSummary(null);
+    setShowZipGuidance(false);
   };
 
   const detectedInfo = preview && preview.type !== 'unknown'
@@ -613,7 +615,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-5xl mx-auto">
+    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-[1700px] mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
@@ -828,6 +830,20 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     <div className="section-header text-xs opacity-90 uppercase tracking-[0.08em]">ZIP Guidance</div>
                     <div className="text-xs text-hc-muted">{zipGuidance.length} files analysed</div>
                   </div>
+                  <button
+                    onClick={() => setShowZipGuidance((v) => !v)}
+                    className="mb-3 w-full text-left px-3 py-2 rounded-lg border border-white/10 text-xs text-hc-muted hover:text-white hover:bg-white/5 transition-all"
+                    title="Show or hide detailed per-file controls"
+                  >
+                    {showZipGuidance ? 'Hide detailed file controls' : 'Show detailed file controls'}
+                  </button>
+                  {!showZipGuidance && (
+                    <div className="mb-3 text-xs text-hc-muted/80">
+                      Expand to bulk edit and map each file quickly. Hover each row after expanding to confirm target and client mode.
+                    </div>
+                  )}
+                  {showZipGuidance && (
+                    <>
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => setZipGuidance((prev) => prev.map((r) => ({ ...r, include: true })))}
@@ -970,6 +986,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       </div>
                     ))}
                   </div>
+                    </>
+                  )}
                 </div>
               )}
               {!!errorMsg && (

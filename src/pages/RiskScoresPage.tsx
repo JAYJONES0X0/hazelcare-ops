@@ -53,13 +53,13 @@ export function RiskScoresPage({ weekData }: Props) {
   }
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-1000">
+    <div className="p-6 lg:p-10 w-full max-w-[1700px] mx-auto animate-in fade-in duration-1000">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer uppercase leading-none">Risk Overview</h1>
           <div className="flex items-center gap-3">
-            <span className="pill pill-amber text-[10px] font-black uppercase tracking-wider shadow-lg">Risk Levels</span>
-            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
+            <span className="pill pill-amber text-xs font-black uppercase tracking-[0.08em] shadow-lg">Risk Levels</span>
+            <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
               Reviewing risk levels across all people
             </p>
           </div>
@@ -69,12 +69,12 @@ export function RiskScoresPage({ weekData }: Props) {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-6 mb-10 glass-light border border-white/5 p-6 rounded-[2rem] shadow-2xl backdrop-blur-xl">
         <div className="flex gap-2 flex-wrap items-center relative z-10">
-          <span className="section-header text-[9px] mr-2 opacity-60 tracking-[0.3em]">Risk Stratification</span>
+          <span className="section-header text-xs mr-2 opacity-90 tracking-[0.08em]">Risk Stratification</span>
           {(['all', 'critical', 'high', 'medium', 'low'] as const).map(level => (
             <button
               key={level}
               onClick={() => setFilterLevel(level)}
-              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 ease-out active:scale-90 ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] transition-all duration-500 ease-out active:scale-90 ${
                 filterLevel === level
                   ? level === 'all' ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105' : `pill ${getRiskPill(level)} shadow-xl scale-105 z-10`
                   : 'bg-white/5 text-hc-muted hover:text-white hover:bg-white/10'

@@ -38,7 +38,7 @@ export function StaffPage({ staff }: Props) {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-8 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Staff Team</h1>
