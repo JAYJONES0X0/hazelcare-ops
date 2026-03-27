@@ -295,7 +295,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [selectedTargets, setSelectedTargets] = useState<ImportTarget[]>([]);
   const [templateMode, setTemplateMode] = useState<'all' | 'specific'>('all');
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<TemplateType[]>([]);
-  const [clientMode, setClientMode] = useState<ClientMode>('auto');
+  const [clientMode, setClientMode] = useState<ClientMode>('global');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
@@ -381,6 +381,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
   const handleConfirm = (destination?: Page) => {
     if (!preview) return;
+    setErrorMsg('');
     if (!selectedTargets.length) {
       setErrorMsg('Select at least one output target.');
       setStep('error');
@@ -402,6 +403,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     });
 
     if (!result.ok) {
+      if (result.requiresManualClientSelection) {
+        setClientMode('specific');
+        setErrorMsg(result.warnings.join('\n') || 'Client match needs confirmation. Select a specific client and retry.');
+        return;
+      }
       setErrorMsg(result.warnings.join('\n') || 'Import failed.');
       setStep('error');
       return;
@@ -430,7 +436,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setSelectedTargets([]);
     setTemplateMode('all');
     setSelectedTemplateIds([]);
-    setClientMode('auto');
+    setClientMode('global');
     setImportTargetClient(null);
   };
 
@@ -549,7 +555,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                    <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
+                    <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] opacity-90">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
                   </div>
                 </div>
               </div>
@@ -557,10 +563,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Decision Row 1: Target Mapping */}
                 <div className="space-y-3">
-                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Output Targets</label>
+                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
                   <div className="glass-light border border-white/10 rounded-2xl p-4 group hover:border-hc-teal/30 transition-all space-y-2">
                     {(['templates', 'reports', 'client-docs'] as ImportTarget[]).map(target => (
-                      <label key={target} className="flex items-center gap-2 text-[11px] text-white font-bold uppercase tracking-wider">
+                      <label key={target} className="flex items-center gap-2 text-sm text-white font-bold uppercase tracking-wide">
                         <input
                           type="checkbox"
                           checked={selectedTargets.includes(target)}
@@ -577,12 +583,12 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="section-header text-[9px] opacity-40 uppercase tracking-[0.2em] ml-1">Client Resolution</label>
+                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Client Resolution</label>
                   <div className="glass-light border border-white/10 rounded-2xl p-4 space-y-3 group hover:border-hc-teal/30 transition-all">
                     <select
                       value={clientMode}
                       onChange={e => setClientMode(e.target.value as ClientMode)}
-                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
                     >
                       <option value="auto">Auto Match</option>
                       <option value="specific">Specific Client</option>
@@ -592,16 +598,20 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       value={targetClient || ''}
                       onChange={e => setImportTargetClient(e.target.value || null)}
                       disabled={clientMode !== 'specific'}
-                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner disabled:opacity-40"
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner disabled:opacity-40"
                     >
                       <option value="">Select client...</option>
                       {loadClients().map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     {preview.clientName && (
-                      <div className="text-[10px] text-hc-muted">
+                      <div className="text-sm text-hc-muted">
                         Detected candidate: <span className="text-white font-bold">{preview.clientName}</span>
                       </div>
                     )}
+                    <div className="text-xs text-hc-muted/80 leading-relaxed">
+                      Use <span className="text-white font-semibold">Global Import</span> to create/update from the dataset directly.
+                      Use <span className="text-white font-semibold">Specific Client</span> when you want to pin import to one person.
+                    </div>
                   </div>
                 </div>
 
@@ -610,11 +620,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               {selectedTargets.includes('templates') && (
                 <div className="mb-6 glass-light border border-white/10 rounded-2xl p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <label className="section-header text-[9px] opacity-60 uppercase tracking-[0.2em]">Template Inclusion</label>
+                    <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em]">Template Inclusion</label>
                     <select
                       value={templateMode}
                       onChange={(e) => setTemplateMode(e.target.value as 'all' | 'specific')}
-                      className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
+                      className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-1.5 text-sm font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
                     >
                       <option value="all">Populate All Compatible Templates</option>
                       <option value="specific">Choose Specific Templates</option>
@@ -623,7 +633,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   {templateMode === 'specific' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {TEMPLATES.map((tpl) => (
-                        <label key={tpl.id} className="flex items-center gap-2 text-[10px] text-white font-bold uppercase tracking-wider">
+                        <label key={tpl.id} className="flex items-center gap-2 text-sm text-white font-bold uppercase tracking-wide">
                           <input
                             type="checkbox"
                             checked={selectedTemplateIds.includes(tpl.id)}
@@ -646,6 +656,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               {!!preview.warnings?.length && (
                 <div className="mb-6 text-[10px] text-flag-amber uppercase tracking-wider font-bold">
                   Warnings: {preview.warnings.join(' | ')}
+                </div>
+              )}
+              {!!errorMsg && (
+                <div className="mb-6 text-xs text-flag-red border border-flag-red/30 bg-flag-red/10 rounded-xl px-4 py-3 whitespace-pre-line">
+                  {errorMsg}
                 </div>
               )}
 
@@ -747,7 +762,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       <div className="mt-auto pt-16 pb-6 flex justify-center">
         <div className="flex items-center gap-3 text-[10px] font-bold text-hc-muted/30 uppercase tracking-widest cursor-default">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.955 0 013.598 6.223a12.02 12.02 0 003 9c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 3.75c-2.59 0-4.97.824-6.882 2.234A11.955 11.955 0 003.75 12c0 5.268 3.435 9.732 8.25 11.273 4.815-1.541 8.25-6.005 8.25-11.273 0-2.338-.672-4.52-1.832-6.016z" />
           </svg>
           All data stays on this device — nothing is sent externally
         </div>
