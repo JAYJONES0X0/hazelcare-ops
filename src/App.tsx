@@ -318,6 +318,7 @@ export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions'
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const [staffMode, setStaffMode] = useState<Page | null>(null);
   const [staffLinkActive, setStaffLinkActive] = useState(false);
   const [sacVerified, setSacVerified] = useState(() => sessionStorage.getItem('hc-sac-verified') === '1');
@@ -358,6 +359,11 @@ export default function App() {
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('theme-light', theme === 'light');
+    localStorage.setItem('hc-theme', theme);
+  }, [theme]);
+
   const generateStaffLink = useCallback(async (toolId: string) => {
     const res = await fetch('/api/issue-staff-link', {
       method: 'POST',
@@ -382,7 +388,7 @@ export default function App() {
     );
   }
 
-  return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} />;
+  return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} />;
 }
 
 function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; onClose: () => void }) {
@@ -433,7 +439,7 @@ function StaffStandaloneView({ page, onClose }: { page: Page; generateStaffLink:
   );
 }
 
-function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p: Page) => void; generateStaffLink: (id: string) => Promise<{ link: string; code: string }> }) {
+function FullApp({ page, setPage, generateStaffLink, theme, setTheme }: { page: Page; setPage: (p: Page) => void; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; theme: 'dark' | 'light'; setTheme: (t: 'dark' | 'light') => void }) {
   const [weekData, setWeekData] = useState<WeekSummary | null>(null);
   const [actions, setActions] = useState<Action[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -490,6 +496,13 @@ function FullApp({ page, setPage, generateStaffLink }: { page: Page; setPage: (p
         incidents={incidents}
       />
       <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin">
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="fixed top-4 right-4 z-40 px-3 py-2 rounded-xl glass-light border border-white/10 text-xs font-black uppercase tracking-[0.08em] text-hc-muted hover:text-white hover:border-hc-teal/30 transition-all"
+          title="Toggle dark/light theme"
+        >
+          {theme === 'dark' ? 'Light' : 'Dark'} mode
+        </button>
         {/* Staff share buttons on Staff Tools pages */}
         {(page === 'notes' || page === 'handover') && (
           <div className="px-8 pt-6 flex justify-end animate-in fade-in duration-1000">

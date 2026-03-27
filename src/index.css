@@ -39,6 +39,24 @@ body {
 
 #root { min-height: 100vh; display: flex; }
 
+.theme-light {
+  --color-hc-navy: #d8e6f2;
+  --color-hc-navy-light: #e7f0f7;
+  --color-hc-dark: #f3f7fb;
+  --color-hc-darker: #ecf3f9;
+  --color-hc-card: #ffffff;
+  --color-hc-card-hover: #f3f8fc;
+  --color-hc-border: #c9d9e7;
+  --color-hc-border-light: #b9ccdd;
+  --color-hc-text: #0f1f2e;
+  --color-hc-muted: #4b647b;
+}
+
+.theme-light body {
+  background: #eaf2f8;
+  color: #0f1f2e;
+}
+
 /* ─── SCROLL ARCHITECTURE ────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
@@ -98,6 +116,12 @@ html {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.theme-light .glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(246, 250, 255, 0.88));
+  border: 1px solid rgba(185, 204, 221, 0.9);
+  box-shadow: 0 4px 24px rgba(10, 36, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 /* Glass card — lighter variant */
 .glass-light {
   background: linear-gradient(135deg, rgba(27, 42, 64, 0.85), rgba(27, 42, 64, 0.5));
@@ -105,6 +129,12 @@ html {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(54, 82, 112, 0.5);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.theme-light .glass-light {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(243, 248, 252, 0.86));
+  border: 1px solid rgba(185, 204, 221, 0.7);
+  box-shadow: 0 2px 16px rgba(10, 36, 58, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 /* Glass card — coloured teal accent */
@@ -222,6 +252,36 @@ html {
               radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
               radial-gradient(ellipse at 60% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
               linear-gradient(180deg, #0f1923 0%, #121e2d 100%);
+  position: relative;
+}
+
+.mesh-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/ops-texture.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.theme-light .mesh-bg {
+  background: radial-gradient(ellipse at 20% 50%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 60% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+              linear-gradient(180deg, #eef5fb 0%, #e6eef6 100%);
+}
+
+.theme-light .mesh-bg::before {
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+}
+
+.mesh-bg > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Shimmer on headings */
