@@ -330,6 +330,31 @@ export function TemplatesPage({ weekData }: Props) {
   const [recommendedTemplateIds, setRecommendedTemplateIds] = useState<TemplateType[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  function templateSignal(type: TemplateType): { label: string; value: number } {
+    if (!weekData) return { label: 'Signals', value: 0 };
+    const houses = Object.values(weekData.houses);
+    switch (type) {
+      case 'incident_report':
+        return { label: 'Incidents', value: houses.reduce((sum, h) => sum + h.incidents.length, 0) };
+      case 'safeguarding':
+        return { label: 'Safeguarding', value: houses.reduce((sum, h) => sum + h.safeguarding.length, 0) };
+      case 'medication_audit':
+        return { label: 'Medication', value: houses.reduce((sum, h) => sum + h.medication.length, 0) };
+      case 'finance':
+        return {
+          label: 'Finance Flags',
+          value: Object.values(weekData.houses).flatMap((h) => h.entries).filter((e) =>
+            e.flags.some((f) => {
+              const k = f.toLowerCase();
+              return k.includes('finance') || k.includes('money') || k.includes('shopping');
+            })
+          ).length,
+        };
+      default:
+        return { label: 'Entries', value: weekData.totalEntries };
+    }
+  }
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(TEMPLATE_CONTEXT_KEY);
@@ -380,6 +405,14 @@ export function TemplatesPage({ weekData }: Props) {
             Processing {weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses
           </p>
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="pill text-[10px] font-black uppercase tracking-wide border border-flag-red/30 text-flag-red bg-flag-red/10">
+            Red Flags {weekData.allFlags.red.length}
+          </span>
+          <span className="pill text-[10px] font-black uppercase tracking-wide border border-flag-amber/30 text-flag-amber bg-flag-amber/10">
+            Amber Flags {weekData.allFlags.amber.length}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 lg:mb-8">
@@ -402,6 +435,10 @@ export function TemplatesPage({ weekData }: Props) {
             </div>
             <div className="text-sm font-black text-white mb-2 group-hover:text-hc-teal-light transition-colors tracking-tight leading-tight uppercase">{tpl.name}</div>
             <div className="text-[10px] font-medium text-hc-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity mb-6">{tpl.desc}</div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2.5 py-1">
+              <span className="text-[9px] font-black uppercase tracking-wider text-hc-muted">{templateSignal(tpl.id).label}</span>
+              <span className="text-[10px] font-black text-white tabular-nums">{templateSignal(tpl.id).value}</span>
+            </div>
             {recommendedTemplateIds.includes(tpl.id) && (
               <div className="mb-3 text-[9px] font-black text-hc-teal-light uppercase tracking-[0.2em]">
                 Recommended from import

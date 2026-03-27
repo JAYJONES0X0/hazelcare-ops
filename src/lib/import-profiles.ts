@@ -19,15 +19,43 @@ const TARGETS_BY_TYPE: Record<ImportType, ImportTarget[]> = {
 export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   const lower = rawText.toLowerCase();
   const ext = (fileName.split('.').pop() || '').toLowerCase();
+  const lowerName = fileName.toLowerCase();
+
+  if (
+    lower.includes('controlled drugs policy') ||
+    lower.includes('daily quality meeting') ||
+    lower.includes('quality meeting minutes') ||
+    lowerName.includes('policy') ||
+    lowerName.includes('quality meeting')
+  ) {
+    return { id: 'ops-governance', type: 'unknown', confidence: 0.9 };
+  }
 
   if (ext === 'csv' && (lower.includes('diary entry') || lower.includes('incident type') || lower.includes('display from'))) {
     return { id: 'nourish-csv-diary', type: 'diary', confidence: 0.95 };
+  }
+  if (
+    lower.includes('weekly activity plan') ||
+    lower.includes('daily 1:1 support') ||
+    lowerName.includes('activity planner') ||
+    lowerName.includes('notes')
+  ) {
+    return { id: 'daily-support-notes', type: 'diary', confidence: 0.72 };
   }
   if (ext === 'pdf' && (lower.includes('client diary') || lower.includes('diary for') || lower.includes('display from'))) {
     return { id: 'nourish-pdf-diary', type: 'diary', confidence: 0.82 };
   }
   if (ext === 'pdf' && (/emergency admission pack/i.test(rawText) || /care plan\s*[–-]\s*.+report run on/i.test(rawText))) {
     return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.9 };
+  }
+  if (
+    lower.includes('incident report') ||
+    lower.includes('crisis & contingency plan') ||
+    lower.includes('crisis and contingency plan') ||
+    lowerName.includes('incident report') ||
+    lowerName.includes('crisis and contigency plan')
+  ) {
+    return { id: 'incident-crisis-doc', type: 'support-plan', confidence: 0.88 };
   }
   if (ext === 'docx' || lower.includes('my support plan') || (lower.includes('what i can do') && lower.includes('how to support'))) {
     return { id: 'support-plan', type: 'support-plan', confidence: ext === 'docx' ? 0.93 : 0.72 };

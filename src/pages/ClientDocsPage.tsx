@@ -162,7 +162,7 @@ export function ClientDocsPage() {
     return (
       <div className="p-6 lg:p-10 max-w-4xl mx-auto animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
-          className="group flex items-center gap-2 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] mb-8 transition-all">
+          className="group flex items-center gap-2 text-hc-muted hover:text-white text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
           <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
           Back
         </button>
@@ -195,8 +195,8 @@ export function ClientDocsPage() {
             <span className="text-xl">💡</span>
           </div>
           <div>
-            <p className="text-[10px] text-hc-teal-light font-black uppercase tracking-widest mb-0.5">Tip</p>
-            <p className="text-[11px] text-hc-muted font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+            <p className="text-xs text-hc-teal-light font-black uppercase tracking-wide mb-0.5">Tip</p>
+            <p className="text-sm text-hc-muted font-medium italic opacity-90 group-hover:opacity-100 transition-opacity">
               On mobile: Tap upload and select the PDF from your device. No extra steps needed.
             </p>
           </div>
@@ -215,14 +215,14 @@ export function ClientDocsPage() {
             onChange={e => setImportText(e.target.value)}
             rows={12}
             placeholder="Or drop manual stream content here…"
-            className="w-full bg-transparent p-6 text-hc-text font-mono text-xs leading-relaxed resize-y placeholder:text-hc-muted/30 focus:outline-none scrollbar-thin"
+            className="w-full bg-transparent p-6 text-hc-text font-mono text-sm leading-relaxed resize-y placeholder:text-hc-muted/60 focus:outline-none scrollbar-thin"
           />
         </div>
 
         {importResult.length > 0 && (
           <div className="glass-light border border-white/5 rounded-2xl px-6 py-4 mb-6 space-y-1">
             {importResult.map((w, i) => (
-              <p key={i} className="text-[10px] font-bold text-hc-muted/80 uppercase tracking-widest leading-relaxed flex items-center gap-2">
+              <p key={i} className="text-xs font-bold text-hc-muted/95 uppercase tracking-wide leading-relaxed flex items-center gap-2">
                 <span className="w-1 h-1 rounded-full bg-hc-teal/40" /> {w}
               </p>
             ))}
@@ -239,19 +239,19 @@ export function ClientDocsPage() {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-[8px] opacity-60 mb-1">DESIGNATION</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Designation</div>
                   <div className="text-sm font-black text-white truncate">{importPreview.name}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-[8px] opacity-60 mb-1">TEMPORAL ID</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Temporal ID</div>
                   <div className="text-sm font-black text-white tabular-nums">{importPreview.dob}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-[8px] opacity-60 mb-1">NET ID</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Net ID</div>
                   <div className="text-sm font-black text-white tabular-nums">{importPreview.nhs}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-[8px] opacity-60 mb-1">DOMAINS</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Domains</div>
                   <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
                 </div>
               </div>
@@ -308,10 +308,10 @@ export function ClientDocsPage() {
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">People & Support Plans</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="pill pill-blue text-[9px] font-black uppercase tracking-widest">{clients.length} People</span>
-            <span className="pill pill-teal text-[9px] font-black uppercase tracking-widest">{pbsCount} PBS Profiles</span>
-            <span className="pill pill-amber text-[9px] font-black uppercase tracking-widest">{riskCount} Risk Matrices</span>
-            <span className="pill pill-purple text-[9px] font-black uppercase tracking-widest">{cpCount} Support Plans</span>
+            <span className="pill pill-blue text-xs font-black uppercase tracking-wide">{clients.length} People</span>
+            <span className="pill pill-teal text-xs font-black uppercase tracking-wide">{pbsCount} PBS Profiles</span>
+            <span className="pill pill-amber text-xs font-black uppercase tracking-wide">{riskCount} Risk Matrices</span>
+            <span className="pill pill-purple text-xs font-black uppercase tracking-wide">{cpCount} Support Plans</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -401,13 +401,13 @@ export function ClientDocsPage() {
                       <div className="flex flex-wrap items-center gap-4">
                         {client.dob && (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">TEMPORAL:</span>
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">DOB:</span>
                             <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.dob}</span>
                           </div>
                         )}
                         {client.nhs && (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">NETWORK:</span>
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">NHS:</span>
                             <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.nhs}</span>
                           </div>
                         )}
@@ -435,6 +435,17 @@ export function ClientDocsPage() {
 
                 {/* Document actions */}
                 <div className="border-t border-white/5 px-8 py-5 bg-black/20 backdrop-blur-md">
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasRisk ? 'pill-amber' : 'pill-blue'}`}>
+                      Risk Assessment {hasRisk ? 'Ready' : 'Missing'}
+                    </span>
+                    <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasCarePlan ? 'pill-teal' : 'pill-blue'}`}>
+                      Care Plan {hasCarePlan ? `Ready (${cpFilled}/${cpDomains.length})` : 'Missing'}
+                    </span>
+                    <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasPBS ? 'pill-teal' : 'pill-blue'}`}>
+                      PBS {hasPBS ? 'Ready' : 'Missing'}
+                    </span>
+                  </div>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex flex-wrap items-center gap-8">
                       {/* PBS */}

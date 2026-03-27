@@ -44,6 +44,15 @@ interface PreviewData {
   unmappedFields?: string[];
 }
 
+interface ZipGuidanceRow {
+  fileName: string;
+  detectedType: UploadDetectedType;
+  parserProfile: string;
+  confidence: number;
+  suggestedTargets: ImportTarget[];
+  suggestedClient: string;
+}
+
 // ─── PDF text extraction with Y-position newline reconstruction ───────────────
 async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
@@ -80,15 +89,21 @@ async function extractDocxText(file: File): Promise<string> {
   return result.value;
 }
 
-async function extractZipText(file: File, onProgress?: (p: number) => void): Promise<string> {
+function inferClientFromFileName(fileName: string): string {
+  const base = fileName.split('/').pop() || fileName;
+  const cleaned = base.replace(/\.[^.]+$/, '');
+  const match = cleaned.match(/\b(Barry(?:\s+Rigney)?|Gavin(?:\s+Rees)?|James(?:\s+(?:Milsom|M))?)\b/i);
+  return match ? match[1] : 'Unclear';
+}
+
+async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter((entry) => !entry.dir);
   const supported = entries.filter((entry) => /\.(txt|csv|tsv|md|pdf|docx)$/i.test(entry.name));
-  if (!supported.length) {
-    return '';
-  }
+  if (!supported.length) return { combined: '', rows: [] };
 
   let combined = '';
+  const rows: ZipGuidanceRow[] = [];
   for (let i = 0; i < supported.length; i += 1) {
     const entry = supported[i];
     const ext = entry.name.split('.').pop()?.toLowerCase();
@@ -104,10 +119,20 @@ async function extractZipText(file: File, onProgress?: (p: number) => void): Pro
 
     if (text.trim()) {
       combined += `\n\n--- FILE: ${entry.name} ---\n${text}`;
+      const envelope = buildEnvelopeFromRaw(entry.name, text);
+      rows.push({
+        fileName: entry.name,
+        detectedType: envelope.source.detectedType,
+        parserProfile: envelope.source.parserProfile,
+        confidence: envelope.source.confidence,
+        suggestedTargets: envelope.suggestedTargets,
+        suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(entry.name),
+      });
     }
     if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
   }
-  return combined.trim();
+
+  return { combined: combined.trim(), rows };
 }
 
 // ─── Build preview data from normalized envelope ──────────────────────────────
@@ -296,6 +321,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [templateMode, setTemplateMode] = useState<'all' | 'specific'>('all');
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<TemplateType[]>([]);
   const [clientMode, setClientMode] = useState<ClientMode>('global');
+  const [zipGuidance, setZipGuidance] = useState<ZipGuidanceRow[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
@@ -324,15 +350,20 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     try {
       let rawText = '';
       const ext = file.name.split('.').pop()?.toLowerCase();
+      let zipRows: ZipGuidanceRow[] = [];
 
       if (ext === 'pdf') {
         rawText = await extractPdfText(file, setProgress);
       } else if (ext === 'docx') {
         rawText = await extractDocxText(file);
       } else if (ext === 'zip') {
-        rawText = await extractZipText(file, setProgress);
+        const zipData = await extractZipGuidance(file, setProgress);
+        rawText = zipData.combined;
+        zipRows = zipData.rows;
+        setZipGuidance(zipRows);
       } else {
         rawText = await file.text();
+        setZipGuidance([]);
       }
 
       if (!rawText.trim()) {
@@ -343,7 +374,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
       const envelope = buildEnvelopeFromRaw(file.name, rawText);
       const previewData = buildPreview(envelope);
-      setSelectedTargets(envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']);
+      const targetUnion = ext === 'zip'
+        ? Array.from(new Set(zipRows.flatMap((row) => row.suggestedTargets)))
+        : envelope.suggestedTargets;
+      setSelectedTargets(targetUnion.length ? targetUnion : (envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']));
       setTemplateMode('all');
       setSelectedTemplateIds([]);
       setImportTargetClient(null);
@@ -362,6 +396,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setStep('extracting');
     setProgress(100);
     try {
+      setZipGuidance([]);
       const envelope = buildEnvelopeFromRaw('Pasted text', pasteText);
       const previewData = buildPreview(envelope);
       setSelectedTargets(envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']);
@@ -438,6 +473,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setSelectedTemplateIds([]);
     setClientMode('global');
     setImportTargetClient(null);
+    setZipGuidance([]);
   };
 
   const detectedInfo = preview && preview.type !== 'unknown'
@@ -656,6 +692,30 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               {!!preview.warnings?.length && (
                 <div className="mb-6 text-[10px] text-flag-amber uppercase tracking-wider font-bold">
                   Warnings: {preview.warnings.join(' | ')}
+                </div>
+              )}
+              {!!zipGuidance.length && (
+                <div className="mb-6 glass-light border border-hc-teal/30 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="section-header text-xs opacity-90 uppercase tracking-[0.08em]">ZIP Guidance</div>
+                    <div className="text-xs text-hc-muted">{zipGuidance.length} files analysed</div>
+                  </div>
+                  <div className="text-xs text-hc-muted/80 mb-3">
+                    Guided recommendation: keep <span className="text-white font-semibold">Global Import</span> for mixed-client ZIP packs, then review each client page after import.
+                  </div>
+                  <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                    {zipGuidance.map((row) => (
+                      <div key={row.fileName} className="border border-white/10 rounded-xl px-3 py-2 bg-hc-dark/30">
+                        <div className="text-xs text-white font-semibold truncate">{row.fileName}</div>
+                        <div className="text-[11px] text-hc-muted">
+                          Client: <span className="text-white">{row.suggestedClient}</span> · Type: <span className="text-white">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-[11px] text-hc-muted">
+                          Targets: <span className="text-white">{row.suggestedTargets.length ? row.suggestedTargets.join(', ') : 'manual review'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {!!errorMsg && (
