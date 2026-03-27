@@ -45,12 +45,18 @@ interface PreviewData {
 }
 
 interface ZipGuidanceRow {
+  id: string;
   fileName: string;
   detectedType: UploadDetectedType;
   parserProfile: string;
   confidence: number;
   suggestedTargets: ImportTarget[];
   suggestedClient: string;
+  envelope: NormalizedImportEnvelope;
+  selectedTarget: ImportTarget | 'skip';
+  clientMode: ClientMode;
+  selectedClientId: string | null;
+  include: boolean;
 }
 
 // ─── PDF text extraction with Y-position newline reconstruction ───────────────
@@ -96,6 +102,16 @@ function inferClientFromFileName(fileName: string): string {
   return match ? match[1] : 'Unclear';
 }
 
+function findClientIdByNameHint(nameHint: string): string | null {
+  const hint = (nameHint || '').trim().toLowerCase();
+  if (!hint || hint === 'unclear') return null;
+  const clients = loadClients();
+  const direct = clients.find((c) => c.name.trim().toLowerCase() === hint);
+  if (direct) return direct.id;
+  const partial = clients.find((c) => c.name.trim().toLowerCase().includes(hint) || hint.includes(c.name.trim().toLowerCase()));
+  return partial?.id || null;
+}
+
 async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter((entry) => !entry.dir);
@@ -121,12 +137,18 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
       combined += `\n\n--- FILE: ${entry.name} ---\n${text}`;
       const envelope = buildEnvelopeFromRaw(entry.name, text);
       rows.push({
+        id: `${entry.name}-${i}`,
         fileName: entry.name,
         detectedType: envelope.source.detectedType,
         parserProfile: envelope.source.parserProfile,
         confidence: envelope.source.confidence,
         suggestedTargets: envelope.suggestedTargets,
         suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(entry.name),
+        envelope,
+        selectedTarget: envelope.suggestedTargets[0] || 'skip',
+        clientMode: 'global',
+        selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(entry.name)),
+        include: true,
       });
     }
     if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
@@ -417,6 +439,59 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const handleConfirm = (destination?: Page) => {
     if (!preview) return;
     setErrorMsg('');
+
+    if (zipGuidance.length > 0) {
+      const selectedRows = zipGuidance.filter((row) => row.include && row.selectedTarget !== 'skip');
+      if (!selectedRows.length) {
+        setErrorMsg('Select at least one ZIP row to import.');
+        return;
+      }
+
+      const messages: string[] = [];
+      const warnings: string[] = [];
+      let anySuccess = false;
+      let sawClientDocs = false;
+      let sawTemplates = false;
+      let sawReports = false;
+
+      for (const row of selectedRows) {
+        const target = row.selectedTarget as ImportTarget;
+        const result = routeImport(row.envelope, {
+          targets: [target],
+          clientMode: row.clientMode,
+          selectedClientId: row.selectedClientId,
+          selectedTemplateIds: target === 'templates'
+            ? (templateMode === 'all' ? [] : selectedTemplateIds)
+            : [],
+        });
+
+        if (result.ok) {
+          anySuccess = true;
+          messages.push(`${row.fileName}: ${result.messages.join(' ') || 'Imported.'}`);
+          if (target === 'client-docs') sawClientDocs = true;
+          if (target === 'templates') sawTemplates = true;
+          if (target === 'reports') sawReports = true;
+          if (target === 'reports' && row.envelope.weekSummary) {
+            onDataParsed(row.envelope.weekSummary);
+          }
+        } else {
+          warnings.push(`${row.fileName}: ${result.warnings.join(' | ') || 'Import failed.'}`);
+        }
+      }
+
+      if (!anySuccess) {
+        setErrorMsg(warnings.join('\n') || 'ZIP import failed.');
+        setStep('error');
+        return;
+      }
+
+      const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : 'upload'));
+      setResultMsg(`Imported ${selectedRows.length} file(s). ${messages.slice(0, 3).join(' ')}${warnings.length ? ` Warnings: ${warnings.slice(0, 3).join(' | ')}` : ''}`);
+      setStep('done');
+      setTimeout(() => setPage(destination || nextPage), 1500);
+      return;
+    }
+
     if (!selectedTargets.length) {
       setErrorMsg('Select at least one output target.');
       setStep('error');
@@ -705,13 +780,47 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   </div>
                   <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
                     {zipGuidance.map((row) => (
-                      <div key={row.fileName} className="border border-white/10 rounded-xl px-3 py-2 bg-hc-dark/30">
-                        <div className="text-xs text-white font-semibold truncate">{row.fileName}</div>
+                      <div key={row.id} className="border border-white/10 rounded-xl px-3 py-2 bg-hc-dark/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="checkbox"
+                            checked={row.include}
+                            onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, include: e.target.checked } : it))}
+                          />
+                          <div className="text-xs text-white font-semibold truncate">{row.fileName}</div>
+                        </div>
                         <div className="text-[11px] text-hc-muted">
                           Client: <span className="text-white">{row.suggestedClient}</span> · Type: <span className="text-white">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
                         </div>
-                        <div className="text-[11px] text-hc-muted">
-                          Targets: <span className="text-white">{row.suggestedTargets.length ? row.suggestedTargets.join(', ') : 'manual review'}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                          <select
+                            value={row.selectedTarget}
+                            onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, selectedTarget: e.target.value as ImportTarget | 'skip' } : it))}
+                            className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                          >
+                            <option value="skip">Skip</option>
+                            <option value="reports">Reports</option>
+                            <option value="templates">Templates</option>
+                            <option value="client-docs">Client Docs</option>
+                          </select>
+                          <select
+                            value={row.clientMode}
+                            onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, clientMode: e.target.value as ClientMode } : it))}
+                            className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                          >
+                            <option value="global">Global</option>
+                            <option value="auto">Auto</option>
+                            <option value="specific">Specific</option>
+                          </select>
+                          <select
+                            value={row.selectedClientId || ''}
+                            disabled={row.clientMode !== 'specific'}
+                            onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, selectedClientId: e.target.value || null } : it))}
+                            className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white disabled:opacity-40"
+                          >
+                            <option value="">Select client...</option>
+                            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
                         </div>
                       </div>
                     ))}
