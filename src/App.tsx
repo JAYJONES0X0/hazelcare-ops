@@ -38,7 +38,11 @@ function LoginGate({ onUnlock, sacRequired, staffToolId, staffToken }: { onUnloc
       const data = await res.json();
       if (res.ok && data?.ok) {
         setError('');
-        setStep('email');
+        if (data?.skip2fa) {
+          onUnlock();
+        } else {
+          setStep('email');
+        }
       } else {
         setError('Incorrect password');
         setPassword('');
