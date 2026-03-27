@@ -344,10 +344,93 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<TemplateType[]>([]);
   const [clientMode, setClientMode] = useState<ClientMode>('global');
   const [zipGuidance, setZipGuidance] = useState<ZipGuidanceRow[]>([]);
+  const [zipFilter, setZipFilter] = useState<'all' | 'needs-decision' | 'will-create' | 'failed-last'>('all');
+  const [zipSearch, setZipSearch] = useState('');
+  const [zipBulkTarget, setZipBulkTarget] = useState<ImportTarget | 'skip'>('client-docs');
+  const [zipBulkClientMode, setZipBulkClientMode] = useState<ClientMode>('global');
+  const [zipBulkClientId, setZipBulkClientId] = useState<string>('');
+  const [zipPendingCreateRows, setZipPendingCreateRows] = useState<ZipGuidanceRow[] | null>(null);
+  const [zipRunSummary, setZipRunSummary] = useState<{ total: number; success: number; failed: number; failedIds: string[]; nextPage: Page } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
   const clients = loadClients();
+
+  const selectedZipCount = zipGuidance.filter((r) => r.include).length;
+
+  function rowWillCreatePerson(row: ZipGuidanceRow): boolean {
+    if (row.selectedTarget === 'skip') return false;
+    if (!(row.selectedTarget === 'client-docs' || row.selectedTarget === 'templates')) return false;
+    if (row.clientMode === 'specific') return false;
+    const candidateName = row.envelope.clientCandidates[0]?.name || row.suggestedClient;
+    if (!candidateName || candidateName.toLowerCase() === 'unclear') return false;
+    const matched = findClientIdByNameHint(candidateName);
+    return !matched;
+  }
+
+  function rowNeedsDecision(row: ZipGuidanceRow): boolean {
+    if (!row.include || row.selectedTarget === 'skip') return false;
+    if (row.clientMode === 'specific' && !row.selectedClientId) return true;
+    if (row.clientMode === 'auto' && row.confidence < 0.75) return true;
+    return false;
+  }
+
+  function applyZipRows(rows: ZipGuidanceRow[]) {
+    const failedIds: string[] = [];
+    let success = 0;
+    let sawClientDocs = false;
+    let sawTemplates = false;
+    let sawReports = false;
+    const messages: string[] = [];
+    const warnings: string[] = [];
+
+    for (const row of rows) {
+      const target = row.selectedTarget as ImportTarget;
+      const result = routeImport(row.envelope, {
+        targets: [target],
+        clientMode: row.clientMode,
+        selectedClientId: row.selectedClientId,
+        selectedTemplateIds: target === 'templates'
+          ? (templateMode === 'all' ? [] : selectedTemplateIds)
+          : [],
+      });
+
+      if (result.ok) {
+        success += 1;
+        messages.push(`${row.fileName}: ${result.messages.join(' ') || 'Imported.'}`);
+        if (target === 'client-docs') sawClientDocs = true;
+        if (target === 'templates') sawTemplates = true;
+        if (target === 'reports') sawReports = true;
+        if (target === 'reports' && row.envelope.weekSummary) {
+          onDataParsed(row.envelope.weekSummary);
+        }
+      } else {
+        failedIds.push(row.id);
+        warnings.push(`${row.fileName}: ${result.warnings.join(' | ') || 'Import failed.'}`);
+      }
+    }
+
+    const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : 'upload'));
+    setZipRunSummary({
+      total: rows.length,
+      success,
+      failed: failedIds.length,
+      failedIds,
+      nextPage,
+    });
+
+    if (success === 0) {
+      setErrorMsg(warnings.join('\n') || 'ZIP import failed.');
+      setStep('error');
+      return;
+    }
+
+    setResultMsg(
+      `Processed ${rows.length} file(s): ${success} applied, ${failedIds.length} failed.` +
+      (warnings.length ? ` Warnings: ${warnings.slice(0, 3).join(' | ')}` : '')
+    );
+    setStep('done');
+  }
 
   const handleClearEverything = () => {
     purgeSystemData();
@@ -446,49 +529,12 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         setErrorMsg('Select at least one ZIP row to import.');
         return;
       }
-
-      const messages: string[] = [];
-      const warnings: string[] = [];
-      let anySuccess = false;
-      let sawClientDocs = false;
-      let sawTemplates = false;
-      let sawReports = false;
-
-      for (const row of selectedRows) {
-        const target = row.selectedTarget as ImportTarget;
-        const result = routeImport(row.envelope, {
-          targets: [target],
-          clientMode: row.clientMode,
-          selectedClientId: row.selectedClientId,
-          selectedTemplateIds: target === 'templates'
-            ? (templateMode === 'all' ? [] : selectedTemplateIds)
-            : [],
-        });
-
-        if (result.ok) {
-          anySuccess = true;
-          messages.push(`${row.fileName}: ${result.messages.join(' ') || 'Imported.'}`);
-          if (target === 'client-docs') sawClientDocs = true;
-          if (target === 'templates') sawTemplates = true;
-          if (target === 'reports') sawReports = true;
-          if (target === 'reports' && row.envelope.weekSummary) {
-            onDataParsed(row.envelope.weekSummary);
-          }
-        } else {
-          warnings.push(`${row.fileName}: ${result.warnings.join(' | ') || 'Import failed.'}`);
-        }
-      }
-
-      if (!anySuccess) {
-        setErrorMsg(warnings.join('\n') || 'ZIP import failed.');
-        setStep('error');
+      const createRows = selectedRows.filter((row) => rowWillCreatePerson(row));
+      if (createRows.length > 0) {
+        setZipPendingCreateRows(createRows);
         return;
       }
-
-      const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : 'upload'));
-      setResultMsg(`Imported ${selectedRows.length} file(s). ${messages.slice(0, 3).join(' ')}${warnings.length ? ` Warnings: ${warnings.slice(0, 3).join(' | ')}` : ''}`);
-      setStep('done');
-      setTimeout(() => setPage(destination || nextPage), 1500);
+      applyZipRows(selectedRows);
       return;
     }
 
@@ -549,6 +595,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setClientMode('global');
     setImportTargetClient(null);
     setZipGuidance([]);
+    setZipFilter('all');
+    setZipSearch('');
+    setZipBulkTarget('client-docs');
+    setZipBulkClientMode('global');
+    setZipBulkClientId('');
+    setZipPendingCreateRows(null);
+    setZipRunSummary(null);
   };
 
   const detectedInfo = preview && preview.type !== 'unknown'
@@ -775,11 +828,98 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     <div className="section-header text-xs opacity-90 uppercase tracking-[0.08em]">ZIP Guidance</div>
                     <div className="text-xs text-hc-muted">{zipGuidance.length} files analysed</div>
                   </div>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setZipGuidance((prev) => prev.map((r) => ({ ...r, include: true })))}
+                      className="px-3 py-1 rounded-lg border border-white/10 text-xs text-white"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      onClick={() => setZipGuidance((prev) => prev.map((r) => ({ ...r, include: false })))}
+                      className="px-3 py-1 rounded-lg border border-white/10 text-xs text-hc-muted"
+                    >
+                      Select none
+                    </button>
+                    <span className="text-xs text-hc-muted">{selectedZipCount} selected</span>
+                  </div>
+                  <div className="mb-3 grid grid-cols-1 md:grid-cols-5 gap-2">
+                    <select
+                      value={zipBulkTarget}
+                      onChange={(e) => setZipBulkTarget(e.target.value as ImportTarget | 'skip')}
+                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                    >
+                      <option value="skip">Bulk target: Skip</option>
+                      <option value="reports">Bulk target: Reports</option>
+                      <option value="templates">Bulk target: Templates</option>
+                      <option value="client-docs">Bulk target: Client Docs</option>
+                    </select>
+                    <select
+                      value={zipBulkClientMode}
+                      onChange={(e) => setZipBulkClientMode(e.target.value as ClientMode)}
+                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                    >
+                      <option value="global">Bulk mode: Global</option>
+                      <option value="auto">Bulk mode: Auto</option>
+                      <option value="specific">Bulk mode: Specific</option>
+                    </select>
+                    <select
+                      value={zipBulkClientId}
+                      onChange={(e) => setZipBulkClientId(e.target.value)}
+                      disabled={zipBulkClientMode !== 'specific'}
+                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white disabled:opacity-40"
+                    >
+                      <option value="">Bulk client...</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <button
+                      onClick={() => {
+                        setZipGuidance((prev) => prev.map((r) => r.include ? {
+                          ...r,
+                          selectedTarget: zipBulkTarget,
+                          clientMode: zipBulkClientMode,
+                          selectedClientId: zipBulkClientMode === 'specific' ? (zipBulkClientId || null) : r.selectedClientId,
+                        } : r));
+                      }}
+                      className="px-3 py-1 rounded-lg border border-hc-teal/40 text-xs text-hc-teal-light"
+                    >
+                      Apply to selected
+                    </button>
+                    <input
+                      value={zipSearch}
+                      onChange={(e) => setZipSearch(e.target.value)}
+                      placeholder="Search file/client"
+                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-hc-muted/60"
+                    />
+                  </div>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {(['all', 'needs-decision', 'will-create', 'failed-last'] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setZipFilter(f)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide border ${
+                          zipFilter === f ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'
+                        }`}
+                      >
+                        {f.replace('-', ' ')}
+                      </button>
+                    ))}
+                  </div>
                   <div className="text-xs text-hc-muted/80 mb-3">
                     Guided recommendation: keep <span className="text-white font-semibold">Global Import</span> for mixed-client ZIP packs, then review each client page after import.
                   </div>
                   <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                    {zipGuidance.map((row) => (
+                    {zipGuidance
+                      .filter((row) => {
+                        const q = zipSearch.trim().toLowerCase();
+                        const matchesSearch = !q || row.fileName.toLowerCase().includes(q) || row.suggestedClient.toLowerCase().includes(q);
+                        if (!matchesSearch) return false;
+                        if (zipFilter === 'needs-decision') return rowNeedsDecision(row);
+                        if (zipFilter === 'will-create') return rowWillCreatePerson(row);
+                        if (zipFilter === 'failed-last') return zipRunSummary?.failedIds.includes(row.id) || false;
+                        return true;
+                      })
+                      .map((row) => (
                       <div key={row.id} className="border border-white/10 rounded-xl px-3 py-2 bg-hc-dark/30">
                         <div className="flex items-center gap-2 mb-1">
                           <input
@@ -791,6 +931,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                         </div>
                         <div className="text-[11px] text-hc-muted">
                           Client: <span className="text-white">{row.suggestedClient}</span> · Type: <span className="text-white">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {rowNeedsDecision(row) && <span className="text-[10px] px-2 py-0.5 rounded-full border border-flag-amber/40 text-flag-amber">Needs decision</span>}
+                          {rowWillCreatePerson(row) && <span className="text-[10px] px-2 py-0.5 rounded-full border border-hc-teal/40 text-hc-teal-light">Will create person</span>}
+                          {zipRunSummary?.failedIds.includes(row.id) && <span className="text-[10px] px-2 py-0.5 rounded-full border border-flag-red/40 text-flag-red">Failed last run</span>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                           <select
@@ -903,7 +1048,38 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
           </div>
           <div className="text-xl font-black text-white mb-2">Import Complete</div>
           <div className="text-sm text-hc-muted mb-6">{resultMsg}</div>
-          <div className="text-[11px] text-hc-teal-light animate-pulse">Redirecting...</div>
+          {zipRunSummary ? (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => setPage(zipRunSummary.nextPage)}
+                className="px-5 py-2.5 rounded-xl btn-gradient text-[11px] font-black uppercase tracking-wide"
+              >
+                Open {zipRunSummary.nextPage}
+              </button>
+              {!!zipRunSummary.failed && (
+                <button
+                  onClick={() => {
+                    setZipGuidance((prev) =>
+                      prev.map((r) => ({ ...r, include: zipRunSummary.failedIds.includes(r.id) }))
+                    );
+                    setStep('preview');
+                    setErrorMsg('Retry mode: only previously failed rows are selected.');
+                  }}
+                  className="px-5 py-2.5 rounded-xl border border-flag-amber/40 text-flag-amber text-[11px] font-black uppercase tracking-wide"
+                >
+                  Retry failed only
+                </button>
+              )}
+              <button
+                onClick={() => setStep('preview')}
+                className="px-5 py-2.5 rounded-xl border border-white/10 text-hc-muted text-[11px] font-black uppercase tracking-wide"
+              >
+                Back to mapping
+              </button>
+            </div>
+          ) : (
+            <div className="text-[11px] text-hc-teal-light animate-pulse">Redirecting...</div>
+          )}
         </div>
       )}
 
@@ -921,6 +1097,43 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             className="px-8 py-3 glass-light border border-white/10 text-sm font-bold text-white rounded-xl hover:bg-white/5 transition-all">
             Try Again
           </button>
+        </div>
+      )}
+
+      {zipPendingCreateRows && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl glass border border-white/10 rounded-2xl p-6">
+            <div className="text-lg font-black text-white mb-2">Confirm New People Creation</div>
+            <div className="text-sm text-hc-muted mb-4">
+              These selected rows will create new people if no match exists. Continue or go back and remap them.
+            </div>
+            <div className="max-h-60 overflow-y-auto space-y-2 mb-5">
+              {zipPendingCreateRows.map((row) => (
+                <div key={row.id} className="border border-white/10 rounded-lg px-3 py-2 bg-hc-dark/30">
+                  <div className="text-xs text-white font-semibold truncate">{row.fileName}</div>
+                  <div className="text-[11px] text-hc-muted">Detected person: <span className="text-white">{row.suggestedClient}</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setZipPendingCreateRows(null)}
+                className="px-4 py-2 rounded-lg border border-white/10 text-hc-muted text-xs font-black uppercase tracking-wide"
+              >
+                Back to mapping
+              </button>
+              <button
+                onClick={() => {
+                  const rows = zipGuidance.filter((row) => row.include && row.selectedTarget !== 'skip');
+                  setZipPendingCreateRows(null);
+                  applyZipRows(rows);
+                }}
+                className="px-4 py-2 rounded-lg btn-gradient text-xs font-black uppercase tracking-wide"
+              >
+                Create and continue
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
