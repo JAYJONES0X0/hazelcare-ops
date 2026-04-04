@@ -125,12 +125,12 @@ function WeeklySummaryReport({ weekData }: { weekData: WeekSummary }) {
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
           <div>
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-0.5">Data Preview</div>
-            <p className="text-[11px] font-bold text-white opacity-80">{weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses</p>
+            <div className="text-xs font-black text-hc-muted uppercase tracking-[0.08em] mb-0.5">Data Preview</div>
+            <p className="text-sm font-semibold text-white opacity-90">{weekData.totalEntries} entries across {Object.keys(weekData.houses).length} houses</p>
           </div>
         </div>
-        <button onClick={() => iframeRef.current?.contentWindow?.print()}
-          className="flex items-center justify-center gap-2.5 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-[1.02] transition-all">
+          <button onClick={() => iframeRef.current?.contentWindow?.print()}
+            className="flex items-center justify-center gap-2.5 px-8 py-3 btn-gradient text-white text-xs font-black uppercase tracking-[0.08em] rounded-xl shadow-xl hover:scale-[1.02] transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
           Print / Save as PDF
         </button>
@@ -154,7 +154,7 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
         <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-xl p-1.5 border border-white/5">
           {(['both', 'red', 'amber'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500
+            className={`px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] rounded-xl transition-all duration-500
                 ${filter === f 
                   ? f === 'red' ? 'pill-red shadow-lg' : f === 'amber' ? 'pill-amber shadow-lg' : 'pill-teal shadow-lg'
                   : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
@@ -165,7 +165,7 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
             </button>
           ))}
         </div>
-        <span className="text-[10px] font-black text-hc-teal-light/60 uppercase tracking-[0.2em] mr-2">Showing {entries.length} entries</span>
+        <span className="text-xs font-black text-hc-teal-light/80 uppercase tracking-[0.08em] mr-2">Showing {entries.length} entries</span>
       </div>
       
       <div className="space-y-3">
@@ -286,12 +286,12 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
         
         <div className="flex flex-wrap items-center gap-3">
           <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
             <option value="all">All Houses</option>
             {houses.map(h => <option key={h} value={h}>{h}</option>)}
           </select>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
             <option value="all">All Channels</option>
             {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
           </select>

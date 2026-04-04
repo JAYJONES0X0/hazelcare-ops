@@ -1,4 +1,4 @@
-import type { AppState, Action, Incident, WeekSummary } from './types';
+import type { AppState, Action, CareEntry, Incident, WeekSummary } from './types';
 
 const STORAGE_KEY = 'hazelcare-ops';
 const CLIENTS_KEY = 'hc-clients-v2';
@@ -24,6 +24,119 @@ export function loadWeekData(): WeekSummary | null {
 
 export function saveWeekData(data: WeekSummary) {
   save({ weekData: data });
+}
+
+function entryFingerprint(entry: CareEntry): string {
+  return [
+    entry.date || '',
+    entry.time || '',
+    entry.house || '',
+    entry.type || '',
+    entry.carer || '',
+    entry.client || '',
+    entry.entry || '',
+  ].join('|').toLowerCase().trim();
+}
+
+function dedupeEntries(entries: CareEntry[]): CareEntry[] {
+  const seen = new Set<string>();
+  const out: CareEntry[] = [];
+  for (const entry of entries) {
+    const key = entryFingerprint(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(entry);
+  }
+  return out;
+}
+
+function compareDateAsc(a: string, b: string): number {
+  const da = Date.parse(a);
+  const db = Date.parse(b);
+  if (Number.isNaN(da) || Number.isNaN(db)) return a.localeCompare(b);
+  return da - db;
+}
+
+export function mergeWeekSummaries(existing: WeekSummary | null, incoming: WeekSummary): WeekSummary {
+  if (!existing) return incoming;
+
+  const mergedHouses: WeekSummary['houses'] = {};
+  const houseNames = new Set([...Object.keys(existing.houses), ...Object.keys(incoming.houses)]);
+  for (const houseName of houseNames) {
+    const left = existing.houses[houseName];
+    const right = incoming.houses[houseName];
+    if (!left && right) {
+      mergedHouses[houseName] = right;
+      continue;
+    }
+    if (left && !right) {
+      mergedHouses[houseName] = left;
+      continue;
+    }
+    if (!left || !right) continue;
+
+    const entries = dedupeEntries([...left.entries, ...right.entries]);
+    const incidents = entries.filter((e) => e.category === 'incident');
+    const safeguarding = entries.filter((e) => e.category === 'safeguarding');
+    const medication = entries.filter((e) => e.category === 'medication');
+    const handovers = entries.filter((e) => e.category === 'handover');
+    const dailySupport = entries.filter((e) => e.category === 'daily_support');
+    const staffPerformance = entries.filter((e) => e.category === 'staff');
+    const healthSafety = entries.filter((e) => e.category === 'health_safety');
+
+    mergedHouses[houseName] = {
+      ...left,
+      ...right,
+      entries,
+      incidents,
+      safeguarding,
+      medication,
+      handovers,
+      dailySupport,
+      staffPerformance,
+      healthSafety,
+      flags: {
+        red: entries.filter((e) => e.severity === 'red').length,
+        amber: entries.filter((e) => e.severity === 'amber').length,
+        green: entries.filter((e) => e.severity === 'green').length,
+      },
+    };
+  }
+
+  const allEntries = dedupeEntries(Object.values(mergedHouses).flatMap((house) => house.entries));
+  const sortedDates = allEntries.map((entry) => entry.date).filter(Boolean).sort(compareDateAsc);
+  const entryTypes: Record<string, number> = {};
+  const clients = new Set<string>();
+  const carers = new Set<string>();
+  const clientDiary: Record<string, CareEntry[]> = {};
+  const red: CareEntry[] = [];
+  const amber: CareEntry[] = [];
+  const green: CareEntry[] = [];
+
+  for (const entry of allEntries) {
+    if (entry.type) entryTypes[entry.type] = (entryTypes[entry.type] || 0) + 1;
+    if (entry.client) clients.add(entry.client);
+    if (entry.carer) carers.add(entry.carer);
+    if (entry.client) {
+      if (!clientDiary[entry.client]) clientDiary[entry.client] = [];
+      clientDiary[entry.client].push(entry);
+    }
+    if (entry.severity === 'red') red.push(entry);
+    else if (entry.severity === 'amber') amber.push(entry);
+    else if (entry.severity === 'green') green.push(entry);
+  }
+
+  return {
+    dateFrom: sortedDates[0] || incoming.dateFrom || existing.dateFrom,
+    dateTo: sortedDates[sortedDates.length - 1] || incoming.dateTo || existing.dateTo,
+    totalEntries: allEntries.length,
+    houses: mergedHouses,
+    allFlags: { red, amber, green },
+    entryTypes,
+    clients: Array.from(clients),
+    carers: Array.from(carers),
+    clientDiary,
+  };
 }
 
 export function loadActions(): Action[] {

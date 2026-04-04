@@ -1,8 +1,8 @@
 import crypto from 'crypto';
-import { consumeOnce } from './lib/durable-once.js';
+import { consumeOnce } from './_lib/durable-once.js';
+import { attachHcSessionCookie } from './_lib/attach-session.js';
 
 const TOTP_SECRET = process.env.AUTH_TOTP_SECRET || '';
-const AUTH_EMERGENCY_BYPASS = process.env.AUTH_EMERGENCY_BYPASS === '1';
 const RECOVERY_CODES = (process.env.AUTH_RECOVERY_CODES || '')
   .split(',')
   .map((x) => x.trim().toUpperCase())
@@ -76,7 +76,8 @@ function getClientIp(req) {
 
 function setCors(req, res) {
   const origin = req.headers.origin;
-  const allowed = !!origin && ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin);
+  const hasAllowlist = ALLOWED_ORIGINS.length > 0;
+  const allowed = !origin || !hasAllowlist || ALLOWED_ORIGINS.includes(origin);
   if (allowed && origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -98,11 +99,6 @@ function isRateLimited(key, max, windowMs) {
 }
 
 export default async function handler(req, res) {
-  if (AUTH_EMERGENCY_BYPASS) {
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).end();
-    return res.json({ valid: true, bypass: true });
-  }
   if (!setCors(req, res)) return res.status(403).json({ valid: false, error: 'Origin not allowed' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
@@ -116,7 +112,9 @@ export default async function handler(req, res) {
   }
 
   if (method === 'totp') {
-    return res.json({ valid: verifyTotp(normalizedCode) });
+    const ok = verifyTotp(normalizedCode);
+    if (ok) attachHcSessionCookie(res);
+    return res.json({ valid: ok });
   }
   if (method === 'recovery') {
     const normalizedRecovery = verifyRecovery(normalizedCode);
@@ -124,6 +122,7 @@ export default async function handler(req, res) {
     const digest = crypto.createHash('sha256').update(normalizedRecovery).digest('hex');
     const once = await consumeOnce(`recovery:${digest}`, 365 * 24 * 60 * 60);
     if (!once.ok) return res.status(500).json({ valid: false, error: once.error });
+    if (once.firstUse) attachHcSessionCookie(res);
     return res.json({ valid: once.firstUse });
   }
 

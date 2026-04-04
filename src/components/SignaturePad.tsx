@@ -1,19 +1,21 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 export interface Sig {
   role: string;
   name: string;
   date: string;
   data: string; // base64 PNG or ''
+  include?: boolean;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function emptySignatories(completedBy = '', keyWorker = '', responsible = ''): Sig[] {
   const today = new Date().toLocaleDateString('en-GB');
   return [
-    { role: 'Completed By', name: completedBy, date: today, data: '' },
-    { role: 'Responsible Person', name: responsible, date: '', data: '' },
-    { role: 'Senior / Key Worker', name: keyWorker, date: '', data: '' },
-    { role: 'Service Manager', name: '', date: '', data: '' },
+    { role: 'Completed By', name: completedBy, date: today, data: '', include: true },
+    { role: 'Responsible Person', name: responsible, date: '', data: '', include: true },
+    { role: 'Senior / Key Worker', name: keyWorker, date: '', data: '', include: true },
+    { role: 'Service Manager', name: '', date: '', data: '', include: true },
   ];
 }
 
@@ -27,10 +29,10 @@ interface PadProps {
 export function SignaturePad({ label, value, onChange }: PadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
-  const [isEmpty, setIsEmpty] = useState(!value);
   const fileRef = useRef<HTMLInputElement>(null);
+  const isEmpty = !value;
 
-  // Restore existing sig on mount / value change
+  // Restore existing signature image from controlled value.
   useEffect(() => {
     if (!value || !canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
@@ -41,8 +43,7 @@ export function SignaturePad({ label, value, onChange }: PadProps) {
       ctx.drawImage(img, 0, 0);
     };
     img.src = value;
-    setIsEmpty(false);
-  }, []); // only on mount
+  }, [value]);
 
   const getPos = (e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -82,7 +83,6 @@ export function SignaturePad({ label, value, onChange }: PadProps) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
-    setIsEmpty(false);
   };
 
   const onEnd = () => {
@@ -96,7 +96,6 @@ export function SignaturePad({ label, value, onChange }: PadProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
-    setIsEmpty(true);
     onChange('');
   };
 
@@ -118,7 +117,6 @@ export function SignaturePad({ label, value, onChange }: PadProps) {
         ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
         const out = canvas.toDataURL('image/png');
         onChange(out);
-        setIsEmpty(false);
       };
       img.src = base64;
     };
@@ -178,16 +176,48 @@ export function SignaturePanel({ sigs, onChange }: PanelProps) {
     next[i] = { ...next[i], ...patch };
     onChange(next);
   };
+  const includeAll = () => onChange(sigs.map((s) => ({ ...s, include: true })));
+  const excludeAll = () => onChange(sigs.map((s) => ({ ...s, include: false })));
 
   return (
     <div>
-      <h2 className="text-base font-bold text-white mb-1">Signatures</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-base font-bold text-white">Signatures</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={includeAll}
+            className="text-[10px] px-2.5 py-1 rounded-lg border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/10 font-semibold uppercase tracking-wide"
+          >
+            Include all
+          </button>
+          <button
+            onClick={excludeAll}
+            className="text-[10px] px-2.5 py-1 rounded-lg border border-red-400/30 text-red-300 hover:bg-red-500/10 font-semibold uppercase tracking-wide"
+          >
+            Exclude all
+          </button>
+        </div>
+      </div>
       <p className="text-xs text-gray-500 mb-5">
         Draw your signature using mouse or touch, or upload an image. Signatures will be embedded in the printed PDF.
       </p>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {sigs.map((sig, i) => (
-          <div key={i} className="bg-[#0a1120] border border-[#1e3050] rounded-xl p-4">
+          <div key={i} className={`bg-[#0a1120] border rounded-xl p-4 relative ${sig.include === false ? 'border-red-500/40 opacity-65' : 'border-[#1e3050]'}`}>
+            <button
+              onClick={() => update(i, { include: sig.include === false ? true : false })}
+              title={sig.include === false ? 'Include this signature in PDF' : 'Exclude this signature from PDF'}
+              className={`absolute top-2 right-2 w-7 h-7 rounded-lg border flex items-center justify-center text-xs font-black transition-all ${
+                sig.include === false
+                  ? 'border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/10'
+                  : 'border-red-400/40 text-red-300 hover:bg-red-500/10'
+              }`}
+            >
+              {sig.include === false ? '↺' : 'X'}
+            </button>
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+              {sig.include === false ? 'Excluded from PDF' : 'Included in PDF'}
+            </div>
             <SignaturePad
               label={sig.role}
               value={sig.data}

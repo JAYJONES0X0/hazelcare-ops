@@ -1,6 +1,9 @@
 import crypto from 'crypto';
+import { parseCookies } from './_lib/parse-cookies.js';
+import { HC_SESSION_COOKIE, verifyHcSession } from './_lib/hc-session.js';
 
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
+const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 const STAFF_LINK_TTL_MINUTES = Number(process.env.STAFF_LINK_TTL_MINUTES || '30');
 const APP_ORIGIN = process.env.APP_ORIGIN || '';
 
@@ -20,7 +23,7 @@ function generateAccessCode() {
   let out = '';
   for (let i = 0; i < 12; i++) {
     if (i > 0 && i % 4 === 0) out += '-';
-    out += chars.charAt(Math.floor(Math.random() * chars.length));
+    out += chars.charAt(crypto.randomInt(0, chars.length));
   }
   return out;
 }
@@ -28,6 +31,12 @@ function generateAccessCode() {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   if (!STAFF_LINK_SECRET) return res.status(500).json({ error: 'Staff link service not configured' });
+  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
+
+  const cookies = parseCookies(req);
+  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
+    return res.status(401).json({ error: 'Sign in required' });
+  }
 
   const { toolId } = req.body || {};
   if (!toolId || !STAFF_TOOLS.has(toolId)) return res.status(400).json({ error: 'Invalid staff tool' });

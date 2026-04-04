@@ -1,7 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
+import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, emptyRisk, emptyRisk_item } from '../lib/client-store';
 import { buildRiskHtml, riskInfo } from '../lib/doc-renderer';
+import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
+import { parseUniversalText } from '../lib/universal-import';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 
@@ -12,6 +15,8 @@ interface Props {
 
 const LIKELIHOOD_LABELS = ['', 'Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'];
 const IMPACT_LABELS = ['', 'Negligible', 'Tolerable', 'Undesirable', 'Severe', 'Catastrophic'];
+
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 function Field({ label, value, onChange, area = false, rows = 3, placeholder = '' }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -239,11 +244,15 @@ export function RiskBuilder({ clientId, onBack }: Props) {
     return all.find(c => c.id === clientId) || all[0];
   });
   const [saved, setSaved] = useState(true);
+  const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
   const [sigs, setSigs] = useState<Sig[]>(() => {
     const c = loadClients().find(x => x.id === clientId);
     return emptySignatories(c?.completedBy || 'Brooklyn Ruvinga', c?.keyWorker || '', c?.responsible || '');
   });
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   const persist = (next: FullClient) => { saveClient(next); setSaved(true); };
 
@@ -274,7 +283,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
   };
 
   const generatePDF = () => {
-    const html = buildRiskHtml(client, sigs);
+    const html = buildRiskHtml(client, sigs, exportLayout);
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
     doc.open(); doc.write(html); doc.close();
@@ -283,6 +292,49 @@ export function RiskBuilder({ clientId, onBack }: Props) {
 
   const today = new Date().toLocaleDateString('en-GB');
   const risk = client.risk || emptyRisk(today);
+
+  const importRiskDataset = async (file: File) => {
+    setImporting(true);
+    setImportStatus('Reading dataset...');
+    try {
+      let rawText = '';
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'pdf') {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        for (let i = 1; i <= pdf.numPages; i += 1) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          rawText += (content.items as any[]).map((it) => it?.str || '').join(' ') + '\n';
+        }
+      } else {
+        rawText = await file.text();
+      }
+      const parsed = parseUniversalText(rawText);
+      const importedRisk = parsed.client.risk;
+      if (!importedRisk) {
+        setImportStatus('No risk dataset detected in file.');
+        return;
+      }
+      const next: FullClient = {
+        ...client,
+        ...parsed.client,
+        risk: {
+          ...(client.risk || emptyRisk(today)),
+          ...importedRisk,
+          planDate: importedRisk.planDate || client.risk?.planDate || today,
+        },
+      };
+      saveClient(next);
+      setClient(next);
+      setImportStatus(`Imported ${next.risk?.risks.filter((r) => r.title).length || 0} risk area(s) from dataset.`);
+    } catch (err: any) {
+      setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
+    } finally {
+      setImporting(false);
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
@@ -312,6 +364,32 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => importFileRef.current?.click()}
+            disabled={importing}
+            className="px-4 py-2 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.08em] text-hc-teal-light disabled:opacity-50"
+          >
+            {importing ? 'Importing...' : 'Import dataset'}
+          </button>
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".pdf,.txt,.csv,.md"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importRiskDataset(f);
+            }}
+          />
+          <select
+            value={exportLayout}
+            onChange={e => setExportLayout(e.target.value as ExportLayout)}
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            title="Export page orientation"
+          >
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
           <button onClick={generatePDF}
             className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -324,6 +402,11 @@ export function RiskBuilder({ clientId, onBack }: Props) {
 
       <div className="flex-1 overflow-y-auto mesh-bg p-10 scrollbar-thin">
         <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-4 duration-700 pb-24">
+          {!!importStatus && (
+            <div className="mb-6 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light">
+              {importStatus}
+            </div>
+          )}
           
           {/* Risk summary bar */}
           {risk.risks.filter(r => r.title).length > 0 && (

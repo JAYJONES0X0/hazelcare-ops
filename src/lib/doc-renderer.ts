@@ -4,6 +4,7 @@
 import { LEVEL_OF_NEED_LABELS } from './client-store';
 import type { FullClient } from './client-store';
 import type { Sig } from '../components/SignaturePad';
+export type ExportLayout = 'portrait' | 'landscape';
 
 const TEAL = '#0f766e';
 const NAVY = '#0c1829';
@@ -25,10 +26,18 @@ export function riskInfo(likelihood: number, impact: number) {
   return { score, color, label };
 }
 
-const BASE_STYLES = `
+function pageSize(layout: ExportLayout) {
+  return layout === 'landscape'
+    ? { width: '297mm', minHeight: '210mm' }
+    : { width: '210mm', minHeight: '297mm' };
+}
+
+function baseStyles(layout: ExportLayout = 'portrait') {
+  const size = pageSize(layout);
+  return `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   
-  @page { margin: 0; }
+  @page { size: A4 ${layout}; margin: 0; }
 
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
   body { 
@@ -42,8 +51,8 @@ const BASE_STYLES = `
   
   .page {
     position: relative;
-    width: 210mm;
-    min-height: 297mm;
+    width: ${size.width};
+    min-height: ${size.minHeight};
     padding: 20mm;
     margin: 0 auto;
     background: #fff;
@@ -58,12 +67,14 @@ const BASE_STYLES = `
     .page { 
       margin: 0 !important; 
       padding: 15mm !important; 
-      width: 210mm !important; 
-      height: 297mm !important;
+      width: ${size.width} !important;
+      min-height: ${size.minHeight} !important;
+      height: auto !important;
       border: none !important; 
       box-shadow: none !important;
       page-break-after: always !important;
-      overflow: hidden;
+      break-after: page !important;
+      overflow: visible !important;
     }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
@@ -104,6 +115,7 @@ const BASE_STYLES = `
   .sig-card { border: 1px solid #edf2f7; padding: 15px; border-radius: 6px; background: #fcfdfe; break-inside: avoid; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 `;
+}
 
 function renderCover(title: string, client: FullClient, planDate: string) {
   return `<div class="page"><div class="cover">
@@ -144,11 +156,14 @@ function renderCover(title: string, client: FullClient, planDate: string) {
 }
 
 function renderSigBlock(sigs?: Sig[]) {
-  const rows = sigs && sigs.length ? sigs : [
+  const rows = sigs && sigs.length
+    ? sigs.filter((s) => s.include !== false)
+    : [
     { role: 'Completed By', name: 'Brooklyn Ruvinga', date: '', data: '' },
     { role: 'Responsible Manager', name: '', date: '', data: '' },
     { role: 'Key Worker', name: '', date: '', data: '' }
   ];
+  if (!rows.length) return '';
   
   return `
     <div style="margin-top: 40px; break-inside: avoid;">
@@ -188,10 +203,10 @@ function riskWidget(likelihood: number, impact: number) {
 
 // ─── Document Generators ─────────────────────────────────────────────────────
 
-export function buildPBSHtml(client: FullClient, sigs?: Sig[]): string {
+export function buildPBSHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const pbs = client.pbs;
   if (!pbs) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('Positive Behaviour Support Plan', client, pbs.planDate);
 
   html += `<div class="page">
@@ -233,39 +248,70 @@ export function buildPBSHtml(client: FullClient, sigs?: Sig[]): string {
   return html;
 }
 
-export function buildRiskHtml(client: FullClient, sigs?: Sig[]): string {
+export function buildRiskHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const risk = client.risk;
   if (!risk) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('Risk Assessment', client, risk.planDate);
 
-  html += `<div class="page">
-    <h2>Identified Risks</h2>
-    ${risk.risks.map((r, i) => `
-      <div style="margin-bottom: 30px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; break-inside: avoid;">
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-          <div style="flex: 1;">
-            <div style="opacity: 0.5; margin-bottom: 4px; font-size: 8px; color: ${MUTED}; font-weight: 700; text-transform: uppercase;">Risk Area ${i + 1}</div>
-            <h3 style="margin: 0; font-size: 16px; color: ${NAVY}; text-transform: none; letter-spacing: 0;">${r.title}</h3>
+  const risks = risk.risks && risk.risks.length ? risk.risks : [];
+  const chunks: typeof risks[] = [];
+  for (let i = 0; i < risks.length; i += 2) chunks.push(risks.slice(i, i + 2));
+
+  if (!chunks.length) {
+    html += `<div class="page"><h2>Identified Risks</h2><p>No structured risks were detected from the imported source.</p>${renderSigBlock(sigs)}</div>`;
+    html += `</body></html>`;
+    return html;
+  }
+
+  chunks.forEach((chunk, pageIdx) => {
+    html += `<div class="page">
+      <h2>Identified Risks ${chunks.length > 1 ? `(${pageIdx + 1}/${chunks.length})` : ''}</h2>
+      ${chunk.map((r, i) => {
+        const globalIndex = pageIdx * 2 + i + 1;
+        const controls = r.controls.filter(c => c).slice(0, 10);
+        const warnings = r.earlyWarnings.filter(w => w).slice(0, 8);
+        return `
+        <div style="margin-bottom: 26px; border-bottom: 1px solid #f1f5f9; padding-bottom: 18px; break-inside: avoid;">
+          <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+            <div style="flex: 1;">
+              <div style="opacity: 0.5; margin-bottom: 4px; font-size: 8px; color: ${MUTED}; font-weight: 700; text-transform: uppercase;">Risk Area ${globalIndex}</div>
+              <h3 style="margin: 0; font-size: 16px; color: ${NAVY}; text-transform: none; letter-spacing: 0;">${r.title || 'Untitled Risk'}</h3>
+            </div>
+            <div style="width: 180px;">${riskWidget(r.likelihood, r.impact)}</div>
           </div>
-          <div style="width: 180px;">${riskWidget(r.likelihood, r.impact)}</div>
+          ${r.description ? `<p style="margin-top: 10px; font-size: 12px;">${r.description}</p>` : ''}
+          <div class="grid-2" style="margin-top: 15px;">
+            <div class="sig-card" style="padding: 12px; background: #fff;">
+              <div class="info-label">How We Manage This</div>
+              <div style="font-size: 10px; margin-top: 6px;">${(controls.length ? controls : ['Follow source plan controls and escalation pathway.']).map(c => `&bull; ${c}`).join('<br/>')}</div>
+            </div>
+            <div class="sig-card" style="padding: 12px; background: #fff;">
+              <div class="info-label">Early Warning Signs</div>
+              <div style="font-size: 10px; margin-top: 6px;">${(warnings.length ? warnings : ['See source risk note for warning signs.']).map(w => `&bull; ${w}`).join('<br/>')}</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+      ${pageIdx === chunks.length - 1 ? `
+        <div style="margin-top: 16px; border: 1px solid #edf2f7; border-left: 4px solid ${RED}; border-radius: 8px; padding: 14px; break-inside: avoid;">
+          <div class="info-label" style="color:${RED}; margin-bottom: 8px;">Escalation Policy & Procedure</div>
+          <div style="font-size: 10px; line-height: 1.6; color: ${SLATE};">
+            ${(risk.escalationProcedure || 'Follow local escalation pathway: immediate safety checks, de-escalation, on-call/manager escalation, incident logging, and safeguarding escalation where threshold is met.').replace(/\n/g, '<br/>')}
+          </div>
         </div>
-        <p style="margin-top: 10px; font-size: 12px;">${r.description}</p>
-        <div class="grid-2" style="margin-top: 15px;">
-          <div class="sig-card" style="padding: 12px; background: #fff;"><div class="info-label">How We Manage This</div><div style="font-size: 10px; margin-top: 6px;">${r.controls.filter(c => c).map(c => `&bull; ${c}`).join('<br/>')}</div></div>
-          <div class="sig-card" style="padding: 12px; background: #fff;"><div class="info-label">Early Warning Signs</div><div style="font-size: 10px; margin-top: 6px;">${r.earlyWarnings.filter(w => w).map(w => `&bull; ${w}`).join('<br/>')}</div></div>
-        </div>
-      </div>
-    `).join('')}
-    ${renderSigBlock(sigs)}
-  </div></body></html>`;
+        ${renderSigBlock(sigs)}
+      ` : ''}
+    </div>`;
+  });
+  html += `</body></html>`;
   return html;
 }
 
-export function buildCarePlanHtml(client: FullClient): string {
+export function buildCarePlanHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const cp = client.carePlan;
   if (!cp) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${BASE_STYLES}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('My Support Plan', client, cp.planDate);
 
   html += `<div class="page">
@@ -324,11 +370,12 @@ export function buildCarePlanHtml(client: FullClient): string {
     </div>`;
   });
 
+  html += `<div class="page">${renderSigBlock(sigs)}</div>`;
   html += `</body></html>`;
   return html;
 }
 
-export function buildEasyReadHtml(client: FullClient): string {
+export function buildEasyReadHtml(client: FullClient, layout: ExportLayout = 'portrait'): string {
   const cp = client.carePlan;
   if (!cp) return 'No care plan data';
 
@@ -358,14 +405,15 @@ export function buildEasyReadHtml(client: FullClient): string {
     'Cultural, Spiritual & Personal Beliefs': '🕊️',
   };
 
+  const size = pageSize(layout);
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-    @page { margin: 0; }
+    @page { size: A4 ${layout}; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
     body { font-family: 'Inter', sans-serif; color: #1a1a2e; line-height: 1.6; margin: 0; padding: 0; font-size: 18px; background: #f8fafc; }
-    .page { width: 210mm; min-height: 297mm; padding: 25mm; margin: 0 auto; background: #fff; display: flex; flex-direction: column; position: relative; }
+    .page { width: ${size.width}; min-height: ${size.minHeight}; padding: 25mm; margin: 0 auto; background: #fff; display: flex; flex-direction: column; position: relative; }
     .page:not(:first-child) { page-break-before: always; }
-    @media print { body { background: #fff; } .page { margin: 0; padding: 15mm; width: 100%; min-height: 297mm; border: none; box-shadow: none; } }
+    @media print { body { background: #fff; } .page { margin: 0; padding: 15mm; width: ${size.width}; min-height: ${size.minHeight}; border: none; box-shadow: none; height: auto; overflow: visible; } }
     
     .logo-box { display: flex; align-items: center; gap: 20px; margin-bottom: 40px; border-bottom: 4px solid #0f766e; padding-bottom: 20px; }
     .logo-img { height: 60px; width: 60px; border-radius: 12px; object-fit: contain; }

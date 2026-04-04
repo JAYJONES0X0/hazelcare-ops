@@ -1,8 +1,8 @@
 // ============================================================
 // HAZEL CARE UNIVERSAL IMPORT — Intelligent Data Mapping
 // ============================================================
-import type { FullClient, CarePlanData, SupportPlanData, SupportPlanNeed } from './client-store';
-import { emptyCarePlan, CARE_PLAN_DOMAINS } from './client-store';
+import type { FullClient, CarePlanData, SupportPlanData, SupportPlanNeed, RiskData, RiskItem } from './client-store';
+import { emptyCarePlan, emptyRisk, emptyRisk_item, CARE_PLAN_DOMAINS } from './client-store';
 
 // Maps legacy industry jargon to Premium Hazel Care Domains
 const DOMAIN_MAP: Record<string, string> = {
@@ -81,6 +81,159 @@ function parseImpact(text: string): number {
   if (lower.includes('major') || lower.includes('severe')) return 4;
   if (lower.includes('catastroph')) return 5;
   return 1;
+}
+
+function clampRiskScore(v: number): number {
+  if (!Number.isFinite(v)) return 1;
+  return Math.min(5, Math.max(1, Math.round(v)));
+}
+
+function parseNumericTriplet(section: string): { likelihood: number; impact: number; total: number } | null {
+  const matches = [...section.matchAll(/(\d)\s+(\d)\s+(\d)(?!\d)/g)];
+  for (let i = matches.length - 1; i >= 0; i -= 1) {
+    const m = matches[i];
+    const l = Number(m[1]);
+    const impact = Number(m[2]);
+    const total = Number(m[3]);
+    if (l >= 1 && l <= 5 && impact >= 1 && impact <= 5 && total >= 1 && total <= 25) {
+      return { likelihood: l, impact, total };
+    }
+  }
+  return null;
+}
+
+function splitSectionLines(input: string): string[] {
+  return input
+    .split('\n')
+    .map((l) => l.replaceAll('\0', '').trim())
+    .filter(Boolean);
+}
+
+function dedupe(items: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const normalized = item.trim();
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+  return out;
+}
+
+function parseRiskItemsFromNotes(text: string): RiskItem[] {
+  const noteChunks = text.split(/\nNOTE\s+/i);
+  const risks: RiskItem[] = [];
+  for (const chunk of noteChunks) {
+    if (!/risk assessment/i.test(chunk) && !/RISK:/i.test(chunk)) continue;
+    const riskTitleMatch = chunk.match(/RISK:\s*([^\n]+)/i);
+    const fallbackTitleMatch = chunk.match(/Risk of\s+([^\n]+)/i);
+    const title = (riskTitleMatch?.[1] || fallbackTitleMatch?.[0] || '').trim();
+    if (!title) continue;
+
+    const lines = splitSectionLines(chunk);
+    const summaryLines: string[] = [];
+    const triggerLines: string[] = [];
+    const controlLines: string[] = [];
+
+    let active: 'summary' | 'triggers' | 'controls' | null = null;
+    for (const line of lines) {
+      if (/Risk Summary:/i.test(line)) {
+        active = 'summary';
+        continue;
+      }
+      if (/Triggers\s*&\s*Warning Signs:/i.test(line)) {
+        active = 'triggers';
+        continue;
+      }
+      if (/Staff Management Actions:/i.test(line)) {
+        active = 'controls';
+        continue;
+      }
+      if (/Consent\s*\/\s*Mental Capacity:/i.test(line) || /Linked Documents/i.test(line) || /Fluctuating Risk/i.test(line)) {
+        active = null;
+        continue;
+      }
+      if (/Risk Level/i.test(line) || /Score:\s*\d+/i.test(line)) continue;
+      if (active === 'summary') summaryLines.push(line);
+      if (active === 'triggers') triggerLines.push(line);
+      if (active === 'controls') controlLines.push(line);
+    }
+
+    const levelMatch = chunk.match(/Likelihood is\s+([a-z]+).*?Impact is\s+([a-z]+)/is);
+    const scoreMatch = chunk.match(/Score:\s*(\d{1,2})/i);
+    let likelihood = levelMatch ? parseLikelihood(levelMatch[1]) : 3;
+    let impact = levelMatch ? parseImpact(levelMatch[2]) : 3;
+    const score = scoreMatch ? Number(scoreMatch[1]) : null;
+    if ((!levelMatch || (likelihood === 1 && impact === 1)) && score && score > 0) {
+      const approx = Math.sqrt(score);
+      likelihood = clampRiskScore(approx);
+      impact = clampRiskScore(score / likelihood);
+    }
+
+    const allTriggerLines = dedupe(triggerLines);
+    const earlyWarnings = allTriggerLines.filter((t) => /warning|sign|pacing|muttering|refusal|hostility|agitation|shouting|clenched/i.test(t));
+    const triggers = allTriggerLines.filter((t) => !earlyWarnings.includes(t));
+
+    risks.push({
+      ...emptyRisk_item(),
+      title,
+      description: dedupe(summaryLines).join(' ').slice(0, 1200),
+      triggers: triggers.length ? triggers : ['See source risk note for triggers.'],
+      earlyWarnings: earlyWarnings.length ? earlyWarnings : ['See source risk note for warning signs.'],
+      controls: dedupe(controlLines).length ? dedupe(controlLines) : ['Follow source plan controls and escalation pathway.'],
+      likelihood: clampRiskScore(likelihood),
+      impact: clampRiskScore(impact),
+      reviewTrigger: 'Review after incident, refusal pattern change, or professional update.',
+    });
+  }
+  return risks;
+}
+
+function buildRiskFromCarePlan(text: string, carePlan: CarePlanData): RiskData {
+  const risk = emptyRisk(new Date().toLocaleDateString('en-GB'));
+  const escalation = extractEscalationProcedure(text);
+  if (escalation) risk.escalationProcedure = escalation;
+  const noteRisks = parseRiskItemsFromNotes(text);
+  if (noteRisks.length) {
+    risk.risks = noteRisks;
+    return risk;
+  }
+
+  const domainRisks = carePlan.domains
+    .filter((d) => d.enabled && (d.riskTitle || d.identifiedNeed || d.howToAchieve))
+    .map((d) => ({
+      ...emptyRisk_item(),
+      title: d.riskTitle || `Risk linked to ${d.title}`,
+      description: d.identifiedNeed || d.plannedOutcomes || 'Risk derived from imported care domain.',
+      triggers: d.riskTitle ? [d.riskTitle] : ['See care plan domain notes.'],
+      earlyWarnings: ['Changes in mood, behaviour, or adherence from baseline.'],
+      controls: d.howToAchieve ? [d.howToAchieve] : ['Follow support guidance in care plan.'],
+      likelihood: clampRiskScore(d.riskLikelihood || 3),
+      impact: clampRiskScore(d.riskImpact || 3),
+      reviewTrigger: d.nextReviewDate || 'Review at next scheduled care plan review.',
+    }));
+
+  risk.risks = domainRisks.length ? domainRisks : [emptyRisk_item()];
+  return risk;
+}
+
+function extractEscalationProcedure(text: string): string {
+  const normalized = text.replace(/\r\n/g, '\n');
+  const direct = normalized.match(/(Escalation Policy\s*&?\s*Procedure[\s\S]{0,2200})/i);
+  if (direct) {
+    return direct[1]
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 24)
+      .join(' ')
+      .slice(0, 1800);
+  }
+  const policyLike = normalized.match(/(escalat(?:e|ion)[\s\S]{0,900}(?:safeguard|on-?call|manager|999|emergency|incident))/i);
+  return policyLike ? policyLike[1].replace(/\s+/g, ' ').trim().slice(0, 900) : '';
 }
 
 export interface ParseResult {
@@ -167,6 +320,7 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
     const riskTitle = extractFieldSmart(section, 'Risk', ['Likelihood', 'Review note', 'Reviewer', 'Description']);
     const likelihoodText = extractFieldSmart(section, 'Likelihood', ['Impact', 'Total', 'Review']);
     const impactText = extractFieldSmart(section, 'Impact', ['Total', 'Review', 'Risk']);
+    const numericTriplet = parseNumericTriplet(section);
     const reviewNote = extractFieldSmart(section, 'Review note', ['Reviewer', 'Page', 'Next']);
     const reviewer = extractFieldSmart(section, 'Reviewer', ['Review date', 'Page', 'Next']);
     const reviewDateVal = extractFieldSmart(section, 'Review date', ['Page', 'Next review']);
@@ -194,8 +348,8 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
       plannedOutcomes,
       howToAchieve,
       riskTitle: riskTitle.split(/[\n]/)[0].trim(),
-      riskLikelihood: parseLikelihood(likelihoodText),
-      riskImpact: parseImpact(impactText),
+      riskLikelihood: numericTriplet ? numericTriplet.likelihood : parseLikelihood(likelihoodText),
+      riskImpact: numericTriplet ? numericTriplet.impact : parseImpact(impactText),
       riskMitigation: '',
       reviewNote,
       reviewer,
@@ -213,7 +367,7 @@ export function parseUniversalText(rawText: string): ParseResult {
   const text = rawText.replace(/\r\n/g, '\n');
   const flat = isFlat(text);
 
-  const isCarePlanReport = /(?:Care Plan|Emergency Admission Pack)\s*[–\-]\s*.+Report run on/i.test(text);
+  const isCarePlanReport = /(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*.+Report run on/i.test(text);
 
   if (isCarePlanReport && flat) {
     const result = parseCarePlanReport(text);
@@ -242,7 +396,8 @@ export function parseUniversalText(rawText: string): ParseResult {
       warnings.push(`Identified ${enabledCount} core care domains for this profile.`);
     }
 
-    return { client: result.client, carePlan: result.carePlan, warnings };
+    const risk = buildRiskFromCarePlan(text, result.carePlan);
+    return { client: { ...result.client, risk }, carePlan: result.carePlan, warnings };
   }
 
   // New Line Delimited Parser
@@ -309,6 +464,7 @@ export function parseUniversalText(rawText: string): ParseResult {
     const riskTitle = extractField(section, 'Risk\n', ['Likelihood', 'Review note', 'Reviewer']);
     const likelihoodText = extractField(section, 'Likelihood\n', ['=', 'Impact']);
     const impactText = extractField(section, 'Impact\n', ['Risk\n', 'Total score', 'Review']);
+    const numericTriplet = parseNumericTriplet(section);
     const reviewNote = extractField(section, 'Review note\n', ['Reviewer', 'Page']);
     const reviewer = extractField(section, 'Reviewer\n', ['Review date', 'Page', '2. Care Plans']);
     const reviewDateVal = extractField(section, 'Review date\n', ['Page', '2. Care Plans', '\n\n']);
@@ -327,8 +483,8 @@ export function parseUniversalText(rawText: string): ParseResult {
       plannedOutcomes: plannedOutcomes.trim(),
       howToAchieve: howToAchieve.trim(),
       riskTitle: riskTitle.split('\n')[0].trim(),
-      riskLikelihood: parseLikelihood(likelihoodText),
-      riskImpact: parseImpact(impactText),
+      riskLikelihood: numericTriplet ? numericTriplet.likelihood : parseLikelihood(likelihoodText),
+      riskImpact: numericTriplet ? numericTriplet.impact : parseImpact(impactText),
       riskMitigation: riskTitle.includes('\n') ? riskTitle.split('\n').slice(1).join('\n').trim() : '',
       reviewNote: reviewNote.trim(),
       reviewer: reviewer.split('\n')[0].trim(),
@@ -342,8 +498,9 @@ export function parseUniversalText(rawText: string): ParseResult {
   if (enabledCount === 0) warnings.push('No support plan areas detected — verify text format.');
   else warnings.push(`Identified ${enabledCount} core care domains for this profile.`);
 
+  const risk = buildRiskFromCarePlan(text, carePlan);
   return {
-    client: { name, preferredName: preferredNameNL, dob, address, nhs, phone, keyWorker, dateOfAdmission },
+    client: { name, preferredName: preferredNameNL, dob, address, nhs, phone, keyWorker, dateOfAdmission, risk },
     carePlan,
     warnings,
   };

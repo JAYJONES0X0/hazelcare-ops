@@ -2,7 +2,7 @@ import type { FullClient } from './client-store';
 import { emptyClient, loadClients, resolveClientMatch, saveClient } from './client-store';
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
 import type { TemplateType } from './types';
-import { exportOpsSnapshot, importOpsSnapshot, saveWeekData } from './storage';
+import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData } from './storage';
 import type { Page } from '../App';
 
 const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
@@ -30,18 +30,26 @@ function pickClient(envelope: NormalizedImportEnvelope, opts: RouteImportOptions
     if (selected) return { client: { ...selected }, existed: true, requiresManualSelection: false };
   }
 
-  if (opts.clientMode !== 'global') {
-    const candidate = envelope.clientCandidates[0] || {};
-    const resolution = resolveClientMatch({
-      name: candidate.name,
-      nhs: candidate.nhs,
-      dob: candidate.dob,
-    });
-    if (resolution.best) {
+  const candidate = envelope.clientCandidates[0] || {};
+  const resolution = resolveClientMatch({
+    name: candidate.name,
+    nhs: candidate.nhs,
+    dob: candidate.dob,
+  });
+
+  if (resolution.best) {
+    // In global mode we still try to prevent duplicates:
+    // - always trust deterministic matches (NHS / name+DOB)
+    // - trust strong fuzzy matches only (>=0.9)
+    const canAutoUseGlobal =
+      opts.clientMode === 'global' &&
+      (resolution.best.strategy === 'nhs' || resolution.best.strategy === 'name_dob' || resolution.best.score >= 0.9);
+
+    if (opts.clientMode !== 'global' || canAutoUseGlobal) {
       return {
         client: { ...resolution.best.client },
         existed: true,
-        requiresManualSelection: resolution.requiresManualSelection,
+        requiresManualSelection: opts.clientMode === 'global' ? false : resolution.requiresManualSelection,
       };
     }
   }
@@ -80,8 +88,10 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
 
     if (opts.targets.includes('reports') || opts.targets.includes('templates')) {
       if (envelope.weekSummary) {
-        saveWeekData(envelope.weekSummary);
-        messages.push(`Loaded ${envelope.weekSummary.totalEntries} diary entries into reporting state.`);
+        const currentWeekData = loadWeekData();
+        const mergedWeekData = mergeWeekSummaries(currentWeekData, envelope.weekSummary);
+        saveWeekData(mergedWeekData);
+        messages.push(`Loaded ${envelope.weekSummary.totalEntries} diary entries (${mergedWeekData.totalEntries} total in reporting state).`);
       } else if (opts.targets.includes('reports')) {
         warnings.push('Reports target selected but no diary summary data was parsed.');
       }
@@ -117,14 +127,26 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
     }
 
     if (opts.targets.includes('templates')) {
+      let prev: Record<string, unknown> = {};
+      try {
+        const raw = localStorage.getItem(TEMPLATE_CONTEXT_KEY);
+        if (raw) prev = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        /* ignore */
+      }
+      const selectedTemplateIds =
+        opts.selectedTemplateIds !== undefined
+          ? opts.selectedTemplateIds
+          : ((prev.selectedTemplateIds as TemplateType[] | undefined) ?? []);
       const context = {
+        ...prev,
         at: new Date().toISOString(),
         parserProfile: envelope.source.parserProfile,
         detectedType: envelope.source.detectedType,
         hasWeekSummary: !!envelope.weekSummary,
         hasAdmission: !!envelope.admission,
         hasSupportPlan: !!envelope.supportPlan,
-        selectedTemplateIds: opts.selectedTemplateIds || [],
+        selectedTemplateIds,
       };
       localStorage.setItem(TEMPLATE_CONTEXT_KEY, JSON.stringify(context));
       messages.push(

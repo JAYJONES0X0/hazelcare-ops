@@ -34,8 +34,9 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Service Hub</h1>
           <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] mt-1">Service-wide overview</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button onClick={() => setPage('briefing')} className="glass-light border border-white/10 text-xs font-black uppercase tracking-[0.08em] px-6 py-3 rounded-xl hover:text-white hover:border-hc-teal/40 transition-all shadow-xl active:scale-95">Morning Briefing</button>
+          <button onClick={() => setPage('staff-monitoring')} className="glass-light border border-hc-teal/25 text-xs font-black uppercase tracking-[0.08em] px-6 py-3 rounded-xl hover:text-white hover:border-hc-teal/50 transition-all shadow-xl active:scale-95 text-hc-teal-light">Staff Intelligence</button>
           <button onClick={() => setPage('upload')} className="btn-gradient px-6 py-3 rounded-xl text-xs font-black uppercase tracking-[0.08em] shadow-xl hover:scale-105 active:scale-95">Update Data</button>
         </div>
       </div>
@@ -135,8 +136,9 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       {/* Navigation footer */}
       <div className="mt-20 pt-10 border-t border-white/5">
         <h3 className="section-header text-xs mb-8 ml-2 opacity-80 tracking-[0.08em]">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pb-10">
           {[
+            { id: 'staff-monitoring', label: 'Staff Intelligence', desc: 'Monitoring & escalations', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
             { id: 'incidents', label: 'Monitor Incidents', desc: 'Active incident log', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z' },
             { id: 'actions', label: 'Review Tasks', desc: 'Action tracker', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
             { id: 'staff', label: 'Staff Roster', desc: 'Staff overview', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },

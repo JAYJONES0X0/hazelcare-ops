@@ -1,16 +1,44 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { uid } from '../lib/storage';
 
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  0: { transcript: string };
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
 // ============================================================
 // VOICE-TO-NOTE — Web Speech API
 // ============================================================
 const SpeechRecognitionAPI =
   typeof window !== 'undefined'
-    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    ? ((window as Window & {
+        SpeechRecognition?: SpeechRecognitionCtor;
+        webkitSpeechRecognition?: SpeechRecognitionCtor;
+      }).SpeechRecognition ||
+      (window as Window & { webkitSpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition)
     : null;
 
 const speechSupported = !!SpeechRecognitionAPI;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const VOICE_LANGUAGES = [
   // English
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
@@ -50,11 +78,13 @@ export const VOICE_LANGUAGES = [
 
 // Global lang so all MicButtons share the same setting
 let _voiceLang = 'en-GB';
+// eslint-disable-next-line react-refresh/only-export-components
 export function setVoiceLang(lang: string) { _voiceLang = lang; }
+// eslint-disable-next-line react-refresh/only-export-components
 export function getVoiceLang() { return _voiceLang; }
 
 function useSpeechToText(onResult: (transcript: string) => void) {
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [listening, setListening] = useState(false);
 
   const stop = useCallback(() => {
@@ -70,7 +100,7 @@ function useSpeechToText(onResult: (transcript: string) => void) {
     recognition.continuous = true;
     recognition.interimResults = true;
     let finalTranscript = '';
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) { finalTranscript += t; onResult(finalTranscript); finalTranscript = ''; }
@@ -377,6 +407,7 @@ export function StaffNotePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: source, noteType: selectedType.label, clientName: client }),
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('Enhancement failed');
       const reader = res.body!.getReader();

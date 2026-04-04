@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, deleteClient, emptyClient, purgeSystemData } from '../lib/client-store';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
+import type { ExportLayout } from '../lib/doc-renderer';
 import { parseUniversalText } from '../lib/universal-import';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
@@ -26,6 +27,7 @@ export function ClientDocsPage() {
   const [importResult, setImportResult] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; domainsDetected: number } | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,10 +146,10 @@ export function ClientDocsPage() {
 
   const printDoc = (client: FullClient, type: 'pbs' | 'risk' | 'careplan' | 'easyread') => {
     let html = '';
-    if (type === 'pbs') html = buildPBSHtml(client);
-    else if (type === 'risk') html = buildRiskHtml(client);
-    else if (type === 'easyread') html = buildEasyReadHtml(client);
-    else html = buildCarePlanHtml(client);
+    if (type === 'pbs') html = buildPBSHtml(client, undefined, exportLayout);
+    else if (type === 'risk') html = buildRiskHtml(client, undefined, exportLayout);
+    else if (type === 'easyread') html = buildEasyReadHtml(client, exportLayout);
+    else html = buildCarePlanHtml(client, undefined, exportLayout);
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
     doc.open(); doc.write(html); doc.close();
@@ -315,6 +317,15 @@ export function ClientDocsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <select
+            value={exportLayout}
+            onChange={e => setExportLayout(e.target.value as ExportLayout)}
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            title="Default export orientation"
+          >
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
             className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
             <svg className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>

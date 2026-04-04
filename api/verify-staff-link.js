@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { consumeOnce } from './lib/durable-once.js';
+import { consumeOnce } from './_lib/durable-once.js';
+import { STAFF_SAC_COOKIE, signStaffSacCookie } from './_lib/staff-sac-cookie.js';
 
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
 const verifyBuckets = new Map();
@@ -56,5 +57,11 @@ export default async function handler(req, res) {
   if (!once.ok) return res.status(500).json({ valid: false, error: once.error });
   if (!once.firstUse) return res.json({ valid: false });
 
+  const { value, maxAgeSec } = signStaffSacCookie(toolId, STAFF_LINK_SECRET);
+  const secure = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `${STAFF_SAC_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secure}`,
+  );
   return res.json({ valid: true });
 }

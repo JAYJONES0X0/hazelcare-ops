@@ -3,6 +3,7 @@ import crypto from 'crypto';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SECRET = process.env.CODE_SECRET;
+const AUTH_LOGIN_EMAIL = (process.env.AUTH_LOGIN_EMAIL || '').trim().toLowerCase();
 const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 const sendBuckets = new Map();
 
@@ -14,8 +15,12 @@ function getClientIp(req) {
 
 function setCors(req, res) {
   const origin = req.headers.origin;
-  const allowed = !!origin && ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin);
-  if (allowed && origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  const hasAllowlist = ALLOWED_ORIGINS.length > 0;
+  const allowed = !origin || !hasAllowlist || ALLOWED_ORIGINS.includes(origin);
+  if (origin && allowed) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -43,8 +48,12 @@ export default async function handler(req, res) {
 
   const { email } = req.body || {};
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+  const normalizedEmail = String(email).trim().toLowerCase();
+  if (AUTH_LOGIN_EMAIL && normalizedEmail !== AUTH_LOGIN_EMAIL) {
+    return res.status(401).json({ error: 'Not authorised' });
+  }
   const ip = getClientIp(req);
-  if (isRateLimited(`send:${ip}`, 8, 10 * 60 * 1000) || isRateLimited(`send-email:${email.toLowerCase()}`, 4, 10 * 60 * 1000)) {
+  if (isRateLimited(`send:${ip}`, 8, 10 * 60 * 1000) || isRateLimited(`send-email:${normalizedEmail}`, 4, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Too many code requests. Wait and retry.' });
   }
 
@@ -55,7 +64,7 @@ export default async function handler(req, res) {
   const msg = [
     '🔐 *HazelCare Ops — Access Request*',
     '',
-    `📧 Email: \`${email}\``,
+    `📧 Email: \`${normalizedEmail}\``,
     `🔑 Code: \`${code}\``,
     '',
     '_Valid 10 minutes. Forward this code to grant access, or ignore to deny._'

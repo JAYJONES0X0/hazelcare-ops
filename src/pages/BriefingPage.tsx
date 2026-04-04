@@ -295,6 +295,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
       <div className="mt-8 lg:mt-12 pt-6 lg:pt-8 border-t border-white/5 flex flex-wrap justify-center gap-3 lg:gap-4 animate-in slide-in-from-bottom-4 duration-1000 delay-500 pb-8">
         {[
           { id: 'dashboard', label: 'Service Hub', color: 'btn-gradient' },
+          { id: 'staff-monitoring', label: 'Staff Intelligence', color: 'glass-light' },
           { id: 'templates', label: 'All Templates', color: 'glass-light' },
           { id: 'notes', label: 'Notes Assistant', color: 'glass-light' },
           { id: 'client-docs', label: 'People & Plans', color: 'glass-light' },

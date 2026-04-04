@@ -3,14 +3,25 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
 import { loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
-import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
+import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot, mergeWeekSummaries, uid } from '../lib/storage';
 import { TEMPLATES } from '../lib/types';
 import type { WeekSummary, TemplateType } from '../lib/types';
 import type { FullClient } from '../lib/client-store';
 import type { Page } from '../App';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
+import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
+import type { MonitoringFilters } from '../lib/staff-monitoring';
+import {
+  downloadText,
+  careEntriesToEvidenceCsv,
+  buildCoordinatorReadme,
+  buildCoordinatorEvidenceHtml,
+  buildCoordinatorPackMeta,
+  buildSnapshotForPack,
+  filterEntriesForCoordinatorPack,
+} from '../lib/coordinator-export-pack';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -57,7 +68,25 @@ interface ZipGuidanceRow {
   clientMode: ClientMode;
   selectedClientId: string | null;
   include: boolean;
+  parseError?: string;
 }
+
+interface ImportGap {
+  id: string;
+  label: string;
+  why: string;
+  recommendedSource: string;
+  critical: boolean;
+}
+
+interface SourceBasketItem {
+  id: string;
+  fileName: string;
+  envelope: NormalizedImportEnvelope;
+  confidence: number;
+}
+
+type IntentPreset = 'custom' | 'risk_quality_all_houses' | 'client_docs_plus_risk' | 'incident_governance_pack';
 
 // ─── PDF text extraction with Y-position newline reconstruction ───────────────
 async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
@@ -112,49 +141,73 @@ function findClientIdByNameHint(nameHint: string): string | null {
   return partial?.id || null;
 }
 
-async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[] }> {
+async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[]; readErrors: string[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter((entry) => !entry.dir);
   const supported = entries.filter((entry) => /\.(txt|csv|tsv|md|pdf|docx)$/i.test(entry.name));
-  if (!supported.length) return { combined: '', rows: [] };
+  if (!supported.length) return { combined: '', rows: [], readErrors: [] };
 
   let combined = '';
   const rows: ZipGuidanceRow[] = [];
+  const readErrors: string[] = [];
   for (let i = 0; i < supported.length; i += 1) {
     const entry = supported[i];
-    const ext = entry.name.split('.').pop()?.toLowerCase();
-    let text = '';
+    const displayName = entry.name.split('/').pop() || entry.name;
+    try {
+      const ext = entry.name.split('.').pop()?.toLowerCase();
+      let text = '';
 
-    if (ext === 'pdf' || ext === 'docx') {
-      const blob = await entry.async('blob');
-      const nestedFile = new File([blob], entry.name);
-      text = ext === 'pdf' ? await extractPdfText(nestedFile) : await extractDocxText(nestedFile);
-    } else {
-      text = await entry.async('text');
-    }
+      if (ext === 'pdf' || ext === 'docx') {
+        const blob = await entry.async('blob');
+        const nestedFile = new File([blob], displayName);
+        text = ext === 'pdf' ? await extractPdfText(nestedFile) : await extractDocxText(nestedFile);
+      } else {
+        text = await entry.async('text');
+      }
 
-    if (text.trim()) {
-      combined += `\n\n--- FILE: ${entry.name} ---\n${text}`;
-      const envelope = buildEnvelopeFromRaw(entry.name, text);
+      if (text.trim()) {
+        combined += `\n\n--- FILE: ${displayName} ---\n${text}`;
+        const envelope = buildEnvelopeFromRaw(displayName, text);
+        rows.push({
+          id: `${entry.name}-${i}`,
+          fileName: displayName,
+          detectedType: envelope.source.detectedType,
+          parserProfile: envelope.source.parserProfile,
+          confidence: envelope.source.confidence,
+          suggestedTargets: envelope.suggestedTargets,
+          suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
+          envelope,
+          selectedTarget: envelope.suggestedTargets[0] || 'skip',
+          clientMode: 'global',
+          selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
+          include: true,
+        });
+      } else {
+        readErrors.push(`${displayName}: no readable text detected`);
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'read failed';
+      readErrors.push(`${displayName}: ${msg}`);
       rows.push({
         id: `${entry.name}-${i}`,
-        fileName: entry.name,
-        detectedType: envelope.source.detectedType,
-        parserProfile: envelope.source.parserProfile,
-        confidence: envelope.source.confidence,
-        suggestedTargets: envelope.suggestedTargets,
-        suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(entry.name),
-        envelope,
-        selectedTarget: envelope.suggestedTargets[0] || 'skip',
+        fileName: displayName,
+        detectedType: 'unknown',
+        parserProfile: 'read-error',
+        confidence: 0,
+        suggestedTargets: [],
+        suggestedClient: inferClientFromFileName(displayName),
+        envelope: buildEnvelopeFromRaw(displayName, ''),
+        selectedTarget: 'skip',
         clientMode: 'global',
-        selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(entry.name)),
-        include: true,
+        selectedClientId: null,
+        include: false,
+        parseError: msg,
       });
     }
     if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
   }
 
-  return { combined: combined.trim(), rows };
+  return { combined: combined.trim(), rows, readErrors };
 }
 
 // ─── Build preview data from normalized envelope ──────────────────────────────
@@ -194,6 +247,84 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
   return base;
 }
 
+function detectImportGaps(envelope: NormalizedImportEnvelope, targets: ImportTarget[]): ImportGap[] {
+  const gaps: ImportGap[] = [];
+  const needsReports = targets.includes('reports');
+  const needsTemplates = targets.includes('templates');
+  const needsClientDocs = targets.includes('client-docs');
+  const wantsDocsOrTemplates = needsClientDocs || needsTemplates;
+
+  const clientName = envelope.clientCandidates[0]?.name || envelope.admission?.client.name || '';
+  const hasIdentity = !!clientName.trim();
+
+  if ((needsReports || needsTemplates) && !envelope.weekSummary) {
+    gaps.push({
+      id: 'missing-week-summary',
+      label: 'No weekly summary detected',
+      why: 'Reports and diary-based templates need structured entries and dates.',
+      recommendedSource: 'Upload a diary export (CSV/PDF/TXT) with dated entries.',
+      critical: needsReports,
+    });
+  }
+
+  if (wantsDocsOrTemplates && !hasIdentity) {
+    gaps.push({
+      id: 'missing-client-identity',
+      label: 'Person identity not detected',
+      why: 'Care, risk, and PBS outputs must be attached to the correct person.',
+      recommendedSource: 'Add an admission/care-plan document with full name, DOB, or NHS number.',
+      critical: true,
+    });
+  }
+
+  if (needsClientDocs && !envelope.admission && !envelope.supportPlan) {
+    gaps.push({
+      id: 'missing-care-source',
+      label: 'No care/support source detected',
+      why: 'Client docs require support needs, risks, or care-plan sections.',
+      recommendedSource: 'Add emergency admission pack, support plan, or assessment notes.',
+      critical: true,
+    });
+  }
+
+  return gaps;
+}
+
+function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImportEnvelope {
+  if (!envelopes.length) return emptyEnvelope('Batch import', '');
+  if (envelopes.length === 1) return envelopes[0];
+
+  const merged = emptyEnvelope('Batch import', envelopes.map((e) => e.source.fileName).join(', '));
+  merged.source.parserProfile = 'batch-merge';
+  merged.source.detectedType = 'unknown';
+  merged.source.confidence = Math.max(...envelopes.map((e) => e.source.confidence));
+  merged.rawText = envelopes.map((e) => e.rawText).filter(Boolean).join('\n\n');
+
+  for (const env of envelopes) {
+    if (merged.source.detectedType === 'unknown' && env.source.detectedType !== 'unknown') {
+      merged.source.detectedType = env.source.detectedType;
+    }
+    if (!merged.admission && env.admission) merged.admission = env.admission;
+    if (!merged.supportPlan && env.supportPlan) merged.supportPlan = env.supportPlan;
+    if (env.weekSummary) merged.weekSummary = mergeWeekSummaries(merged.weekSummary, env.weekSummary);
+    merged.diaryEntries.push(...env.diaryEntries);
+    merged.clientCandidates.push(...env.clientCandidates);
+    merged.warnings.push(...env.warnings);
+    merged.unmappedFields.push(...env.unmappedFields);
+    merged.suggestedTargets.push(...env.suggestedTargets);
+  }
+
+  merged.clientCandidates = merged.clientCandidates.filter((c, idx, arr) => {
+    const key = `${(c.name || '').toLowerCase()}|${c.dob || ''}|${c.nhs || ''}`;
+    return arr.findIndex((x) => `${(x.name || '').toLowerCase()}|${x.dob || ''}|${x.nhs || ''}` === key) === idx;
+  });
+  merged.warnings = Array.from(new Set(merged.warnings));
+  merged.unmappedFields = Array.from(new Set(merged.unmappedFields));
+  merged.suggestedTargets = Array.from(new Set(merged.suggestedTargets));
+
+  return merged;
+}
+
 // ─── TYPE CONFIG ──────────────────────────────────────────────────────────────
 const TYPE_INFO: Record<Exclude<UploadDetectedType, 'unknown'>, { label: string; desc: string; icon: string; accepts: string; help: string; destination: string }> = {
   diary: {
@@ -221,6 +352,97 @@ const TYPE_INFO: Record<Exclude<UploadDetectedType, 'unknown'>, { label: string;
     destination: 'Client Documents',
   },
 };
+
+function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
+  const houseKeys = Object.keys(weekData.houses).sort();
+  const [house, setHouse] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState(weekData.dateFrom || '');
+  const [dateTo, setDateTo] = useState(weekData.dateTo || '');
+  const [typeFilter, setTypeFilter] = useState('');
+
+  function runCoordinatorPack() {
+    const filters: MonitoringFilters = {
+      house: house as MonitoringFilters['house'],
+      dateFrom: dateFrom.trim() || undefined,
+      dateTo: dateTo.trim() || undefined,
+    };
+    const snapshot = buildSnapshotForPack(weekData, filters);
+    const entries = filterEntriesForCoordinatorPack(weekData, filters, typeFilter);
+    const meta = buildCoordinatorPackMeta(snapshot, 'upload-hub', {
+      typeFilter: typeFilter.trim() || undefined,
+      entryCount: entries.length,
+    });
+    const day = new Date().toISOString().slice(0, 10);
+    downloadText(`hazelcare-coordinator-evidence-${day}.csv`, careEntriesToEvidenceCsv(entries), 'text/csv;charset=utf-8');
+    downloadText(`hazelcare-coordinator-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
+    downloadText(`hazelcare-coordinator-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta), 'text/html;charset=utf-8');
+  }
+
+  return (
+    <div className="glass border border-hc-teal/30 rounded-[2rem] p-6 mb-8 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Coordinator evidence pack</h2>
+          <p className="text-[11px] text-hc-muted mt-1 max-w-xl leading-relaxed">
+            Evidence-grade CSV (full text + ids), readme with next-export hints from your current registry, and printable HTML — same shape as Staff Intelligence exports. Filter by house, dates, and optional diary type substring (e.g. <span className="text-hc-teal-light">1:1</span>,{' '}
+            <span className="text-hc-teal-light">handover</span>).
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={runCoordinatorPack}
+          className="shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide"
+        >
+          Download all 3 files
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
+          House
+          <select
+            value={house}
+            onChange={(e) => setHouse(e.target.value)}
+            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white bg-transparent"
+          >
+            <option value="all">All houses</option>
+            {houseKeys.map((h) => (
+              <option key={h} value={h}>
+                {weekData.houses[h]?.name || h}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
+          Date from
+          <input
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            placeholder="DD/MM/YYYY"
+            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
+          Date to
+          <input
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            placeholder="DD/MM/YYYY"
+            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
+          Type contains (optional)
+          <input
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            placeholder="e.g. 1:1, handover"
+            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
 
 function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: {
   weekData: WeekSummary | null;
@@ -352,12 +574,53 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [zipPendingCreateRows, setZipPendingCreateRows] = useState<ZipGuidanceRow[] | null>(null);
   const [zipRunSummary, setZipRunSummary] = useState<{ total: number; success: number; failed: number; failedIds: string[]; nextPage: Page } | null>(null);
   const [showZipGuidance, setShowZipGuidance] = useState(false);
+  const [zipReadErrors, setZipReadErrors] = useState<string[]>([]);
+  const [importGaps, setImportGaps] = useState<ImportGap[]>([]);
+  const [pendingConfirmDestination, setPendingConfirmDestination] = useState<Page | undefined>(undefined);
+  const [pendingConfirmBypassGaps, setPendingConfirmBypassGaps] = useState(false);
+  const [sourceBasket, setSourceBasket] = useState<SourceBasketItem[]>([]);
+  const [intentPreset, setIntentPreset] = useState<IntentPreset>('custom');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const weekData = loadWeekData();
   const clients = loadClients();
 
   const selectedZipCount = zipGuidance.filter((r) => r.include).length;
+
+  function applyIntentPreset(preset: IntentPreset) {
+    setIntentPreset(preset);
+    if (preset === 'risk_quality_all_houses') {
+      setSelectedTargets(['reports', 'templates']);
+      setTemplateMode('specific');
+      setSelectedTemplateIds(['quality_meeting', 'daily_quality', 'incident_report', 'safeguarding']);
+      setClientMode('global');
+      return;
+    }
+    if (preset === 'client_docs_plus_risk') {
+      setSelectedTargets(['client-docs', 'templates']);
+      setTemplateMode('specific');
+      setSelectedTemplateIds(['incident_report', 'safeguarding']);
+      setClientMode('auto');
+      return;
+    }
+    if (preset === 'incident_governance_pack') {
+      setSelectedTargets(['reports', 'templates']);
+      setTemplateMode('specific');
+      setSelectedTemplateIds(['incident_report', 'quality_meeting', 'handover', 'medication_audit']);
+      setClientMode('global');
+      return;
+    }
+  }
+
+  function refreshPreviewFromBasket(nextBasket: SourceBasketItem[]) {
+    if (!nextBasket.length) return;
+    const combined = mergeEnvelopes(nextBasket.map((item) => item.envelope));
+    const previewData = buildPreview(combined);
+    const defaults: ImportTarget[] = combined.suggestedTargets.length ? combined.suggestedTargets : ['reports'];
+    setPreview(previewData);
+    setSelectedTargets(defaults);
+    setStep('preview');
+  }
 
   function rowWillCreatePerson(row: ZipGuidanceRow): boolean {
     if (row.selectedTarget === 'skip') return false;
@@ -463,12 +726,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       } else if (ext === 'docx') {
         rawText = await extractDocxText(file);
       } else if (ext === 'zip') {
+        setSourceBasket([]);
         const zipData = await extractZipGuidance(file, setProgress);
         rawText = zipData.combined;
         zipRows = zipData.rows;
+        setZipReadErrors(zipData.readErrors);
         setZipGuidance(zipRows);
       } else {
         rawText = await file.text();
+        setZipReadErrors([]);
         setZipGuidance([]);
       }
 
@@ -483,16 +749,30 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       const targetUnion = ext === 'zip'
         ? Array.from(new Set(zipRows.flatMap((row) => row.suggestedTargets)))
         : envelope.suggestedTargets;
-      setSelectedTargets(targetUnion.length ? targetUnion : (envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']));
-      setTemplateMode('all');
-      setSelectedTemplateIds([]);
-      setImportTargetClient(null);
-      setPreview(previewData);
-      setStep('preview');
+      if (ext !== 'zip') {
+        const nextBasket = [...sourceBasket, { id: uid(), fileName: file.name, envelope, confidence: envelope.source.confidence }];
+        setSourceBasket(nextBasket);
+        refreshPreviewFromBasket(nextBasket);
+      } else {
+        setSelectedTargets(targetUnion.length ? targetUnion : (envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']));
+        setTemplateMode('all');
+        setSelectedTemplateIds([]);
+        setImportTargetClient(null);
+        setPreview(previewData);
+        setStep('preview');
+      }
     } catch (err: any) {
       console.error('Import error:', err);
       setErrorMsg(`Failed to read file: ${err.message || 'Unknown error'}. Try a different format or paste the text manually.`);
       setStep('error');
+    }
+  };
+
+  const handleFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    for (const file of list) {
+      // Process sequentially so basket/order and progress are predictable.
+      await handleFile(file);
     }
   };
 
@@ -503,14 +783,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setProgress(100);
     try {
       setZipGuidance([]);
+      setZipReadErrors([]);
       const envelope = buildEnvelopeFromRaw('Pasted text', pasteText);
-      const previewData = buildPreview(envelope);
-      setSelectedTargets(envelope.suggestedTargets.length ? envelope.suggestedTargets : ['reports']);
-      setTemplateMode('all');
-      setSelectedTemplateIds([]);
-      setImportTargetClient(null);
-      setPreview(previewData);
-      setStep('preview');
+      const nextBasket = [...sourceBasket, { id: uid(), fileName: `Pasted text ${sourceBasket.length + 1}`, envelope, confidence: envelope.source.confidence }];
+      setSourceBasket(nextBasket);
+      refreshPreviewFromBasket(nextBasket);
     } catch (err: any) {
       setErrorMsg(`Failed to analyse pasted text: ${err?.message || 'Unknown error'}`);
       setStep('error');
@@ -520,7 +797,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   // ─── Confirm and process ─────────────────────────────────────────────────────
   const [targetClient, setImportTargetClient] = useState<string | null>(null);
 
-  const handleConfirm = (destination?: Page) => {
+  const handleConfirm = (destination?: Page, bypassGapGate = false) => {
     if (!preview) return;
     setErrorMsg('');
 
@@ -547,6 +824,14 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (selectedTargets.includes('templates') && templateMode === 'specific' && selectedTemplateIds.length === 0) {
       setErrorMsg('Select at least one template or switch to "all templates".');
       setStep('error');
+      return;
+    }
+
+    const gaps = detectImportGaps(preview.envelope, selectedTargets);
+    if (!bypassGapGate && gaps.some((g) => g.critical)) {
+      setImportGaps(gaps);
+      setPendingConfirmDestination(destination);
+      setPendingConfirmBypassGaps(true);
       return;
     }
 
@@ -604,6 +889,12 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setZipPendingCreateRows(null);
     setZipRunSummary(null);
     setShowZipGuidance(false);
+    setZipReadErrors([]);
+    setImportGaps([]);
+    setPendingConfirmDestination(undefined);
+    setPendingConfirmBypassGaps(false);
+    setSourceBasket([]);
+    setIntentPreset('custom');
   };
 
   const detectedInfo = preview && preview.type !== 'unknown'
@@ -642,7 +933,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
           {/* Drop zone */}
           <div
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) void handleFiles(e.dataTransfer.files); }}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onClick={() => fileRef.current?.click()}
@@ -658,8 +949,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <div className="text-[11px] text-hc-muted/50">CSV, PDF, DOCX, TXT, or ZIP bundle — we'll auto-detect the format</div>
             </div>
           </div>
-          <input ref={fileRef} type="file" accept=".txt,.vtt,.csv,.tsv,.md,.pdf,.docx,.zip,application/zip" className="hidden"
-            onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
+          <input ref={fileRef} type="file" multiple accept=".txt,.vtt,.csv,.tsv,.md,.pdf,.docx,.zip,application/zip" className="hidden"
+            onChange={(e) => { if (e.target.files?.length) void handleFiles(e.target.files); }} />
 
           {/* Paste option */}
           <details className="mb-8 group/details" open={showPaste} onToggle={(e) => setShowPaste((e.target as HTMLDetailsElement).open)}>
@@ -684,6 +975,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
             </div>
           </details>
+
+          {weekData && (
+            <CoordinatorExportCard
+              key={`${weekData.totalEntries}-${weekData.dateFrom}-${weekData.dateTo}-${Object.keys(weekData.houses).sort().join(',')}`}
+              weekData={weekData}
+            />
+          )}
         </>
       )}
 
@@ -727,6 +1025,16 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-3 md:col-span-2">
+                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Intent Preset</label>
+                  <div className="glass-light border border-white/10 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <button onClick={() => applyIntentPreset('risk_quality_all_houses')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'risk_quality_all_houses' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Risk + Quality (All Houses)</button>
+                    <button onClick={() => applyIntentPreset('client_docs_plus_risk')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'client_docs_plus_risk' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Client Docs + Risk</button>
+                    <button onClick={() => applyIntentPreset('incident_governance_pack')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'incident_governance_pack' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Incident Governance</button>
+                    <button onClick={() => applyIntentPreset('custom')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'custom' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Custom</button>
+                  </div>
+                </div>
+
                 {/* Decision Row 1: Target Mapping */}
                 <div className="space-y-3">
                   <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
@@ -783,6 +1091,38 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
               </div>
 
+              {!!sourceBasket.length && (
+                <div className="mb-6 glass-light border border-white/10 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="section-header text-xs opacity-90 uppercase tracking-[0.08em]">Source Basket ({sourceBasket.length})</div>
+                    <button
+                      onClick={() => { setSourceBasket([]); setIntentPreset('custom'); }}
+                      className="text-[10px] font-black uppercase tracking-wide text-flag-red"
+                    >
+                      Clear Basket
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin">
+                    {sourceBasket.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-xs border border-white/10 rounded-lg px-2.5 py-1.5">
+                        <span className="text-hc-muted truncate">{item.fileName}</span>
+                        <button
+                          onClick={() => {
+                            const next = sourceBasket.filter((x) => x.id !== item.id);
+                            setSourceBasket(next);
+                            if (next.length) refreshPreviewFromBasket(next);
+                            else setStep('choose');
+                          }}
+                          className="text-flag-red font-black uppercase tracking-wide text-[10px]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedTargets.includes('templates') && (
                 <div className="mb-6 glass-light border border-white/10 rounded-2xl p-4">
                   <div className="flex items-center gap-3 mb-3">
@@ -824,6 +1164,24 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   Warnings: {preview.warnings.join(' | ')}
                 </div>
               )}
+              {(() => {
+                const gaps = detectImportGaps(preview.envelope, selectedTargets);
+                if (!gaps.length) return null;
+                return (
+                  <div className="mb-6 border border-flag-amber/30 bg-flag-amber/10 rounded-xl px-4 py-3">
+                    <div className="text-xs text-flag-amber font-black uppercase tracking-wide mb-2">
+                      Missing data detected ({gaps.length})
+                    </div>
+                    <div className="space-y-2">
+                      {gaps.map((gap) => (
+                        <div key={gap.id} className="text-xs text-hc-muted">
+                          <span className="text-white font-semibold">{gap.label}</span> - {gap.why} Suggested source: <span className="text-white">{gap.recommendedSource}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               {!!zipGuidance.length && (
                 <div className="mb-6 glass-light border border-hc-teal/30 rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-3">
@@ -924,6 +1282,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   <div className="text-xs text-hc-muted/80 mb-3">
                     Guided recommendation: keep <span className="text-white font-semibold">Global Import</span> for mixed-client ZIP packs, then review each client page after import.
                   </div>
+                  {!!zipReadErrors.length && (
+                    <div className="mb-3 border border-flag-amber/30 bg-flag-amber/10 rounded-xl px-3 py-2 text-xs text-flag-amber">
+                      Some files could not be read and were auto-skipped: {zipReadErrors.slice(0, 3).join(' | ')}{zipReadErrors.length > 3 ? ` (+${zipReadErrors.length - 3} more)` : ''}
+                    </div>
+                  )}
                   <div className="max-h-56 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
                     {zipGuidance
                       .filter((row) => {
@@ -948,6 +1311,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                         <div className="text-[11px] text-hc-muted">
                           Client: <span className="text-white">{row.suggestedClient}</span> · Type: <span className="text-white">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
                         </div>
+                        {row.parseError && (
+                          <div className="text-[11px] text-flag-red">Read error: {row.parseError}</div>
+                        )}
                         <div className="mt-1 flex flex-wrap gap-1.5">
                           {rowNeedsDecision(row) && <span className="text-[10px] px-2 py-0.5 rounded-full border border-flag-amber/40 text-flag-amber">Needs decision</span>}
                           {rowWillCreatePerson(row) && <span className="text-[10px] px-2 py-0.5 rounded-full border border-hc-teal/40 text-hc-teal-light">Will create person</span>}
@@ -1149,6 +1515,47 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 className="px-4 py-2 rounded-lg btn-gradient text-xs font-black uppercase tracking-wide"
               >
                 Create and continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {!!importGaps.length && pendingConfirmBypassGaps && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl glass border border-flag-amber/30 rounded-2xl p-6">
+            <div className="text-lg font-black text-white mb-2">More Source Data Recommended</div>
+            <div className="text-sm text-hc-muted mb-4">
+              Some required fields are missing. Add another document now for better output quality, or continue anyway.
+            </div>
+            <div className="max-h-60 overflow-y-auto space-y-2 mb-5">
+              {importGaps.map((gap) => (
+                <div key={gap.id} className="border border-white/10 rounded-lg px-3 py-2 bg-hc-dark/30">
+                  <div className="text-xs text-white font-semibold">{gap.label}</div>
+                  <div className="text-[11px] text-hc-muted">{gap.why}</div>
+                  <div className="text-[11px] text-hc-teal-light mt-1">Add: {gap.recommendedSource}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setImportGaps([]);
+                  setPendingConfirmBypassGaps(false);
+                  setStep('choose');
+                }}
+                className="px-4 py-2 rounded-lg border border-white/10 text-hc-muted text-xs font-black uppercase tracking-wide"
+              >
+                Add more source files
+              </button>
+              <button
+                onClick={() => {
+                  setImportGaps([]);
+                  setPendingConfirmBypassGaps(false);
+                  handleConfirm(pendingConfirmDestination, true);
+                }}
+                className="px-4 py-2 rounded-lg btn-gradient text-xs font-black uppercase tracking-wide"
+              >
+                Continue anyway
               </button>
             </div>
           </div>

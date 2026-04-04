@@ -73,13 +73,13 @@ export function ActionsPage({ actions, onUpdate }: Props) {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1200px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Action Tracker</h1>
           <div className="flex items-center gap-2">
-            <span className="pill pill-teal text-[10px] uppercase tracking-wider font-bold">Action Tracker</span>
-            <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-2">
+            <span className="pill pill-teal text-xs uppercase tracking-[0.08em] font-bold">Action Tracker</span>
+            <span className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-2">
               Track tasks and accountability
             </span>
           </div>
@@ -99,19 +99,19 @@ export function ActionsPage({ actions, onUpdate }: Props) {
           <h3 className="section-header mb-4 text-hc-teal-light">Create New Action</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="section-header text-[9px] mb-1.5 ml-1 block">Objective Title</label>
+              <label className="section-header text-xs mb-1.5 ml-1 block">Objective Title</label>
               <input value={newAction.title} onChange={e => setNewAction({ ...newAction, title: e.target.value })} placeholder="What needs to be done?" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[9px] mb-1.5 ml-1 block">Location / House</label>
+              <label className="section-header text-xs mb-1.5 ml-1 block">Location / House</label>
               <input value={newAction.house} onChange={e => setNewAction({ ...newAction, house: e.target.value })} placeholder="House name" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[9px] mb-1.5 ml-1 block">Assigned Owner</label>
+              <label className="section-header text-xs mb-1.5 ml-1 block">Assigned Owner</label>
               <input value={newAction.owner} onChange={e => setNewAction({ ...newAction, owner: e.target.value })} placeholder="Carer or Manager" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
-              <label className="section-header text-[9px] mb-1.5 ml-1 block">Priority Level</label>
+              <label className="section-header text-xs mb-1.5 ml-1 block">Priority Level</label>
               <select value={newAction.priority} onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 <option value="critical">Critical (Immediate)</option>
                 <option value="high">High (Today)</option>
@@ -120,7 +120,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
               </select>
             </div>
             <div>
-              <label className="section-header text-[9px] mb-1.5 ml-1 block">Deadline</label>
+              <label className="section-header text-xs mb-1.5 ml-1 block">Deadline</label>
               <input type="date" value={newAction.dueDate} onChange={e => setNewAction({ ...newAction, dueDate: e.target.value })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
           </div>

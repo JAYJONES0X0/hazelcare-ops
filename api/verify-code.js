@@ -1,7 +1,7 @@
 import crypto from 'crypto';
+import { attachHcSessionCookie } from './_lib/attach-session.js';
 
 const SECRET = process.env.CODE_SECRET;
-const AUTH_EMERGENCY_BYPASS = process.env.AUTH_EMERGENCY_BYPASS === '1';
 const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 const verifyBuckets = new Map();
 
@@ -13,8 +13,12 @@ function getClientIp(req) {
 
 function setCors(req, res) {
   const origin = req.headers.origin;
-  const allowed = !!origin && ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin);
-  if (allowed && origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  const hasAllowlist = ALLOWED_ORIGINS.length > 0;
+  const allowed = !origin || !hasAllowlist || ALLOWED_ORIGINS.includes(origin);
+  if (origin && allowed) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -41,11 +45,6 @@ function safeTokenEqual(expectedHex, providedHex) {
 }
 
 export default async function handler(req, res) {
-  if (AUTH_EMERGENCY_BYPASS) {
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).end();
-    return res.json({ valid: true, bypass: true });
-  }
   if (!setCors(req, res)) return res.status(403).json({ valid: false });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
@@ -65,5 +64,6 @@ export default async function handler(req, res) {
     return safeTokenEqual(expected, token);
   });
 
+  if (valid) attachHcSessionCookie(res);
   res.json({ valid });
 }

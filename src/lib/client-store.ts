@@ -92,6 +92,7 @@ export interface RiskItem {
 
 export interface RiskData {
   leastRestrictivePractice: string;
+  escalationProcedure: string;
   reviewSchedule: string;
   multiAgencyRows: AgencyRow[];
   risks: RiskItem[];
@@ -333,6 +334,7 @@ export function emptyPBS(planDate: string): PBSData {
 export function emptyRisk(planDate: string): RiskData {
   return {
     leastRestrictivePractice: 'All risk management strategies are based on the principle of least restrictive practice in accordance with the Mental Capacity Act 2005. This person has capacity in relation to their daily choices and lifestyle. Support must always respect their autonomy, use the least restrictive approach, focus on enabling independence, and only restrict choices where necessary to prevent serious harm in a proportionate manner. Restrictive responses are not routine — they are a last resort.',
+    escalationProcedure: 'If risk escalates beyond routine support, staff must follow the Escalation Policy & Procedure immediately: ensure immediate safety, initiate de-escalation steps, alert senior/on-call support, complete incident and safeguarding records, and trigger multi-agency escalation where thresholds are met.',
     reviewSchedule: 'This risk assessment will be reviewed routinely every 3 months, following any significant incident, if there is a change in presentation or needs, following multi-agency input or professional review, and as part of routine care plan reviews.',
     multiAgencyRows: [{ service: '', role: '', status: 'Active' }],
     risks: [emptyRisk_item()],

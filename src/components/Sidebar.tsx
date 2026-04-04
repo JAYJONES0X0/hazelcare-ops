@@ -8,6 +8,7 @@ interface Props {
   weekData: WeekSummary | null;
   actions: Action[];
   incidents: Incident[];
+  theme: 'dark' | 'light';
 }
 
 const navSections: { heading?: string; items: { id: Page; label: string; icon: ReactNode }[] }[] = [
@@ -23,6 +24,7 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
     heading: 'Operations',
     items: [
       { id: 'client-diary' as Page, label: 'Client Diary', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg> },
+      { id: 'staff-monitoring' as Page, label: 'Staff Intelligence', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> },
       { id: 'actions', label: 'Action Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
       { id: 'incidents', label: 'Incidents', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> },
       { id: 'risk', label: 'Risk Scores', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> },
@@ -58,8 +60,9 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
   },
 ];
 
-export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isLight = theme === 'light';
   const redFlags = weekData?.allFlags.red.length ?? 0;
   const amberFlags = weekData?.allFlags.amber.length ?? 0;
   const openActions = actions.filter(a => a.status !== 'completed').length;
@@ -77,43 +80,53 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
     setMobileOpen(false);
   }
 
+  const shellBorder = isLight ? 'border-hc-border' : 'border-white/[0.06]';
+  const brandTitle = isLight ? 'text-hc-text' : 'text-white';
+  const asideBg = isLight
+    ? { background: 'linear-gradient(180deg, #eef6fb 0%, #e2edf6 100%)' }
+    : { background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' };
+
   const sidebarContent = (
     <>
       {/* Logo + Brand */}
-      <div className="p-5 border-b border-white/[0.06]">
-        <div className="flex items-center gap-3">
+      <div className={`p-3 border-b ${shellBorder}`}>
+        <div className="flex items-center gap-2.5">
           <div className="relative">
-            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-10 w-10 rounded-xl relative z-10" />
+            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-8 w-8 rounded-lg relative z-10" />
             <div className="absolute inset-0 rounded-xl bg-hc-teal/25 blur-lg" />
           </div>
           <div className="flex-1">
-            <div className="text-sm font-bold text-white tracking-tight">Care Portal</div>
-            <div className="text-[10px] text-hc-teal-light font-medium">Hazel Care Ltd</div>
+            <div className={`text-xs font-bold tracking-tight ${brandTitle}`}>Care Portal</div>
+            <div className="text-[10px] text-hc-teal font-medium">Hazel Care Ltd</div>
           </div>
           {/* Mobile close */}
-          <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden text-hc-muted hover:text-white p-1">
+          <button onClick={() => setMobileOpen(false)} className={`ml-auto lg:hidden p-1.5 rounded-lg ${isLight ? 'text-hc-muted hover:text-hc-text hover:bg-black/[0.06]' : 'text-hc-muted hover:text-white'}`}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-2.5 space-y-3 overflow-y-auto scrollbar-thin">
         {/* Intelligence Sync — Global Access */}
-        <div className="px-1.5 mb-2">
+        <div className="px-1 mb-1">
           <button 
             onClick={() => handleNav('upload')}
-            className={`w-full group flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-500 shadow-2xl active:scale-95 ${
+            className={`w-full group flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl border transition-all duration-300 active:scale-[0.98] ${
               page === 'upload' 
-                ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal translate-x-1' 
-                : 'border-white/5 glass-light hover:border-hc-teal/30 hover:bg-white/5'
+                ? isLight
+                  ? 'border-hc-teal/35 bg-hc-teal/10 shadow-md translate-x-0.5'
+                  : 'border-hc-teal/40 bg-hc-teal/10 glow-teal translate-x-1'
+                : isLight
+                  ? 'border-hc-border/80 bg-white/60 hover:border-hc-teal/25 hover:bg-white/90 shadow-sm'
+                  : 'border-white/5 glass-light hover:border-hc-teal/30 hover:bg-white/5'
             }`}>
-            <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <span className="text-xl">🧠</span>
+            <div className="w-8 h-8 rounded-lg bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <span className="text-base">🧠</span>
             </div>
-            <div className="text-left">
-              <div className="text-[10px] font-black text-white uppercase tracking-tighter group-hover:text-hc-teal-light transition-colors">Sync Intelligence</div>
-              <div className="text-[8px] font-bold text-hc-muted uppercase tracking-widest opacity-40">Global Data Import</div>
+            <div className="text-left min-w-0">
+              <div className={`text-[11px] font-black uppercase tracking-tight transition-colors ${isLight ? 'text-hc-text group-hover:text-hc-teal' : 'text-white group-hover:text-hc-teal-light'}`}>Sync Intelligence</div>
+              <div className="text-[10px] font-semibold text-hc-muted uppercase tracking-wide">Global Data Import</div>
             </div>
           </button>
         </div>
@@ -121,21 +134,25 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
         {navSections.map((section, si) => (
           <div key={si}>
             {section.heading && (
-              <div className="text-[10px] font-semibold text-hc-teal-light/60 uppercase tracking-[0.12em] px-3 mb-2">{section.heading}</div>
+              <div className={`text-[10px] font-semibold uppercase tracking-[0.04em] px-2.5 mb-1 ${isLight ? 'text-hc-teal' : 'text-hc-teal-light/80'}`}>{section.heading}</div>
             )}
-            <div className="space-y-0.5">
+            <div className="space-y-px">
               {section.items.map(item => (
                 <button
                   key={item.id}
                   onClick={() => handleNav(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-300 ease-out active:scale-[0.97] hover:scale-[1.02] ${
+                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-200 ease-out active:scale-[0.98] ${
                     page === item.id
-                      ? 'glass-teal text-hc-teal-glow font-semibold shadow-[0_0_15px_rgba(20,184,166,0.15)] translate-x-1'
-                      : 'text-hc-text/70 hover:text-white hover:bg-white/[0.06]'
+                      ? isLight
+                        ? 'sidebar-nav-active font-semibold'
+                        : 'glass-teal text-hc-teal-glow font-semibold shadow-[0_0_15px_rgba(20,184,166,0.15)] translate-x-1'
+                      : isLight
+                        ? 'text-hc-text/80 hover:text-hc-text hover:bg-black/[0.05]'
+                        : 'text-hc-text/70 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
-                  <span className={`transition-transform duration-500 ${page === item.id ? 'text-hc-teal-glow scale-110' : 'group-hover:scale-110'}`}>{item.icon}</span>
-                  {item.label}
+                  <span className={`shrink-0 transition-transform duration-300 ${page === item.id ? (isLight ? 'text-hc-teal scale-105' : 'text-hc-teal-glow scale-110') : ''}`}>{item.icon}</span>
+                  <span className="truncate text-left">{item.label}</span>
                   {getBadge(item.id)}
                 </button>
               ))}
@@ -145,19 +162,19 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
       </nav>
 
       {/* Status Panel */}
-      <div className="p-3 border-t border-white/[0.06] hidden lg:block">
+      <div className={`p-3 border-t ${shellBorder} hidden lg:block`}>
         {weekData ? (
-          <div className="glass rounded-xl p-4 transition-all duration-500 hover:scale-[1.02] hover:bg-white/[0.02] hover:border-hc-teal/20 group/status">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] text-hc-teal-light/70 uppercase tracking-wider font-semibold group-hover/status:text-hc-teal-light transition-colors">This Week</div>
+          <div className="glass rounded-xl p-3 transition-all duration-300 hover:border-hc-teal/25 group/status">
+            <div className="flex items-center justify-between mb-2">
+              <div className={`text-xs uppercase tracking-wide font-semibold ${isLight ? 'text-hc-teal' : 'text-hc-teal-light/90'}`}>This Week</div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="group/val"><div className="text-lg font-black text-white group-hover/val:scale-110 transition-transform tabular-nums">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Notes</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-red group-hover/val:scale-110 transition-transform tabular-nums">{redFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Flags</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-amber group-hover/val:scale-110 transition-transform tabular-nums">{amberFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-tighter">Alerts</div></div>
+              <div className="group/val"><div className={`text-lg font-black tabular-nums ${isLight ? 'text-hc-text' : 'text-white'}`}>{weekData.totalEntries}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Notes</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-red tabular-nums">{redFlags}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Flags</div></div>
+              <div className="group/val"><div className="text-lg font-black text-flag-amber tabular-nums">{amberFlags}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Alerts</div></div>
             </div>
-            <div className="mt-3 pt-3 border-t border-white/[0.06]">
-              <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-hc-muted/60">
+            <div className={`mt-2 pt-2 border-t ${shellBorder}`}>
+              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-hc-muted">
                 <span>{Object.keys(weekData.houses).length} Houses</span>
                 <span>{weekData.clients.length} Clients</span>
               </div>
@@ -171,8 +188,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
       {/* Quick links */}
       <div className="px-3 pb-4 hidden lg:block">
         <div className="flex gap-2">
-          <a href="https://hazelcare.Hazel Carecare.com/user/login?destination=reporting/clientdiary" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Hazel Care</a>
-          <a href="https://org.Hazel Carecare.co.uk/hazel-care-ltd+nc-hazelcare#/" target="_blank" rel="noopener" className="flex-1 text-[10px] text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
+          <a href="https://www.hazelcare.co.uk" target="_blank" rel="noopener noreferrer" title="Organisation site (update href if your provider differs)" className="flex-1 text-xs text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Hazel Care</a>
+          <a href="https://login.nourishcare.com" target="_blank" rel="noopener noreferrer" title="Care records portal (update if you use another system)" className="flex-1 text-xs text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
         </div>
       </div>
     </>
@@ -181,12 +198,12 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 glass border-b border-white/[0.06]">
-        <button onClick={() => setMobileOpen(true)} className="text-hc-muted hover:text-white">
+      <div className={`lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 glass border-b ${shellBorder}`}>
+        <button type="button" onClick={() => setMobileOpen(true)} className={isLight ? 'text-hc-muted hover:text-hc-text' : 'text-hc-muted hover:text-white'} aria-label="Open menu">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-7 w-7 rounded-lg" />
-        <span className="text-sm font-bold text-white">Care Portal</span>
+        <span className={`text-sm font-bold ${brandTitle}`}>Care Portal</span>
         {redFlags > 0 && <span className="pill pill-red text-[10px] ml-auto">{redFlags}</span>}
       </div>
 
@@ -194,14 +211,14 @@ export function Sidebar({ page, setPage, weekData, actions, incidents }: Props) 
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 flex flex-col" style={{ background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' }}>
+          <aside className="absolute left-0 top-0 bottom-0 w-72 flex flex-col border-r border-black/10" style={asideBg}>
             {sidebarContent}
           </aside>
         </div>
       )}
 
       {/* Desktop Sidebar — Glass morphism */}
-      <aside className="hidden lg:flex w-64 flex-col shrink-0 border-r border-white/[0.06] h-screen sticky top-0 overflow-hidden" style={{ background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' }}>
+      <aside className={`hidden lg:flex w-[14rem] flex-col shrink-0 h-screen sticky top-0 overflow-hidden ${isLight ? 'border-r border-hc-border' : 'border-r border-white/[0.06]'}`} style={asideBg}>
         {sidebarContent}
       </aside>
     </>

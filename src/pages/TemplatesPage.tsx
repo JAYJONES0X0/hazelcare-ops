@@ -1,6 +1,12 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import type { WeekSummary, CareEntry, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
+import { escapeHtml } from '../lib/html-escape';
+
+/** Escape user-derived strings embedded in report HTML. */
+function ex(s: string | undefined | null): string {
+  return escapeHtml(s == null ? '' : String(s));
+}
 
 interface Props {
   weekData: WeekSummary | null;
@@ -10,6 +16,53 @@ const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
 
 interface TemplateImportContext {
   selectedTemplateIds?: TemplateType[];
+  /** Set when arriving from Staff Intelligence monitoring */
+  source?: string;
+  at?: string;
+  monitoringRunId?: string;
+  house?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  escalationCount?: number;
+  avgHouseQuality?: number;
+}
+
+function readTemplateImportContext(): TemplateImportContext | null {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_CONTEXT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TemplateImportContext;
+  } catch {
+    return null;
+  }
+}
+
+function loadRecommendedTemplateIds(): TemplateType[] {
+  return readTemplateImportContext()?.selectedTemplateIds || [];
+}
+
+/** Inline block inside document body (after header) when Staff Intelligence context is active. */
+function monitoringContextBlock(ctx: TemplateImportContext | null): string {
+  if (!ctx || ctx.source !== 'staff-monitoring') return '';
+  const win =
+    ctx.dateFrom && ctx.dateTo ? `${ex(ctx.dateFrom)} — ${ex(ctx.dateTo)}` : 'See registry / monitoring filters';
+  const esc =
+    ctx.escalationCount != null && ctx.escalationCount > 0
+      ? `<div style="margin-top:6px;"><strong>Open escalations (monitoring):</strong> ${ctx.escalationCount}</div>`
+      : '';
+  const q =
+    ctx.avgHouseQuality != null
+      ? `<div style="margin-top:4px;"><strong>Avg house quality (monitoring):</strong> ${ctx.avgHouseQuality}/100</div>`
+      : '';
+  const scope = ctx.house ? ex(ctx.house) : 'All houses';
+  return `
+  <div style="background:#f0fdfa;border:2px solid #5eead4;border-radius:10px;padding:14px 18px;margin-bottom:22px;font-size:12px;color:#134e4a;line-height:1.5;">
+    <div style="font-weight:900;text-transform:uppercase;letter-spacing:0.06em;color:#0f766e;">Staff Intelligence context</div>
+    <div style="margin-top:6px;"><strong>Window:</strong> ${win} · <strong>Scope:</strong> ${scope}</div>
+    ${esc}
+    ${q}
+    <div style="margin-top:8px;font-size:10px;color:#64748b;">Context saved: ${ex(ctx.at || '')}</div>
+  </div>`;
 }
 
 function truncate(s: string, max: number): string {
@@ -25,11 +78,13 @@ const FOOTER_HTML = `
 `;
 
 function renderHeader(title: string, subtitle: string, color: string) {
+  const t = ex(title);
+  const s = ex(subtitle);
   return `
   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid ${color}; padding-bottom: 20px; margin-bottom: 30px;">
     <div>
-      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: ${color}; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1.1;">${title}</h1>
-      <p style="margin: 8px 0 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${subtitle}</p>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: ${color}; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1.1;">${t}</h1>
+      <p style="margin: 8px 0 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${s}</p>
     </div>
     <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
       <img src="/logo-icon-dark.png" style="height: 38px; width: 38px; border-radius: 8px; object-fit: contain;" />
@@ -41,7 +96,7 @@ function renderHeader(title: string, subtitle: string, color: string) {
   </div>`;
 }
 
-function generateQualityMeeting(data: WeekSummary): string {
+function generateQualityMeeting(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#0f766e';
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
   const redFlags = data.allFlags.red;
@@ -49,6 +104,7 @@ function generateQualityMeeting(data: WeekSummary): string {
 
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Quality & Performance Meeting', `WEEK: ${data.dateFrom || '___'} — ${data.dateTo || '___'} · ${data.totalEntries} ENTRIES`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
@@ -82,7 +138,7 @@ function generateQualityMeeting(data: WeekSummary): string {
     <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
       <tr style="background: #f8fafc;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 120px;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Details</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase; width: 150px;">Flags</th></tr>`;
     for (const e of redFlags) {
-      html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${e.client || '—'}</td><td style="padding: 10px; border: 1px solid #e2e8f0; line-height: 1.5;">${e.entry}</td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #ef4444; font-weight: 700;">${e.flags.join(', ')}</td></tr>`;
+      html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${ex(e.house)}</td><td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 700;">${e.client ? ex(e.client) : '—'}</td><td style="padding: 10px; border: 1px solid #e2e8f0; line-height: 1.5;">${ex(e.entry)}</td><td style="padding: 10px; border: 1px solid #e2e8f0; color: #ef4444; font-weight: 700;">${ex(e.flags.join(', '))}</td></tr>`;
     }
     html += `</table>`;
   }
@@ -94,8 +150,8 @@ function generateQualityMeeting(data: WeekSummary): string {
     <div style="page-break-inside: avoid; margin-bottom: 20px; border: 1px solid ${hasIssues ? '#fecaca' : '#e2e8f0'}; border-radius: 12px; overflow: hidden; background: #fff;">
       <div style="background: ${hasIssues ? '#fef2f2' : '#f8fafc'}; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid ${hasIssues ? '#fecaca' : '#e2e8f0'};">
         <div>
-          <strong style="font-size: 15px; font-weight: 900; color: #1e293b; text-transform: uppercase; letter-spacing: 0.02em;">${house.name}</strong>
-          ${house.coordinator ? `<span style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 12px; text-transform: uppercase; letter-spacing: 0.05em;">LEAD: ${house.coordinator}</span>` : ''}
+          <strong style="font-size: 15px; font-weight: 900; color: #1e293b; text-transform: uppercase; letter-spacing: 0.02em;">${ex(house.name)}</strong>
+          ${house.coordinator ? `<span style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 12px; text-transform: uppercase; letter-spacing: 0.05em;">LEAD: ${ex(house.coordinator)}</span>` : ''}
         </div>
         <div style="display: flex; gap: 8px;">
           ${house.flags.red > 0 ? `<span style="background: #ef4444; color: white; font-size: 9px; font-weight: 900; padding: 3px 10px; border-radius: 99px; text-transform: uppercase;">${house.flags.red} RED</span>` : ''}
@@ -118,7 +174,7 @@ function generateQualityMeeting(data: WeekSummary): string {
         for (const item of items.slice(0, 10)) {
           html += `<div style="margin-left: 12px; margin-top: 6px; color: #475569; line-height: 1.5; position: relative; padding-left: 12px;">
             <span style="position: absolute; left: 0; color: #94a3b8;">•</span>
-            ${item.client ? `<strong>${item.client}:</strong> ` : ''}${truncate(item.entry, 250)}
+            ${item.client ? `<strong>${ex(item.client)}:</strong> ` : ''}${ex(truncate(item.entry, 250))}
           </div>`;
         }
         html += `</div>`;
@@ -139,11 +195,12 @@ function generateQualityMeeting(data: WeekSummary): string {
   return html;
 }
 
-function generateIncidentReport(data: WeekSummary): string {
+function generateIncidentReport(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#dc2626';
   const incidents = [...data.allFlags.red, ...data.allFlags.amber.filter(e => e.flags.some(f => f.includes('incident') || f.includes('police') || f.includes('ambulance')))];
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Incident Report', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <p style="font-size: 13px; font-weight: 600; margin-bottom: 24px; background: #fef2f2; color: #b91c1c; padding: 12px 20px; border-radius: 8px; border: 1px solid #fecaca;">
@@ -158,7 +215,7 @@ function generateIncidentReport(data: WeekSummary): string {
         <span style="background: ${e.severity === 'red' ? '#ef4444' : '#f59e0b'}; color: white; font-size: 10px; font-weight: 900; padding: 3px 12px; border-radius: 99px; text-transform: uppercase;">${e.severity === 'red' ? 'CRITICAL' : 'MONITOR'}</span>
       </div>
       <div style="padding: 16px; background: #f8fafc; border-radius: 8px; font-size: 13px; line-height: 1.7; border: 1px solid #e2e8f0; color: #334155;">
-        ${e.entry}
+        ${ex(e.entry)}
       </div>
     </div>`;
   }
@@ -166,15 +223,21 @@ function generateIncidentReport(data: WeekSummary): string {
   return html;
 }
 
-function generateDailyQuality(data: WeekSummary): string {
+function generateDailyQuality(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#1e40af';
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
   const redFlags = data.allFlags.red;
   const amberFlags = data.allFlags.amber;
   const allFlagged = [...redFlags, ...amberFlags];
 
+  const dailySub =
+    mon?.source === 'staff-monitoring' && mon.dateFrom && mon.dateTo
+      ? `DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()} · MONITORING WINDOW: ${mon.dateFrom} — ${mon.dateTo}`
+      : `DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()}`;
+
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
-  html += renderHeader('Daily Quality Briefing', `DATE: ${new Date().toLocaleDateString('en-GB').toUpperCase()}`, COLOR);
+  html += renderHeader('Daily Quality Briefing', dailySub, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 32px;">
@@ -188,7 +251,7 @@ function generateDailyQuality(data: WeekSummary): string {
   for (const house of houses) {
     const rowBg = house.flags.red > 0 ? '#fef2f2' : '#fff';
     html += `<tr style="background: ${rowBg};">
-      <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 800;">${house.name}</td>
+      <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 800;">${ex(house.name)}</td>
       <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700;">${house.entries.length}</td>
       <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; color: ${house.flags.red > 0 ? '#ef4444' : '#64748b'}; font-weight: 900;">${house.flags.red || '0'}</td>
       <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: 600;">${house.flags.red > 0 ? 'INTERVENTION' : 'NOMINAL'}</td>
@@ -201,7 +264,7 @@ function generateDailyQuality(data: WeekSummary): string {
     for (const e of allFlagged.slice(0, 15)) {
       const badge = e.severity === 'red' ? '#ef4444' : '#f59e0b';
       html += `<div style="background: #f8fafc; border-left: 5px solid ${badge}; padding: 12px 16px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 12px; border: 1px solid #e2e8f0; border-left-width: 5px;">
-        <strong>${e.house}:</strong> ${truncate(e.entry, 200)}
+        <strong>${ex(e.house)}:</strong> ${ex(truncate(e.entry, 200))}
       </div>`;
     }
   }
@@ -209,11 +272,12 @@ function generateDailyQuality(data: WeekSummary): string {
   return html;
 }
 
-function generateFinanceReport(data: WeekSummary): string {
+function generateFinanceReport(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#059669';
   const financeEntries = Object.values(data.houses).flatMap(h => h.entries.filter(e => e.flags.some(f => f.toLowerCase().includes('finance') || f.toLowerCase().includes('money') || f.toLowerCase().includes('shopping'))));
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Finance & Petty Cash Audit', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
@@ -225,27 +289,29 @@ function generateFinanceReport(data: WeekSummary): string {
   return html;
 }
 
-function generateMedicationAudit(data: WeekSummary): string {
+function generateMedicationAudit(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#0891b2';
   const medEntries = Object.values(data.houses).flatMap(h => h.medication);
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Medication Administration Audit', `PERIOD: ${data.dateFrom || '___'} — ${data.dateTo || '___'}`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px;">
     <tr style="background: #ecfeff;"><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">House</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Client</th><th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0; text-transform: uppercase;">Admin Details</th></tr>`;
   for (const e of medEntries) {
-    html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.house}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.client}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${e.entry}</td></tr>`;
+    html += `<tr><td style="padding: 10px; border: 1px solid #e2e8f0;">${ex(e.house)}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${ex(e.client)}</td><td style="padding: 10px; border: 1px solid #e2e8f0;">${ex(e.entry)}</td></tr>`;
   }
   html += `</table>` + FOOTER_HTML + `</div>`;
   return html;
 }
 
-function generateHandoverReport(data: WeekSummary): string {
+function generateHandoverReport(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#d97706';
   const houses = Object.values(data.houses).sort((a, b) => a.name.localeCompare(b.name));
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Shift Handover Report', `DATE: ${new Date().toLocaleDateString('en-GB')} · ALL HOUSES`, COLOR);
+  html += monitoringContextBlock(mon);
 
   for (const house of houses) {
     const concerns = [...house.incidents, ...house.safeguarding, ...(house.flags.red > 0 ? house.entries.filter(e => e.severity === 'red') : [])];
@@ -254,7 +320,7 @@ function generateHandoverReport(data: WeekSummary): string {
       <div style="background: #fffbeb; padding: 12px 20px; border-bottom: 1px solid #fde68a; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">${house.name}</div>
       <div style="padding: 20px;">
         <div style="margin-bottom: 15px;"><strong style="font-size: 10px; color: ${COLOR}; text-transform: uppercase;">Key Concerns:</strong>
-          ${concerns.length > 0 ? concerns.slice(0, 5).map(c => `<div style="margin-top: 8px; font-size: 12px; border-left: 3px solid #fde68a; padding-left: 12px; color: #475569;">${c.client ? `<strong>${c.client}:</strong> ` : ''}${truncate(c.entry, 200)}</div>`).join('') : '<div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">No critical concerns flagged for this period.</div>'}
+          ${concerns.length > 0 ? concerns.slice(0, 5).map(c => `<div style="margin-top: 8px; font-size: 12px; border-left: 3px solid #fde68a; padding-left: 12px; color: #475569;">${c.client ? `<strong>${ex(c.client)}:</strong> ` : ''}${ex(truncate(c.entry, 200))}</div>`).join('') : '<div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">No critical concerns flagged for this period.</div>'}
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
           <div><strong style="font-size: 10px; color: #64748b; text-transform: uppercase;">Medication:</strong><div style="font-size: 11px; margin-top: 5px;">${house.medication.length} updates logged</div></div>
@@ -267,15 +333,17 @@ function generateHandoverReport(data: WeekSummary): string {
   return html;
 }
 
-function generateSupervisionReport(): string {
+function generateSupervisionReport(mon: TemplateImportContext | null): string {
   const COLOR = '#7c3aed';
+  const meetingDate = mon?.at ? new Date(mon.at).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB');
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Staff Supervision Record', `CONFIDENTIAL PERSONNEL DOCUMENT`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px;">
     <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Staff Name</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td><td style="padding: 12px; background: #f8fafc; font-weight: 700; width: 150px; border: 1px solid #e2e8f0;">Supervisor</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
-    <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Date</td><td style="padding: 12px; border: 1px solid #e2e8f0;">${new Date().toLocaleDateString('en-GB')}</td><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Location</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
+    <tr><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Date</td><td style="padding: 12px; border: 1px solid #e2e8f0;">${meetingDate}</td><td style="padding: 12px; background: #f8fafc; font-weight: 700; border: 1px solid #e2e8f0;">Location</td><td style="padding: 12px; border: 1px solid #e2e8f0;"></td></tr>
   </table>
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: ${COLOR}; border-bottom: 1px solid #ddd; padding-bottom: 5px;">1. Performance Review</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
   <div style="margin-bottom: 25px;"><h2 style="font-size: 11px; text-transform: uppercase; color: ${COLOR}; border-bottom: 1px solid #ddd; padding-bottom: 5px;">2. Professional Development</h2><div style="height: 120px; border: 1px solid #e2e8f0; margin-top: 10px; border-radius: 8px;"></div></div>
@@ -285,11 +353,12 @@ function generateSupervisionReport(): string {
   return html;
 }
 
-function generateSafeguardingReport(data: WeekSummary): string {
+function generateSafeguardingReport(data: WeekSummary, mon: TemplateImportContext | null): string {
   const COLOR = '#be185d';
   const safeguarding = Object.values(data.houses).flatMap(h => h.safeguarding);
   let html = `<div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 0 auto; color: #1e293b; background: #fff; min-height: 100%; display: flex; flex-direction: column; padding: 40px;">`;
   html += renderHeader('Safeguarding Concern Audit', `STRICTLY CONFIDENTIAL · PROTECTED DATA`, COLOR);
+  html += monitoringContextBlock(mon);
 
   html += `
   <div style="background: #fdf2f8; border: 1px solid #fbcfe8; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; color: #9d174d; font-size: 13px; font-weight: 700;">
@@ -300,34 +369,55 @@ function generateSafeguardingReport(data: WeekSummary): string {
     html += `
     <div style="border: 1px solid #fbcfe8; border-radius: 12px; margin-bottom: 15px; overflow: hidden; page-break-inside: avoid;">
       <div style="background: #fdf2f8; padding: 10px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #fbcfe8;">
-        <span style="font-weight: 900; font-size: 11px;">${e.house} · ${e.client}</span>
-        <span style="font-weight: 900; font-size: 11px;">${e.date}</span>
+        <span style="font-weight: 900; font-size: 11px;">${ex(e.house)} · ${ex(e.client)}</span>
+        <span style="font-weight: 900; font-size: 11px;">${ex(e.date)}</span>
       </div>
-      <div style="padding: 15px; font-size: 13px; line-height: 1.6; color: #334155;">${e.entry}</div>
+      <div style="padding: 15px; font-size: 13px; line-height: 1.6; color: #334155;">${ex(e.entry)}</div>
     </div>`;
   }
   html += FOOTER_HTML + `</div>`;
   return html;
 }
 
-function generateTemplate(type: TemplateType, data: WeekSummary): string {
+function generateTemplate(type: TemplateType, data: WeekSummary, importCtx: TemplateImportContext | null): string {
+  const mon = importCtx?.source === 'staff-monitoring' ? importCtx : null;
+  let html: string;
   switch (type) {
-    case 'quality_meeting':   return generateQualityMeeting(data);
-    case 'daily_quality':     return generateDailyQuality(data);
-    case 'incident_report':   return generateIncidentReport(data);
-    case 'handover':          return generateHandoverReport(data);
-    case 'supervision':       return generateSupervisionReport();
-    case 'safeguarding':      return generateSafeguardingReport(data);
-    case 'medication_audit':  return generateMedicationAudit(data);
-    case 'finance':           return generateFinanceReport(data);
-    default: return generateQualityMeeting(data);
+    case 'quality_meeting':
+      html = generateQualityMeeting(data, mon);
+      break;
+    case 'daily_quality':
+      html = generateDailyQuality(data, mon);
+      break;
+    case 'incident_report':
+      html = generateIncidentReport(data, mon);
+      break;
+    case 'handover':
+      html = generateHandoverReport(data, mon);
+      break;
+    case 'supervision':
+      html = generateSupervisionReport(mon);
+      break;
+    case 'safeguarding':
+      html = generateSafeguardingReport(data, mon);
+      break;
+    case 'medication_audit':
+      html = generateMedicationAudit(data, mon);
+      break;
+    case 'finance':
+      html = generateFinanceReport(data, mon);
+      break;
+    default:
+      html = generateQualityMeeting(data, mon);
   }
+  return html;
 }
 
 export function TemplatesPage({ weekData }: Props) {
   const [selected, setSelected] = useState<TemplateType | null>(null);
   const [generated, setGenerated] = useState('');
-  const [recommendedTemplateIds, setRecommendedTemplateIds] = useState<TemplateType[]>([]);
+  const [recommendedTemplateIds] = useState<TemplateType[]>(() => loadRecommendedTemplateIds());
+  const [monitoringSnapshot, setMonitoringSnapshot] = useState<TemplateImportContext | null>(() => readTemplateImportContext());
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   function templateSignal(type: TemplateType): { label: string; value: number } {
@@ -355,27 +445,21 @@ export function TemplatesPage({ weekData }: Props) {
     }
   }
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(TEMPLATE_CONTEXT_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as TemplateImportContext;
-      const ids = parsed.selectedTemplateIds || [];
-      setRecommendedTemplateIds(ids);
-      if (ids.length > 0 && weekData) {
-        handleGenerate(ids[0]);
-      }
-    } catch {
-      setRecommendedTemplateIds([]);
-    }
-  }, [weekData]);
-
-  function handleGenerate(type: TemplateType) {
+  const handleGenerate = useCallback((type: TemplateType) => {
     if (!weekData) return;
     setSelected(type);
-    const html = generateTemplate(type, weekData);
+    const ctx = readTemplateImportContext();
+    setMonitoringSnapshot(ctx);
+    const html = generateTemplate(type, weekData, ctx?.source === 'staff-monitoring' ? ctx : null);
     setGenerated(html);
-  }
+  }, [weekData]);
+
+  useEffect(() => {
+    if (recommendedTemplateIds.length > 0 && weekData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleGenerate(recommendedTemplateIds[0]);
+    }
+  }, [handleGenerate, recommendedTemplateIds, weekData]);
 
   function handlePrint() {
     const win = iframeRef.current?.contentWindow;
@@ -413,6 +497,21 @@ export function TemplatesPage({ weekData }: Props) {
             Amber Flags {weekData.allFlags.amber.length}
           </span>
         </div>
+        {monitoringSnapshot?.source === 'staff-monitoring' && (
+          <div className="mt-4 glass-light border border-hc-teal/35 rounded-2xl px-4 py-3 text-sm text-hc-text max-w-3xl">
+            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-hc-teal-light mb-1">Staff Intelligence context loaded</div>
+            <p className="text-xs text-white/90 leading-relaxed">
+              {monitoringSnapshot.dateFrom && monitoringSnapshot.dateTo
+                ? `Window ${monitoringSnapshot.dateFrom} — ${monitoringSnapshot.dateTo}`
+                : 'Monitoring window from registry'}
+              {monitoringSnapshot.house ? ` · House: ${monitoringSnapshot.house}` : ' · All houses'}
+              {monitoringSnapshot.escalationCount != null && monitoringSnapshot.escalationCount > 0
+                ? ` · ${monitoringSnapshot.escalationCount} escalation(s) queued`
+                : ''}
+              {monitoringSnapshot.avgHouseQuality != null ? ` · Avg quality ${monitoringSnapshot.avgHouseQuality}/100` : ''}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 lg:mb-8">

@@ -1,7 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
+import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, emptyPBS } from '../lib/client-store';
 import { buildPBSHtml } from '../lib/doc-renderer';
+import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
+import { parseUniversalText } from '../lib/universal-import';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 
@@ -24,6 +27,8 @@ const SECTIONS = [
   'Reviews & Professionals',
   'Sign-Off',
 ];
+
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 // ─── SHARED FIELD COMPONENTS ─────────────────────────────────────────────────
 
@@ -141,6 +146,9 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   });
   const [section, setSection] = useState(0);
   const [saved, setSaved] = useState(true);
+  const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
   const [sigs, setSigs] = useState<Sig[]>(() =>
     emptySignatories(
       loadClients().find(c => c.id === clientId)?.completedBy || 'Brooklyn Ruvinga',
@@ -149,6 +157,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
     )
   );
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   const update = useCallback((patch: Partial<FullClient>) => {
     setClient(prev => {
@@ -171,7 +180,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   }, []);
 
   const generatePDF = () => {
-    const html = buildPBSHtml(client, sigs);
+    const html = buildPBSHtml(client, sigs, exportLayout);
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
     doc.open(); doc.write(html); doc.close();
@@ -180,6 +189,50 @@ export function PBSBuilder({ clientId, onBack }: Props) {
 
   const today = new Date().toLocaleDateString('en-GB');
   const pbs = client.pbs || emptyPBS(today);
+
+  const importDataset = async (file: File) => {
+    setImporting(true);
+    setImportStatus('Reading dataset...');
+    try {
+      let rawText = '';
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'pdf') {
+        const ab = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: ab }).promise;
+        for (let i = 1; i <= pdf.numPages; i += 1) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          rawText += (content.items as any[]).map((it) => it?.str || '').join(' ') + '\n';
+        }
+      } else {
+        rawText = await file.text();
+      }
+      const parsed = parseUniversalText(rawText);
+      const sourceRisk = parsed.client.risk;
+      const sourceCarePlan = parsed.carePlan;
+      const nextPbs = { ...(client.pbs || emptyPBS(today)) };
+      if (sourceCarePlan?.biography && !nextPbs.aboutText) nextPbs.aboutText = sourceCarePlan.biography;
+      if (sourceRisk?.risks?.length) {
+        const titles = sourceRisk.risks.map((r) => r.title).filter(Boolean);
+        if (titles.length) nextPbs.findsDifficult = Array.from(new Set([...(nextPbs.findsDifficult || []), ...titles])).slice(0, 7);
+        const warnings = sourceRisk.risks.flatMap((r) => r.earlyWarnings || []).filter(Boolean).slice(0, 8);
+        if (warnings.length) nextPbs.warningSignRows = warnings.map((w) => ({ sign: w, staffAction: 'Follow de-escalation and escalation procedure.' }));
+      }
+      const next: FullClient = {
+        ...client,
+        ...parsed.client,
+        pbs: nextPbs,
+      };
+      saveClient(next);
+      setClient(next);
+      setImportStatus('Dataset imported into PBS draft. Review each section before print.');
+    } catch (err: any) {
+      setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
+    } finally {
+      setImporting(false);
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  };
 
   const sectionComplete = (i: number) => {
     if (i === 0) return !!(client.name && client.dob);
@@ -225,6 +278,32 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => importFileRef.current?.click()}
+            disabled={importing}
+            className="px-4 py-2 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.08em] text-hc-teal-light disabled:opacity-50"
+          >
+            {importing ? 'Importing...' : 'Import dataset'}
+          </button>
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".pdf,.txt,.csv,.md"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importDataset(f);
+            }}
+          />
+          <select
+            value={exportLayout}
+            onChange={e => setExportLayout(e.target.value as ExportLayout)}
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            title="Export page orientation"
+          >
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
           <button onClick={generatePDF}
             className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -260,6 +339,11 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         {/* Section content */}
         <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
           <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+            {!!importStatus && (
+              <div className="mb-6 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light">
+                {importStatus}
+              </div>
+            )}
             
             <div className="mb-12 flex items-center gap-6">
               <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
