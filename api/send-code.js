@@ -1,9 +1,9 @@
 import crypto from 'crypto';
+import { getAllowedLoginEmails, isLoginEmailAllowed } from './_lib/auth-login-allowlist.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SECRET = process.env.CODE_SECRET;
-const AUTH_LOGIN_EMAIL = (process.env.AUTH_LOGIN_EMAIL || '').trim().toLowerCase();
 const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 const sendBuckets = new Map();
 
@@ -49,7 +49,10 @@ export default async function handler(req, res) {
   const { email } = req.body || {};
   if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
   const normalizedEmail = String(email).trim().toLowerCase();
-  if (AUTH_LOGIN_EMAIL && normalizedEmail !== AUTH_LOGIN_EMAIL) {
+  if (getAllowedLoginEmails().length === 0) {
+    return res.status(503).json({ error: 'Auth allowlist not configured' });
+  }
+  if (!isLoginEmailAllowed(normalizedEmail)) {
     return res.status(401).json({ error: 'Not authorised' });
   }
   const ip = getClientIp(req);

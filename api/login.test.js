@@ -63,6 +63,28 @@ describe('/api/login identifier-first flow', () => {
     expect(res.jsonBody).toMatchObject({ ok: false, recognized: false });
   });
 
+  it('rejects all probes when AUTH_LOGIN_EMAIL is not configured (fail closed)', async () => {
+    delete process.env.AUTH_LOGIN_EMAIL;
+    const { default: handler } = await import('./login.js');
+    const req = createReq({ email: 'ops@hazelcare.co.uk', probe: true });
+    const res = createRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(503);
+    expect(res.jsonBody).toMatchObject({ ok: false, recognized: false });
+    process.env.AUTH_LOGIN_EMAIL = 'ops@hazelcare.co.uk';
+  });
+
+  it('allows either of two comma-separated emails', async () => {
+    process.env.AUTH_LOGIN_EMAIL = 'ops@hazelcare.co.uk,jane@hazelcare.co.uk';
+    const { default: handler } = await import('./login.js');
+    const res = createRes();
+    await handler(createReq({ email: 'jane@hazelcare.co.uk', probe: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.jsonBody).toEqual({ ok: true, recognized: true });
+  });
+
   it('signs in with known email + valid password', async () => {
     const { default: handler } = await import('./login.js');
     const req = createReq({ email: 'ops@hazelcare.co.uk', password: 'TopSecret!123' });

@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { attachHcSessionCookie } from './_lib/attach-session.js';
+import { getAllowedLoginEmails, isLoginEmailAllowed } from './_lib/auth-login-allowlist.js';
 
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || '';
-const AUTH_LOGIN_EMAIL = (process.env.AUTH_LOGIN_EMAIL || '').trim().toLowerCase();
 const AUTH_EMERGENCY_BYPASS = process.env.AUTH_EMERGENCY_BYPASS === '1';
 const loginBuckets = new Map();
 
@@ -45,14 +45,21 @@ export default async function handler(req, res) {
   if (!email) return res.status(400).json({ ok: false, recognized: false });
   if (typeof email !== 'string' || !email.includes('@')) return res.status(400).json({ ok: false });
   const normalizedEmail = email.trim().toLowerCase();
-  const recognized = AUTH_LOGIN_EMAIL ? safeEq(normalizedEmail, AUTH_LOGIN_EMAIL) : true;
+  if (getAllowedLoginEmails().length === 0) {
+    return res.status(503).json({
+      ok: false,
+      recognized: false,
+      error: 'Login allowlist not configured. Set AUTH_LOGIN_EMAIL in the server environment.',
+    });
+  }
+  const recognized = isLoginEmailAllowed(normalizedEmail);
   if (probe) {
     if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
     return res.json({ ok: true, recognized: true });
   }
   if (!password) return res.status(400).json({ ok: false, recognized });
   if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
-  if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false });
+  if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false, recognized: true });
 
   attachHcSessionCookie(res);
 
