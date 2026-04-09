@@ -1,4 +1,6 @@
 import type { CareEntry, WeekSummary } from './types';
+import { scoreEntry, aggregateModuleGaps, type ModuleScore } from './entry-rubric';
+import { getRepeatTargets } from './staff-monitoring-store';
 
 export type EscalationTier = 1 | 2 | 3;
 
@@ -20,7 +22,18 @@ export interface StaffScorecard {
   qualityScore: number;
   tier: EscalationTier | null;
   reasons: string[];
+  // Rubric detail
+  moduleBreakdown: ModuleScore[];   // averaged across entries
+  topGaps: string[];                // most frequent missing items
+  handoverScore: number | null;     // avg score for handover entries only
+  dailySupportScore: number | null; // avg score for 1:1 entries only
+  entryScores: { id: string; score: number; category: string }[]; // per-entry scores
+  // Repeat coaching targets
+  isRepeatTarget: boolean;
+  repeatGaps: string[];
 }
+
+export type { ModuleScore };
 
 export interface HouseHealth {
   name: string;
@@ -57,15 +70,28 @@ const VERY_SHORT = 40;
 
 function parseDateMs(s: string | undefined): number | null {
   if (!s?.trim()) return null;
-  const uk = s.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const str = s.trim();
+  // DD/MM/YYYY
+  const uk = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (uk) {
-    const d = Number(uk[1]);
-    const m = Number(uk[2]) - 1;
-    const y = Number(uk[3]);
-    const t = new Date(y, m, d).getTime();
+    const t = new Date(+uk[3], +uk[2] - 1, +uk[1]).getTime();
     return Number.isNaN(t) ? null : t;
   }
-  const iso = Date.parse(s);
+  // DD-MM-YY or DD-MM-YYYY (CarePlanner messy export)
+  const dash = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+  if (dash) {
+    let y = Number(dash[3]);
+    if (y < 100) y += 2000;
+    const t = new Date(y, +dash[2] - 1, +dash[1]).getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+  // DD/MM/YY
+  const ukShort = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (ukShort) {
+    const t = new Date(2000 + +ukShort[3], +ukShort[2] - 1, +ukShort[1]).getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+  const iso = Date.parse(str);
   return Number.isNaN(iso) ? null : iso;
 }
 
@@ -135,15 +161,6 @@ function tierForStaff(
   return { tier, reasons };
 }
 
-function qualityScore(shortRatio: number, avgChars: number, red: number, amber: number, entryCount: number): number {
-  let score = 100;
-  score -= Math.min(45, shortRatio * 50);
-  score -= Math.min(20, Math.max(0, 200 - avgChars) / 10);
-  score -= Math.min(15, red * 3 + amber * 1.5);
-  if (entryCount < 2) score -= 8;
-  return Math.max(0, Math.min(100, Math.round(score)));
-}
-
 export function computeStaffMonitoring(week: WeekSummary | null, filters: MonitoringFilters): StaffMonitoringSnapshot {
   const computedAt = new Date().toISOString();
   if (!week || week.totalEntries === 0) {
@@ -163,9 +180,18 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
 
   const byCarer = new Map<string, CareEntry[]>();
   for (const e of filtered) {
-    const c = (e.carer || 'Unknown').trim() || 'Unknown';
+    const c = (e.carer || '').trim();
+    if (!c || c === 'Unassigned' || c.toLowerCase() === 'staff' || c.toLowerCase() === 'carer') continue;
     if (!byCarer.has(c)) byCarer.set(c, []);
     byCarer.get(c)!.push(e);
+  }
+
+  // Load repeat coaching targets (from localStorage history)
+  const repeatTargets = getRepeatTargets();
+  const repeatByCarerMap = new Map<string, string[]>();
+  for (const rt of repeatTargets) {
+    if (!repeatByCarerMap.has(rt.carer)) repeatByCarerMap.set(rt.carer, []);
+    repeatByCarerMap.get(rt.carer)!.push(`${rt.gap} (flagged ${rt.count}× this week)`);
   }
 
   const staff: StaffScorecard[] = [];
@@ -179,8 +205,77 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     const amberCount = list.filter((e) => e.severity === 'amber').length;
     const houses = new Set(list.map((e) => e.house).filter(Boolean));
     const house = houses.size <= 1 ? [...houses][0] || '—' : 'multiple';
-    const { tier, reasons } = tierForStaff(shortEntryRatio, avgEntryChars, redCount, amberCount, entryCount);
-    const qs = qualityScore(shortEntryRatio, avgEntryChars, redCount, amberCount, entryCount);
+
+    // ── Rubric-based scoring ───────────────────────────────────
+    const entryScores = list.map((e) => ({
+      id: e.id,
+      score: scoreEntry(e).total,
+      category: e.category || 'other',
+    }));
+    const avgRubricScore = entryCount ? Math.round(entryScores.reduce((s, e) => s + e.score, 0) / entryCount) : 0;
+
+    // Per-category sub-scores
+    const handoverEntries = list.filter((e) => e.category === 'handover');
+    const dailyEntries = list.filter((e) => e.category === 'daily_support');
+    const handoverScore = handoverEntries.length
+      ? Math.round(handoverEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / handoverEntries.length)
+      : null;
+    const dailySupportScore = dailyEntries.length
+      ? Math.round(dailyEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / dailyEntries.length)
+      : null;
+
+    // Module breakdown — average across all entries' modules by name
+    const moduleMap = new Map<string, { total: number; count: number; weight: number; missing: string[] }>();
+    for (const e of list) {
+      const result = scoreEntry(e);
+      for (const m of result.modules) {
+        if (!moduleMap.has(m.name)) moduleMap.set(m.name, { total: 0, count: 0, weight: m.weight, missing: [] });
+        const bucket = moduleMap.get(m.name)!;
+        bucket.total += m.score;
+        bucket.count += 1;
+        for (const gap of m.missing) {
+          if (!bucket.missing.includes(gap)) bucket.missing.push(gap);
+        }
+      }
+    }
+    const moduleBreakdown: import('./entry-rubric').ModuleScore[] = [...moduleMap.entries()].map(([name, v]) => ({
+      name,
+      score: Math.round(v.total / v.count),
+      weight: v.weight,
+      missing: v.missing.slice(0, 3),
+    }));
+
+    const topGaps = aggregateModuleGaps(list);
+
+    // Blend rubric score with legacy length signals for tier calculation
+    const blendedScore = Math.round(avgRubricScore * 0.7 + (100 - shortEntryRatio * 100) * 0.3);
+    const { tier: lengthTier, reasons } = tierForStaff(shortEntryRatio, avgEntryChars, redCount, amberCount, entryCount);
+
+    // Augment tier based on blended rubric quality score (overrides length-only signals upward)
+    let tier = lengthTier;
+    if (entryCount > 0) {
+      if (blendedScore < 25) {
+        tier = 3;
+        if (!reasons.some(r => r.includes('quality'))) reasons.push('Overall note quality critically low (score < 25).');
+      } else if (blendedScore < 45) {
+        if (tier === null || tier < 2) {
+          tier = 2;
+          if (!reasons.some(r => r.includes('quality'))) reasons.push('Note quality below acceptable threshold (score < 45).');
+        }
+      } else if (blendedScore < 60) {
+        if (tier === null || tier < 1) {
+          tier = 1;
+          if (!reasons.some(r => r.includes('quality'))) reasons.push('Note quality below expected standard (score < 60).');
+        }
+      }
+    }
+
+    // Augment reasons with rubric gaps
+    const allReasons = [
+      ...reasons,
+      ...topGaps.slice(0, 2).filter((g) => !reasons.some((r) => r.toLowerCase().includes(g.substring(0, 20).toLowerCase()))),
+    ];
+
     staff.push({
       carer,
       house,
@@ -190,9 +285,16 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       shortEntryRatio: Math.round(shortEntryRatio * 100) / 100,
       redCount,
       amberCount,
-      qualityScore: qs,
+      qualityScore: blendedScore,
       tier,
-      reasons,
+      reasons: allReasons,
+      moduleBreakdown,
+      topGaps,
+      handoverScore,
+      dailySupportScore,
+      entryScores,
+      isRepeatTarget: (repeatByCarerMap.get(carer)?.length ?? 0) > 0,
+      repeatGaps: repeatByCarerMap.get(carer) ?? [],
     });
   }
 
@@ -224,7 +326,10 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
   for (const s of staff) {
     if (!s.tier) continue;
     const suggestedTool: EscalationItem['suggestedTool'] =
-      s.redCount > 0 ? 'incidents' : s.amberCount > 1 ? 'handover' : 'notes';
+      (s.handoverScore !== null && s.handoverScore < 50) ? 'handover'
+      : s.redCount > 0 ? 'notes'
+      : s.amberCount > 1 ? 'handover'
+      : 'notes';
     escalations.push({
       id: `esc-${s.carer}-${s.tier}-${s.qualityScore}`,
       tier: s.tier,

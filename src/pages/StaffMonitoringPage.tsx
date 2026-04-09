@@ -772,6 +772,15 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('escalations') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </button>
             {!isPanelCollapsed('escalations') && <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin px-4 pb-4">
+              {/* Tier legend */}
+              <div className="flex items-center gap-3 mb-3 px-1">
+                {[{t:1,label:'Coaching nudge',c:'#f59e0b'},{t:2,label:'Formal coaching',c:'#ef4444'},{t:3,label:'Immediate action',c:'#dc2626'}].map(({t,label,c}) => (
+                  <div key={t} className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{color:c,background:`${c}18`}}>T{t}</span>
+                    <span className="text-[9px] text-hc-muted">{label}</span>
+                  </div>
+                ))}
+              </div>
               {snapshot.escalations.length === 0 && (
                 <div className="text-xs text-hc-muted opacity-60 py-2">No tiered escalations for this filter.</div>
               )}
@@ -799,9 +808,9 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
                     className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
                   >
-                    <option value="coaching">Coaching</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="support">Support-first</option>
+                    <option value="coaching">Coaching — warm, developmental</option>
+                    <option value="urgent">Urgent — Tier 3, formal</option>
+                    <option value="support-first">Support-first — curious before challenging</option>
                   </select>
                   <button
                     type="button"
