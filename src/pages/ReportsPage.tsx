@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import type { Page } from '../App';
 
@@ -199,6 +200,11 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
     { label: 'Other Entries', entries: house.entries.filter(e => !['incident','safeguarding','medication','health_safety','staff','handover','daily_support'].includes(e.category || '')), color: '#475569', pill: 'pill-blue opacity-60' },
   ].filter(s => s.entries.length > 0) : [];
 
+  const sectionIds = sections.map(s => s.label);
+  const { isCollapsed: isSectionCollapsed, toggle: toggleSection, collapseAll, expandAll, allCollapsed } = useCollapseStore('reports-house-sections');
+  const allClosed = allCollapsed(sectionIds);
+  const toggleAll = useCallback(() => { allClosed ? expandAll(sectionIds) : collapseAll(sectionIds); }, [allClosed, sectionIds, collapseAll, expandAll]);
+
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-white/5 p-5 rounded-2xl shadow-xl">
@@ -210,29 +216,39 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
           </select>
         </div>
         {house && (
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-4 ml-auto flex-wrap">
             {house.flags.red > 0 && <span className="pill pill-red text-[10px] font-black px-4 shadow-lg animate-pulse-soft">{house.flags.red} RED FLAGS</span>}
             {house.flags.amber > 0 && <span className="pill pill-amber text-[10px] font-black px-4 shadow-lg">{house.flags.amber} ALERTS</span>}
             <div className="h-4 w-px bg-white/10 mx-2" />
             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] tabular-nums">{house.entries.length} TOTAL POINTS</span>
+            <button type="button" onClick={toggleAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
+              style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}>
+              <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allClosed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              {allClosed ? 'Expand all' : 'Collapse all'}
+            </button>
           </div>
         )}
       </div>
 
       {house && (
-        <div className="space-y-12">
+        <div className="space-y-6">
           {sections.map((section, idx) => (
-            <div key={section.label} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${idx * 100}ms` }}>
-              <div className="flex items-center gap-4 mb-5 px-2">
-                <h3 className="text-base font-black uppercase tracking-tight text-white group-hover:text-shimmer transition-all">
-                  {section.label}
-                </h3>
+            <div key={section.label} className="animate-in slide-in-from-bottom-6 duration-700 rounded-2xl overflow-hidden" style={{ animationDelay: `${idx * 100}ms`, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(10,12,18,0.5)' }}>
+              <button type="button" onClick={() => toggleSection(section.label)}
+                className="w-full flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                style={{borderBottom: isSectionCollapsed(section.label) ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
+                <div className="w-1 h-4 rounded-full shrink-0" style={{background: section.color, boxShadow:`0 0 8px ${section.color}60`}} />
+                <h3 className="text-sm font-black uppercase tracking-tight text-white">{section.label}</h3>
                 <span className={`pill ${section.pill} text-[10px] font-black px-3`}>{section.entries.length}</span>
                 <div className="flex-1 h-px bg-white/5" />
-              </div>
-              <div className="space-y-3">
-                {section.entries.map((e, i) => <EntryRow key={i} entry={e} />)}
-              </div>
+                <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200 shrink-0" style={{transform: isSectionCollapsed(section.label) ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {!isSectionCollapsed(section.label) && (
+                <div className="space-y-3 p-4">
+                  {section.entries.map((e, i) => <EntryRow key={i} entry={e} />)}
+                </div>
+              )}
             </div>
           ))}
         </div>

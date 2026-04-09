@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Action, ActionStatus, ActionPriority } from '../lib/types';
 import { uid } from '../lib/storage';
+import { useCollapseStore } from '../lib/collapse-store';
 
 interface Props {
   actions: Action[];
@@ -28,6 +29,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [newAction, setNewAction] = useState({ title: '', house: '', owner: '', priority: 'medium' as ActionPriority, dueDate: '' });
+  const { isCollapsed: isActionCollapsed, toggle: toggleAction, collapseAll: collapseAllActions, expandAll: expandAllActions, allCollapsed: allActionsCollapsed } = useCollapseStore('actions-cards', true);
 
   const filtered = filter === 'all' ? actions : actions.filter(a => a.status === filter);
   const sorted = [...filtered].sort((a, b) => {
@@ -35,6 +37,12 @@ export function ActionsPage({ actions, onUpdate }: Props) {
     const sOrder: Record<string, number> = { blocked: 0, overdue: 0, open: 1, in_progress: 2, completed: 3 };
     return (sOrder[a.status] ?? 4) - (sOrder[b.status] ?? 4) || (pOrder[a.priority] ?? 4) - (pOrder[b.priority] ?? 4);
   });
+  const actionIds = sorted.map(a => a.id);
+  const allCollapsed = allActionsCollapsed(actionIds);
+  const toggleAll = useCallback(() => {
+    if (allCollapsed) expandAllActions(actionIds);
+    else collapseAllActions(actionIds);
+  }, [allCollapsed, actionIds, collapseAllActions, expandAllActions]);
 
   const counts = {
     all: actions.length,
@@ -84,13 +92,24 @@ export function ActionsPage({ actions, onUpdate }: Props) {
             </span>
           </div>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className={`flex items-center gap-2 px-6 py-3 btn-gradient rounded-xl shadow-lg transition-all ${showAdd ? 'opacity-50 grayscale' : 'hover:scale-105'}`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-          <span className="text-sm font-bold uppercase tracking-wider">New Action</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
+            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
+          >
+            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            {allCollapsed ? 'Expand all' : 'Collapse all'}
+          </button>
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className={`flex items-center gap-2 px-6 py-3 btn-gradient rounded-xl shadow-lg transition-all ${showAdd ? 'opacity-50 grayscale' : 'hover:scale-105'}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            <span className="text-sm font-bold uppercase tracking-wider">New Action</span>
+          </button>
+        </div>
       </div>
 
       {/* Add form */}
@@ -155,74 +174,77 @@ export function ActionsPage({ actions, onUpdate }: Props) {
           const sc = STATUS_CONFIG[action.status];
           const pc = PRIORITY_CONFIG[action.priority];
           const isCritical = action.priority === 'critical' && action.status !== 'completed';
-          
+          const collapsed = isActionCollapsed(action.id);
+
           return (
-            <div key={action.id} className={`glass-light border transition-all duration-500 rounded-[2rem] p-6 card-glow interactive-row group animate-in slide-in-from-left-4
+            <div key={action.id} className={`glass-light border transition-all duration-300 rounded-2xl overflow-hidden card-glow group animate-in slide-in-from-left-4
               ${action.status === 'completed' ? 'opacity-50 grayscale-[0.3] hover:opacity-80' : ''}
               ${isCritical ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-white/5 hover:border-hc-teal/20'}`}
               style={{ animationDelay: `${idx * 50}ms` }}>
-              <div className="flex items-start gap-6 relative z-10">
+              {/* Always-visible header row */}
+              <div className="flex items-center gap-4 px-5 py-3.5">
                 {/* Status toggle */}
                 <button
-                  onClick={() => cycleStatus(action)}
-                  className={`mt-1.5 w-7 h-7 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all duration-500 hover:scale-110 active:scale-90 shadow-xl
+                  onClick={(e) => { e.stopPropagation(); cycleStatus(action); }}
+                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 active:scale-90
                     ${action.status === 'completed' ? 'bg-flag-green border-flag-green' : 'border-white/10 hover:border-hc-teal-light bg-black/20'}`}
                   style={action.status !== 'completed' ? { borderColor: sc.color + '44' } : {}}
                 >
                   {action.status === 'completed' ? (
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   ) : action.status === 'in_progress' ? (
-                    <div className="w-2 h-2 rounded-full bg-flag-amber animate-pulse shadow-[0_0_8px_#f59e0b]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-flag-amber animate-pulse" />
                   ) : null}
                 </button>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-4 mb-2.5 flex-wrap">
-                    <span className={`text-[16px] font-black tracking-tight transition-all duration-500
-                      ${action.status === 'completed' ? 'text-hc-muted line-through opacity-60' : 'text-white group-hover:text-hc-teal-light'}`}>
-                      {action.title}
-                    </span>
-                    <span className={`pill text-[9px] font-black uppercase tracking-widest shadow-md
-                      ${action.priority === 'critical' ? 'pill-red animate-pulse-soft' : action.priority === 'high' ? 'pill-amber' : action.priority === 'medium' ? 'pill-blue' : 'pill-teal'}`}>
-                      {pc.label}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-[0.15em] text-hc-muted/60 group-hover:text-hc-muted/80 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/20">📍</span>
-                      {action.house}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/20">👤</span>
-                      {action.owner}
-                    </div>
+                {/* Title + priority — click to expand/collapse */}
+                <button type="button" onClick={() => toggleAction(action.id)} className="flex-1 min-w-0 text-left flex items-center gap-3 cursor-pointer">
+                  <span className={`text-sm font-black tracking-tight transition-colors duration-200
+                    ${action.status === 'completed' ? 'text-hc-muted line-through opacity-60' : 'text-white group-hover:text-hc-teal-light'}`}>
+                    {action.title}
+                  </span>
+                  <span className={`pill text-[9px] font-black uppercase tracking-widest shrink-0
+                    ${action.priority === 'critical' ? 'pill-red animate-pulse-soft' : action.priority === 'high' ? 'pill-amber' : action.priority === 'medium' ? 'pill-blue' : 'pill-teal'}`}>
+                    {pc.label}
+                  </span>
+                </button>
+
+                {/* Right: status pill + chevron */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`pill text-[10px] font-black uppercase tracking-widest px-3 py-1
+                    ${action.status === 'completed' ? 'pill-green opacity-60' : action.status === 'in_progress' ? 'pill-amber' : action.status === 'blocked' ? 'pill-red' : 'pill-blue'}`}>
+                    {sc.label}
+                  </span>
+                  <button type="button" onClick={() => toggleAction(action.id)} className="w-6 h-6 flex items-center justify-center rounded-lg cursor-pointer transition-colors hover:bg-white/5">
+                    <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Collapsable detail */}
+              {!collapsed && (
+                <div className="px-5 pb-4 pt-0" style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
+                  <div className="flex items-center gap-5 text-[10px] font-bold uppercase tracking-[0.12em] text-hc-muted/60 mt-3">
+                    <span>{action.house}</span>
+                    <span className="opacity-30">·</span>
+                    <span>{action.owner}</span>
                     {action.dueDate && (
-                      <div className={`flex items-center gap-2 ${isCritical ? 'text-flag-red font-black' : ''}`}>
-                        <span className="text-white/20">📅</span>
-                        Deadline: {action.dueDate}
-                      </div>
+                      <>
+                        <span className="opacity-30">·</span>
+                        <span className={isCritical ? 'text-flag-red font-black' : ''}>Due: {action.dueDate}</span>
+                      </>
                     )}
+                    <span className="ml-auto opacity-30 font-mono">#{action.id.slice(0, 4)}</span>
                   </div>
-                  
                   {action.tags.length > 0 && (
-                    <div className="flex gap-2 mt-5">
+                    <div className="flex gap-2 mt-2.5">
                       {action.tags.map(tag => (
-                        <span key={tag} className="text-[9px] font-black px-3 py-1 rounded-lg bg-black/40 text-hc-muted/60 border border-white/5 uppercase tracking-widest group-hover:border-hc-teal/20 transition-all">{tag}</span>
+                        <span key={tag} className="text-[9px] font-black px-2.5 py-1 rounded-lg bg-black/40 text-hc-muted/60 border border-white/5 uppercase tracking-widest">{tag}</span>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {/* Status badge */}
-                <div className="shrink-0 pt-1 flex flex-col items-end gap-2">
-                  <span className={`pill text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-black/40 px-4 py-1.5
-                    ${action.status === 'completed' ? 'pill-green opacity-60' : action.status === 'in_progress' ? 'pill-amber' : action.status === 'blocked' ? 'pill-red shadow-flag-red/10' : 'pill-blue'}`}>
-                    {sc.label}
-                  </span>
-                  <span className="text-[9px] font-black text-hc-muted/30 uppercase tracking-[0.2em] tabular-nums">ID: {action.id.slice(0, 4)}</span>
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
