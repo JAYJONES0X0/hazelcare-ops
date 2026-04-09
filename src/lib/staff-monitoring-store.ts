@@ -1,6 +1,13 @@
 import { uid } from './storage';
 import type { EscalationItem } from './staff-monitoring';
 
+/** Swallows QuotaExceededError silently — monitoring history is non-critical */
+function safeset(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch { /* quota exceeded — skip write */ }
+}
+
 const KEY = 'hc-staff-monitoring-runs-v1';
 const OUTCOMES_KEY = 'hc-staff-monitoring-outcomes-v1';
 const COACHING_EVENTS_KEY = 'hc-coaching-events-v1';
@@ -60,7 +67,7 @@ export function saveMonitoringRun(summary: string, escalationCount: number): Mon
     escalationCount,
   };
   const prev = loadMonitoringRuns();
-  localStorage.setItem(KEY, JSON.stringify([rec, ...prev].slice(0, 50)));
+  safeset(KEY, JSON.stringify([rec, ...prev].slice(0, 50)));
   return rec;
 }
 
@@ -89,7 +96,7 @@ export function saveCallOutcome(
     notes,
   };
   const prev = loadCallOutcomes();
-  localStorage.setItem(OUTCOMES_KEY, JSON.stringify([rec, ...prev].slice(0, 200)));
+  safeset(OUTCOMES_KEY, JSON.stringify([rec, ...prev].slice(0, 200)));
   return rec;
 }
 
@@ -103,7 +110,7 @@ export function lastHourlyCheckAt(): number | null {
 }
 
 export function touchHourlyCheck(): void {
-  localStorage.setItem('hc-staff-monitoring-hourly-v1', String(Date.now()));
+  safeset('hc-staff-monitoring-hourly-v1', String(Date.now()));
 }
 
 // ── Coaching event log ────────────────────────────────────────────
@@ -126,7 +133,7 @@ export function recordCoachingEvents(staff: { carer: string; topGaps: string[] }
   // Keep 90 days
   const cutoff = Date.now() - 90 * 86400000;
   const pruned = prev.filter((e) => new Date(e.at).getTime() > cutoff);
-  localStorage.setItem(COACHING_EVENTS_KEY, JSON.stringify([...newEvents, ...pruned].slice(0, 1000)));
+  safeset(COACHING_EVENTS_KEY, JSON.stringify([...newEvents, ...pruned].slice(0, 1000)));
 }
 
 export interface RepeatTarget {
@@ -189,7 +196,7 @@ export function recordModuleScores(
   const prev = loadModuleHistory();
   const cutoff = Date.now() - 30 * 86400000;
   const pruned = prev.filter((r) => new Date(r.at).getTime() > cutoff);
-  localStorage.setItem(MODULE_HISTORY_KEY, JSON.stringify([...newRecords, ...pruned].slice(0, 2000)));
+  safeset(MODULE_HISTORY_KEY, JSON.stringify([...newRecords, ...pruned].slice(0, 2000)));
 }
 
 export interface GrowthAlert {

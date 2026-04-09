@@ -12,10 +12,43 @@ function load(): AppState {
   return { weekData: null, actions: [], incidents: [], staff: [] };
 }
 
+function isQuotaError(e: unknown): boolean {
+  return (
+    e instanceof DOMException &&
+    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)
+  );
+}
+
+/** Slim weekData to reduce payload — keep structure, truncate entry bodies */
+function slimWeekData(data: AppState['weekData']): AppState['weekData'] {
+  if (!data) return data;
+  const houses: typeof data.houses = {};
+  for (const [name, house] of Object.entries(data.houses)) {
+    houses[name] = {
+      ...house,
+      entries: house.entries.map(e => ({ ...e, entry: (e.entry ?? '').slice(0, 300) })),
+    };
+  }
+  return { ...data, houses };
+}
+
 function save(state: Partial<AppState>) {
   const current = load();
   const merged = { ...current, ...state };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  const serialised = JSON.stringify(merged);
+  try {
+    localStorage.setItem(STORAGE_KEY, serialised);
+  } catch (e) {
+    if (!isQuotaError(e)) throw e;
+    // Quota exceeded — try again with truncated entry bodies
+    try {
+      const slim = { ...merged, weekData: slimWeekData(merged.weekData) };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+    } catch {
+      // Still over quota — remove and let the session run in memory only
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    }
+  }
 }
 
 export function loadWeekData(): WeekSummary | null {
