@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import type { Page } from '../App';
 import type { WeekSummary, Action, Incident } from '../lib/types';
 
@@ -9,6 +9,8 @@ interface Props {
   actions: Action[];
   incidents: Incident[];
   theme: 'dark' | 'light';
+  setTheme: (t: 'dark' | 'light') => void;
+  onSignOut: () => void;
 }
 
 const navSections: { heading?: string; items: { id: Page; label: string; icon: ReactNode }[] }[] = [
@@ -60,9 +62,17 @@ const navSections: { heading?: string; items: { id: Page; label: string; icon: R
   },
 ];
 
-export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, incidents, theme, setTheme, onSignOut }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem('hc-custom-logo-v1'));
   const isLight = theme === 'light';
+
+  // Listen for logo changes from Settings page
+  useEffect(() => {
+    const handler = () => setCustomLogo(localStorage.getItem('hc-custom-logo-v1'));
+    window.addEventListener('hc-logo-change', handler);
+    return () => window.removeEventListener('hc-logo-change', handler);
+  }, []);
   const redFlags = weekData?.allFlags.red.length ?? 0;
   const amberFlags = weekData?.allFlags.amber.length ?? 0;
   const openActions = actions.filter(a => a.status !== 'completed').length;
@@ -84,7 +94,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: 
   const brandTitle = isLight ? 'text-hc-text' : 'text-white';
   const asideBg = isLight
     ? { background: 'linear-gradient(180deg, #eef6fb 0%, #e2edf6 100%)' }
-    : { background: 'linear-gradient(180deg, #141e30 0%, #0f1923 100%)' };
+    : { background: 'linear-gradient(180deg, #0a0d14 0%, #060810 100%)', borderRight: '1px solid rgba(255,255,255,0.06)' };
 
   const sidebarContent = (
     <>
@@ -92,7 +102,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: 
       <div className={`p-3 border-b ${shellBorder}`}>
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-8 w-8 rounded-lg relative z-10" />
+            <img src={customLogo || '/logo-icon-dark.png'} alt="Hazelcare" className="h-8 w-8 rounded-lg relative z-10 object-cover" />
             <div className="absolute inset-0 rounded-xl bg-hc-teal/25 blur-lg" />
           </div>
           <div className="flex-1">
@@ -108,31 +118,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: 
 
       {/* Nav */}
       <nav className="flex-1 px-2.5 py-2.5 space-y-3 overflow-y-auto scrollbar-thin">
-        {/* Intelligence Sync — Global Access */}
-        <div className="px-1 mb-1">
-          <button 
-            onClick={() => handleNav('upload')}
-            className={`w-full group flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl border transition-all duration-300 active:scale-[0.98] ${
-              page === 'upload' 
-                ? isLight
-                  ? 'border-hc-teal/35 bg-hc-teal/10 shadow-md translate-x-0.5'
-                  : 'border-hc-teal/40 bg-hc-teal/10 glow-teal translate-x-1'
-                : isLight
-                  ? 'border-hc-border/80 bg-white/60 hover:border-hc-teal/25 hover:bg-white/90 shadow-sm'
-                  : 'border-white/5 glass-light hover:border-hc-teal/30 hover:bg-white/5'
-            }`}>
-            <div className="w-8 h-8 rounded-lg bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <span className="text-base">🧠</span>
-            </div>
-            <div className="text-left min-w-0">
-              <div className={`text-[11px] font-black uppercase tracking-tight transition-colors ${isLight ? 'text-hc-text group-hover:text-hc-teal' : 'text-white group-hover:text-hc-teal-light'}`}>Sync Intelligence</div>
-              <div className="text-[10px] font-semibold text-hc-muted uppercase tracking-wide">Global Data Import</div>
-            </div>
-          </button>
-        </div>
-
-        {navSections.map((section, si) => (
-          <div key={si}>
+        {navSections.map((section, si) => (          <div key={si}>
             {section.heading && (
               <div className={`text-[10px] font-semibold uppercase tracking-[0.04em] px-2.5 mb-1 ${isLight ? 'text-hc-teal' : 'text-hc-teal-light/80'}`}>{section.heading}</div>
             )}
@@ -145,10 +131,10 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: 
                     page === item.id
                       ? isLight
                         ? 'sidebar-nav-active font-semibold'
-                        : 'glass-teal text-hc-teal-glow font-semibold shadow-[0_0_15px_rgba(20,184,166,0.15)] translate-x-1'
+                        : 'bg-hc-teal/[0.08] text-hc-teal-light font-semibold border-l-2 border-hc-teal/50'
                       : isLight
                         ? 'text-hc-text/80 hover:text-hc-text hover:bg-black/[0.05]'
-                        : 'text-hc-text/70 hover:text-white hover:bg-white/[0.06]'
+                        : 'text-hc-muted hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   <span className={`shrink-0 transition-transform duration-300 ${page === item.id ? (isLight ? 'text-hc-teal scale-105' : 'text-hc-teal-glow scale-110') : ''}`}>{item.icon}</span>
@@ -164,32 +150,97 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, theme }: 
       {/* Status Panel */}
       <div className={`p-3 border-t ${shellBorder} hidden lg:block`}>
         {weekData ? (
-          <div className="glass rounded-xl p-3 transition-all duration-300 hover:border-hc-teal/25 group/status">
-            <div className="flex items-center justify-between mb-2">
-              <div className={`text-xs uppercase tracking-wide font-semibold ${isLight ? 'text-hc-teal' : 'text-hc-teal-light/90'}`}>This Week</div>
+          <div className="rounded-xl p-3 transition-all duration-300"
+            style={{
+              background: 'linear-gradient(145deg, rgba(16,18,26,0.9), rgba(10,12,18,0.85))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            }}>
+            <div className="text-[9px] font-black tracking-[0.2em] text-hc-teal uppercase mb-3">This Week</div>
+            <div className="grid grid-cols-3 gap-1.5 text-center mb-3">
+              <div><div className="text-xl font-black tabular-nums text-white">{weekData.totalEntries}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-wide opacity-60">Notes</div></div>
+              <div><div className="text-xl font-black text-flag-red tabular-nums">{redFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-wide opacity-60">Flags</div></div>
+              <div><div className="text-xl font-black text-flag-amber tabular-nums">{amberFlags}</div><div className="text-[9px] text-hc-muted font-bold uppercase tracking-wide opacity-60">Alerts</div></div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="group/val"><div className={`text-lg font-black tabular-nums ${isLight ? 'text-hc-text' : 'text-white'}`}>{weekData.totalEntries}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Notes</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-red tabular-nums">{redFlags}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Flags</div></div>
-              <div className="group/val"><div className="text-lg font-black text-flag-amber tabular-nums">{amberFlags}</div><div className="text-[11px] text-hc-muted font-bold uppercase tracking-tight">Alerts</div></div>
-            </div>
-            <div className={`mt-2 pt-2 border-t ${shellBorder}`}>
-              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-hc-muted">
-                <span>{Object.keys(weekData.houses).length} Houses</span>
-                <span>{weekData.clients.length} Clients</span>
-              </div>
+            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-hc-muted opacity-50 pt-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+              <span>{Object.keys(weekData.houses).length} Houses</span>
+              <span>{weekData.clients.length} Clients</span>
             </div>
           </div>
         ) : (
-          <div className="text-[11px] text-hc-muted text-center py-3">No data loaded</div>
+          <div className="text-[10px] text-hc-muted text-center py-3 opacity-40">No data loaded</div>
         )}
       </div>
 
-      {/* Quick links */}
-      <div className="px-3 pb-4 hidden lg:block">
+      {/* Bottom bar */}
+      <div className="px-3 pb-4 hidden lg:block space-y-2">
+        {/* Theme toggle */}
+        <button
+          type="button"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group cursor-pointer"
+          style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)'}}
+        >
+          {theme === 'dark' ? (
+            <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-teal-light transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          ) : (
+            <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-teal-light transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
+          )}
+          <span className="text-[11px] font-semibold text-hc-muted group-hover:text-white transition-colors">
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </span>
+          <div className="ml-auto w-8 h-4 rounded-full flex items-center px-0.5 transition-colors duration-200"
+            style={{background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(20,184,166,0.4)'}}>
+            <div className="w-3 h-3 rounded-full transition-all duration-200"
+              style={{background: theme === 'dark' ? '#475569' : '#14b8a6', transform: theme === 'dark' ? 'translateX(0)' : 'translateX(16px)'}} />
+          </div>
+        </button>
+
+        {/* Profile / Settings row */}
         <div className="flex gap-2">
-          <a href="https://www.hazelcare.co.uk" target="_blank" rel="noopener noreferrer" title="Organisation site (update href if your provider differs)" className="flex-1 text-xs text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Hazel Care</a>
-          <a href="https://login.nourishcare.com" target="_blank" rel="noopener noreferrer" title="Care records portal (update if you use another system)" className="flex-1 text-xs text-center py-2 text-hc-muted hover:text-hc-teal-light glass-light rounded-lg hover:border-hc-teal/30 transition-all">Portal</a>
+          <button
+            type="button"
+            onClick={() => handleNav('settings' as Page)}
+            className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all group"
+            style={{
+              background: page === 'settings' ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.03)',
+              border: page === 'settings' ? '1px solid rgba(20,184,166,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-white shrink-0"
+              style={{background:'linear-gradient(135deg,#0f766e,#14b8a6)'}}>
+              {(() => {
+                const name = localStorage.getItem('hc-profile-v1');
+                try { const p = name ? JSON.parse(name) : null; return p?.name?.split(' ').map((w: string) => w[0]).join('').slice(0,2).toUpperCase() || 'HC'; } catch { return 'HC'; }
+              })()}
+            </div>
+            <span className="text-[11px] font-semibold text-hc-muted group-hover:text-white transition-colors truncate">Settings</span>
+            <svg className="w-3 h-3 text-hc-muted/40 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          </button>
+          <button
+            type="button"
+            onClick={onSignOut}
+            title="Sign out"
+            className="w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer transition-all hover:text-flag-red group"
+            style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)'}}
+          >
+            <svg className="w-3.5 h-3.5 text-hc-muted/50 group-hover:text-flag-red transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          </button>
+        </div>
+
+        {/* Quick links */}
+        <div className="flex gap-2">
+          <a href="https://www.hazelcare.co.uk" target="_blank" rel="noopener noreferrer"
+            className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors"
+            style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.04)'}}>
+            Hazel Care
+          </a>
+          <a href="https://login.nourishcare.com" target="_blank" rel="noopener noreferrer"
+            className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors"
+            style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.04)'}}>
+            CarePlanner
+          </a>
         </div>
       </div>
     </>
