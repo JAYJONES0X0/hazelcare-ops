@@ -53,6 +53,12 @@ export interface EscalationItem {
   summary: string;
   reasons: string[];
   suggestedTool: 'notes' | 'handover' | 'actions' | 'incidents';
+  // Rich data for personalised call scripts
+  qualityScore: number;
+  entryCount: number;
+  shortEntryRatio: number;
+  avgEntryChars: number;
+  topGaps: string[];
 }
 
 export interface StaffMonitoringSnapshot {
@@ -338,6 +344,11 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       summary: `${s.carer}: quality ${s.qualityScore}/100, ${s.entryCount} notes (${Math.round(s.shortEntryRatio * 100)}% short)`,
       reasons: s.reasons,
       suggestedTool,
+      qualityScore: s.qualityScore,
+      entryCount: s.entryCount,
+      shortEntryRatio: s.shortEntryRatio,
+      avgEntryChars: s.avgEntryChars,
+      topGaps: s.topGaps,
     });
   }
   escalations.sort((a, b) => b.tier - a.tier);

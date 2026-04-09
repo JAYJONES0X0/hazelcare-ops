@@ -11,6 +11,11 @@ describe('call-prep', () => {
       summary: 'test',
       reasons: ['Short notes'],
       suggestedTool: 'notes' as const,
+      qualityScore: 42,
+      entryCount: 8,
+      shortEntryRatio: 0.75,
+      avgEntryChars: 55,
+      topGaps: ['First-person voice missing'],
     };
     const s = buildCallPrepScript(esc, 'Lingfield', 'coaching');
     expect(s.lines.length).toBeGreaterThan(5);
