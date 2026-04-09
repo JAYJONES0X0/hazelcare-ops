@@ -1,7 +1,92 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import { loadClients } from '../lib/client-store';
 import type { Page } from '../App';
+
+// ── PDF import types ──────────────────────────────────────────────────────────
+interface PdfDiaryEntry {
+  client: string;
+  carer: string;
+  date: string;
+  type: string;
+  entry: string;
+}
+
+async function parseDiaryPdf(file: File): Promise<PdfDiaryEntry[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjsLib = await import('pdfjs-dist') as any;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fullText += (tc.items as any[]).map((it: { str: string }) => it.str).join(' ') + '\n';
+  }
+
+  // Best-effort extraction: split on date patterns and build entries
+  const entries: PdfDiaryEntry[] = [];
+  // Match lines like: "08/04/2026" or "8 April 2026" followed by content
+  const datePattern = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4})/gi;
+  const blocks = fullText.split(datePattern).filter(s => s.trim());
+
+  // Attempt to extract client name from first block
+  const clientMatch = fullText.match(/(?:Client|Service User|Name)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/);
+  const clientName = clientMatch ? clientMatch[1] : file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ').replace(/[()]/g, '').trim();
+
+  // Attempt to extract carer names - lines starting with known patterns
+  let currentDate = '';
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i].trim();
+    if (!b) continue;
+    if (datePattern.test(b)) {
+      currentDate = b;
+      continue;
+    }
+    if (currentDate && b.length > 10) {
+      // Try to extract carer from "Written by" or "Staff:" patterns
+      const carerMatch = b.match(/(?:Written by|Staff|Carer|Author)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
+      const carer = carerMatch ? carerMatch[1] : 'Unknown';
+
+      // Determine type
+      const lower = b.toLowerCase();
+      const type = lower.includes('medication') ? 'Medication'
+        : lower.includes('personal care') || lower.includes('shower') || lower.includes('bath') ? 'Personal Care'
+        : lower.includes('incident') ? 'Incident'
+        : lower.includes('handover') ? 'Handover'
+        : lower.includes('activity') || lower.includes('engagement') ? 'Activity'
+        : '1:1 Support';
+
+      entries.push({
+        client: clientName,
+        carer,
+        date: currentDate,
+        type,
+        entry: b,
+      });
+      currentDate = '';
+    }
+  }
+
+  // Fallback: if no structured entries found, create one block per page-worth of text
+  if (entries.length === 0 && fullText.trim()) {
+    const paragraphs = fullText.split(/\n{2,}/).filter(p => p.trim().length > 20);
+    for (const p of paragraphs.slice(0, 50)) {
+      entries.push({
+        client: clientName,
+        carer: 'Unknown',
+        date: '',
+        type: '1:1 Support',
+        entry: p.trim(),
+      });
+    }
+  }
+
+  return entries;
+}
 
 interface Props {
   weekData: WeekSummary | null;
@@ -75,23 +160,81 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
   const [typeFilter, setTypeFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
 
+  // PDF import state
+  const [pdfEntries, setPdfEntries] = useState<PdfDiaryEntry[]>([]);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfDrop = useCallback(async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setPdfError('Only PDF files are supported');
+      return;
+    }
+    setPdfError('');
+    setPdfLoading(true);
+    try {
+      const entries = await parseDiaryPdf(file);
+      setPdfEntries(entries);
+      if (entries.length > 0) setSelectedClient(entries[0].client);
+    } catch (e) {
+      setPdfError(`Could not parse PDF: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setPdfLoading(false);
+    }
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) void handlePdfDrop(file);
+  }, [handlePdfDrop]);
+
   const storedClients = useMemo(() => loadClients().map(c => c.name.toLowerCase()), []);
 
   const clientDiary = weekData?.clientDiary || {};
+
+  // Merge PDF entries into clientDiary view
+  const mergedDiary = useMemo(() => {
+    const d: Record<string, CareEntry[]> = { ...clientDiary };
+    for (const pe of pdfEntries) {
+      const key = pe.client;
+      if (!d[key]) d[key] = [];
+      // Avoid duplicates
+      const exists = d[key].some(e => e.entry === pe.entry && e.date === pe.date);
+      if (!exists) {
+        d[key].push({
+          id: `pdf-${pe.date}-${pe.carer}-${pe.entry.slice(0, 20)}`,
+          client: pe.client,
+          carer: pe.carer,
+          date: pe.date,
+          type: pe.type,
+          category: 'daily',
+          entry: pe.entry,
+          house: '',
+          severity: 'none',
+          flags: [],
+        } as unknown as CareEntry);
+      }
+    }
+    return d;
+  }, [clientDiary, pdfEntries]);
+
   const allClients = useMemo(() =>
-    Object.keys(clientDiary)
+    Object.keys(mergedDiary)
       .filter(name => name && !['Maintenance', 'Station', 'On Call'].includes(name))
       .sort((a, b) => {
-        // Sort by red flags first, then amber, then name
-        const ra = clientDiary[a].filter(e => e.severity === 'red').length;
-        const rb = clientDiary[b].filter(e => e.severity === 'red').length;
+        const ra = (mergedDiary[a] || []).filter(e => e.severity === 'red').length;
+        const rb = (mergedDiary[b] || []).filter(e => e.severity === 'red').length;
         if (rb !== ra) return rb - ra;
-        const aa = clientDiary[a].filter(e => e.severity === 'amber').length;
-        const ab = clientDiary[b].filter(e => e.severity === 'amber').length;
+        const aa = (mergedDiary[a] || []).filter(e => e.severity === 'amber').length;
+        const ab = (mergedDiary[b] || []).filter(e => e.severity === 'amber').length;
         if (ab !== aa) return ab - aa;
         return a.localeCompare(b);
       }),
-    [clientDiary]
+    [mergedDiary]
   );
 
   const filteredClients = useMemo(() =>
@@ -103,46 +246,101 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
 
   const allTypes = useMemo(() => {
     const s = new Set<string>();
-    Object.values(clientDiary).flat().forEach(e => s.add(e.type));
+    Object.values(mergedDiary).flat().forEach(e => s.add(e.type));
     return [...s].sort();
-  }, [clientDiary]);
+  }, [mergedDiary]);
 
   const selectedEntries = useMemo(() => {
     if (!selectedClient) return [];
-    let entries = clientDiary[selectedClient] || [];
+    let entries = mergedDiary[selectedClient] || [];
     if (typeFilter) entries = entries.filter(e => e.type === typeFilter);
     if (severityFilter) {
       if (severityFilter === 'none') entries = entries.filter(e => e.severity === 'none');
       else entries = entries.filter(e => e.severity === severityFilter);
     }
     return [...entries].sort((a, b) => b.date.localeCompare(a.date));
-  }, [selectedClient, clientDiary, typeFilter, severityFilter]);
+  }, [selectedClient, mergedDiary, typeFilter, severityFilter]);
 
-  if (!weekData) {
+  // PDF drop zone — shown when no weekData AND no PDF entries yet
+  const showDropZone = !weekData && pdfEntries.length === 0;
+
+  if (showDropZone) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8 animate-in fade-in zoom-in duration-500">
-        <div className="w-24 h-24 rounded-2xl glass border border-hc-teal/20 flex items-center justify-center mb-8 glow-teal animate-float">
-          <span className="text-4xl">📋</span>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8 animate-in fade-in zoom-in duration-500"
+        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={onDrop}
+      >
+        <input ref={fileInputRef} type="file" accept=".pdf" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) void handlePdfDrop(f); }} />
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="cursor-pointer rounded-[2rem] p-10 mb-6 transition-all duration-300 flex flex-col items-center gap-4"
+          style={{
+            background: isDragging ? 'rgba(20,184,166,0.08)' : 'linear-gradient(145deg,rgba(16,18,26,0.9),rgba(10,12,18,0.85))',
+            border: isDragging ? '2px dashed rgba(20,184,166,0.6)' : '2px dashed rgba(255,255,255,0.1)',
+            boxShadow: isDragging ? '0 0 40px rgba(20,184,166,0.15)' : '0 8px 40px rgba(0,0,0,0.5)',
+          }}
+        >
+          <svg className={`w-14 h-14 transition-colors ${isDragging ? 'text-hc-teal' : 'text-hc-muted'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div className="text-[10px] font-black tracking-[0.3em] text-hc-teal uppercase">
+            {pdfLoading ? 'Reading PDF…' : isDragging ? 'Drop it' : 'Client Diary'}
+          </div>
+          <div className="text-white font-black text-xl tracking-tight">
+            {pdfLoading ? 'Parsing entries…' : 'Drop a diary PDF here'}
+          </div>
+          <div className="text-hc-muted text-xs max-w-xs leading-relaxed opacity-70">
+            Drop a CarePlanner diary export (PDF) directly here. No redirects.
+          </div>
+          {!pdfLoading && (
+            <span className="text-[10px] font-bold text-hc-teal-light uppercase tracking-widest opacity-60">or click to browse</span>
+          )}
         </div>
-        <h2 className="text-2xl font-bold text-white mb-3 text-gradient">No diary data loaded</h2>
-        <p className="text-hc-muted text-sm mb-8 max-w-xs leading-relaxed">
-          Drop a CSV export to see all client diaries with care insights.
-        </p>
-        <button onClick={() => setPage('upload')}
-          className="px-8 py-3 btn-gradient rounded-xl shadow-lg hover:shadow-hc-teal/20 transition-all">
-          Import Data
+        {pdfError && <div className="text-flag-red text-xs font-bold mt-2">{pdfError}</div>}
+        <div className="h-px w-20 bg-white/5 my-5" />
+        <button onClick={() => setPage('upload')} className="text-[10px] text-hc-muted hover:text-white uppercase tracking-widest transition-colors">
+          Or sync from global import
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden animate-in fade-in duration-700">
+    <div className="flex h-screen overflow-hidden animate-in fade-in duration-700"
+      onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={onDrop}
+    >
+      {/* Full-screen drop overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+          style={{background:'rgba(10,12,18,0.85)',backdropFilter:'blur(8px)'}}>
+          <div className="rounded-[2rem] p-12 flex flex-col items-center gap-4"
+            style={{border:'2px dashed rgba(20,184,166,0.6)',boxShadow:'0 0 60px rgba(20,184,166,0.2)'}}>
+            <svg className="w-16 h-16 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <div className="text-white font-black text-xl">Drop diary PDF</div>
+          </div>
+        </div>
+      )}
+      <input ref={fileInputRef} type="file" accept=".pdf" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) void handlePdfDrop(f); }} />
+
       {/* Client list sidebar */}
       <div className="w-72 flex-shrink-0 border-r border-white/5 flex flex-col glass backdrop-blur-3xl">
         <div className="p-4 border-b border-white/5 bg-black/20">
+          {/* Import button */}
+          <button onClick={() => fileInputRef.current?.click()}
+            className="w-full mb-3 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase text-hc-teal-light cursor-pointer transition-all duration-200 hover:opacity-90"
+            style={{background:'rgba(20,184,166,0.08)',border:'1px solid rgba(20,184,166,0.25)'}}>
+            {pdfLoading ? 'Reading…' : '+ Import diary PDF'}
+          </button>
+          {pdfError && <div className="text-flag-red text-[10px] font-bold mb-2">{pdfError}</div>}
           <p className="section-header text-[9px] mb-3 px-1">
-            {allClients.length} clients · {weekData.dateFrom}–{weekData.dateTo}
+            {allClients.length} clients{weekData ? ` · ${weekData.dateFrom}–${weekData.dateTo}` : ' · PDF import'}
           </p>
           <div className="relative group">
             <input
@@ -158,7 +356,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {filteredClients.map(name => {
-            const entries = clientDiary[name] || [];
+            const entries = mergedDiary[name] || [];
             const red = entries.filter(e => e.severity === 'red').length;
             const amber = entries.filter(e => e.severity === 'amber').length;
             const hasDocs = storedClients.some(n => n.includes(name.toLowerCase().split(' ')[0]));
@@ -213,9 +411,11 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                 <h2 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter uppercase text-shimmer">{selectedClient}</h2>
                 <div className="flex items-center gap-3">
                   <span className="pill pill-teal text-[10px] uppercase tracking-[0.2em] font-black shadow-xl">Care Entries</span>
-                  <span className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] ml-2 tabular-nums">
-                    DATE RANGE: {weekData.dateFrom} – {weekData.dateTo}
-                  </span>
+                  {weekData && (
+                    <span className="text-hc-muted text-[10px] font-black uppercase tracking-[0.2em] ml-2 tabular-nums">
+                      DATE RANGE: {weekData.dateFrom} – {weekData.dateTo}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-4">
@@ -230,7 +430,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             </div>
 
             {/* Stats */}
-            <ClientStats entries={clientDiary[selectedClient] || []} />
+            <ClientStats entries={mergedDiary[selectedClient] || []} />
 
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3 mb-6 glass-light border border-white/5 p-3 md:p-4 rounded-xl lg:rounded-2xl shadow-xl backdrop-blur-xl">

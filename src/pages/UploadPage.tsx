@@ -127,7 +127,8 @@ async function extractDocxText(file: File): Promise<string> {
 function inferClientFromFileName(fileName: string): string {
   const base = fileName.split('/').pop() || fileName;
   const cleaned = base.replace(/\.[^.]+$/, '');
-  const match = cleaned.match(/\b(Barry(?:\s+Rigney)?|Gavin(?:\s+Rees)?|James(?:\s+(?:Milsom|M))?)\b/i);
+  // Try to extract a likely name pattern (two capitalised words)
+  const match = cleaned.match(/\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b/);
   return match ? match[1] : 'Unclear';
 }
 
@@ -744,6 +745,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         return;
       }
 
+      // Yield before heavy parse — prevents browser freeze on large exports
+      await new Promise<void>(res => setTimeout(res, 10));
+
       const envelope = buildEnvelopeFromRaw(file.name, rawText);
       const previewData = buildPreview(envelope);
       const targetUnion = ext === 'zip'
@@ -906,7 +910,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-[1700px] mx-auto">
+    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-[2560px] mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>

@@ -50,9 +50,19 @@ function dedupeEntries(entries: CareEntry[]): CareEntry[] {
   return out;
 }
 
+function parseDDMMYYYY(s: string): number {
+  const parts = s.split('/');
+  if (parts.length === 3) {
+    const [d, m, y] = parts.map(Number);
+    const t = new Date(y, m - 1, d).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return Date.parse(s);
+}
+
 function compareDateAsc(a: string, b: string): number {
-  const da = Date.parse(a);
-  const db = Date.parse(b);
+  const da = parseDDMMYYYY(a);
+  const db = parseDDMMYYYY(b);
   if (Number.isNaN(da) || Number.isNaN(db)) return a.localeCompare(b);
   return da - db;
 }

@@ -6,7 +6,7 @@ const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 export function attachHcSessionCookie(res) {
   if (!AUTH_SESSION_SECRET) return;
   try {
-    const { value, maxAgeSec } = mintHcSession(AUTH_SESSION_SECRET, 12);
+    const { value, maxAgeSec } = mintHcSession(AUTH_SESSION_SECRET, 168);
     const secure = secureCookieSuffix();
     res.setHeader(
       'Set-Cookie',

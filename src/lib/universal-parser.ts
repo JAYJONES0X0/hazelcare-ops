@@ -77,20 +77,45 @@ function isKnownHouse(raw: string): boolean {
 type Category = 'incident' | 'safeguarding' | 'medication' | 'handover' | 'daily_support' | 'finance' | 'staff' | 'health_safety' | 'other';
 
 function categorizeEntry(type: string, text: string): Category {
-  const t = type.toLowerCase();
+  const t = type.toLowerCase().trim();
   const x = text.toLowerCase();
-  if (t.includes('accident') || t.includes('incident')) return 'incident';
-  if (t.includes('safeguard')) return 'safeguarding';
-  if (t.includes('medication')) return 'medication';
+  // ── CarePlanner exact type names ──────────────────────────────────────
   if (t.includes('handover')) return 'handover';
-  if (t.includes('daily 1:1') || t.includes('1to1') || t.includes('daily support')) return 'daily_support';
-  if (t.includes('finance') || t.includes('expense') || t.includes('mileage') || t.includes('financial') || t.includes('money')) return 'finance';
+  if (t.includes('task note') || t.includes('daily 1:1') || t.includes('1to1') || t.includes('daily support') || t.includes('1:1')) return 'daily_support';
+  if (t.includes('accident') || t.includes('incident') || t.includes('abc')) return 'incident';
+  if (t.includes('safeguard')) return 'safeguarding';
+  if (
+    t.includes('medication audit') || t.includes('medication collected') ||
+    t.includes('medication ordered') || t.includes('medication returned') ||
+    t.includes('medication review') || t.startsWith('medication')
+  ) return 'medication';
+  if (t === 'gp appointment' || t.includes('gp appoint') || t.includes('hospital') || t.includes('health appointment')) return 'other';
+  if (
+    t.includes('care review') || t.includes('quality performance') ||
+    t.includes('weekly quality') || t.includes('house meeting') ||
+    t.includes('cqc') || t.includes('concern') || t.includes('complaint') ||
+    t.includes('compliment') || t.includes('client feedback') || t.includes('family feedback') ||
+    t.includes('service charge')
+  ) return 'other';
+  if (
+    t.includes('daily finance') || t.includes('daily hr') ||
+    t.includes('daily maintenance') || t.includes('daily quality') ||
+    t.includes('exit interview') || t.includes('performance improvement') ||
+    t.includes('probation') || t.includes('senior support worker') ||
+    t.includes('supervision') || t.includes('spot check') || t.includes('quality meeting') ||
+    t.includes('professional notes')
+  ) return 'staff';
+  if (
+    t.includes('finance') || t.includes('expense') || t.includes('mileage') ||
+    t.includes('financial') || t.includes('money') || t.includes('service charge') ||
+    t === 'financial transaction' || t === 'finance audit'
+  ) return 'finance';
   if (t.includes('repair')) return 'health_safety';
-  if (t.includes('supervision') || t.includes('spot check') || t.includes('quality meeting')) return 'staff';
+  // ── Fallback from entry text ──────────────────────────────────────────
   if (x.includes('safeguard')) return 'safeguarding';
   if (x.includes('medication') || x.includes('prescribed')) return 'medication';
   if (x.includes('incident') || x.includes('police') || x.includes('ambulance')) return 'incident';
-  if (t.includes('professional notes')) return 'staff';
+  if (x.includes('handover')) return 'handover';
   return 'other';
 }
 
@@ -117,8 +142,10 @@ function extractHouseFromCarers(carers: string): string {
 function cleanCarerName(raw: string): string {
   return raw
     .replace(/All carers in region:[^,]+,?\s*/gi, '')
+    .replace(/All carers in region[^,]*/gi, '')
     .split(',')[0]
-    .trim() || 'Staff';
+    .replace(/\s{2,}/g, ' ')  // collapse double spaces
+    .trim() || '';
 }
 
 const NON_CLIENT = new Set(['Maintenance', 'Station', 'On Call', 'On-call', '', 'Management']);
@@ -216,7 +243,10 @@ export function parseUniversalCSV(text: string): CareEntry[] {
       client = clientRaw;
     }
 
-    const carer = cleanCarerName(carersRaw);
+    const carerClean = cleanCarerName(carersRaw);
+    // Skip header-like rows that were accidentally included
+    if (carerClean.toLowerCase() === 'carer' || carerClean.toLowerCase() === 'staff' || carerClean.toLowerCase() === 'worker') continue;
+    const carer = carerClean || 'Unassigned';
     const { severity, flags } = detectFlags(entryRaw + ' ' + typeRaw);
     const category = categorizeEntry(typeRaw, entryRaw);
 

@@ -332,6 +332,40 @@ export function StaffNotePage() {
   const [search, setSearch] = useState('');
   const [activeGroup, setActiveGroup] = useState<string>('client');
 
+  // ── QUICK FIX mode ────────────────────────────────────────────────
+  const [quickRaw, setQuickRaw] = useState('');
+  const [quickResult, setQuickResult] = useState('');
+  const [quickLoading, setQuickLoading] = useState(false);
+  const [quickCopied, setQuickCopied] = useState(false);
+
+  async function quickFix() {
+    if (!quickRaw.trim() || quickLoading) return;
+    setQuickResult('');
+    setQuickLoading(true);
+    try {
+      const res = await fetch('/api/enhance-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text: quickRaw.trim(), noteType: '1:1 Support' }),
+      });
+      if (!res.ok || !res.body) throw new Error('Failed');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+        setQuickResult(text);
+      }
+    } catch {
+      setQuickResult('Could not reach the AI. Make sure you are logged in.');
+    } finally {
+      setQuickLoading(false);
+    }
+  }
+
   useEffect(() => { setAnswers({}); }, [selectedType.id]);
 
   const filteredTypes = useMemo(() => {
@@ -437,6 +471,61 @@ export function StaffNotePage() {
 
   return (
     <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
+
+      {/* ── QUICK FIX PANEL ─────────────────────────────────── */}
+      <div className="mb-8 rounded-2xl p-5" style={{background:'linear-gradient(145deg,rgba(16,18,26,0.95),rgba(10,12,18,0.9))',backdropFilter:'blur(28px) saturate(1.4)',border:'1px solid rgba(139,92,246,0.2)',boxShadow:'0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(139,92,246,0.05),inset 0 1px 0 rgba(255,255,255,0.05)'}}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6',boxShadow:'0 0 12px rgba(139,92,246,0.7)'}} />
+          <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white">Quick Fix</span>
+          <span className="text-[10px] text-hc-muted opacity-50 uppercase tracking-wide">Paste any note → get Gold Standard instantly</span>
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {/* Input */}
+          <div className="flex flex-col gap-3">
+            <label className="text-[10px] font-black tracking-widest uppercase text-hc-muted">Original note (paste here)</label>
+            <textarea
+              value={quickRaw}
+              onChange={e => setQuickRaw(e.target.value)}
+              placeholder={"Paste the staff note here — any language, any format, good or bad.\n\nExamples:\n• \"Staff supported James with personal care. He refused at first.\"\n• \"Good morning handover completed.\"\n• Third-person notes, brief notes, notes in another language — all fine."}
+              className="w-full text-sm text-hc-muted leading-relaxed resize-none focus:outline-none scrollbar-thin"
+              style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'12px',padding:'14px',minHeight:'160px',color:'#c8d4e0'}}
+            />
+            <button
+              type="button"
+              onClick={quickFix}
+              disabled={!quickRaw.trim() || quickLoading}
+              className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.01] active:scale-95 disabled:opacity-30 cursor-pointer"
+              style={{background:'linear-gradient(135deg,#7c3aed,#8b5cf6)',boxShadow:'0 4px 24px rgba(139,92,246,0.4)',color:'white'}}
+            >
+              {quickLoading ? 'Generating Gold Standard…' : '✦ Generate Gold Standard'}
+            </button>
+          </div>
+          {/* Output */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black tracking-widest uppercase text-hc-muted">Gold Standard rewrite</label>
+              {quickResult && !quickLoading && <span className="text-[10px] font-bold text-flag-green uppercase tracking-wide">Ready</span>}
+            </div>
+            <textarea
+              value={quickResult}
+              onChange={e => setQuickResult(e.target.value)}
+              readOnly={quickLoading}
+              placeholder={quickLoading ? 'Writing your Gold Standard note…' : 'The rewritten first-person note will appear here as it streams.'}
+              className="flex-1 w-full text-sm leading-relaxed resize-none focus:outline-none scrollbar-thin"
+              style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'12px',padding:'14px',minHeight:'160px',color:quickLoading ? '#6b7d94' : '#e2eaf2'}}
+            />
+            <button
+              type="button"
+              disabled={!quickResult.trim() || quickLoading}
+              onClick={() => { if (!quickResult.trim()) return; void navigator.clipboard.writeText(quickResult); setQuickCopied(true); setTimeout(() => setQuickCopied(false), 2500); }}
+              className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.01] active:scale-95 disabled:opacity-30 cursor-pointer"
+              style={{background: quickCopied ? 'linear-gradient(135deg,#16a34a,#22c55e)' : 'linear-gradient(135deg,#0f766e,#14b8a6)',boxShadow: quickCopied ? '0 4px 24px rgba(34,197,94,0.4)' : '0 4px 24px rgba(20,184,166,0.35)',color:'white'}}
+            >
+              {quickCopied ? '✓ Copied to clipboard' : 'Copy rewritten note'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ── PAGE HEADER ───────────────────────────────────────── */}
       <div className="mb-6">

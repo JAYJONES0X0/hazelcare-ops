@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Incident, IncidentStage } from '../lib/types';
+import { useCollapseStore } from '../lib/collapse-store';
 
 interface Props {
   incidents: Incident[];
@@ -34,6 +35,10 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
     setLastTransition(null);
   }
 
+  const { isCollapsed: isStageCollapsed, toggle: toggleStage, collapseAll: collapseAllStages, expandAll: expandAllStages, allCollapsed: allStagesCollapsed } = useCollapseStore('incidents-stages');
+  const stageIds = STAGES.map(s => s.id);
+  const allCollapsed = allStagesCollapsed(stageIds);
+
   const byStage = STAGES.map(stage => ({
     ...stage,
     items: incidents.filter(i => i.stage === stage.id),
@@ -43,7 +48,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1700px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-8 max-w-[2560px] mx-auto animate-in fade-in duration-700">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
@@ -56,14 +61,25 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             </span>
           </div>
         </div>
-        {lastTransition && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={undoLastTransition}
-            className="px-4 py-2 text-xs font-black uppercase tracking-[0.08em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
+            type="button"
+            onClick={() => allCollapsed ? expandAllStages(stageIds) : collapseAllStages(stageIds)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
+            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
           >
-            Undo Last Stage Change
+            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            {allCollapsed ? 'Expand all' : 'Collapse all'}
           </button>
-        )}
+          {lastTransition && (
+            <button
+              onClick={undoLastTransition}
+              className="px-4 py-2 text-xs font-black uppercase tracking-[0.08em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
+            >
+              Undo Last Stage Change
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Pipeline progress visualization */}
@@ -88,16 +104,24 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
       {/* Kanban-style columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 min-h-[600px]">
         {byStage.map((stage, sIdx) => (
-          <div key={stage.id} className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${sIdx * 100}ms` }}>
-            <div className="flex items-center justify-between px-3 py-1.5 glass border-l-2 border-white/5 rounded-xl bg-white/[0.02]" style={{ borderLeftColor: stage.color }}>
+          <div key={stage.id} className="flex flex-col gap-2 animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${sIdx * 100}ms` }}>
+            <button
+              type="button"
+              onClick={() => toggleStage(stage.id)}
+              className="flex items-center justify-between px-3 py-2 glass border-l-2 border-white/5 rounded-xl bg-white/[0.02] cursor-pointer transition-all hover:bg-white/[0.04]"
+              style={{ borderLeftColor: stage.color }}
+            >
               <div className="flex items-center gap-2">
                 <span className="text-sm">{stage.icon}</span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{stage.label}</span>
               </div>
-              <span className="pill pill-teal text-[9px] px-1.5 py-0 shadow-sm opacity-60 group-hover:opacity-100">{stage.items.length}</span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="pill pill-teal text-[9px] px-1.5 py-0 shadow-sm">{stage.items.length}</span>
+                <svg className="w-3 h-3 text-hc-muted/40 transition-transform duration-200" style={{transform: isStageCollapsed(stage.id) ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </button>
 
-            <div className="flex-1 space-y-3 bg-black/10 rounded-2xl p-2 border border-white/5 overflow-y-auto max-h-[70vh] scrollbar-thin shadow-inner group/stage">
+            {!isStageCollapsed(stage.id) && <div className="flex-1 space-y-3 bg-black/10 rounded-2xl p-2 border border-white/5 overflow-y-auto max-h-[70vh] scrollbar-thin shadow-inner group/stage">
               {stage.items.map(incident => (
                 <div
                   key={incident.id}
@@ -169,7 +193,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                   <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">No Incidents</div>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         ))}
       </div>
