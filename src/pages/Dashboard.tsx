@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import type { WeekSummary, Action, Incident } from '../lib/types';
 import type { Page } from '../App';
 import { useCollapseStore } from '../lib/collapse-store';
@@ -18,10 +17,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const houseIds = houseList.map(h => h.name);
   const { isCollapsed: isHouseCollapsed, toggle: toggleHouse, collapseAll: collapseAllHouses, expandAll: expandAllHouses, allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
   const housesAllCollapsed = allHousesCollapsed(houseIds);
-  const toggleAllHouses = useCallback(() => {
+  function toggleAllHouses() {
     if (housesAllCollapsed) expandAllHouses(houseIds);
     else collapseAllHouses(houseIds);
-  }, [housesAllCollapsed, houseIds, collapseAllHouses, expandAllHouses]);
+  }
   const openActions = weekData ? actions.filter(a => a.status === 'open' || a.status === 'in_progress') : [];
   const activeIncidents = weekData ? incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved') : [];
 

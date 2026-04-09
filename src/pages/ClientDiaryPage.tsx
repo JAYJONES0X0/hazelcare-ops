@@ -30,7 +30,7 @@ async function parseDiaryPdf(file: File): Promise<PdfDiaryEntry[]> {
   // Best-effort extraction: split on date patterns and build entries
   const entries: PdfDiaryEntry[] = [];
   // Match lines like: "08/04/2026" or "8 April 2026" followed by content
-  const datePattern = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4})/gi;
+  const datePattern = /(\d{1,2}[/-]\d{1,2}[/-]\d{4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4})/gi;
   const blocks = fullText.split(datePattern).filter(s => s.trim());
 
   // Attempt to extract client name from first block

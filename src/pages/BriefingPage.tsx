@@ -30,6 +30,16 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
       .sort((a, b) => (b.red * 10 + b.amber) - (a.red * 10 + a.amber)).slice(0, 10);
   }, [weekData]);
 
+  const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
+  const {
+    isCollapsed: isSectionCollapsed,
+    toggle: toggleSection,
+    collapseAll: collapseAllSections,
+    expandAll: expandAllSections,
+    allCollapsed: allSectionsCollapsed,
+  } = useCollapseStore('briefing-sections');
+  const allCollapsed = allSectionsCollapsed(SECTION_IDS);
+
   if (!weekData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 animate-in fade-in duration-700">
@@ -50,10 +60,6 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
   const redFlags = weekData.allFlags.red;
   const amberFlags = weekData.allFlags.amber;
   const houseList = Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber));
-
-  const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
-  const { isCollapsed: isSectionCollapsed, toggle: toggleSection, collapseAll: collapseAllSections, expandAll: expandAllSections, allCollapsed: allSectionsCollapsed } = useCollapseStore('briefing-sections');
-  const allCollapsed = allSectionsCollapsed(SECTION_IDS);
 
   const overdueActions = actions.filter(a => a.status !== 'completed' && a.priority === 'critical');
   const openActions = actions.filter(a => a.status === 'open' || a.status === 'in_progress');

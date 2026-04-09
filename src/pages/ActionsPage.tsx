@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import type { Action, ActionStatus, ActionPriority } from '../lib/types';
 import { uid } from '../lib/storage';
 import { useCollapseStore } from '../lib/collapse-store';
@@ -39,10 +39,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
   });
   const actionIds = sorted.map(a => a.id);
   const allCollapsed = allActionsCollapsed(actionIds);
-  const toggleAll = useCallback(() => {
+  function toggleAll() {
     if (allCollapsed) expandAllActions(actionIds);
     else collapseAllActions(actionIds);
-  }, [allCollapsed, actionIds, collapseAllActions, expandAllActions]);
+  }
 
   const counts = {
     all: actions.length,

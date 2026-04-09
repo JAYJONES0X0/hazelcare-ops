@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import type { Page } from '../App';
@@ -203,7 +203,10 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
   const sectionIds = sections.map(s => s.label);
   const { isCollapsed: isSectionCollapsed, toggle: toggleSection, collapseAll, expandAll, allCollapsed } = useCollapseStore('reports-house-sections');
   const allClosed = allCollapsed(sectionIds);
-  const toggleAll = useCallback(() => { allClosed ? expandAll(sectionIds) : collapseAll(sectionIds); }, [allClosed, sectionIds, collapseAll, expandAll]);
+  function toggleAll() {
+    if (allClosed) expandAll(sectionIds);
+    else collapseAll(sectionIds);
+  }
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-700">

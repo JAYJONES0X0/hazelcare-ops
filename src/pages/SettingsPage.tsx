@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface Props {
-  theme: 'dark' | 'light';
-  setTheme: (t: 'dark' | 'light') => void;
   onSignOut: () => void;
 }
 
@@ -27,7 +25,7 @@ function saveProfile(p: Profile) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
 }
 
-export function SettingsPage({ theme, setTheme, onSignOut }: Props) {
+export function SettingsPage({ onSignOut }: Props) {
   const [profile, setProfile] = useState<Profile>(loadProfile);
   const [profileSaved, setProfileSaved] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem(LOGO_KEY));
@@ -266,31 +264,18 @@ export function SettingsPage({ theme, setTheme, onSignOut }: Props) {
       {/* ── Appearance ───────────────────────────────────────────── */}
       <div className={card} style={cardStyle}>
         <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
           Appearance
         </div>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-bold text-white mb-0.5">Interface theme</div>
-            <div className="text-xs text-hc-muted">{theme === 'dark' ? 'Dark mode — current' : 'Light mode — current'}</div>
+            <div className="text-xs text-hc-muted">Precision dark — optimised for shift use</div>
           </div>
-          <button
-            type="button"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
-          >
-            {theme === 'dark'
-              ? <svg className="w-4 h-4 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-              : <svg className="w-4 h-4 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
-            }
-            <div className="w-10 h-5 rounded-full flex items-center px-0.5 transition-colors duration-200"
-              style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(20,184,166,0.5)' }}>
-              <div className="w-4 h-4 rounded-full transition-all duration-200"
-                style={{ background: theme === 'dark' ? '#475569' : '#14b8a6', transform: theme === 'dark' ? 'translateX(0)' : 'translateX(20px)' }} />
-            </div>
-            <span className="text-xs font-bold text-hc-muted">{theme === 'dark' ? 'Light' : 'Dark'}</span>
-          </button>
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{background:'rgba(13,148,136,0.08)',border:'1px solid rgba(13,148,136,0.25)'}}>
+            <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
+            <span className="text-xs font-bold text-hc-teal-light">Dark</span>
+          </div>
         </div>
       </div>
 

@@ -490,6 +490,7 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
     { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },
     { key: 'notes', label: 'Staff Notes', present: notes.length > 0, desc: notes.length > 0 ? `${notes.length} saved notes` : 'Local registry empty' },
   ];
+  if (!datasets[0].present) datasets[0].desc = 'Session empty — re-upload diary export';
 
   return (
     <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden mt-8">
@@ -529,7 +530,7 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
           onClick={handleExportBackup}
           className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
         >
-          Export Full Backup
+          Export Persistent Backup
         </button>
         <button
           onClick={() => restoreRef.current?.click()}
@@ -548,6 +549,9 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
             e.currentTarget.value = '';
           }}
         />
+      </div>
+      <div className="mt-3 text-[10px] text-hc-muted leading-relaxed">
+        Backups include people, actions, incidents, and saved notes. Diary/briefing data is session-only to avoid browser storage failures, so re-upload the source export when needed.
       </div>
     </div>
   );
@@ -667,7 +671,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         if (target === 'templates') sawTemplates = true;
         if (target === 'reports') sawReports = true;
         if (target === 'reports' && row.envelope.weekSummary) {
-          onDataParsed(row.envelope.weekSummary);
+          const mergedWeekData = loadWeekData();
+          if (mergedWeekData) onDataParsed(mergedWeekData);
         }
       } else {
         failedIds.push(row.id);
@@ -860,7 +865,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     }
 
     if (preview.envelope.weekSummary && selectedTargets.includes('reports')) {
-      onDataParsed(preview.envelope.weekSummary);
+      const mergedWeekData = loadWeekData();
+      if (mergedWeekData) onDataParsed(mergedWeekData);
     }
 
     const target = destination || result.page;

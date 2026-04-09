@@ -3,13 +3,23 @@ import type { AppState, Action, CareEntry, Incident, WeekSummary } from './types
 const STORAGE_KEY = 'hazelcare-ops';
 const CLIENTS_KEY = 'hc-clients-v2';
 const STAFF_NOTES_KEY = 'hazelcare-staff-notes';
+let sessionWeekData: WeekSummary | null = null;
+
+function normalizeState(raw: Partial<AppState> | null | undefined): AppState {
+  return {
+    weekData: null,
+    actions: Array.isArray(raw?.actions) ? raw.actions : [],
+    incidents: Array.isArray(raw?.incidents) ? raw.incidents : [],
+    staff: Array.isArray(raw?.staff) ? raw.staff : [],
+  };
+}
 
 function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return normalizeState(JSON.parse(raw) as Partial<AppState>);
   } catch { /* empty */ }
-  return { weekData: null, actions: [], incidents: [], staff: [] };
+  return normalizeState(null);
 }
 
 function isQuotaError(e: unknown): boolean {
@@ -34,7 +44,7 @@ function slimWeekData(data: AppState['weekData']): AppState['weekData'] {
 
 function save(state: Partial<AppState>) {
   const current = load();
-  const merged = { ...current, ...state };
+  const merged = normalizeState({ ...current, ...state, weekData: null });
   const serialised = JSON.stringify(merged);
   try {
     localStorage.setItem(STORAGE_KEY, serialised);
@@ -52,11 +62,11 @@ function save(state: Partial<AppState>) {
 }
 
 export function loadWeekData(): WeekSummary | null {
-  return load().weekData;
+  return sessionWeekData;
 }
 
-export function saveWeekData(data: WeekSummary) {
-  save({ weekData: data });
+export function saveWeekData(data: WeekSummary | null) {
+  sessionWeekData = data;
 }
 
 function entryFingerprint(entry: CareEntry): string {
@@ -199,6 +209,7 @@ export function saveIncidents(incidents: Incident[]) {
 }
 
 export function clearWeekData() {
+  sessionWeekData = null;
   save({ weekData: null });
 }
 
@@ -211,12 +222,16 @@ export function clearIncidents() {
 }
 
 export function clearSelectedData(type: 'diary' | 'actions' | 'incidents') {
-  if (type === 'diary') save({ weekData: null });
+  if (type === 'diary') {
+    sessionWeekData = null;
+    save({ weekData: null });
+  }
   else if (type === 'actions') save({ actions: [] });
   else if (type === 'incidents') save({ incidents: [] });
 }
 
 export function clearAllData() {
+  sessionWeekData = null;
   localStorage.removeItem(STORAGE_KEY);
 }
 
@@ -251,12 +266,14 @@ export function exportOpsSnapshot(): OpsSnapshot {
     staffNotes = [];
   }
 
+  // weekData is excluded — it lives in React state only (too large for localStorage)
+  const appState = load();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     source: 'hazelcare-ops',
     data: {
-      appState: load(),
+      appState: { ...appState, weekData: null },
       clients,
       staffNotes,
     },
@@ -279,12 +296,13 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   }
 
   const appState: AppState = {
-    weekData: (data.appState as Partial<AppState>).weekData ?? null,
+    weekData: null,
     actions: Array.isArray((data.appState as Partial<AppState>).actions) ? (data.appState as Partial<AppState>).actions as Action[] : [],
     incidents: Array.isArray((data.appState as Partial<AppState>).incidents) ? (data.appState as Partial<AppState>).incidents as Incident[] : [],
     staff: Array.isArray((data.appState as Partial<AppState>).staff) ? (data.appState as Partial<AppState>).staff as AppState['staff'] : [],
   };
 
+  sessionWeekData = null;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   localStorage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
   localStorage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));

@@ -648,7 +648,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           )}
           {page === 'settings' && (
             <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <SettingsPage theme={theme} setTheme={setTheme} onSignOut={onSignOut} />
+              <SettingsPage onSignOut={onSignOut} />
             </div>
           )}
         </div>

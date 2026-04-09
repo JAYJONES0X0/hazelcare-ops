@@ -60,6 +60,7 @@ function pickClient(envelope: NormalizedImportEnvelope, opts: RouteImportOptions
 export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImportOptions): RouteImportResult {
   const messages: string[] = [];
   const warnings: string[] = [...envelope.warnings];
+  const previousWeekData = loadWeekData();
   const snapshot = exportOpsSnapshot();
 
   try {
@@ -165,6 +166,7 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
     return { ok: true, page, messages, warnings, requiresManualClientSelection };
   } catch (err) {
     const rollback = importOpsSnapshot(snapshot);
+    saveWeekData(previousWeekData);
     const msg = err instanceof Error ? err.message : 'Unknown import error';
     const rollbackMsg = rollback.ok ? '' : ` Rollback failed: ${rollback.error}`;
     return { ok: false, page: 'upload', messages: [], warnings: [`Import rolled back: ${msg}.${rollbackMsg}`.trim()] };
