@@ -11,6 +11,20 @@ interface Props {
 }
 
 export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
+  // Hooks must be unconditional — compute safe defaults for the null case
+  const houseList = weekData
+    ? Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber))
+    : [];
+  const houseIds = houseList.map(h => h.name);
+  const { isCollapsed: isHouseCollapsed, toggle: toggleHouse, collapseAll: collapseAllHouses, expandAll: expandAllHouses, allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
+  const housesAllCollapsed = allHousesCollapsed(houseIds);
+  const toggleAllHouses = useCallback(() => {
+    if (housesAllCollapsed) expandAllHouses(houseIds);
+    else collapseAllHouses(houseIds);
+  }, [housesAllCollapsed, houseIds, collapseAllHouses, expandAllHouses]);
+  const openActions = weekData ? actions.filter(a => a.status === 'open' || a.status === 'in_progress') : [];
+  const activeIncidents = weekData ? incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved') : [];
+
   if (!weekData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 animate-in fade-in duration-700 relative overflow-hidden">
@@ -50,17 +64,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     );
   }
 
-  const houseList = Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber));
-  const houseIds = houseList.map(h => h.name);
-  const { isCollapsed: isHouseCollapsed, toggle: toggleHouse, collapseAll: collapseAllHouses, expandAll: expandAllHouses, allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
-  const housesAllCollapsed = allHousesCollapsed(houseIds);
-  const toggleAllHouses = useCallback(() => {
-    if (housesAllCollapsed) expandAllHouses(houseIds);
-    else collapseAllHouses(houseIds);
-  }, [housesAllCollapsed, houseIds, collapseAllHouses, expandAllHouses]);
-  
-  const openActions = actions.filter(a => a.status === 'open' || a.status === 'in_progress');
-  const activeIncidents = incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved');
 
   return (
     <div className="p-6 lg:p-10 w-full max-w-[2560px] mx-auto animate-in fade-in duration-1000">
