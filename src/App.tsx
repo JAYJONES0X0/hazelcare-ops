@@ -597,7 +597,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-hc-darker">
+    <div className="flex h-screen overflow-hidden" style={{background:'transparent'}}>
       <Sidebar
         page={page}
         setPage={setPage}

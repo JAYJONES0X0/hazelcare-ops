@@ -49,7 +49,7 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
 ];
 
 const sidebarBg = {
-  background: '#0d1117',
+  background: '#0f172a',
   borderRight: '1px solid rgba(255,255,255,0.06)',
 };
 
@@ -264,7 +264,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
 
       {/* Desktop Sidebar */}
       <aside
-        className="hidden lg:flex w-[13.5rem] flex-col shrink-0 h-screen sticky top-0"
+        className="hidden lg:flex w-[13.5rem] flex-col shrink-0 h-screen sticky top-0 theme-dark"
         style={{ ...sidebarBg, overflow: 'clip' }}
       >
         {sidebarContent}

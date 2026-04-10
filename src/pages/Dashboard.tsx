@@ -139,16 +139,16 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                 className="group/house relative rounded-2xl overflow-hidden transition-all duration-300"
                 style={{
                   background: hasRed
-                    ? '#1a0d0d'
+                    ? '#fff5f5'
                     : hasAmber
-                    ? '#181208'
-                    : '#111827',
-                  border: `1px solid ${hasRed ? 'rgba(239,68,68,0.2)' : hasAmber ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.07)'}`,
+                    ? '#fffbeb'
+                    : '#ffffff',
+                  border: `1px solid ${hasRed ? 'rgba(239,68,68,0.18)' : hasAmber ? 'rgba(245,158,11,0.18)' : 'rgba(0,0,0,0.07)'}`,
                   boxShadow: hasRed
-                    ? '0 8px 40px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.04)'
+                    ? '0 2px 12px rgba(239,68,68,0.10)'
                     : hasAmber
-                    ? '0 8px 40px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.04)'
-                    : '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
+                    ? '0 2px 12px rgba(245,158,11,0.08)'
+                    : '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06)',
                   animationDelay: `${idx * 40}ms`,
                 }}
               >
@@ -233,14 +233,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               onClick={() => setPage(btn.id as Page)}
               className="group/btn cursor-pointer text-left rounded-2xl p-5 transition-all duration-250 hover:-translate-y-0.5 active:scale-95"
               style={{
-                background: '#111827',
-                backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
-                WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 0.5px rgba(255,255,255,0.04)',
+                background: '#ffffff',
+                border: '1px solid rgba(0,0,0,0.07)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.border = '1px solid rgba(20,184,166,0.25)')}
-              onMouseLeave={e => (e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)')}
+              onMouseEnter={e => (e.currentTarget.style.border = '1px solid rgba(13,148,136,0.30)')}
+              onMouseLeave={e => (e.currentTarget.style.border = '1px solid rgba(0,0,0,0.07)')}
             >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover/btn:scale-110"
                 style={{background:'rgba(20,184,166,0.08)', border:'1px solid rgba(20,184,166,0.15)'}}>
