@@ -60,7 +60,7 @@ export function ClientRiskPage({ weekData }: Props) {
           { label: 'Moderate Alerts', value: stats.medium, color: '#3b82f6', pill: 'pill-blue' },
           { label: 'Secure Status', value: stats.low, color: '#22c55e', pill: 'pill-green' },
         ].map(s => (
-          <div key={s.label} className="glass-light border border-white/5 rounded-[1.5rem] p-6 shadow-xl transition-all hover:scale-[1.02] group relative overflow-hidden">
+          <div key={s.label} className="glass-light border border-hc-border rounded-[1.5rem] p-6 shadow-xl transition-all hover:scale-[1.02] group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
             <div className="text-3xl font-black tabular-nums tracking-tighter shadow-lg" style={{ color: s.color, textShadow: `0 0 20px ${s.color}40` }}>{s.value}</div>
             <div className="section-header text-[9px] mt-2 opacity-60 tracking-[0.2em]">{s.label}</div>
@@ -69,7 +69,7 @@ export function ClientRiskPage({ weekData }: Props) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-2xl w-fit">
+      <div className="flex flex-wrap gap-2 mb-8 bg-black/5 backdrop-blur-md rounded-2xl p-1.5 border border-hc-border shadow-2xl w-fit">
         {(['all', 'critical', 'high', 'medium'] as const).map((f) => (
           <button
             key={f}
@@ -93,7 +93,7 @@ export function ClientRiskPage({ weekData }: Props) {
       {/* Client List */}
       <div className="grid grid-cols-1 gap-3">
         {filteredProfiles.length === 0 ? (
-          <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
+          <div className="text-center py-32 glass border border-hc-border rounded-[2.5rem] animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20 grayscale">📡</div>
             <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No matches found</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Adjust sensor parameters to restore visibility</div>
@@ -104,7 +104,7 @@ export function ClientRiskPage({ weekData }: Props) {
               key={profile.name}
               onClick={() => setSelectedClient(profile)}
               className={`glass-light border transition-all duration-500 rounded-[2rem] p-6 cursor-pointer card-glow interactive-row group animate-in slide-in-from-bottom-4
-                ${profile.riskLevel === 'critical' ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-white/5 hover:border-hc-teal/30'}`}
+                ${profile.riskLevel === 'critical' ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-hc-border hover:border-hc-teal/30'}`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -130,7 +130,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="flex items-center gap-8 px-8 md:border-x md:border-white/5 relative z-10">
+                <div className="flex items-center gap-8 px-8 md:border-x md:border-hc-border relative z-10">
                   {profile.redFlags > 0 && (
                     <div className="text-center group/stat">
                       <div className="text-xl font-black text-flag-red tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform">{profile.redFlags}</div>
@@ -158,7 +158,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 </div>
 
                 {/* Arrow */}
-                <div className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted group-hover:text-hc-teal-light group-hover:border-hc-teal/30 group-hover:translate-x-1 transition-all duration-500 shadow-xl">
+                <div className="w-10 h-10 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted group-hover:text-hc-teal-light group-hover:border-hc-teal/30 group-hover:translate-x-1 transition-all duration-500 shadow-xl">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
@@ -168,7 +168,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 <div className="flex flex-wrap gap-2 mt-6 pl-20 relative z-10">
                   <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.3em] mr-2 flex items-center">DETECTED CONCERNS:</span>
                   {profile.topConcerns.map((concern) => (
-                    <span key={concern} className="text-[9px] font-black px-3 py-1 rounded-lg bg-black/40 text-hc-text/60 border border-white/5 uppercase tracking-widest group-hover:text-hc-text group-hover:border-hc-teal/20 transition-all">
+                    <span key={concern} className="text-[9px] font-black px-3 py-1 rounded-lg bg-black/5 text-hc-text/60 border border-hc-border uppercase tracking-widest group-hover:text-hc-text group-hover:border-hc-teal/20 transition-all">
                       {concern}
                     </span>
                   ))}
@@ -182,10 +182,10 @@ export function ClientRiskPage({ weekData }: Props) {
       {/* Detail Modal */}
       {selectedClient && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedClient(null)}>
-          <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="glass border border-hc-border rounded-[2.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className={`absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.05] blur-[100px] -translate-y-1/2 translate-x-1/2`} style={{ background: getRiskColor(selectedClient.riskLevel) }} />
             
-            <div className={`p-10 border-b border-white/5 relative z-10 ${selectedClient.riskLevel === 'critical' ? 'bg-flag-red/[0.03]' : ''}`}>
+            <div className={`p-10 border-b border-hc-border relative z-10 ${selectedClient.riskLevel === 'critical' ? 'bg-flag-red/[0.03]' : ''}`}>
               <div className="flex items-start justify-between gap-8">
                 <div>
                   <h2 className="text-4xl font-black text-white tracking-tighter uppercase text-shimmer mb-2">{selectedClient.name}</h2>
@@ -210,7 +210,7 @@ export function ClientRiskPage({ weekData }: Props) {
                   { label: 'MED VECTORS', value: selectedClient.medicationIssues, color: '#3b82f6' },
                   { label: 'SAFEGUARD', value: selectedClient.safeguardingFlags, color: '#ef4444' },
                 ].map(stat => (
-                  <div key={stat.label} className="glass-light border border-white/5 rounded-2xl p-5 text-center shadow-inner group/sub">
+                  <div key={stat.label} className="glass-light border border-hc-border rounded-2xl p-5 text-center shadow-inner group/sub">
                     <div className="text-3xl font-black tabular-nums tracking-tighter group-hover/sub:scale-110 transition-transform mb-1" style={{ color: stat.color }}>{stat.value}</div>
                     <div className="section-header text-[8px] opacity-50 tracking-[0.2em]">{stat.label}</div>
                   </div>
@@ -226,7 +226,7 @@ export function ClientRiskPage({ weekData }: Props) {
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {selectedClient.topConcerns.map((concern) => (
-                      <span key={concern} className="pill pill-red text-[11px] font-black uppercase tracking-widest px-5 py-2 shadow-xl shadow-red-950/20 border-white/10">
+                      <span key={concern} className="pill pill-red text-[11px] font-black uppercase tracking-widest px-5 py-2 shadow-xl shadow-red-950/20 border-hc-border">
                         {concern}
                       </span>
                     ))}
@@ -239,7 +239,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 <h3 className="section-header text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-5">Recent History</h3>
                 <div className="space-y-3">
                   {selectedClient.recentEntries.map((entry) => (
-                    <div key={entry.id} className="glass-light border border-white/5 rounded-2xl p-5 group/entry hover:bg-white/[0.03] transition-all interactive-row">
+                    <div key={entry.id} className="glass-light border border-hc-border rounded-2xl p-5 group/entry hover:bg-hc-teal/5 transition-all interactive-row">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
@@ -257,7 +257,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-6 border-t border-white/5">
+              <div className="flex gap-4 pt-6 border-t border-hc-border">
                 <button
                   onClick={() => setSelectedClient(null)}
                   className="flex-1 btn-gradient rounded-2xl py-4 text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] transition-all"
@@ -266,7 +266,7 @@ export function ClientRiskPage({ weekData }: Props) {
                 </button>
                 <button
                   onClick={() => setSelectedClient(null)}
-                  className="px-10 glass-light border border-white/10 text-hc-muted py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:text-white transition-all shadow-xl"
+                  className="px-10 glass-light border border-hc-border text-hc-muted py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:text-white transition-all shadow-xl"
                 >
                   Close
                 </button>

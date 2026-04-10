@@ -83,7 +83,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
       </div>
 
       {/* Pipeline progress visualization */}
-      <div className="grid grid-cols-5 gap-4 mb-10 glass border border-white/5 p-4 rounded-2xl shadow-2xl">
+      <div className="grid grid-cols-5 gap-4 mb-10 glass border border-hc-border p-4 rounded-2xl shadow-2xl">
         {STAGES.map(stage => {
           const count = incidents.filter(i => i.stage === stage.id).length;
           return (
@@ -92,7 +92,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                 <span className="text-xs font-black uppercase tracking-[0.08em] transition-colors group-hover:text-hc-text" style={{ color: stage.color }}>{stage.label}</span>
                 <span className="text-[10px] font-bold text-hc-text/40 group-hover:text-hc-text transition-colors">{count}</span>
               </div>
-              <div className="h-2 rounded-full bg-hc-dark/60 overflow-hidden shadow-inner border border-white/5">
+              <div className="h-2 rounded-full bg-white overflow-hidden shadow-inner border border-hc-border">
                 <div className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(255,255,255,0.1)]" 
                   style={{ background: `linear-gradient(90deg, ${stage.color}88, ${stage.color})`, width: count > 0 ? '100%' : '0%', opacity: count > 0 ? 1 : 0.1 }} />
               </div>
@@ -108,7 +108,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             <button
               type="button"
               onClick={() => toggleStage(stage.id)}
-              className="flex items-center justify-between px-3 py-2 glass border-l-2 border-white/5 rounded-xl bg-white/[0.02] cursor-pointer transition-all hover:bg-white/[0.04]"
+              className="flex items-center justify-between px-3 py-2 glass border-l-2 border-hc-border rounded-xl bg-white/[0.02] cursor-pointer transition-all hover:bg-hc-teal/5"
               style={{ borderLeftColor: stage.color }}
             >
               <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               </div>
             </button>
 
-            {!isStageCollapsed(stage.id) && <div className="flex-1 space-y-3 bg-black/10 rounded-2xl p-2 border border-white/5 overflow-y-auto max-h-[70vh] scrollbar-thin shadow-inner group/stage">
+            {!isStageCollapsed(stage.id) && <div className="flex-1 space-y-3 bg-black/10 rounded-2xl p-2 border border-hc-border overflow-y-auto max-h-[70vh] scrollbar-thin shadow-inner group/stage">
               {stage.items.map(incident => (
                 <div
                   key={incident.id}
@@ -151,7 +151,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
                   {/* Actions */}
                   {incident.actions.length > 0 && (
-                    <div className="space-y-2 mb-5 bg-black/30 p-3 rounded-xl border border-white/5 shadow-inner">
+                    <div className="space-y-2 mb-5 bg-black/5 p-3 rounded-xl border border-hc-border shadow-inner">
                       <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1.5 opacity-40">Actions Taken</div>
                       {incident.actions.slice(0, 3).map((a, i) => (
                         <div key={i} className="flex items-center gap-2.5 text-[9px] font-black text-hc-teal-light/70 uppercase tracking-widest group-hover/card:text-hc-teal-light transition-colors">
@@ -162,7 +162,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="flex items-center justify-between border-t border-hc-border pt-4">
                     <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40 tabular-nums">{incident.date}</span>
                     {incident.stage !== 'closed' && (
                       <button

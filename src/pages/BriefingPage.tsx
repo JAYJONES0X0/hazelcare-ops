@@ -168,7 +168,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               </button>
               {!isSectionCollapsed('interventions') && <div className="divide-y divide-white/[0.04]">
                 {redFlags.slice(0, 8).map((flag, i) => (
-                  <div key={`rf${i}`} className="px-4 py-3 flex items-start gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                  <div key={`rf${i}`} className="px-4 py-3 flex items-start gap-3 hover:bg-hc-teal/5 transition-colors cursor-pointer group"
                     onClick={() => setPage('reports')}>
                     <div className="w-1.5 h-1.5 rounded-full bg-flag-red mt-1.5 shrink-0 animate-pulse" />
                     <div className="flex-1 min-w-0">
@@ -210,7 +210,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               </button>
               {!isSectionCollapsed('clients') && <div className="divide-y divide-white/[0.04]">
                 {priorityClients.map((c) => (
-                  <div key={c.name} className="px-4 py-2.5 flex items-center gap-3 hover:bg-white/[0.02] cursor-pointer transition-colors"
+                  <div key={c.name} className="px-4 py-2.5 flex items-center gap-3 hover:bg-hc-teal/5 cursor-pointer transition-colors"
                     onClick={() => setPage('client-diary')}>
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-hc-teal-light"
                       style={{background:'rgba(20,184,166,0.1)',border:'1px solid rgba(20,184,166,0.2)'}}>

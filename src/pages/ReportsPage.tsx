@@ -25,7 +25,7 @@ function EntryRow({ entry }: { entry: CareEntry }) {
 
   return (
     <div className={`glass-light border transition-all duration-300 rounded-[1.25rem] overflow-hidden card-glow interactive-row
-      ${isRed ? 'border-flag-red/25 bg-flag-red/[0.02]' : isAmber ? 'border-flag-amber/20 bg-flag-amber/[0.01]' : 'border-white/5 hover:border-white/10'}`}>
+      ${isRed ? 'border-flag-red/25 bg-flag-red/[0.02]' : isAmber ? 'border-flag-amber/20 bg-flag-amber/[0.01]' : 'border-hc-border hover:border-hc-border'}`}>
       <button className="w-full text-left px-5 py-4 flex items-start gap-4 group" onClick={() => setOpen(!open)}>
         <div className={`w-2 h-2 rounded-full mt-2 shrink-0 shadow-lg ${isRed ? 'bg-flag-red glow-red animate-pulse' : isAmber ? 'bg-flag-amber glow-amber' : 'bg-flag-green shadow-flag-green/20'}`} />
         <div className="flex-1 min-w-0">
@@ -45,12 +45,12 @@ function EntryRow({ entry }: { entry: CareEntry }) {
             </div>
           )}
         </div>
-        <div className={`w-6 h-6 rounded-lg glass border border-white/5 flex items-center justify-center shrink-0 mt-1 transition-all duration-500 ${open ? 'rotate-90 bg-white/5 border-white/20' : 'group-hover:translate-x-1'}`}>
+        <div className={`w-6 h-6 rounded-lg glass border border-hc-border flex items-center justify-center shrink-0 mt-1 transition-all duration-500 ${open ? 'rotate-90 bg-white/5 border-white/20' : 'group-hover:translate-x-1'}`}>
           <svg className={`w-3 h-3 text-hc-muted group-hover:text-hc-text transition-colors`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
         </div>
       </button>
       {open && entry.carer && entry.carer !== 'Staff' && (
-        <div className="px-5 pb-4 text-[10px] text-hc-muted font-bold uppercase tracking-[0.2em] border-t border-white/5 pt-3 bg-black/20 flex items-center gap-2">
+        <div className="px-5 pb-4 text-[10px] text-hc-muted font-bold uppercase tracking-[0.2em] border-t border-hc-border pt-3 bg-black/5 flex items-center gap-2">
           <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
           Staff: {entry.carer}
         </div>
@@ -120,7 +120,7 @@ function WeeklySummaryReport({ weekData }: { weekData: WeekSummary }) {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 glass-light border border-white/5 p-4 rounded-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 glass-light border border-hc-border p-4 rounded-2xl">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0">
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -136,7 +136,7 @@ function WeeklySummaryReport({ weekData }: { weekData: WeekSummary }) {
           Print / Save as PDF
         </button>
       </div>
-      <div className="bg-white rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl p-1 relative group">
+      <div className="bg-white rounded-[2rem] overflow-hidden border border-hc-border shadow-2xl p-1 relative group">
         <div className="absolute inset-0 bg-hc-teal/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         <iframe ref={iframeRef} srcDoc={html} className="w-full relative z-10" style={{ minHeight: 850 }} title="Report Preview" />
       </div>
@@ -151,8 +151,8 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
 
   return (
     <div className="animate-in fade-in slide-in-from-left-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 glass-light border border-white/5 p-4 rounded-2xl shadow-xl">
-        <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-xl p-1.5 border border-white/5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 glass-light border border-hc-border p-4 rounded-2xl shadow-xl">
+        <div className="flex gap-2 bg-black/5 backdrop-blur-md rounded-xl p-1.5 border border-hc-border">
           {(['both', 'red', 'amber'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
             className={`px-5 py-2.5 text-xs font-black uppercase tracking-[0.08em] rounded-xl transition-all duration-500
@@ -172,7 +172,7 @@ function FlagReport({ weekData }: { weekData: WeekSummary }) {
       <div className="space-y-3">
         {entries.map((e, i) => <EntryRow key={i} entry={e} />)}
         {entries.length === 0 && (
-          <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+          <div className="text-center py-24 glass border border-hc-border rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">🛡️</div>
             <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">No Issues</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">No priority flags detected in this stream</div>
@@ -210,11 +210,11 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-white/5 p-5 rounded-2xl shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 glass-light border border-hc-border p-5 rounded-2xl shadow-xl">
         <div className="flex items-center gap-4">
           <span className="section-header text-[10px] tracking-[0.2em]">Select House</span>
           <select value={selected} onChange={e => setSelected(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[250px]">
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[250px]">
             {houses.map(h => <option key={h} value={h}>{h} ({weekData.houses[h].entries.length} POINTS)</option>)}
           </select>
         </div>
@@ -239,7 +239,7 @@ function HouseDetailReport({ weekData }: { weekData: WeekSummary }) {
           {sections.map((section, idx) => (
             <div key={section.label} className="animate-in slide-in-from-bottom-6 duration-700 rounded-2xl overflow-hidden" style={{ animationDelay: `${idx * 100}ms`, border:'1px solid rgba(255,255,255,0.05)', background:'rgba(10,12,18,0.5)' }}>
               <button type="button" onClick={() => toggleSection(section.label)}
-                className="w-full flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                className="w-full flex items-center gap-4 px-5 py-3 cursor-pointer hover:bg-hc-teal/5 transition-colors"
                 style={{borderBottom: isSectionCollapsed(section.label) ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="w-1 h-4 rounded-full shrink-0" style={{background: section.color, boxShadow:`0 0 8px ${section.color}60`}} />
                 <h3 className="text-sm font-black uppercase tracking-tight text-hc-text">{section.label}</h3>
@@ -294,10 +294,10 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
 
   return (
     <div className="animate-in fade-in duration-700">
-      <div className="flex flex-wrap items-center gap-4 mb-8 glass-light border border-white/5 p-5 rounded-[2rem] shadow-2xl backdrop-blur-xl">
+      <div className="flex flex-wrap items-center gap-4 mb-8 glass-light border border-hc-border p-5 rounded-[2rem] shadow-2xl backdrop-blur-xl">
         <div className="relative group flex-1 min-w-[300px]">
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries, people, staff..."
-            className="w-full pl-12 pr-6 py-3.5 bg-hc-dark/60 border border-white/10 rounded-2xl text-sm text-hc-text placeholder:text-hc-muted/30 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+            className="w-full pl-12 pr-6 py-3.5 bg-white border border-hc-border rounded-2xl text-sm text-hc-text placeholder:text-hc-muted/30 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
@@ -305,17 +305,17 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
         
         <div className="flex flex-wrap items-center gap-3">
           <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
             <option value="all">All Houses</option>
             {houses.map(h => <option key={h} value={h}>{h}</option>)}
           </select>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]">
             <option value="all">All Channels</option>
             {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           
-          <div className="flex gap-1 bg-black/30 rounded-xl p-1 border border-white/5">
+          <div className="flex gap-1 bg-black/5 rounded-xl p-1 border border-hc-border">
             {(['all', 'red', 'amber', 'none'] as const).map(s => (
               <button key={s} onClick={() => setSeverityFilter(s)}
                 className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all duration-300
@@ -337,13 +337,13 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
         <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">TELEMETRY FEED — {filtered.length} NODES CAPTURED</div>
         {filtered.slice(0, 200).map((e, i) => <EntryRow key={i} entry={e} />)}
         {filtered.length > 200 && (
-          <div className="text-center py-10 glass border border-white/5 rounded-2xl">
+          <div className="text-center py-10 glass border border-hc-border rounded-2xl">
             <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Stream Truncated: 200 / {filtered.length}</div>
             <div className="text-[9px] font-bold text-hc-muted/50 uppercase tracking-widest mt-1">Refine filters to access deep-history logs</div>
           </div>
         )}
         {filtered.length === 0 && (
-          <div className="text-center py-32 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+          <div className="text-center py-32 glass border border-hc-border rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">📡</div>
             <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">No Entries Yet</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Adjust sensor parameters to restore visibility</div>
@@ -375,7 +375,7 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center gap-4 mb-8 glass-light border border-white/5 p-4 rounded-2xl shadow-xl">
+      <div className="flex items-center gap-4 mb-8 glass-light border border-hc-border p-4 rounded-2xl shadow-xl">
         <div className="w-10 h-10 rounded-xl bg-hc-purple/10 border border-hc-purple/20 flex items-center justify-center shrink-0">
           <svg className="w-5 h-5 text-hc-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
         </div>
@@ -388,10 +388,10 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
       <div className="grid grid-cols-1 gap-3">
         {byStaff.map(([name, data], idx) => (
           <div key={name} className={`glass-light border transition-all duration-500 rounded-2xl overflow-hidden card-glow
-            ${data.red > 0 ? 'border-flag-red/25 bg-flag-red/[0.02] glow-red' : data.amber > 0 ? 'border-flag-amber/20 bg-flag-amber/[0.01]' : 'border-white/5 hover:border-white/10'}`}
+            ${data.red > 0 ? 'border-flag-red/25 bg-flag-red/[0.02] glow-red' : data.amber > 0 ? 'border-flag-amber/20 bg-flag-amber/[0.01]' : 'border-hc-border hover:border-hc-border'}`}
             style={{ animationDelay: `${idx * 50}ms` }}>
             <button className="w-full text-left px-6 py-5 flex items-center gap-6 group" onClick={() => setExpanded(expanded === name ? null : name)}>
-              <div className="w-14 h-14 rounded-2xl glass border border-white/10 flex items-center justify-center text-lg font-black text-hc-teal-light shrink-0 shadow-xl group-hover:scale-110 group-hover:border-hc-teal/30 transition-all duration-500">
+              <div className="w-14 h-14 rounded-2xl glass border border-hc-border flex items-center justify-center text-lg font-black text-hc-teal-light shrink-0 shadow-xl group-hover:scale-110 group-hover:border-hc-teal/30 transition-all duration-500">
                 {name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -418,17 +418,17 @@ function StaffActivityReport({ weekData }: { weekData: WeekSummary }) {
                     <div className="text-[8px] font-black text-flag-amber/60 uppercase tracking-[0.2em]">AMB</div>
                   </div>
                 )}
-                <div className={`w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center transition-all duration-500 ${expanded === name ? 'rotate-90 bg-white/5 border-white/20' : 'group-hover:translate-x-1'}`}>
+                <div className={`w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center transition-all duration-500 ${expanded === name ? 'rotate-90 bg-white/5 border-white/20' : 'group-hover:translate-x-1'}`}>
                   <svg className="w-4 h-4 text-hc-muted group-hover:text-hc-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
             </button>
             
             {expanded === name && (
-              <div className="border-t border-white/5 px-6 py-6 space-y-3 max-h-[500px] overflow-y-auto bg-black/20 backdrop-blur-3xl scrollbar-thin animate-in slide-in-from-top-4 duration-500">
+              <div className="border-t border-hc-border px-6 py-6 space-y-3 max-h-[500px] overflow-y-auto bg-black/5 backdrop-blur-3xl scrollbar-thin animate-in slide-in-from-top-4 duration-500">
                 <div className="section-header text-[8px] mb-4 opacity-40 tracking-[0.3em]">PERSONNEL TELEMETRY FEED — CHRONOLOGICAL</div>
                 {data.entries.map((e, i) => (
-                  <div key={i} className="flex items-start gap-4 glass-light border border-white/5 p-4 rounded-xl hover:bg-white/5 transition-all group/entry interactive-row">
+                  <div key={i} className="flex items-start gap-4 glass-light border border-hc-border p-4 rounded-xl hover:bg-white/5 transition-all group/entry interactive-row">
                     <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 shadow-lg ${e.severity === 'red' ? 'bg-flag-red glow-red animate-pulse' : e.severity === 'amber' ? 'bg-flag-amber glow-amber' : 'bg-flag-green'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
@@ -486,8 +486,8 @@ export function ReportsPage({ weekData, setPage }: Props) {
           </div>
         </div>
         {selectedReport && (
-          <button onClick={() => setSelectedReport(null)} className="group flex items-center gap-3 glass-light border border-white/10 text-[10px] font-black text-hc-muted hover:text-hc-text uppercase tracking-[0.2em] px-6 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl">
-            <span className="w-5 h-5 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+          <button onClick={() => setSelectedReport(null)} className="group flex items-center gap-3 glass-light border border-hc-border text-[10px] font-black text-hc-muted hover:text-hc-text uppercase tracking-[0.2em] px-6 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl">
+            <span className="w-5 h-5 rounded-lg glass border border-hc-border flex items-center justify-center group-hover:bg-white/5 transition-all">
               <svg className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </span>
             Back to Reports
@@ -500,10 +500,10 @@ export function ReportsPage({ weekData, setPage }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
           {REPORT_TYPES.map((rt, idx) => (
             <button key={rt.id} onClick={() => setSelectedReport(rt.id)}
-              className="glass-light border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-5 text-left hover:border-hc-teal/40 hover:bg-white/[0.03] transition-all duration-500 group relative overflow-hidden card-glow animate-in slide-in-from-bottom-4 active:scale-95 shadow-xl"
+              className="glass-light border border-hc-border rounded-xl lg:rounded-2xl p-4 lg:p-5 text-left hover:border-hc-teal/40 hover:bg-hc-teal/5 transition-all duration-500 group relative overflow-hidden card-glow animate-in slide-in-from-bottom-4 active:scale-95 shadow-xl"
               style={{ animationDelay: `${idx * 100}ms` }}>
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.03] blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-[0.1] transition-opacity duration-1000" style={{ background: rt.color }} />
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 shadow-2xl border border-white/10 relative z-10" style={{ background: `${rt.color}15` }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 shadow-2xl border border-hc-border relative z-10" style={{ background: `${rt.color}15` }}>
                 <svg className="w-7 h-7" style={{ color: rt.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d={rt.icon} /></svg>
               </div>
               <div className="text-sm font-black text-hc-text mb-2 group-hover:text-hc-teal-light transition-colors tracking-tight leading-tight uppercase relative z-10">{rt.label}</div>
@@ -519,7 +519,7 @@ export function ReportsPage({ weekData, setPage }: Props) {
       {/* Active report header */}
       {active && (
         <div className="flex items-center gap-5 mb-8 animate-in slide-in-from-left-4 duration-700 px-2">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center glass border border-white/10 shadow-2xl" style={{ background: `${active.color}15` }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center glass border border-hc-border shadow-2xl" style={{ background: `${active.color}15` }}>
             <svg className="w-6 h-6" style={{ color: active.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d={active.icon} /></svg>
           </div>
           <div>

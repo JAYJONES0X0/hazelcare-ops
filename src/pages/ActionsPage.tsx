@@ -119,19 +119,19 @@ export function ActionsPage({ actions, onUpdate }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="md:col-span-2 lg:col-span-2">
               <label className="section-header text-xs mb-1.5 ml-1 block">Objective Title</label>
-              <input value={newAction.title} onChange={e => setNewAction({ ...newAction, title: e.target.value })} placeholder="What needs to be done?" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <input value={newAction.title} onChange={e => setNewAction({ ...newAction, title: e.target.value })} placeholder="What needs to be done?" className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header text-xs mb-1.5 ml-1 block">Location / House</label>
-              <input value={newAction.house} onChange={e => setNewAction({ ...newAction, house: e.target.value })} placeholder="House name" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <input value={newAction.house} onChange={e => setNewAction({ ...newAction, house: e.target.value })} placeholder="House name" className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header text-xs mb-1.5 ml-1 block">Assigned Owner</label>
-              <input value={newAction.owner} onChange={e => setNewAction({ ...newAction, owner: e.target.value })} placeholder="Carer or Manager" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <input value={newAction.owner} onChange={e => setNewAction({ ...newAction, owner: e.target.value })} placeholder="Carer or Manager" className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header text-xs mb-1.5 ml-1 block">Priority Level</label>
-              <select value={newAction.priority} onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
+              <select value={newAction.priority} onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })} className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 <option value="critical">Critical (Immediate)</option>
                 <option value="high">High (Today)</option>
                 <option value="medium">Medium (Routine)</option>
@@ -140,10 +140,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
             </div>
             <div>
               <label className="section-header text-xs mb-1.5 ml-1 block">Deadline</label>
-              <input type="date" value={newAction.dueDate} onChange={e => setNewAction({ ...newAction, dueDate: e.target.value })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <input type="date" value={newAction.dueDate} onChange={e => setNewAction({ ...newAction, dueDate: e.target.value })} className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+          <div className="flex justify-end gap-3 pt-4 border-t border-hc-border">
             <button onClick={() => setShowAdd(false)} className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-hc-muted hover:text-hc-text transition-colors">Cancel</button>
             <button onClick={addAction} className="px-8 py-2.5 btn-gradient rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg">Save Action</button>
           </div>
@@ -151,7 +151,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
       )}
 
       {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-xl w-fit">
+      <div className="flex flex-wrap gap-2 mb-8 bg-black/5 backdrop-blur-md rounded-2xl p-1.5 border border-hc-border shadow-xl w-fit">
         {(['all', 'open', 'in_progress', 'blocked', 'completed'] as FilterStatus[]).map(f => (
           <button
             key={f}
@@ -179,7 +179,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
           return (
             <div key={action.id} className={`glass-light border transition-all duration-300 rounded-2xl overflow-hidden card-glow group animate-in slide-in-from-left-4
               ${action.status === 'completed' ? 'opacity-50 grayscale-[0.3] hover:opacity-80' : ''}
-              ${isCritical ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-white/5 hover:border-hc-teal/20'}`}
+              ${isCritical ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-hc-border hover:border-hc-teal/20'}`}
               style={{ animationDelay: `${idx * 50}ms` }}>
               {/* Always-visible header row */}
               <div className="flex items-center gap-4 px-5 py-3.5">
@@ -187,7 +187,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 <button
                   onClick={(e) => { e.stopPropagation(); cycleStatus(action); }}
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 active:scale-90
-                    ${action.status === 'completed' ? 'bg-flag-green border-flag-green' : 'border-white/10 hover:border-hc-teal-light bg-black/20'}`}
+                    ${action.status === 'completed' ? 'bg-flag-green border-flag-green' : 'border-hc-border hover:border-hc-teal-light bg-black/5'}`}
                   style={action.status !== 'completed' ? { borderColor: sc.color + '44' } : {}}
                 >
                   {action.status === 'completed' ? (
@@ -239,7 +239,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                   {action.tags.length > 0 && (
                     <div className="flex gap-2 mt-2.5">
                       {action.tags.map(tag => (
-                        <span key={tag} className="text-[9px] font-black px-2.5 py-1 rounded-lg bg-black/40 text-hc-muted/60 border border-white/5 uppercase tracking-widest">{tag}</span>
+                        <span key={tag} className="text-[9px] font-black px-2.5 py-1 rounded-lg bg-black/5 text-hc-muted/60 border border-hc-border uppercase tracking-widest">{tag}</span>
                       ))}
                     </div>
                   )}
@@ -250,7 +250,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         })}
 
         {sorted.length === 0 && (
-          <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+          <div className="text-center py-24 glass border border-hc-border rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20">🎯</div>
             <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">All Done</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">No active objectives matching these parameters</div>

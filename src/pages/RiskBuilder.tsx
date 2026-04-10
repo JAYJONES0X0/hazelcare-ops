@@ -22,7 +22,7 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
+  const cls = 'w-full bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
     <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
       <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
@@ -49,15 +49,15 @@ function ListField({ label, items, onChange, placeholder = 'Enter details…' }:
         {items.map((item, i) => (
           <div key={i} className="flex gap-3 items-center group">
             <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-              className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />
-            <button onClick={() => remove(i)} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
+              className="flex-1 bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />
+            <button onClick={() => remove(i)} className="w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         ))}
         {items.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            className="w-full glass-light border-2 border-dashed border-hc-border rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Initialize List
           </button>
@@ -78,7 +78,7 @@ function ScoreSlider({ label, value, onChange, max = 5, labelArr }: {
       </div>
       <div className="relative pt-1 px-1">
         <input type="range" min={1} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
-          className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
+          className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-hc-border" />
         <div className="flex justify-between px-1 mt-3">
           {Array.from({ length: max }, (_, i) => (
             <span key={i} className={`text-[9px] font-black tabular-nums transition-all ${value === i + 1 ? 'text-hc-teal-light scale-125' : 'text-hc-muted/30'}`}>{i + 1}</span>
@@ -102,11 +102,11 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
       ${open ? 'shadow-2xl z-10' : 'hover:border-hc-teal/30'}`} style={{ borderColor: open ? color + '60' : 'rgba(255,255,255,0.05)' }}>
       {/* Card header */}
       <div className={`flex flex-col md:flex-row md:items-center gap-4 px-8 py-6 cursor-pointer relative overflow-hidden transition-all
-        ${open ? 'bg-black/20' : 'bg-transparent'}`} onClick={() => setOpen(o => !o)}>
+        ${open ? 'bg-black/5' : 'bg-transparent'}`} onClick={() => setOpen(o => !o)}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: color }} />
         
         <div className="flex items-center gap-5 flex-1 min-w-0 relative z-10">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl transition-transform group-hover:scale-110 duration-500 border border-white/10"
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl transition-transform group-hover:scale-110 duration-500 border border-hc-border"
             style={{ background: color }}>
             {index + 1}
           </div>
@@ -118,7 +118,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 relative z-10 shrink-0 md:pl-8 md:border-l md:border-white/5">
+        <div className="flex items-center gap-6 relative z-10 shrink-0 md:pl-8 md:border-l md:border-hc-border">
           {risk.title && (
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-50">SCORE: {risk.likelihood}×{risk.impact}</span>
@@ -130,10 +130,10 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
           )}
           <div className="flex items-center gap-3">
             <button onClick={e => { e.stopPropagation(); onRemove(); }}
-              className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all shadow-lg opacity-40 hover:opacity-100 group/del">
+              className="w-9 h-9 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-flag-red transition-all shadow-lg opacity-40 hover:opacity-100 group/del">
               <svg className="w-4 h-4 group-hover/del:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
-            <div className={`w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted group-hover:text-white transition-all duration-500 shadow-lg ${open ? 'rotate-180 bg-white/5' : ''}`}>
+            <div className={`w-9 h-9 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted group-hover:text-white transition-all duration-500 shadow-lg ${open ? 'rotate-180 bg-white/5' : ''}`}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </div>
           </div>
@@ -142,7 +142,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
 
       {/* Card body */}
       {open && (
-        <div className="px-8 py-10 border-t border-white/5 space-y-2 animate-in slide-in-from-top-4 duration-500 bg-black/10 backdrop-blur-3xl">
+        <div className="px-8 py-10 border-t border-hc-border space-y-2 animate-in slide-in-from-top-4 duration-500 bg-black/10 backdrop-blur-3xl">
           <Field label="Risk Title" value={risk.title} onChange={v => up({ title: v })}
             placeholder="e.g. Falls risk during morning routine" />
           <Field label="Description & Context" value={risk.description} onChange={v => up({ description: v })} area rows={4}
@@ -170,7 +170,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
             placeholder="e.g. Following any fall or change in Mobility, Movement & Exercise" />
 
           {/* Score */}
-          <div className="glass border-2 border-white/5 rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">
+          <div className="glass border-2 border-hc-border rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover/score:opacity-100 transition-opacity duration-1000" />
             <div className="section-header text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-shimmer flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
@@ -182,7 +182,7 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
               <ScoreSlider label="Impact" value={risk.impact} onChange={v => up({ impact: v })}
                 labelArr={IMPACT_LABELS} />
             </div>
-            <div className="flex items-center gap-6 mt-10 pt-8 border-t border-white/5 relative z-10">
+            <div className="flex items-center gap-6 mt-10 pt-8 border-t border-hc-border relative z-10">
               <div className="text-sm font-black text-hc-muted uppercase tracking-[0.2em]">Risk Rating:</div>
               <div className="text-4xl font-black tabular-nums tracking-tighter shadow-2xl" style={{ color, textShadow: `0 0 30px ${color}40` }}>{score}</div>
               <div className="pill text-[11px] font-black uppercase tracking-[0.2em] px-6 py-2 shadow-2xl animate-shimmer" style={{ background: color + '33', color, border: `1px solid ${color}60` }}>
@@ -213,13 +213,13 @@ function AgencyTable({ rows, onChange }: { rows: AgencyRow[]; onChange: (r: Agen
         {rows.map((row, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center group">
             <input value={row.service} onChange={e => update(i, 'service', e.target.value)} placeholder="Service / Agency Name"
-              className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
+              className="bg-white border border-hc-border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
             <input value={row.role} onChange={e => update(i, 'role', e.target.value)} placeholder="Role / Responsibility"
-              className="bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
+              className="bg-white border border-hc-border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />
             <div className="flex gap-3">
               <input value={row.status} onChange={e => update(i, 'status', e.target.value)} placeholder="Current Status"
-                className="flex-1 bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-hc-teal-light focus:outline-none focus:border-hc-teal/50 shadow-inner" />
-              <button onClick={() => remove(i)} className="w-9 h-9 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100 shadow-lg">
+                className="flex-1 bg-white border border-hc-border rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-hc-teal-light focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <button onClick={() => remove(i)} className="w-9 h-9 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100 shadow-lg">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -227,7 +227,7 @@ function AgencyTable({ rows, onChange }: { rows: AgencyRow[]; onChange: (r: Agen
         ))}
         {rows.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-2xl py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            className="w-full glass-light border-2 border-dashed border-hc-border rounded-2xl py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Agency Details
           </button>
@@ -339,10 +339,10 @@ export function RiskBuilder({ clientId, onBack }: Props) {
   return (
     <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-hc-border z-20 shadow-2xl backdrop-blur-3xl">
         <button onClick={onBack}
           className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
-          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+          <span className="w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center group-hover:bg-white/5 transition-all">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </span>
           Back
@@ -384,7 +384,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
             title="Export page orientation"
           >
             <option value="portrait">Portrait</option>
@@ -445,7 +445,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
             ))}
             
             {risk.risks.length === 0 && (
-              <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
+              <div className="text-center py-24 glass border border-hc-border rounded-[2.5rem] animate-in zoom-in duration-700">
                 <div className="text-5xl mb-6 opacity-20">🛡️</div>
                 <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Risk List Empty</div>
                 <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Add risk areas above to build the assessment</div>
@@ -454,7 +454,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           </div>
 
           {/* Global fields */}
-          <div className="mt-16 pt-10 border-t border-white/10 space-y-10">
+          <div className="mt-16 pt-10 border-t border-hc-border space-y-10">
             <div className="px-2">
               <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">Service Safeguards</h3>
               <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">Professional network & review cycle</p>
@@ -471,7 +471,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
                 placeholder="Define how often this assessment will be reviewed..." />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/20 p-8 rounded-[2rem] border border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/5 p-8 rounded-[2rem] border border-hc-border">
               <Field label="Assessment Date" value={risk.planDate}
                 onChange={v => updateRisk({ planDate: v })} />
               <Field label="Next Review Date" value={client.reviewDate}
@@ -480,7 +480,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           </div>
 
           {/* Signatures */}
-          <div className="mt-16 pt-10 border-t border-white/10 animate-in zoom-in-95 duration-1000">
+          <div className="mt-16 pt-10 border-t border-hc-border animate-in zoom-in-95 duration-1000">
             <SignaturePanel sigs={sigs} onChange={setSigs} />
           </div>
 

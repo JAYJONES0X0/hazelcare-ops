@@ -127,7 +127,7 @@ function WorkerPipeline({ status }: { status: WorkerStatus }) {
   const currentIdx = order.indexOf(status);
 
   return (
-    <div className="flex items-center gap-2 mt-4 bg-black/20 p-3 rounded-2xl border border-white/5">
+    <div className="flex items-center gap-2 mt-4 bg-black/5 p-3 rounded-2xl border border-hc-border">
       {steps.map((step, i) => {
         const done = i < currentIdx;
         const current = i === currentIdx;
@@ -135,7 +135,7 @@ function WorkerPipeline({ status }: { status: WorkerStatus }) {
           <div key={step.key} className="flex-1 flex items-center gap-2">
             <div className="flex flex-col items-center gap-1.5 flex-1">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all duration-500
-                ${done ? 'bg-hc-teal border-hc-teal text-hc-text shadow-lg' : current ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light shadow-lg animate-pulse' : 'bg-white/5 border-white/10 text-hc-muted opacity-40'}`}>
+                ${done ? 'bg-hc-teal border-hc-teal text-hc-text shadow-lg' : current ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light shadow-lg animate-pulse' : 'bg-white/5 border-hc-border text-hc-muted opacity-40'}`}>
                 {done ? '✓' : i + 1}
               </div>
               <span className={`text-[8px] font-black uppercase tracking-widest ${current ? 'text-hc-teal-light' : done ? 'text-hc-text/60' : 'text-hc-muted/40'}`}>{step.label}</span>
@@ -172,7 +172,7 @@ function ShiftBoard() {
           { label: 'Confirmed Cover', value: filled, color: '#22c55e', sub: 'Shifts filled' },
           { label: 'Network Hours', value: `${totalHours}H`, color: '#f59e0b', sub: 'Total hours booked' },
         ].map(s => (
-          <div key={s.label} className={`glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
+          <div key={s.label} className={`glass-light border border-hc-border rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
             <div className="text-2xl md:text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 20px ${s.color}40` }}>{s.value}</div>
                   <div className="section-header text-xs mt-2 opacity-90 tracking-[0.08em]">{s.label}</div>
@@ -182,7 +182,7 @@ function ShiftBoard() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 w-fit shadow-2xl mb-8">
+      <div className="flex gap-2 bg-black/5 backdrop-blur-md rounded-2xl p-1.5 border border-hc-border w-fit shadow-2xl mb-8">
         {(['all', 'open', 'submitted', 'confirmed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] transition-all duration-500 ease-out active:scale-90
@@ -197,7 +197,7 @@ function ShiftBoard() {
         {filtered.map((shift, idx) => (
           <div key={shift.id}
             className={`glass-light border transition-all duration-500 rounded-[2.5rem] p-8 cursor-pointer card-glow group/shift active:scale-[0.99] animate-in slide-in-from-left-4
-              ${shift.urgency === 'critical' && shift.status === 'open' ? 'border-flag-red/40 bg-flag-red/[0.03] glow-red shadow-flag-red/5' : 'border-white/10 hover:border-hc-teal/30'}
+              ${shift.urgency === 'critical' && shift.status === 'open' ? 'border-flag-red/40 bg-flag-red/[0.03] glow-red shadow-flag-red/5' : 'border-hc-border hover:border-hc-teal/30'}
               ${selectedShift?.id === shift.id ? 'border-hc-teal/50 bg-hc-teal/[0.05] ring-1 ring-hc-teal/30 shadow-2xl scale-[1.01] z-10' : ''}`}
             style={{ animationDelay: `${idx * 50}ms` }}
             onClick={() => setSelectedShift(selectedShift?.id === shift.id ? null : shift)}>
@@ -214,13 +214,13 @@ function ShiftBoard() {
                   <div className="flex items-center gap-2.5 text-hc-teal-light/80"><span className="text-xl leading-none">👤</span> {shift.role}</div>
                 </div>
                 {shift.notes && (
-                  <div className="mt-6 p-4 bg-black/30 rounded-2xl border border-white/5 flex items-start gap-4 transition-transform duration-500 group-hover/shift:translate-x-1 shadow-inner">
+                  <div className="mt-6 p-4 bg-black/5 rounded-2xl border border-hc-border flex items-start gap-4 transition-transform duration-500 group-hover/shift:translate-x-1 shadow-inner">
                     <span className="text-amber-400 mt-0.5 animate-pulse">⚠</span>
                     <p className="text-[12px] font-medium text-hc-text leading-relaxed italic opacity-80 group-hover/shift:opacity-100">"{shift.notes}"</p>
                   </div>
                 )}
               </div>
-              <div className="text-right shrink-0 flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 md:pl-10 md:border-l md:border-white/5 relative">
+              <div className="text-right shrink-0 flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 md:pl-10 md:border-l md:border-hc-border relative">
                 <div className="text-4xl font-black text-hc-text tabular-nums tracking-tighter shadow-2xl group-hover/shift:scale-110 transition-transform duration-700">{shift.hours}H</div>
                 <div className="pill pill-teal text-[9px] font-black uppercase tracking-[0.3em] py-1 px-3 shadow-lg opacity-40 group-hover/shift:opacity-100 transition-all">TRANSMISSION LOAD</div>
               </div>
@@ -228,7 +228,7 @@ function ShiftBoard() {
 
             {/* Expanded submit form */}
             {selectedShift?.id === shift.id && shift.status === 'open' && (
-              <div className="mt-8 pt-8 border-t border-white/5 animate-in slide-in-from-top-4 duration-500" onClick={e => e.stopPropagation()}>
+              <div className="mt-8 pt-8 border-t border-hc-border animate-in slide-in-from-top-4 duration-500" onClick={e => e.stopPropagation()}>
                 {!submitted ? (
                   <div className="max-w-2xl">
                     <h3 className="section-header text-[10px] mb-6 flex items-center gap-2">
@@ -248,7 +248,7 @@ function ShiftBoard() {
                           <input placeholder={f.placeholder}
                             value={(submitWorker as Record<string, string>)[f.key]}
                             onChange={e => setSubmitWorker(w => ({ ...w, [f.key]: e.target.value }))}
-                            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                            className="w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-xs text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
                         </div>
                       ))}
                     </div>
@@ -289,7 +289,7 @@ function WorkerPipelinePage() {
         {['Requests', 'DBS Check', 'Audit', 'Verified', 'Active'].map((label, i) => {
           const counts = [1, 1, 0, 1, 0];
           return (
-            <div key={label} className="glass-light border border-white/5 rounded-2xl p-5 text-center shadow-lg group hover:bg-white/5 transition-all">
+            <div key={label} className="glass-light border border-hc-border rounded-2xl p-5 text-center shadow-lg group hover:bg-white/5 transition-all">
               <div className="text-2xl font-black text-hc-teal-light tabular-nums tracking-tighter mb-1">{counts[i]}</div>
               <div className="section-header text-[8px] opacity-60 tracking-[0.2em]">{label}</div>
             </div>
@@ -303,12 +303,12 @@ function WorkerPipelinePage() {
           const isDeclined = w.status === 'declined';
           return (
             <div key={w.id} className={`glass-light border transition-all duration-500 rounded-[2rem] p-6 card-glow group animate-in slide-in-from-bottom-4
-              ${isDeclined ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-white/5 hover:border-white/10'}`}
+              ${isDeclined ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-hc-border hover:border-hc-border'}`}
               style={{ animationDelay: `${idx * 100}ms` }}>
               <div className="flex flex-col md:flex-row items-start justify-between gap-6">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap mb-3">
-                    <div className="w-12 h-12 rounded-xl glass border border-white/10 flex items-center justify-center text-lg font-black text-hc-teal-light shadow-xl group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-12 h-12 rounded-xl glass border border-hc-border flex items-center justify-center text-lg font-black text-hc-teal-light shadow-xl group-hover:scale-110 transition-transform duration-500">
                       {w.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -330,7 +330,7 @@ function WorkerPipelinePage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 bg-black/20 p-4 rounded-2xl border border-white/5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 bg-black/5 p-4 rounded-2xl border border-hc-border">
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">SECURITY SCAN (DBS)</span>
                       <span className={`text-[10px] font-black tabular-nums ${w.dbsExpiry > '06/2026' ? 'text-flag-green' : 'text-flag-red'}`}>{w.dbsRef} (exp {w.dbsExpiry})</span>
@@ -381,14 +381,14 @@ function AgencyDirectory() {
         {AGENCIES.sort((a, b) => b.fillRate - a.fillRate).map((agency, i) => (
           <div key={agency.id}
             className={`glass-light border transition-all duration-500 rounded-[2.5rem] p-6 cursor-pointer card-glow group
-              ${selected === agency.id ? 'border-hc-teal/40 bg-hc-teal/[0.04] shadow-2xl' : 'border-white/5 hover:border-white/10'}`}
+              ${selected === agency.id ? 'border-hc-teal/40 bg-hc-teal/[0.04] shadow-2xl' : 'border-hc-border hover:border-hc-border'}`}
             onClick={() => setSelected(selected === agency.id ? null : agency.id)}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: '#14b8a6' }} />
               
               <div className="flex-1 min-w-0 relative z-10">
                 <div className="flex items-center gap-4 flex-wrap mb-3">
-                  <div className="w-12 h-12 rounded-xl glass border border-white/10 flex items-center justify-center text-lg font-black text-hc-teal-light shadow-xl group-hover:scale-110 transition-transform duration-500">
+                  <div className="w-12 h-12 rounded-xl glass border border-hc-border flex items-center justify-center text-lg font-black text-hc-teal-light shadow-xl group-hover:scale-110 transition-transform duration-500">
                     {i + 1}
                   </div>
                   <div>
@@ -408,7 +408,7 @@ function AgencyDirectory() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-8 text-center shrink-0 relative z-10 md:pl-10 md:border-l md:border-white/5">
+              <div className="grid grid-cols-3 gap-8 text-center shrink-0 relative z-10 md:pl-10 md:border-l md:border-hc-border">
                 <div className="group/stat">
                   <div className={`text-2xl font-black tabular-nums tracking-tighter transition-transform group-hover/stat:scale-110 ${agency.fillRate >= 80 ? 'text-flag-green' : agency.fillRate >= 65 ? 'text-flag-amber' : 'text-flag-red'}`}>{agency.fillRate}%</div>
                   <div className="section-header text-[8px] opacity-50 tracking-[0.2em]">FILL RATE</div>
@@ -425,7 +425,7 @@ function AgencyDirectory() {
             </div>
 
             {selected === agency.id && (
-              <div className="mt-8 pt-8 border-t border-white/5 animate-in slide-in-from-top-4 duration-500 relative z-10">
+              <div className="mt-8 pt-8 border-t border-hc-border animate-in slide-in-from-top-4 duration-500 relative z-10">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                   {[
                     { label: 'Cumulative Syncs', value: `${Math.round(agency.fillRate * 2.3)}` },
@@ -433,7 +433,7 @@ function AgencyDirectory() {
                     { label: 'Active Workers', value: agency.activeWorkers },
                     { label: 'Integrity Rating', value: `${agency.complianceScore}%` },
                   ].map(s => (
-                    <div key={s.label} className="bg-black/20 rounded-2xl border border-white/5 p-4 text-center shadow-inner group/sub">
+                    <div key={s.label} className="bg-black/5 rounded-2xl border border-hc-border p-4 text-center shadow-inner group/sub">
                       <div className="text-lg font-black text-hc-teal-light group-hover/sub:scale-110 transition-transform tabular-nums">{s.value}</div>
                       <div className="section-header text-[8px] opacity-40 mt-1">{s.label}</div>
                     </div>
@@ -441,8 +441,8 @@ function AgencyDirectory() {
                 </div>
                 <div className="flex flex-col md:flex-row gap-3">
                   <button className="flex-1 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">Send Booking Request</button>
-                  <button className="px-8 glass-light border border-white/10 text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">View History</button>
-                  <button className="px-8 glass-light border border-white/10 text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Contact Agency</button>
+                  <button className="px-8 glass-light border border-hc-border text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">View History</button>
+                  <button className="px-8 glass-light border border-hc-border text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Contact Agency</button>
                 </div>
               </div>
             )}
@@ -467,11 +467,11 @@ function RateCards() {
         </p>
       </div>
 
-      <div className="glass-light border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+      <div className="glass-light border border-hc-border rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div className="overflow-x-auto scrollbar-thin">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-black/30 border-b border-white/5">
+              <tr className="bg-black/5 border-b border-hc-border">
                 <th className="px-8 py-5 section-header text-[10px] tracking-[0.2em]">Operational Role title</th>
                 <th className="px-6 py-5 section-header text-[10px] tracking-[0.2em] text-center">Day Cycle<br/><span className="text-[8px] font-bold text-hc-muted opacity-60">07:00–19:00</span></th>
                 <th className="px-6 py-5 section-header text-[10px] tracking-[0.2em] text-center">Evening Shift<br/><span className="text-[8px] font-bold text-hc-muted opacity-60">15:00–23:00</span></th>
@@ -482,7 +482,7 @@ function RateCards() {
             </thead>
             <tbody>
               {RATE_CARDS.map((r, idx) => (
-                <tr key={r.role} className={`group hover:bg-white/[0.03] transition-colors border-b border-white/5 ${idx === RATE_CARDS.length - 1 ? 'border-none' : ''}`}>
+                <tr key={r.role} className={`group hover:bg-hc-teal/5 transition-colors border-b border-hc-border ${idx === RATE_CARDS.length - 1 ? 'border-none' : ''}`}>
                   <td className="px-8 py-6">
                     <div className="text-sm font-black text-hc-text group-hover:text-hc-teal-light transition-colors uppercase tracking-tight">{r.role}</div>
                     <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-40">Cover Level</div>
@@ -505,7 +505,7 @@ function RateCards() {
           { title: 'Specialist Requirements', items: ['PBS trained', 'Autism & learning disability awareness', 'Positive behaviour support', 'Critical First Aid Verified', 'Medication trained'] },
           { title: 'Payment Terms', items: ['Weekly timesheets', 'Invoices within 12 hours', 'Payment within 30 days', '5-day dispute window', 'BACS payment only'] },
         ].map((section, idx) => (
-          <div key={section.title} className="glass-light border border-white/5 rounded-3xl p-6 shadow-xl card-glow animate-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 150}ms` }}>
+          <div key={section.title} className="glass-light border border-hc-border rounded-3xl p-6 shadow-xl card-glow animate-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 150}ms` }}>
             <div className="text-xs font-black text-hc-teal-light mb-5 uppercase tracking-[0.2em] flex items-center gap-3">
               <span className="w-1 h-4 rounded-full bg-hc-teal" />
               {section.title}
@@ -567,7 +567,7 @@ export function AgencyPortalPage() {
             { label: 'In Scan', value: pendingWorkers, color: '#f59e0b', pill: 'pill-amber' },
             { label: 'Approved Hubs', value: AGENCIES.length, color: '#3b82f6', pill: 'pill-blue' },
           ].map(stat => (
-            <div key={stat.label} className="glass-light border border-white/5 rounded-2xl px-6 py-4 text-center min-w-[120px] shadow-xl group cursor-default">
+            <div key={stat.label} className="glass-light border border-hc-border rounded-2xl px-6 py-4 text-center min-w-[120px] shadow-xl group cursor-default">
               <div className="text-2xl font-black tabular-nums tracking-tighter group-hover:scale-110 transition-transform duration-500" style={{ color: stat.color }}>{stat.value}</div>
               <div className="section-header text-[8px] opacity-50 mt-1">{stat.label}</div>
             </div>
@@ -576,7 +576,7 @@ export function AgencyPortalPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/5 shadow-xl w-fit mx-auto lg:mx-0">
+      <div className="flex gap-2 mb-6 bg-black/5 backdrop-blur-md rounded-xl p-1 border border-hc-border shadow-xl w-fit mx-auto lg:mx-0">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center justify-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500

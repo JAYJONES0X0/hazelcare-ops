@@ -165,7 +165,7 @@ export function ClientDocsPage() {
       <div className="p-6 lg:p-10 max-w-6xl mx-auto animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
           className="group flex items-center gap-2 text-hc-muted hover:text-hc-text text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
-          <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
+          <span className="w-6 h-6 rounded-lg glass border border-hc-border flex items-center justify-center group-hover:bg-white/5">←</span>
           Back
         </button>
 
@@ -211,7 +211,7 @@ export function ClientDocsPage() {
           </div>
         )}
 
-        <div className="relative rounded-2xl border border-white/5 glass p-1 shadow-2xl mb-6 overflow-hidden">
+        <div className="relative rounded-2xl border border-hc-border glass p-1 shadow-2xl mb-6 overflow-hidden">
           <textarea
             value={importText}
             onChange={e => setImportText(e.target.value)}
@@ -222,7 +222,7 @@ export function ClientDocsPage() {
         </div>
 
         {importResult.length > 0 && (
-          <div className="glass-light border border-white/5 rounded-2xl px-6 py-4 mb-6 space-y-1">
+          <div className="glass-light border border-hc-border rounded-2xl px-6 py-4 mb-6 space-y-1">
             {importResult.map((w, i) => (
               <p key={i} className="text-xs font-bold text-hc-muted/95 uppercase tracking-wide leading-relaxed flex items-center gap-2">
                 <span className="w-1 h-1 rounded-full bg-hc-teal/40" /> {w}
@@ -240,19 +240,19 @@ export function ClientDocsPage() {
                 Preview
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                <div className="glass-light border border-hc-border rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Designation</div>
                   <div className="text-sm font-black text-hc-text truncate">{importPreview.name}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                <div className="glass-light border border-hc-border rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Temporal ID</div>
                   <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                <div className="glass-light border border-hc-border rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Net ID</div>
                   <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.nhs}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
+                <div className="glass-light border border-hc-border rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Domains</div>
                   <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
                 </div>
@@ -263,7 +263,7 @@ export function ClientDocsPage() {
                   Confirm & Sync Profile
                 </button>
                 <button onClick={() => setImportPreview(null)}
-                  className="px-8 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
+                  className="px-8 glass-light border border-hc-border text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
                   Cancel
                 </button>
               </div>
@@ -278,12 +278,12 @@ export function ClientDocsPage() {
               Initiate Preview
             </button>
             {!importTarget && (
-              <div className="flex items-center gap-4 glass-light border border-white/5 px-5 py-3 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-4 glass-light border border-hc-border px-5 py-3 rounded-2xl shadow-xl">
                 <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Target Mapping:</span>
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
-                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  className="bg-hc-dark/80 border border-hc-border rounded-xl px-4 py-2 text-[11px] font-black text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
                   <option value="">Add New Person</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -320,14 +320,14 @@ export function ClientDocsPage() {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text"
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text"
             title="Default export orientation"
           >
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
           </select>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
+            className="flex items-center gap-2.5 glass-light border border-hc-border text-hc-muted hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
             <svg className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -351,7 +351,7 @@ export function ClientDocsPage() {
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
             placeholder="Search people…"
-            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-10 py-3 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
+            className="w-full bg-white border border-hc-border rounded-xl px-10 py-3 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
           />
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -361,7 +361,7 @@ export function ClientDocsPage() {
 
       {/* Client cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+        <div className="text-center py-24 glass border border-hc-border rounded-3xl animate-in zoom-in duration-700">
           <div className="text-5xl mb-6 opacity-20">👥</div>
           <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
           <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">{filterText ? 'Try a different search' : 'Click "Add Person" to get started'}</div>
@@ -387,14 +387,14 @@ export function ClientDocsPage() {
 
             return (
               <div key={client.id}
-                className="glass border border-white/10 rounded-[2rem] overflow-hidden transition-all duration-500 card-glow group animate-in slide-in-from-bottom-4"
+                className="glass border border-hc-border rounded-[2rem] overflow-hidden transition-all duration-500 card-glow group animate-in slide-in-from-bottom-4"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 {/* Client header */}
                 <div className="px-8 py-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: riskColor }} />
                   <div className="flex flex-col md:flex-row md:items-center gap-6 relative z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-white/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-border flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
                       <span className="text-xl font-black text-hc-teal-light">
                         {client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
@@ -425,7 +425,7 @@ export function ClientDocsPage() {
                         <div className="h-3 w-px bg-white/10 hidden md:block" />
                         <div className="flex items-center gap-2">
                           {client.diagnoses.slice(0, 3).map((d, i) => (
-                            <span key={i} className="text-[9px] font-black bg-black/40 border border-white/5 px-2.5 py-0.5 rounded-lg text-hc-muted/80 uppercase tracking-tighter truncate max-w-[140px]">
+                            <span key={i} className="text-[9px] font-black bg-black/5 border border-hc-border px-2.5 py-0.5 rounded-lg text-hc-muted/80 uppercase tracking-tighter truncate max-w-[140px]">
                               {d}
                             </span>
                           ))}
@@ -436,7 +436,7 @@ export function ClientDocsPage() {
                       </div>
                     </div>
                     {topRisk > 0 && (
-                      <div className="hidden lg:flex flex-col items-end shrink-0 pl-6 border-l border-white/5">
+                      <div className="hidden lg:flex flex-col items-end shrink-0 pl-6 border-l border-hc-border">
                         <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Risk Status</span>
                         <span className="text-[13px] font-black uppercase tracking-widest" style={{ color: riskColor }}>{riskLabel}</span>
                       </div>
@@ -445,7 +445,7 @@ export function ClientDocsPage() {
                 </div>
 
                 {/* Document actions */}
-                <div className="border-t border-white/5 px-8 py-5 bg-black/20 backdrop-blur-md">
+                <div className="border-t border-hc-border px-8 py-5 bg-black/5 backdrop-blur-md">
                   <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasRisk ? 'pill-amber' : 'pill-blue'}`}>
                       Risk Assessment {hasRisk ? 'Ready' : 'Missing'}
@@ -468,7 +468,7 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openPBS(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
+                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-hc-border hover:text-hc-text'}`}>
                             {hasPBS ? 'Edit' : 'Create'}
                           </button>
                           {hasPBS && (
@@ -489,7 +489,7 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openRisk(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
+                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-hc-border hover:text-hc-text'}`}>
                             {hasRisk ? 'Edit' : 'Create'}
                           </button>
                           {hasRisk && (
@@ -510,7 +510,7 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openCarePlan(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
+                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-hc-border hover:text-hc-text'}`}>
                             {hasCarePlan ? `Update (${cpFilled}/${cpDomains.length})` : 'Create'}
                           </button>
                           {hasCarePlan && (
@@ -545,7 +545,7 @@ export function ClientDocsPage() {
 
                 {/* Care plan domains preview */}
                 {hasCarePlan && cpDomains.length > 0 && (
-                  <div className="border-t border-white/5 px-8 py-4 bg-hc-dark/40 overflow-hidden relative">
+                  <div className="border-t border-hc-border px-8 py-4 bg-hc-dark/40 overflow-hidden relative">
                     <div className="flex flex-wrap gap-2 relative z-10">
                       {cpDomains.slice(0, 12).map((d, i) => {
                         const colors = ['pill-green', 'pill-blue', 'pill-amber', 'pill-red', 'pill-red'];
@@ -568,7 +568,7 @@ export function ClientDocsPage() {
       )}
 
       {/* Danger Zone */}
-      <div className="mt-32 pt-12 border-t border-white/5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
+      <div className="mt-32 pt-12 border-t border-hc-border animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
         <div className="bg-flag-red/5 rounded-[2rem] p-8 border border-flag-red/20 flex flex-col md:flex-row items-center justify-between gap-8 backdrop-blur-sm">
           <div className="flex items-center gap-6 text-center md:text-left flex-col md:flex-row">
             <div className="w-16 h-16 rounded-3xl bg-flag-red/10 flex items-center justify-center text-flag-red glow-red shrink-0">
@@ -594,7 +594,7 @@ export function ClientDocsPage() {
       {/* New Person Modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="glass border border-white/10 rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden">
+          <div className="glass border border-hc-border rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
             
             <div className="relative z-10">
@@ -613,7 +613,7 @@ export function ClientDocsPage() {
                     onChange={e => setNewName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                     placeholder="e.g. Sarah Johnson"
-                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-lg font-bold text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
+                    className="w-full bg-white border border-hc-border rounded-2xl px-6 py-4 text-lg font-bold text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-hc-teal/10 flex items-center justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
                     <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
@@ -623,7 +623,7 @@ export function ClientDocsPage() {
               
               <div className="flex gap-4">
                 <button onClick={() => { setShowNewModal(false); setNewName(''); }}
-                  className="flex-1 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
+                  className="flex-1 glass-light border border-hc-border text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
                   Cancel
                 </button>
                 <button onClick={handleCreate} disabled={!newName.trim()}

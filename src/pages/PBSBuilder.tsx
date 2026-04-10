@@ -36,7 +36,7 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
+  const cls = 'w-full bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
     <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
       <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
@@ -65,17 +65,17 @@ function ListField({ label, items, onChange, placeholder = 'Enter details…', r
           <div key={i} className="flex gap-3 items-start group">
             {rows > 1
               ? <textarea value={item} onChange={e => update(i, e.target.value)} rows={rows} placeholder={placeholder}
-                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-y placeholder:text-hc-muted/20 shadow-inner transition-all font-medium italic" />
+                  className="flex-1 bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-y placeholder:text-hc-muted/20 shadow-inner transition-all font-medium italic" />
               : <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />}
-            <button onClick={() => remove(i)} className="mt-2 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
+                  className="flex-1 bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />}
+            <button onClick={() => remove(i)} className="mt-2 w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         ))}
         {items.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            className="w-full glass-light border-2 border-dashed border-hc-border rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add to List
           </button>
@@ -107,9 +107,9 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
       </div>
       <div className="space-y-4">
         {rows.map((row, i) => (
-          <div key={i} className="glass-light border border-white/5 rounded-[2rem] p-6 relative card-glow group active:scale-[0.99] transition-all">
+          <div key={i} className="glass-light border border-hc-border rounded-[2rem] p-6 relative card-glow group active:scale-[0.99] transition-all">
             <button onClick={() => remove(i)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-0 group-hover:opacity-100 shadow-xl z-10">
+              className="absolute top-4 right-4 w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-0 group-hover:opacity-100 shadow-xl z-10">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className={`grid gap-6 ${cols.length >= 2 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
@@ -118,9 +118,9 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
                   <label className="section-header text-[8px] mb-2 ml-1 block opacity-40 uppercase tracking-[0.2em]">{col.label}</label>
                   {col.area
                     ? <textarea value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        rows={3} className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none font-medium italic" />
+                        rows={3} className="w-full bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none font-medium italic" />
                     : <input type="text" value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />}
+                        className="w-full bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />}
                 </div>
               ))}
             </div>
@@ -128,7 +128,7 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
         ))}
         {rows.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[2rem] py-10 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            className="w-full glass-light border-2 border-dashed border-hc-border rounded-[2rem] py-10 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Details
           </button>
@@ -253,10 +253,10 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   return (
     <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-hc-border z-20 shadow-2xl backdrop-blur-3xl">
         <button onClick={onBack}
           className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
-          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
+          <span className="w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center group-hover:bg-white/5 transition-all">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </span>
           Back
@@ -298,7 +298,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
             title="Export page orientation"
           >
             <option value="portrait">Portrait</option>
@@ -316,8 +316,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
 
       <div className="flex flex-1 overflow-hidden mesh-bg">
         {/* Section nav */}
-        <div className="w-72 flex-shrink-0 border-r border-white/5 overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
-          <div className="p-6 border-b border-white/5 bg-black/20">
+        <div className="w-72 flex-shrink-0 border-r border-hc-border overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
+          <div className="p-6 border-b border-hc-border bg-black/5">
             <p className="section-header text-[9px] tracking-[0.3em] opacity-40 uppercase">Plan Sections</p>
           </div>
           <div className="py-4">
@@ -346,7 +346,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             )}
             
             <div className="mb-12 flex items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
+              <div className="w-20 h-20 rounded-3xl glass border-2 border-hc-border flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
                 {section + 1}
               </div>
               <div>
@@ -373,7 +373,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   </div>
                   <Field label="Primary Address" value={client.address} onChange={v => update({ address: v })} area rows={2} />
                   <ListField label="Diagnoses" items={client.diagnoses} onChange={v => update({ diagnoses: v })} placeholder="e.g. Autism Spectrum Disorder" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-8 pt-8 border-t border-white/5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-8 pt-8 border-t border-hc-border">
                     <Field label="Key Worker" value={client.keyWorker} onChange={v => update({ keyWorker: v })} />
                     <Field label="Responsible Manager" value={client.responsible} onChange={v => update({ responsible: v })} />
                     <Field label="Completed By" value={client.completedBy} onChange={v => update({ completedBy: v })} />
@@ -568,10 +568,10 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-16 pt-8 border-t border-white/5 relative z-10">
+            <div className="flex justify-between mt-16 pt-8 border-t border-hc-border relative z-10">
               {section > 0
                 ? <button onClick={() => setSection(s => s - 1)}
-                    className="flex items-center gap-3 px-8 py-4 glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-white/[0.03] active:scale-90 shadow-xl">
+                    className="flex items-center gap-3 px-8 py-4 glass-light border border-hc-border text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-hc-teal/5 active:scale-90 shadow-xl">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                     Previous Section
                   </button>

@@ -376,7 +376,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               onRecompute();
               setPage('templates');
             }}
-            className="px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-wide text-hc-muted hover:text-hc-text transition-colors"
+            className="px-4 py-2 rounded-xl border border-hc-border text-[10px] font-black uppercase tracking-wide text-hc-muted hover:text-hc-text transition-colors"
             style={{background:'rgba(255,255,255,0.03)'}}
           >
             Templates
@@ -430,7 +430,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                 setHourlyTick((t) => t + 1);
                 setHourlyDismissed(true);
               }}
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] text-hc-muted uppercase"
+              className="px-3 py-1.5 rounded-lg border border-hc-border text-[10px] text-hc-muted uppercase"
             >
               Nothing new
             </button>
@@ -481,7 +481,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
       {/* Filters */}
       <div className="rounded-2xl overflow-hidden mb-6" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-      <button type="button" onClick={() => togglePanel('filters')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('filters') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
+      <button type="button" onClick={() => togglePanel('filters')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-hc-teal/5 transition-colors" style={{borderBottom: isPanelCollapsed('filters') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 rounded-full bg-hc-muted/40" />
           <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Filters</span>
@@ -496,7 +496,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <select
               value={house}
               onChange={(e) => setHouse(e.target.value)}
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             >
               {houseOptions.map((h) => (
                 <option key={h} value={h}>
@@ -511,7 +511,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             />
           </label>
           <label className="flex flex-col gap-1.5 min-w-[150px]">
@@ -520,7 +520,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             />
           </label>
           <button
@@ -540,7 +540,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
       {/* Export recommendations */}
       <div className="rounded-2xl overflow-hidden mb-6" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-        <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('export-hints') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
+        <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-hc-teal/5 transition-colors" style={{borderBottom: isPanelCollapsed('export-hints') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full bg-hc-teal/60" />
             <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">What to export next from CarePlanner</span>
@@ -549,7 +549,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         </button>
         {!isPanelCollapsed('export-hints') && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
           {exportHints.map((h) => (
-            <div key={h.id} className="bg-black/20 border border-white/5 rounded-xl p-3">
+            <div key={h.id} className="bg-black/5 border border-hc-border rounded-xl p-3">
               <div className="text-xs font-bold text-hc-teal-light mb-1">{h.label}</div>
               <div className="text-xs text-hc-muted leading-relaxed">{h.detail}</div>
               <div className="text-xs text-hc-muted/50 mt-1.5 italic">{h.carePlannerHint}</div>
@@ -599,7 +599,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.4fr] gap-6">
           {/* Houses */}
           <div className="rounded-2xl overflow-hidden" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-            <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-hc-teal/5 transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.6)'}} />
                 <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">House Health</span>
@@ -647,7 +647,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
           {/* Staff leaderboard */}
           <div className="rounded-2xl overflow-hidden" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-            <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-hc-teal/5 transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.6)'}} />
                 <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Staff Quality</span>
@@ -779,7 +779,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
           {/* Escalations + call prep */}
           <div className="rounded-2xl overflow-hidden" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-            <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-hc-teal/5 transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-flag-red" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
                 <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Escalations & Call Prep</span>
@@ -822,7 +822,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                   <select
                     value={callVariant}
                     onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
-                    className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-hc-text"
+                    className="bg-hc-dark/80 border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text"
                   >
                     <option value="coaching">Coaching — warm, developmental</option>
                     <option value="urgent">Urgent — Tier 3, formal</option>
@@ -850,19 +850,19 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                   >
                     Staff link: {selectedEsc.suggestedTool}
                   </button>
-                  <button type="button" onClick={() => void copyStaffTool('notes')} className="px-3 py-2 rounded-xl border border-white/10 text-[10px] text-hc-muted uppercase">
+                  <button type="button" onClick={() => void copyStaffTool('notes')} className="px-3 py-2 rounded-xl border border-hc-border text-[10px] text-hc-muted uppercase">
                     Link: notes
                   </button>
-                  <button type="button" onClick={() => void copyStaffTool('handover')} className="px-3 py-2 rounded-xl border border-white/10 text-[10px] text-hc-muted uppercase">
+                  <button type="button" onClick={() => void copyStaffTool('handover')} className="px-3 py-2 rounded-xl border border-hc-border text-[10px] text-hc-muted uppercase">
                     Link: handover
                   </button>
                 </div>
-                <div className="border-t border-white/10 pt-3 space-y-2">
+                <div className="border-t border-hc-border pt-3 space-y-2">
                   <div className="text-[10px] font-black text-hc-muted uppercase">Call outcome</div>
                   <select
                     value={outcomeType}
                     onChange={(e) => setOutcomeType(e.target.value as typeof outcomeType)}
-                    className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-hc-text"
+                    className="w-full bg-hc-dark/80 border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text"
                   >
                     <option value="reached">Reached</option>
                     <option value="voicemail">Voicemail</option>
@@ -874,7 +874,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     value={outcomeNotes}
                     onChange={(e) => setOutcomeNotes(e.target.value)}
                     placeholder="Brief notes…"
-                    className="w-full min-h-[60px] bg-hc-dark/60 border border-white/10 rounded-lg p-2 text-[11px] text-hc-text"
+                    className="w-full min-h-[60px] bg-white border border-hc-border rounded-lg p-2 text-[11px] text-hc-text"
                   />
                   <button
                     type="button"
@@ -882,7 +882,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                       saveCallOutcome(selectedEsc, outcomeType, outcomeNotes);
                       setOutcomeNotes('');
                     }}
-                    className="w-full py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase text-hc-teal-light"
+                    className="w-full py-2 rounded-xl border border-hc-border text-[10px] font-black uppercase text-hc-teal-light"
                   >
                     Log outcome
                   </button>
@@ -1070,7 +1070,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
       {/* Recent outcomes */}
       <div className="mt-8 rounded-2xl overflow-hidden" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
-        <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
+        <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-hc-teal/5 transition-colors">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full" style={{background:'#64748b'}} />
             <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Recent Call Outcomes</span>
