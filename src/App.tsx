@@ -597,7 +597,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ isolation: 'isolate' }}>
+    <div className="flex h-screen" style={{ overflow: 'clip', isolation: 'isolate' }}>
       <Sidebar
         page={page}
         setPage={setPage}

@@ -266,8 +266,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
 
       {/* Desktop Sidebar */}
       <aside
-        className="hidden lg:flex w-[13.5rem] flex-col shrink-0 h-screen sticky top-0 overflow-hidden"
-        style={sidebarBg}
+        className="hidden lg:flex w-[13.5rem] flex-col shrink-0 h-screen sticky top-0"
+        style={{ ...sidebarBg, overflow: 'clip' }}
       >
         {sidebarContent}
       </aside>
