@@ -277,7 +277,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
           onClick={() => fileInputRef.current?.click()}
           className="cursor-pointer rounded-[2rem] p-10 mb-6 transition-all duration-300 flex flex-col items-center gap-4"
           style={{
-            background: isDragging ? 'rgba(20,184,166,0.08)' : 'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',
+            background: isDragging ? 'rgba(20,184,166,0.08)' : 'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',
             border: isDragging ? '2px dashed rgba(20,184,166,0.6)' : '2px dashed rgba(255,255,255,0.1)',
             boxShadow: isDragging ? '0 0 40px rgba(20,184,166,0.15)' : '0 8px 40px rgba(0,0,0,0.5)',
           }}

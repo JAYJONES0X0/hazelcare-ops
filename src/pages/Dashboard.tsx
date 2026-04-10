@@ -139,10 +139,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                 className="group/house relative rounded-2xl overflow-hidden transition-all duration-300"
                 style={{
                   background: hasRed
-                    ? 'linear-gradient(145deg, rgba(30,10,10,0.48), rgba(16,6,6,0.40))'
+                    ? 'linear-gradient(145deg, rgba(30,10,10,0.30), rgba(16,6,6,0.24))'
                     : hasAmber
-                    ? 'linear-gradient(145deg, rgba(28,18,6,0.48), rgba(16,10,4,0.40))'
-                    : 'linear-gradient(145deg, rgba(12,16,24,0.52), rgba(8,11,18,0.46))',
+                    ? 'linear-gradient(145deg, rgba(28,18,6,0.30), rgba(16,10,4,0.24))'
+                    : 'linear-gradient(145deg, rgba(12,16,24,0.30), rgba(8,11,18,0.24))',
                   backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
                   WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
                   border: `1px solid ${hasRed ? 'rgba(239,68,68,0.2)' : hasAmber ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.07)'}`,
@@ -235,7 +235,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               onClick={() => setPage(btn.id as Page)}
               className="group/btn cursor-pointer text-left rounded-2xl p-5 transition-all duration-250 hover:-translate-y-0.5 active:scale-95"
               style={{
-                background: 'linear-gradient(145deg, rgba(12,16,24,0.52), rgba(8,11,18,0.46))',
+                background: 'linear-gradient(145deg, rgba(12,16,24,0.30), rgba(8,11,18,0.24))',
                 backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
                 WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
                 border: '1px solid rgba(255,255,255,0.09)',

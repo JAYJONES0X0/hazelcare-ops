@@ -383,7 +383,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           { label: 'Last entry', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white' },
           { label: 'Computed', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl px-4 py-3" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+          <div key={label} className="rounded-xl px-4 py-3" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
             <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">{label}</div>
             <div className={`text-sm font-bold ${color} truncate`}>{value}</div>
           </div>
@@ -464,7 +464,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       )}
 
       {/* Filters */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
       <button type="button" onClick={() => togglePanel('filters')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('filters') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 rounded-full bg-hc-muted/40" />
@@ -523,7 +523,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       </div>
 
       {/* Export recommendations */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
         <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('export-hints') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full bg-hc-teal/60" />
@@ -547,7 +547,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           onClick={() => importFileRef.current?.click()}
           className="cursor-pointer flex flex-col items-center justify-center py-20 text-center rounded-[2rem] animate-in zoom-in duration-700 relative overflow-hidden transition-all duration-300"
           style={{
-            background: importDragging ? 'rgba(20,184,166,0.06)' : 'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',
+            background: importDragging ? 'rgba(20,184,166,0.06)' : 'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',
             border: importDragging ? '2px dashed rgba(20,184,166,0.5)' : '2px dashed rgba(255,255,255,0.08)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
           }}
@@ -582,7 +582,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       {weekData && (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.4fr] gap-6">
           {/* Houses */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
             <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.6)'}} />
@@ -630,7 +630,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           </div>
 
           {/* Staff leaderboard */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
             <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.6)'}} />
@@ -762,7 +762,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           </div>
 
           {/* Escalations + call prep */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+          <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
             <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-flag-red" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
@@ -1053,7 +1053,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       )}
 
       {/* Recent outcomes */}
-      <div className="mt-8 rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(255,255,255,0.09)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)'}}>
+      <div className="mt-8 rounded-2xl overflow-hidden" style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',backdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',WebkitBackdropFilter:'blur(48px) saturate(1.8) brightness(1.06)',border:'1px solid rgba(255,255,255,0.10)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.12),inset 0 0 0 0.5px rgba(255,255,255,0.05)'}}>
         <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full" style={{background:'#64748b'}} />

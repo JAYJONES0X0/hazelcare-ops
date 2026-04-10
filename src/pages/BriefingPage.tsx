@@ -81,7 +81,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
       {/* ── Header ── */}
       <div className="rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         style={{
-          background: 'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',
+          background: 'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',
           border: `1px solid ${scoreColor}30`,
           boxShadow: `0 4px 24px ${scoreColor}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
         }}>
@@ -155,7 +155,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
           {/* Priority Interventions */}
           {(redFlags.length > 0 || overdueActions.length > 0) && (
             <div className="rounded-2xl overflow-hidden"
-              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',border:'1px solid rgba(239,68,68,0.2)',boxShadow:'0 4px 20px rgba(239,68,68,0.05)'}}>
+              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',border:'1px solid rgba(239,68,68,0.2)',boxShadow:'0 4px 20px rgba(239,68,68,0.05)'}}>
               <button type="button" onClick={() => toggleSection('interventions')} className="w-full flex items-center justify-between px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('interventions') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-flag-red animate-pulse" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
@@ -199,7 +199,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
           {/* Client Focus */}
           {priorityClients.length > 0 && (
             <div className="rounded-2xl overflow-hidden"
-              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',border:'1px solid rgba(255,255,255,0.07)'}}>
+              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',border:'1px solid rgba(255,255,255,0.07)'}}>
               <button type="button" onClick={() => toggleSection('clients')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('clients') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.5)'}} />
@@ -233,7 +233,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
           {/* Trends */}
           {trends.length > 0 && (
             <div className="rounded-2xl overflow-hidden"
-              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',border:'1px solid rgba(255,255,255,0.07)'}}>
+              style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',border:'1px solid rgba(255,255,255,0.07)'}}>
               <button type="button" onClick={() => toggleSection('trends')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('trends') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-hc-purple" />
@@ -264,7 +264,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
 
           {/* House grid */}
           <div className="rounded-2xl overflow-hidden"
-            style={{background:'linear-gradient(145deg,rgba(12,16,24,0.52),rgba(8,11,18,0.46))',border:'1px solid rgba(255,255,255,0.07)'}}>
+            style={{background:'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))',border:'1px solid rgba(255,255,255,0.07)'}}>
             <button type="button" onClick={() => toggleSection('houses')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('houses') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.5)'}} />

@@ -132,10 +132,7 @@ function LoginGate({
   const inputClass = "w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/25 focus:outline-none focus:border-hc-teal/60 transition-colors text-sm font-medium";
 
   return (
-    <div className="min-h-screen flex mesh-bg relative overflow-hidden">
-      {/* Ambient */}
-      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-hc-teal/[0.04] rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-hc-blue/[0.04] rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen flex relative overflow-hidden" style={{ isolation: 'isolate' }}>
 
       {/* Left panel — brand / info (hidden on mobile) */}
       <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10 relative"
@@ -600,7 +597,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-hc-darker">
+    <div className="flex h-screen overflow-hidden" style={{ isolation: 'isolate' }}>
       <Sidebar
         page={page}
         setPage={setPage}

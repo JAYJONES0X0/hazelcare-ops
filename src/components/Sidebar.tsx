@@ -49,8 +49,10 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
 ];
 
 const sidebarBg = {
-  background: 'linear-gradient(180deg,#070a11 0%,#050810 100%)',
-  borderRight: '1px solid rgba(255,255,255,0.05)',
+  background: 'linear-gradient(180deg, rgba(7,10,17,0.72) 0%, rgba(5,8,16,0.78) 100%)',
+  backdropFilter: 'blur(40px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(40px) saturate(1.6)',
+  borderRight: '1px solid rgba(255,255,255,0.07)',
 };
 
 export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut }: Props) {
