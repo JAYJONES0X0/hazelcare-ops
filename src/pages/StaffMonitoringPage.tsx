@@ -65,8 +65,24 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const tc = await page.getTextContent();
+          // Reconstruct table structure by grouping items by Y coordinate (row),
+          // then sorting each row by X coordinate (column order).
+          // This preserves the tabular layout CarePlanner PDFs use.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          text += (tc.items as any[]).map((it: { str: string }) => it.str).join(' ') + '\n';
+          const items = tc.items as any[];
+          const rowMap = new Map<number, { x: number; str: string }[]>();
+          for (const it of items) {
+            if (!it.str?.trim()) continue;
+            // transform[5] = Y position, transform[4] = X position
+            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4; // bucket to 4pt rows
+            if (!rowMap.has(y)) rowMap.set(y, []);
+            rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
+          }
+          // Sort rows top→bottom (descending Y in PDF coords), cells left→right
+          const sortedRows = [...rowMap.entries()]
+            .sort((a, b) => b[0] - a[0])
+            .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
+          text += sortedRows.join('\n') + '\n';
         }
       } else {
         text = await file.text();

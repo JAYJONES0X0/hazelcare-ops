@@ -194,24 +194,33 @@ function parseCSVRaw(text: string): string[][] {
   return rows;
 }
 
+const DIARY_KEYWORDS = ['diary', 'display', 'entry', 'client', 'carer', 'incident', 'staff', 'notes', 'date'];
+
 function looksLikeCSV(text: string): boolean {
   const firstLine = text.trim().split('\n')[0] || '';
-  return firstLine.includes(',') && (
-    firstLine.toLowerCase().includes('diary') ||
-    firstLine.toLowerCase().includes('display') ||
-    firstLine.toLowerCase().includes('entry') ||
-    firstLine.toLowerCase().includes('client') ||
-    firstLine.toLowerCase().includes('carer') ||
-    firstLine.toLowerCase().includes('incident')
-  );
+  const lower = firstLine.toLowerCase();
+  return firstLine.includes(',') && DIARY_KEYWORDS.some(k => lower.includes(k));
 }
 
-export function parseUniversalCSV(text: string): CareEntry[] {
-  const clean = text.replace(/^\uFEFF/, '');
-  const rows = parseCSVRaw(clean);
-  if (rows.length < 2) return [];
+function looksLikeTSV(text: string): boolean {
+  const firstLine = text.trim().split('\n')[0] || '';
+  const lower = firstLine.toLowerCase();
+  return firstLine.includes('\t') && DIARY_KEYWORDS.some(k => lower.includes(k));
+}
 
-  const headers = rows[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+function parseTSVRaw(text: string): string[][] {
+  return text.split('\n')
+    .map(line => line.split('\t').map(c => c.trim()))
+    .filter(row => row.some(c => c));
+}
+
+export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] {
+  const clean = text.replace(/^\uFEFF/, '');
+  const parsedRows = rows ?? parseCSVRaw(clean);
+  if (parsedRows.length < 2) return [];
+  const rows2 = parsedRows;
+
+  const headers = rows2[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
 
   const iDate  = findCol(headers, 'entry_occurred', 'display_from', 'occurred', 'date', 'entry_date', 'record_date');
   const iType  = findCol(headers, 'incident_type', 'entry_type', 'type', 'category', 'record_type', 'diary_type');
@@ -223,8 +232,8 @@ export function parseUniversalCSV(text: string): CareEntry[] {
   if (iEntry < 0) return [];
 
   const entries: CareEntry[] = [];
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+  for (let i = 1; i < rows2.length; i++) {
+    const row = rows2[i];
     if (row.every(cell => !cell.trim())) continue;
 
     const dateRaw   = safeCell(row, iDate);
@@ -268,8 +277,14 @@ export function parseUniversalCSV(text: string): CareEntry[] {
 
 export function parseUniversalData(rawText: string): CareEntry[] {
   const trimmed = rawText.trim();
+  // CSV path (comma-separated with recognisable headers)
   if (trimmed.startsWith('\uFEFF') || looksLikeCSV(trimmed)) {
     const result = parseUniversalCSV(trimmed);
+    if (result.length > 0) return result;
+  }
+  // TSV path — PDF extractor produces tab-separated rows preserving table layout
+  if (looksLikeTSV(trimmed)) {
+    const result = parseUniversalCSV(trimmed, parseTSVRaw(trimmed));
     if (result.length > 0) return result;
   }
 
