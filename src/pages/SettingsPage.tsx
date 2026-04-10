@@ -123,7 +123,7 @@ export function SettingsPage({ onSignOut }: Props) {
   }
 
   const card = 'rounded-2xl p-5 mb-4';
-  const cardStyle = { background: 'linear-gradient(145deg,rgba(12,16,24,0.30),rgba(8,11,18,0.24))', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)' };
+  const cardStyle = { background: '#111827', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)' };
   const sectionLabel = 'text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2';
   const inputClass = 'w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-hc-teal/50 transition-colors';
   const fieldLabel = 'text-[10px] font-bold text-hc-muted uppercase tracking-wide mb-1.5 block';

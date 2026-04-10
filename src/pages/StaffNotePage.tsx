@@ -473,7 +473,7 @@ export function StaffNotePage() {
     <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
 
       {/* ── QUICK FIX PANEL ─────────────────────────────────── */}
-      <div className="mb-8 rounded-2xl p-5" style={{background:'linear-gradient(145deg,rgba(16,8,32,0.28),rgba(10,8,22,0.22))',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(139,92,246,0.2)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(139,92,246,0.05),inset 0 1px 0 rgba(255,255,255,0.10)'}}>
+      <div className="mb-8 rounded-2xl p-5" style={{background:'#13101e',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(139,92,246,0.2)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(139,92,246,0.05),inset 0 1px 0 rgba(255,255,255,0.10)'}}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6',boxShadow:'0 0 12px rgba(139,92,246,0.7)'}} />
           <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white">Quick Fix</span>
