@@ -131,7 +131,7 @@ function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript:
       className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-500 select-none shadow-xl
         ${listening
           ? 'bg-red-500/20 border-2 border-red-500 text-red-400 glow-red animate-pulse'
-          : 'glass-light border border-white/10 text-hc-teal-light hover:border-hc-teal hover:text-white hover:bg-hc-teal/5 hover:scale-105 active:scale-95'
+          : 'glass-light border border-white/10 text-hc-teal-light hover:border-hc-teal hover:text-hc-text hover:bg-hc-teal/5 hover:scale-105 active:scale-95'
       }`}
     >
       <div className={`w-2 h-2 rounded-full ${listening ? 'bg-red-500 animate-ping' : 'bg-hc-teal'}`} />
@@ -476,7 +476,7 @@ export function StaffNotePage() {
       <div className="mb-8 rounded-2xl p-5" style={{background:'#f8f6ff',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(139,92,246,0.2)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(139,92,246,0.05),inset 0 1px 0 rgba(255,255,255,0.10)'}}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6',boxShadow:'0 0 12px rgba(139,92,246,0.7)'}} />
-          <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white">Quick Fix</span>
+          <span className="text-[10px] font-black tracking-[0.25em] uppercase text-hc-text">Quick Fix</span>
           <span className="text-[10px] text-hc-muted opacity-50 uppercase tracking-wide">Paste any note → get Gold Standard instantly</span>
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -531,7 +531,7 @@ export function StaffNotePage() {
       <div className="mb-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Notes Assistant</h1>
+            <h1 className="text-xl md:text-2xl font-black text-hc-text mb-1 tracking-tighter text-shimmer">Notes Assistant</h1>
             <div className="flex items-center gap-3">
               <span className="pill pill-teal text-xs font-black uppercase tracking-[0.08em] shadow-lg">Daily Notes Log</span>
               <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
@@ -555,14 +555,14 @@ export function StaffNotePage() {
               </div>
               <div className="flex-1 text-left relative z-10">
                 <div className="text-xs text-hc-teal-light uppercase tracking-[0.08em] font-black mb-1">Voice Language — Tap to switch</div>
-                <div className="text-sm md:text-base font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
+                <div className="text-sm md:text-base font-black text-hc-text tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
               </div>
               <div className="text-hc-muted text-right hidden md:block relative z-10 pr-4">
                 <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest mb-1">Multi-Language Support</div>
                 <div className="text-xs font-medium opacity-60 italic">Speak or dictate in any language — AI translates and polishes</div>
               </div>
               <div className={`w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 transition-transform duration-500 ${showLangPicker ? 'rotate-180 bg-hc-teal/10 border-hc-teal/30' : 'group-hover:bg-white/5'}`}>
-                <svg className="w-4 h-4 text-hc-muted group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                <svg className="w-4 h-4 text-hc-muted group-hover:text-hc-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
               </div>
             </button>
 
@@ -578,8 +578,8 @@ export function StaffNotePage() {
                       onClick={() => handleLangChange(l.code)}
                       className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-500 group/lang active:scale-90 ${
                         voiceLang === l.code
-                          ? 'border-hc-teal bg-hc-teal/20 text-white shadow-lg shadow-hc-teal/10 scale-105'
-                          : 'border-white/5 glass-light text-hc-muted hover:border-hc-teal/40 hover:bg-white/5 hover:text-white'
+                          ? 'border-hc-teal bg-hc-teal/20 text-hc-text shadow-lg shadow-hc-teal/10 scale-105'
+                          : 'border-white/5 glass-light text-hc-muted hover:border-hc-teal/40 hover:bg-white/5 hover:text-hc-text'
                       }`}
                     >
                       <span className="text-2xl leading-none transition-transform group-hover/lang:scale-125 duration-500">{l.flag}</span>
@@ -607,13 +607,13 @@ export function StaffNotePage() {
             <button
               type="button"
               onClick={() => setShowCategoryPanel((v) => !v)}
-              className="w-full flex items-center justify-between section-header text-xs mb-2 ml-1 opacity-90 tracking-[0.08em] hover:text-white transition-all"
+              className="w-full flex items-center justify-between section-header text-xs mb-2 ml-1 opacity-90 tracking-[0.08em] hover:text-hc-text transition-all"
               title="Choose note category and prompt profile"
             >
               <span>Note Category</span>
               <span className="text-hc-muted">{showCategoryPanel ? 'Hide' : 'Show'}</span>
             </button>
-            <p className="text-xs text-hc-muted/80 mb-4">Selected: <span className="text-white font-semibold">{selectedType.label}</span></p>
+            <p className="text-xs text-hc-muted/80 mb-4">Selected: <span className="text-hc-text font-semibold">{selectedType.label}</span></p>
             {showCategoryPanel && (
               <>
 
@@ -624,7 +624,7 @@ export function StaffNotePage() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search entry types..."
-                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
+                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
                   <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -634,7 +634,7 @@ export function StaffNotePage() {
                 <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5">
                   {GROUPS.map(g => (
                     <button key={g.id} onClick={() => setActiveGroup(g.id)}
-                      className={`text-[10px] px-5 py-2 rounded-xl font-black uppercase tracking-widest transition-all duration-500 active:scale-95 ${activeGroup === g.id ? 'shadow-lg bg-hc-teal/10 scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}
+                      className={`text-[10px] px-5 py-2 rounded-xl font-black uppercase tracking-widest transition-all duration-500 active:scale-95 ${activeGroup === g.id ? 'shadow-lg bg-hc-teal/10 scale-105' : 'text-hc-muted hover:text-hc-text hover:bg-white/5'}`}
                       style={activeGroup === g.id ? { color: g.color, background: `${g.color}15`, border: `1px solid ${g.color}30` } : {}}>
                       {g.label}
                     </button>
@@ -648,7 +648,7 @@ export function StaffNotePage() {
               {filteredTypes.map(type => (
                 <button key={type.id} onClick={() => { setSelectedType(type); setSearch(''); if (!search) setActiveGroup(type.group); }}
                   className={`text-left px-4 py-3 rounded-xl border text-[11px] font-black uppercase tracking-tight transition-all duration-500 group/type relative overflow-hidden active:scale-95
-                    ${selectedType.id === type.id ? 'shadow-2xl scale-[1.03] z-10 border-hc-teal/40' : 'border-white/5 glass-light text-hc-muted hover:text-white hover:border-white/20'}`}
+                    ${selectedType.id === type.id ? 'shadow-2xl scale-[1.03] z-10 border-hc-teal/40' : 'border-white/5 glass-light text-hc-muted hover:text-hc-text hover:border-white/20'}`}
                   style={selectedType.id === type.id ? { color: type.color, background: `${type.color}15` } : {}}>
                   <div className="absolute top-0 right-0 w-12 h-12 rounded-full opacity-[0.03] blur-xl group-hover/type:opacity-[0.1] transition-opacity" style={{ background: type.color }} />
                   <span className="relative z-10 group-hover/type:translate-x-1 transition-transform duration-500 block">{type.label}</span>
@@ -659,7 +659,7 @@ export function StaffNotePage() {
             {/* Selected type indicator */}
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-3">
               <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ background: selectedType.color, boxShadow: `0 0 10px ${selectedType.color}` }} />
-              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Selected: <span className="text-white ml-1">{selectedType.label}</span></span>
+              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Selected: <span className="text-hc-text ml-1">{selectedType.label}</span></span>
             </div>
               </>
             )}
@@ -670,19 +670,19 @@ export function StaffNotePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="group">
                 <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
+                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
                   {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div className="group">
                 <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Person</label>
-                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
               <div>
                 <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Input Mode</label>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
                   {(['guided', 'free'] as const).map(m => (
-                    <button key={m} onClick={() => setMode(m)} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition-all duration-500 active:scale-95 ${mode === m ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+                    <button key={m} onClick={() => setMode(m)} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition-all duration-500 active:scale-95 ${mode === m ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105' : 'text-hc-muted hover:text-hc-text hover:bg-white/5'}`}>
                       {m === 'guided' ? 'Guided' : 'Free Text'}
                     </button>
                   ))}
@@ -696,7 +696,7 @@ export function StaffNotePage() {
             <div className="space-y-4">
               {selectedType.prompts.map((prompt, i) => (
                 <div key={prompt.key} className="glass-light border border-white/5 rounded-[2rem] p-6 focus-within:border-hc-teal/30 transition-all card-glow group animate-in slide-in-from-left-4 active:scale-[0.99]" style={{ animationDelay: `${i * 100}ms` }}>
-                  <label className="flex items-center gap-3 text-[11px] font-black text-white uppercase tracking-wider mb-4 transition-transform group-focus-within:translate-x-1">
+                  <label className="flex items-center gap-3 text-[11px] font-black text-hc-text uppercase tracking-wider mb-4 transition-transform group-focus-within:translate-x-1">
                     <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg" style={{ background: `${selectedType.color}20`, color: selectedType.color, border: `1px solid ${selectedType.color}40` }}>{i + 1}</span>
                     {prompt.label}
                     {prompt.required && <span className="text-flag-red text-xs animate-pulse">*</span>}
@@ -705,7 +705,7 @@ export function StaffNotePage() {
                     value={answers[prompt.key] || ''}
                     onChange={e => setAnswer(prompt.key, e.target.value)}
                     placeholder={prompt.placeholder}
-                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl p-5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none leading-relaxed mb-4 font-medium"
+                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl p-5 text-sm text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none leading-relaxed mb-4 font-medium"
                     rows={2}
                   />
                   <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
@@ -715,14 +715,14 @@ export function StaffNotePage() {
           ) : (
             <div className="glass-light border border-white/5 rounded-[2.5rem] p-8 card-glow group">
               <div className="flex items-center justify-between mb-6">
-                <label className="text-sm font-black text-white uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Free Text Entry</label>
+                <label className="text-sm font-black text-hc-text uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Free Text Entry</label>
                 <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
               </div>
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
                 placeholder="Type or dictate in any language — HazelCare will translate and polish your note into professional English..."
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
               />
             </div>
           )}
@@ -736,7 +736,7 @@ export function StaffNotePage() {
                 <svg className={`w-8 h-8 ${flagResult.severity === 'red' ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
               </div>
               <div>
-                <div className="text-xl font-black text-white tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Red Flag Alert' : 'Amber Monitor Alert'}</div>
+                <div className="text-xl font-black text-hc-text tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Red Flag Alert' : 'Amber Monitor Alert'}</div>
                 <p className="text-sm font-medium text-hc-muted mb-4 opacity-80 leading-relaxed">{flagResult.severity === 'red' ? 'This entry contains critical concerns requiring immediate manager escalation.' : 'Concerns detected — monitoring recommended for this person.'}</p>
                 <div className="flex flex-wrap gap-2">
                   {flagResult.flags.map((f, i) => (
@@ -757,7 +757,7 @@ export function StaffNotePage() {
               <div className="p-8 border-b border-white/5 bg-black/20 relative z-10">
                 <div className="flex items-center justify-between">
                   <div className="transition-transform duration-500 group-hover/preview:translate-x-1">
-                    <h3 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Preview</h3>
+                    <h3 className="text-lg font-black text-hc-text tracking-tighter uppercase text-shimmer">Preview</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
                       <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words · ~{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
@@ -777,9 +777,9 @@ export function StaffNotePage() {
                   <div className="animate-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-3 mb-6">
                       <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 shadow-lg glow-teal animate-shimmer">✦ AI POLISHED</span>
-                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] transition-all ml-auto">Reset</button>
+                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-hc-text uppercase tracking-[0.2em] transition-all ml-auto">Reset</button>
                     </div>
-                    <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap italic group-hover/preview:text-white transition-colors duration-700">"{enhancedNote}{enhancing && <span className="inline-block w-2 h-4 bg-hc-teal-light ml-1 animate-pulse align-middle shadow-[0_0_10px_#14b8a6]" />}"</pre>
+                    <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap italic group-hover/preview:text-hc-text transition-colors duration-700">"{enhancedNote}{enhancing && <span className="inline-block w-2 h-4 bg-hc-teal-light ml-1 animate-pulse align-middle shadow-[0_0_10px_#14b8a6]" />}"</pre>
                   </div>
                 ) : enhancing ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -816,10 +816,10 @@ export function StaffNotePage() {
 
               <div className="p-8 border-t border-white/5 bg-black/30 flex gap-4 relative z-10">
                 <button onClick={() => { const n = enhancedNote || generatedNote; if (n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(() => setCopied(false), 2000); } }} disabled={!generatedNote && !enhancedNote}
-                  className={`flex-1 flex items-center justify-center gap-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 disabled:opacity-20 disabled:grayscale shadow-2xl hover:scale-105 active:scale-95 ${copied ? 'bg-flag-green text-white shadow-flag-green/20' : 'btn-gradient text-white'}`}>
+                  className={`flex-1 flex items-center justify-center gap-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 disabled:opacity-20 disabled:grayscale shadow-2xl hover:scale-105 active:scale-95 ${copied ? 'bg-flag-green text-hc-text shadow-flag-green/20' : 'btn-gradient text-hc-text'}`}>
                   {copied ? (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>COPIED</>) : (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>COPY TO CLIPBOARD</>)}
                 </button>
-                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">SAVE ENTRY</button>
+                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-hc-text hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">SAVE ENTRY</button>
               </div>
             </div>
 
@@ -844,7 +844,7 @@ export function StaffNotePage() {
                         <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/[0.02] blur-2xl -translate-y-1/2 translate-x-1/2 group-hover/archive:bg-hc-teal/5 transition-colors" />
                         <div className="flex items-start justify-between gap-4 relative z-10">
                           <div className="min-w-0 transition-transform duration-500 group-hover/archive:translate-x-1">
-                            <div className="text-[11px] font-black text-white group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight truncate">{note.type}</div>
+                            <div className="text-[11px] font-black text-hc-text group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight truncate">{note.type}</div>
                             <div className="text-[9px] font-bold text-hc-muted/60 uppercase tracking-widest mt-1">{note.house}{note.client ? ` · ${note.client}` : ''} · <span className="tabular-nums">{note.date}</span></div>
                           </div>
                           <button onClick={() => { navigator.clipboard.writeText(note.text); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-hc-teal-light opacity-0 group-hover/archive:opacity-100 transition-all shadow-lg active:scale-90">

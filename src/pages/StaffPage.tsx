@@ -41,7 +41,7 @@ export function StaffPage({ staff }: Props) {
     <div className="p-6 lg:p-8 max-w-[2560px] mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Staff Team</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight text-shimmer">Staff Team</h1>
           <div className="flex items-center gap-3">
             <span className="pill pill-blue text-[10px] uppercase tracking-wider font-bold shadow-lg">Team Overview</span>
             <span className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
@@ -62,7 +62,7 @@ export function StaffPage({ staff }: Props) {
             <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: kpi.color }} />
             <div className="section-header text-[9px] mb-2 opacity-60 uppercase tracking-[0.2em]">{kpi.label}</div>
             <div className="flex items-baseline gap-2 relative z-10">
-              <div className="text-3xl font-black text-white tabular-nums tracking-tighter group-hover:scale-110 transition-transform duration-500" style={{ textShadow: `0 0 20px ${kpi.color}44` }}>{kpi.value}</div>
+              <div className="text-3xl font-black text-hc-text tabular-nums tracking-tighter group-hover:scale-110 transition-transform duration-500" style={{ textShadow: `0 0 20px ${kpi.color}44` }}>{kpi.value}</div>
               {kpi.sub && <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-40">{kpi.sub}</span>}
             </div>
             <div className={`h-1 w-8 rounded-full mt-4 opacity-30 group-hover:opacity-100 group-hover:w-12 transition-all duration-700 ${kpi.pill.replace('pill', 'bg')}`} />
@@ -77,7 +77,7 @@ export function StaffPage({ staff }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search staff by name or role..."
-            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/20 focus:bg-hc-dark"
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/20 focus:bg-hc-dark"
           />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -89,7 +89,7 @@ export function StaffPage({ staff }: Props) {
           <select
             value={houseFilter}
             onChange={e => setHouseFilter(e.target.value)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]"
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-6 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]"
           >
             <option value="all">All Houses</option>
             {houses.map(h => <option key={h} value={h}>{h}</option>)}
@@ -108,7 +108,7 @@ export function StaffPage({ staff }: Props) {
         {Object.entries(byHouse).sort(([a], [b]) => a.localeCompare(b)).map(([house, members], hIdx) => (
           <div key={house} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${hIdx * 100}ms` }}>
             <div className="flex items-center gap-4 mb-6 px-2 group cursor-default">
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase group-hover:text-shimmer group-hover:translate-x-1 transition-all duration-500">{house}</h2>
+              <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase group-hover:text-shimmer group-hover:translate-x-1 transition-all duration-500">{house}</h2>
               <span className="pill pill-teal text-[10px] font-black px-3 py-0.5 shadow-lg opacity-80">{members.length} Staff</span>
               {members.some(m => m.status === 'sickness') && (
                 <span className="pill pill-red text-[10px] font-black px-3 py-0.5 shadow-xl shadow-red-950/20 animate-pulse">
@@ -130,7 +130,7 @@ export function StaffPage({ staff }: Props) {
                           {member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-[15px] font-black text-white group-hover/card:text-hc-teal-light transition-colors tracking-tight leading-none mb-1">{member.name}</div>
+                          <div className="text-[15px] font-black text-hc-text group-hover/card:text-hc-teal-light transition-colors tracking-tight leading-none mb-1">{member.name}</div>
                           <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest opacity-60">{member.role}</div>
                         </div>
                       </div>
@@ -166,13 +166,13 @@ export function StaffPage({ staff }: Props) {
                         {member.dbsExpiry && (
                           <div className="flex items-center justify-between group/line">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60 group-hover/line:text-hc-text group-hover/line:opacity-100 transition-all">DBS EXPIRY</span>
-                            <span className="text-[10px] font-black text-white/80 tabular-nums tracking-widest">{member.dbsExpiry}</span>
+                            <span className="text-[10px] font-black text-hc-text/80 tabular-nums tracking-widest">{member.dbsExpiry}</span>
                           </div>
                         )}
                         {member.trainingExpiry && (
                           <div className="flex items-center justify-between group/line">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60 group-hover/line:text-hc-text group-hover/line:opacity-100 transition-all">TRAINING CYCLE</span>
-                            <span className="text-[10px] font-black text-white/80 tabular-nums tracking-widest">{member.trainingExpiry}</span>
+                            <span className="text-[10px] font-black text-hc-text/80 tabular-nums tracking-widest">{member.trainingExpiry}</span>
                           </div>
                         )}
                       </div>
@@ -198,7 +198,7 @@ export function StaffPage({ staff }: Props) {
       {filtered.length === 0 && (
         <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Staff Found</div>
+          <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">No Staff Found</div>
           <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to see all staff</div>
         </div>
       )}

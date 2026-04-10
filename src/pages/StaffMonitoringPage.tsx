@@ -310,7 +310,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{background:'rgba(10,12,18,0.9)',backdropFilter:'blur(8px)'}}>
           <div className="rounded-[2rem] p-12 flex flex-col items-center gap-4" style={{border:'2px dashed rgba(20,184,166,0.6)',boxShadow:'0 0 60px rgba(20,184,166,0.2)'}}>
             <svg className="w-16 h-16 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            <div className="text-white font-black text-xl">Drop diary CSV here</div>
+            <div className="text-hc-text font-black text-xl">Drop diary CSV here</div>
             <div className="text-hc-muted text-xs opacity-60">Release to import and analyse</div>
           </div>
         </div>
@@ -321,7 +321,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       {/* ── Page header ── */}
       <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter text-shimmer">Staff Intelligence</h1>
+          <h1 className="text-xl md:text-2xl font-black text-hc-text tracking-tighter text-shimmer">Staff Intelligence</h1>
           <p className="text-hc-muted text-sm font-medium mt-1">
             Drop your diary CSV here — scores every entry, flags weak notes, generates call scripts and coaching rewrites.
           </p>
@@ -376,7 +376,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               onRecompute();
               setPage('templates');
             }}
-            className="px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-wide text-hc-muted hover:text-white transition-colors"
+            className="px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-wide text-hc-muted hover:text-hc-text transition-colors"
             style={{background:'rgba(255,255,255,0.03)'}}
           >
             Templates
@@ -395,8 +395,8 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
           { label: 'Window', value: snapshot.windowLabel, color: 'text-hc-teal-light' },
-          { label: 'Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-white' },
-          { label: 'Last entry', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white' },
+          { label: 'Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-hc-text' },
+          { label: 'Last entry', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-hc-text' },
           { label: 'Computed', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-xl px-4 py-3" style={{background:'#ffffff',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.06)'}}>
@@ -409,7 +409,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       {/* Hourly prompt */}
       {hourlyDue && !hourlyDismissed && (
         <div className="mb-6 border border-flag-amber/40 bg-flag-amber/10 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-white font-semibold">Has anything changed in the last hour?</div>
+          <div className="text-sm text-hc-text font-semibold">Has anything changed in the last hour?</div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -444,16 +444,16 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-flag-green shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
             <span className="text-sm font-black text-flag-green">Growth Detected — Send Positive Reinforcement</span>
-            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] text-hc-muted hover:text-white cursor-pointer">Dismiss</button>
+            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] text-hc-muted hover:text-hc-text cursor-pointer">Dismiss</button>
           </div>
           <div className="space-y-2">
             {growthAlerts.map((a) => (
               <div key={`${a.carer}-${a.module}`} className="rounded-xl p-3 flex items-start justify-between gap-3" style={{background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)'}}>
                 <div>
-                  <div className="text-sm font-bold text-white mb-0.5">{a.carer}</div>
+                  <div className="text-sm font-bold text-hc-text mb-0.5">{a.carer}</div>
                   <div className="text-xs text-hc-muted">
                     <span className="text-flag-green font-semibold">{a.module}</span> improved{' '}
-                    <span className="font-black text-white">{a.previousScore} → {a.currentScore}</span>
+                    <span className="font-black text-hc-text">{a.previousScore} → {a.currentScore}</span>
                     {' '}(+{a.delta} pts vs last {Math.min(5, 1)} sessions)
                   </div>
                 </div>
@@ -484,7 +484,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       <button type="button" onClick={() => togglePanel('filters')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('filters') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 rounded-full bg-hc-muted/40" />
-          <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Filters</span>
+          <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Filters</span>
           <span className="text-[9px] text-hc-muted opacity-40">{house !== 'all' ? house : 'All houses'} · {dateFrom}→{dateTo}</span>
         </div>
         <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('filters') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -496,7 +496,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <select
               value={house}
               onChange={(e) => setHouse(e.target.value)}
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             >
               {houseOptions.map((h) => (
                 <option key={h} value={h}>
@@ -511,7 +511,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             />
           </label>
           <label className="flex flex-col gap-1.5 min-w-[150px]">
@@ -520,7 +520,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
+              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50"
             />
           </label>
           <button
@@ -543,7 +543,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('export-hints') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full bg-hc-teal/60" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">What to export next from CarePlanner</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">What to export next from CarePlanner</span>
           </div>
           <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('export-hints') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
         </button>
@@ -573,7 +573,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               <svg className="w-10 h-10 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.4}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
             <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-3">Staff Intelligence</div>
-            <div className="text-2xl font-black text-white mb-3 tracking-tighter">Drop your diary CSV here</div>
+            <div className="text-2xl font-black text-hc-text mb-3 tracking-tighter">Drop your diary CSV here</div>
             <div className="text-sm text-hc-muted mb-2 leading-relaxed max-w-sm">
               Export the weekly diary from CarePlanner, drop the CSV file here — or click to browse.
             </div>
@@ -590,7 +590,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         <div className="flex items-center justify-center py-20 rounded-[2rem]" style={{border:'1px solid rgba(255,255,255,0.06)'}}>
           <div className="flex flex-col items-center gap-4">
             <div className="w-10 h-10 rounded-full border-2 border-hc-teal/30 border-t-hc-teal animate-spin" />
-            <div className="text-sm font-black text-white">Reading and scoring entries…</div>
+            <div className="text-sm font-black text-hc-text">Reading and scoring entries…</div>
           </div>
         </div>
       )}
@@ -602,7 +602,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">House Health</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">House Health</span>
                 <span className="text-[9px] text-hc-muted opacity-40">{snapshot.houses.length}</span>
               </div>
               <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('houses') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -624,7 +624,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     }}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-sm font-bold text-white">{h.name}</span>
+                      <span className="text-sm font-bold text-hc-text">{h.name}</span>
                       {hasEsc && <span className="pill pill-amber text-[10px]">T{h.tierWorst}</span>}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-hc-muted">
@@ -650,7 +650,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Staff Quality</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Staff Quality</span>
                 <span className="text-[9px] text-hc-muted opacity-40">{snapshot.staff.length} carers</span>
               </div>
               <div className="flex items-center gap-2">
@@ -675,7 +675,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     >
                       <div className="flex justify-between items-center gap-2 mb-1.5">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-bold text-white truncate">{s.carer}</span>
+                          <span className="text-sm font-bold text-hc-text truncate">{s.carer}</span>
                           {s.isRepeatTarget && (
                             <span className="shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide" style={{background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>
                               Critical Training Need
@@ -782,7 +782,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 rounded-full bg-flag-red" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Escalations & Call Prep</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Escalations & Call Prep</span>
                 <span className="text-[9px] text-hc-muted opacity-40">{snapshot.escalations.length}</span>
               </div>
               <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('escalations') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -822,7 +822,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                   <select
                     value={callVariant}
                     onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
-                    className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                    className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-hc-text"
                   >
                     <option value="coaching">Coaching — warm, developmental</option>
                     <option value="urgent">Urgent — Tier 3, formal</option>
@@ -862,7 +862,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                   <select
                     value={outcomeType}
                     onChange={(e) => setOutcomeType(e.target.value as typeof outcomeType)}
-                    className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                    className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-hc-text"
                   >
                     <option value="reached">Reached</option>
                     <option value="voicemail">Voicemail</option>
@@ -874,7 +874,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     value={outcomeNotes}
                     onChange={(e) => setOutcomeNotes(e.target.value)}
                     placeholder="Brief notes…"
-                    className="w-full min-h-[60px] bg-hc-dark/60 border border-white/10 rounded-lg p-2 text-[11px] text-white"
+                    className="w-full min-h-[60px] bg-hc-dark/60 border border-white/10 rounded-lg p-2 text-[11px] text-hc-text"
                   />
                   <button
                     type="button"
@@ -894,12 +894,12 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
               <button
                 type="button"
                 onClick={exportMonitoringPack}
-                className="w-full py-3 rounded-xl text-xs font-black uppercase text-white cursor-pointer transition-all duration-200 hover:opacity-90"
+                className="w-full py-3 rounded-xl text-xs font-black uppercase text-hc-text cursor-pointer transition-all duration-200 hover:opacity-90"
                 style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)'}}
               >
                 Download evidence pack
               </button>
-              <button type="button" onClick={onRecompute} className="w-full py-2 text-[10px] text-hc-muted uppercase cursor-pointer hover:text-white transition-colors">
+              <button type="button" onClick={onRecompute} className="w-full py-2 text-[10px] text-hc-muted uppercase cursor-pointer hover:text-hc-text transition-colors">
                 Save run & push template context
               </button>
             </div>
@@ -917,7 +917,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             className="w-full flex items-center gap-3 mb-5 cursor-pointer group"
           >
             <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6', boxShadow:'0 0 12px rgba(139,92,246,0.6)'}} />
-            <h2 className="text-sm font-black text-white uppercase tracking-widest">Note Coaching Studio</h2>
+            <h2 className="text-sm font-black text-hc-text uppercase tracking-widest">Note Coaching Studio</h2>
             <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-50 flex-1 text-left">Select staff → pick entry → generate gold standard → copy coaching message</span>
             <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200 shrink-0" style={{transform: isPanelCollapsed('coaching') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </button>
@@ -939,7 +939,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                         border: isActive ? '1px solid rgba(139,92,246,0.35)' : '1px solid rgba(255,255,255,0.05)',
                       }}>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-white truncate">{s.carer}</span>
+                        <span className="text-sm font-bold text-hc-text truncate">{s.carer}</span>
                         <span className="text-xs font-black px-2 py-0.5 rounded-lg shrink-0" style={{color: scoreColor, background:`${scoreColor}18`}}>{s.qualityScore}</span>
                       </div>
                       <div className="text-[10px] text-hc-muted mt-0.5 opacity-60">{s.entryCount} notes · {Math.round(s.shortEntryRatio * 100)}% short</div>
@@ -1073,7 +1073,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 rounded-full" style={{background:'#64748b'}} />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Recent Call Outcomes</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-hc-text uppercase">Recent Call Outcomes</span>
           </div>
           <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('outcomes') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
         </button>

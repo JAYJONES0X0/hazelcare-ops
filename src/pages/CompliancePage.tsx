@@ -23,7 +23,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
       <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
-          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">{staff.id && staff.name ? 'Edit Staff Member' : 'Add New Staff Member'}</h3>
+          <h3 className="text-2xl font-black text-hc-text tracking-tighter text-shimmer">{staff.id && staff.name ? 'Edit Staff Member' : 'Add New Staff Member'}</h3>
           <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] mt-1">Compliance and roster details</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
@@ -31,20 +31,20 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
             <div className="group">
               <label className="section-header mb-2 ml-1 block opacity-90">Full Name</label>
               <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sarah Mitchell"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="section-header mb-2 ml-1 block opacity-90">Job Role</label>
                 <select value={form.role} onChange={e => set('role', e.target.value)}
-                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
                 <label className="section-header mb-2 ml-1 block opacity-90">Primary House</label>
                 <select value={form.house} onChange={e => set('house', e.target.value)}
-                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                  className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
                   {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
@@ -55,27 +55,27 @@ function StaffModal({ staff, onSave, onClose }: { staff: ComplianceStaff; onSave
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">DBS Expiry</label>
               <input value={form.dbsExpiry} onChange={e => set('dbsExpiry', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">Training Expiry</label>
               <input value={form.trainingExpiry} onChange={e => set('trainingExpiry', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">Next Supervision</label>
               <input value={form.nextSupervision} onChange={e => set('nextSupervision', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
           </div>
           
           <div className="flex gap-4 pt-4">
             <button onClick={() => { if (form.name.trim()) onSave(form); }}
               disabled={!form.name.trim()}
-              className="flex-[2] btn-gradient disabled:opacity-20 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
+              className="flex-[2] btn-gradient disabled:opacity-20 text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
               Save Staff Member
             </button>
-            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-2xl transition-all">
+            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-hc-text py-4 rounded-2xl transition-all">
               Cancel
             </button>
           </div>
@@ -101,7 +101,7 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
       <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-blue/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="p-8 border-b border-white/5 relative z-10">
-          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Service Audit</h3>
+          <h3 className="text-2xl font-black text-hc-text tracking-tighter text-shimmer">Log Service Audit</h3>
           <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] mt-1">Quality control and compliance audit</p>
         </div>
         <div className="p-8 space-y-6 relative z-10">
@@ -109,41 +109,41 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">House</label>
               <select value={form.house} onChange={e => set('house', e.target.value)}
-                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
               </select>
             </div>
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">Audit Type</label>
               <select value={form.type} onChange={e => set('type', e.target.value as ComplianceAudit['type'])}
-                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
+                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner">
                 {AUDIT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
             </div>
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">Last Completed</label>
               <input value={form.lastCompleted} onChange={e => set('lastCompleted', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div>
               <label className="section-header mb-2 ml-1 block opacity-90">Next Due</label>
               <input value={form.dueDate} onChange={e => set('dueDate', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
               <label className="section-header mb-2 ml-1 block opacity-90">Completed By</label>
               <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Name"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner" />
             </div>
             <div className="col-span-2">
               <label className="section-header mb-2 ml-1 block opacity-90">Findings and Observations</label>
               <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Summary of findings..."
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
+                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
             </div>
           </div>
           <div className="flex gap-4 pt-2">
-            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Save Audit Result</button>
-            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-xl transition-all">Cancel</button>
+            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Save Audit Result</button>
+            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-hc-text py-4 rounded-xl transition-all">Cancel</button>
           </div>
         </div>
       </div>
@@ -246,7 +246,7 @@ export function CompliancePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Compliance & Quality</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight text-shimmer">Compliance & Quality</h1>
           <div className="flex items-center gap-3">
             <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Compliance Status</span>
             <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
@@ -256,12 +256,12 @@ export function CompliancePage() {
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setEditAudit(emptyAudit())}
-            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-blue/30 group shadow-xl">
+            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-blue/30 group shadow-xl">
             <svg className="w-4 h-4 text-hc-blue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             Log Audit
           </button>
           <button onClick={() => setEditStaff(emptyStaff())}
-            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
+            className="flex items-center gap-2.5 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Staff Member
           </button>
@@ -290,7 +290,7 @@ export function CompliancePage() {
         {(['overview', 'staff', 'audits'] as const).map(id => (
           <button key={id} onClick={() => setTab(id)}
             className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.25rem] transition-all duration-500 ease-out active:scale-95
-              ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+              ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-hc-text hover:bg-white/5'}`}>
             {id === 'overview' ? 'Overview' : id === 'staff' ? 'Staff Records' : 'Audit Logs'}
           </button>
         ))}
@@ -302,9 +302,9 @@ export function CompliancePage() {
           {staffList.length === 0 && audits.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 text-center glass border border-white/5 rounded-[2.5rem]">
               <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 group">
-                <svg className="w-10 h-10 text-hc-muted group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <svg className="w-10 h-10 text-hc-muted group-hover:text-hc-text transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Compliance Data</h2>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tighter mb-2">No Compliance Data</h2>
               <p className="text-sm text-hc-muted max-w-sm mb-10 font-medium leading-relaxed opacity-80">Add staff profiles and log audits to start tracking compliance.</p>
               <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">Add Staff Member</button>
             </div>
@@ -314,7 +314,7 @@ export function CompliancePage() {
             <div className="animate-in slide-in-from-left-4 duration-700">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-red glow-red animate-pulse" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Critical Overdue — {overdue.length} Items</h2>
+                <h2 className="text-lg font-black text-hc-text tracking-tight uppercase">Critical Overdue — {overdue.length} Items</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {overdue.map((item, i) => (
@@ -323,7 +323,7 @@ export function CompliancePage() {
                       <svg className="w-5 h-5 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-black text-white group-hover:text-flag-red transition-colors truncate tracking-tight">{item.label}</div>
+                      <div className="text-[14px] font-black text-hc-text group-hover:text-flag-red transition-colors truncate tracking-tight">{item.label}</div>
                       <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-60">{item.house} · <DaysChip dateStr={item.date} /></div>
                     </div>
                     <StatusBadge status="overdue" />
@@ -337,7 +337,7 @@ export function CompliancePage() {
             <div className="animate-in slide-in-from-left-4 duration-700 delay-150">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-amber glow-amber" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Upcoming Expiries — {dueSoon.length} Items</h2>
+                <h2 className="text-lg font-black text-hc-text tracking-tight uppercase">Upcoming Expiries — {dueSoon.length} Items</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {dueSoon.map((item, i) => (
@@ -346,7 +346,7 @@ export function CompliancePage() {
                       <svg className="w-4 h-4 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-12 0 9 9 0 0112 0z" /></svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-black text-white group-hover:text-flag-amber transition-colors truncate tracking-tight">{item.label}</div>
+                      <div className="text-[13px] font-black text-hc-text group-hover:text-flag-amber transition-colors truncate tracking-tight">{item.label}</div>
                       <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-0.5 opacity-60">{item.house} · <DaysChip dateStr={item.date} /></div>
                     </div>
                     <StatusBadge status="due_soon" />
@@ -360,7 +360,7 @@ export function CompliancePage() {
             <div className="animate-in slide-in-from-left-4 duration-700 delay-300">
               <div className="flex items-center gap-3 mb-5 px-2">
                 <div className="w-2 h-6 rounded-full bg-flag-green shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Compliant Status — {ok.length} Items</h2>
+                <h2 className="text-lg font-black text-hc-text tracking-tight uppercase">Compliant Status — {ok.length} Items</h2>
               </div>
               <div className="glass-light border border-white/5 rounded-[2rem] px-8 py-6 text-sm text-hc-muted font-medium flex items-center justify-between shadow-xl">
                 <div className="flex items-center gap-4">
@@ -368,7 +368,7 @@ export function CompliancePage() {
                     <svg className="w-6 h-6 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div>
-                    <span className="text-white font-black uppercase tracking-widest block mb-0.5">Service-Wide Compliance</span>
+                    <span className="text-hc-text font-black uppercase tracking-widest block mb-0.5">Service-Wide Compliance</span>
                     <span>All compliance checks are up to date across the service.</span>
                   </div>
                 </div>
@@ -386,7 +386,7 @@ export function CompliancePage() {
             <div className="flex items-center gap-4">
               <span className="section-header text-[10px] tracking-[0.2em]">Filter by House</span>
               <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
-                className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]">
+                className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]">
                 <option value="all">All Staff Members ({staffList.length})</option>
                 {HAZELCARE_HOUSES.map(h => {
                   const c = staffList.filter(s => s.house === h).length;
@@ -402,7 +402,7 @@ export function CompliancePage() {
           {filteredStaff.length === 0 ? (
             <div className="text-center py-32 glass border border-white/5 rounded-[2.5rem]">
               <div className="text-5xl mb-6 opacity-20 grayscale">👥</div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Profiles Found</h2>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tighter mb-2">No Profiles Found</h2>
               <p className="text-sm text-hc-muted max-w-sm mx-auto mb-10 font-medium leading-relaxed opacity-80">Adjust filter or add a new staff member.</p>
               <button onClick={() => setEditStaff(emptyStaff())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Add Staff Profile</button>
             </div>
@@ -425,7 +425,7 @@ export function CompliancePage() {
                           {s.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xl font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1.5">{s.name}</div>
+                          <div className="text-xl font-black text-hc-text group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1.5">{s.name}</div>
                           <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{s.role}</span>
                             <span className="w-1 h-1 rounded-full bg-white/10" />
@@ -459,13 +459,13 @@ export function CompliancePage() {
                       </div>
 
                       <div className="flex items-center gap-3 relative z-10 shrink-0 ml-auto">
-                        <button onClick={() => setEditStaff(s)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-white hover:bg-hc-teal/10 hover:border-hc-teal/30 transition-all shadow-lg group/btn">
+                        <button onClick={() => setEditStaff(s)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-hc-text hover:bg-hc-teal/10 hover:border-hc-teal/30 transition-all shadow-lg group/btn">
                           <svg className="w-4 h-4 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
                         {deleteConfirm === s.id ? (
                           <div className="flex gap-2 animate-in slide-in-from-right-4 duration-300">
                             <button onClick={() => deleteStaff(s.id)} className="px-4 py-2 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-flag-red/30 shadow-lg">DELETE</button>
-                            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 glass-light border border-white/10 text-hc-muted text-[10px] font-black uppercase tracking-widest rounded-xl hover:text-white">CANCEL</button>
+                            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 glass-light border border-white/10 text-hc-muted text-[10px] font-black uppercase tracking-widest rounded-xl hover:text-hc-text">CANCEL</button>
                           </div>
                         ) : (
                           <button onClick={() => setDeleteConfirm(s.id)} className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:bg-flag-red/5 hover:border-flag-red/30 transition-all shadow-lg group/btn">
@@ -490,7 +490,7 @@ export function CompliancePage() {
               <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 mx-auto">
                 <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
               </div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-2">No Audit Logs Yet</h2>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tighter mb-2">No Audit Logs Yet</h2>
               <p className="text-sm text-hc-muted max-w-md mx-auto mb-10 font-medium leading-relaxed opacity-80">Service audits for medication, fire safety, and environmental checks are pending initialization.</p>
               <button onClick={() => setEditAudit(emptyAudit())} className="btn-gradient px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all hover:scale-105">Add Audit Record</button>
             </div>
@@ -502,7 +502,7 @@ export function CompliancePage() {
                 return (
                   <div key={atype.id} className="animate-in slide-in-from-bottom-6 duration-700" style={{ animationDelay: `${groupIdx * 100}ms` }}>
                     <div className="flex items-center gap-4 mb-5 px-2">
-                      <h3 className="text-lg font-black uppercase tracking-tight text-white transition-all" style={{ color: atype.color }}>
+                      <h3 className="text-lg font-black uppercase tracking-tight text-hc-text transition-all" style={{ color: atype.color }}>
                         {atype.label} Records
                       </h3>
                       <span className="pill pill-teal text-[10px] font-black px-3">{typeAudits.length} Audits</span>
@@ -517,7 +517,7 @@ export function CompliancePage() {
                             ${s === 'overdue' ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : s === 'due_soon' ? 'border-flag-amber/25 bg-flag-amber/[0.01] glow-amber' : 'border-white/5 hover:border-white/10'}`}>
                             <div className="flex items-start justify-between mb-4">
                               <div>
-                                <div className="text-[15px] font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tight leading-none mb-1.5">{a.house}</div>
+                                <div className="text-[15px] font-black text-hc-text group-hover:text-hc-teal-light transition-colors tracking-tight leading-none mb-1.5">{a.house}</div>
                                 <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Service Audit</div>
                               </div>
                               <StatusBadge status={s} />
@@ -526,7 +526,7 @@ export function CompliancePage() {
                             <div className="flex flex-wrap items-center gap-6 mb-6 pb-5 border-b border-white/5">
                               <div className="flex flex-col gap-1">
                                 <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LAST COMPLETED</span>
-                                <span className="text-[11px] font-bold text-white/80 tabular-nums tracking-widest">{a.lastCompleted || 'PENDING'}</span>
+                                <span className="text-[11px] font-bold text-hc-text/80 tabular-nums tracking-widest">{a.lastCompleted || 'PENDING'}</span>
                               </div>
                               <div className="flex flex-col gap-1">
                                 <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">NEXT DUE</span>
@@ -568,7 +568,7 @@ export function CompliancePage() {
                         <svg className="w-8 h-8 text-flag-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Audit Gaps Identified</h3>
+                        <h3 className="text-xl font-black text-hc-text uppercase tracking-tighter mb-1">Audit Gaps Identified</h3>
                         <p className="text-sm text-flag-amber/70 font-medium leading-relaxed mb-4">The following houses have no documented audit activity. Quality assurance coverage is currently missing.</p>
                         <div className="flex flex-wrap gap-2">
                           {HAZELCARE_HOUSES.filter(h => !housesInAudits.includes(h)).map(h => (

@@ -29,7 +29,7 @@ export function RiskScoresPage({ weekData }: Props) {
         <div className="w-24 h-24 rounded-2xl glass border border-hc-teal/20 flex items-center justify-center mb-8 glow-teal animate-float">
           <svg className="w-12 h-12 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
         </div>
-        <h2 className="text-2xl font-bold text-white mb-3 text-gradient">Risk Scores</h2>
+        <h2 className="text-2xl font-bold text-hc-text mb-3 text-gradient">Risk Scores</h2>
         <p className="text-hc-muted text-sm mb-8 text-center max-w-xs leading-relaxed">Import care data to generate risk profiles and scores for each person.</p>
       </div>
     );
@@ -56,7 +56,7 @@ export function RiskScoresPage({ weekData }: Props) {
     <div className="p-6 lg:p-10 w-full max-w-[2560px] mx-auto animate-in fade-in duration-1000">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer uppercase leading-none">Risk Overview</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight text-shimmer uppercase leading-none">Risk Overview</h1>
           <div className="flex items-center gap-3">
             <span className="pill pill-amber text-xs font-black uppercase tracking-[0.08em] shadow-lg">Risk Levels</span>
             <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
@@ -77,7 +77,7 @@ export function RiskScoresPage({ weekData }: Props) {
               className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] transition-all duration-500 ease-out active:scale-90 ${
                 filterLevel === level
                   ? level === 'all' ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105' : `pill ${getRiskPill(level)} shadow-xl scale-105 z-10`
-                  : 'bg-white/5 text-hc-muted hover:text-white hover:bg-white/10'
+                  : 'bg-white/5 text-hc-muted hover:text-hc-text hover:bg-white/10'
               }`}
             >
               {level === 'all' ? 'All Houses' : level}
@@ -95,7 +95,7 @@ export function RiskScoresPage({ weekData }: Props) {
             placeholder="Search by name or house..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-12 py-3 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-12 py-3 text-sm text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
           />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -108,7 +108,7 @@ export function RiskScoresPage({ weekData }: Props) {
         {filteredProfiles.length === 0 ? (
           <div className="col-span-full text-center py-32 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
             <div className="text-5xl mb-6 opacity-20 grayscale">📡</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">No Strategic Matches</div>
+            <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">No Strategic Matches</div>
             <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Clear filters to restore visibility</div>
           </div>
         ) : (
@@ -126,7 +126,7 @@ export function RiskScoresPage({ weekData }: Props) {
                     {client.riskScore}
                   </div>
                   <div>
-                    <div className="text-lg font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter uppercase leading-none mb-1.5">{client.name}</div>
+                    <div className="text-lg font-black text-hc-text group-hover:text-hc-teal-light transition-colors tracking-tighter uppercase leading-none mb-1.5">{client.name}</div>
                     <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">{client.house}</div>
                   </div>
                 </div>
@@ -196,14 +196,14 @@ export function RiskScoresPage({ weekData }: Props) {
                   {selectedClient.riskScore}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-1">{selectedClient.name}</h3>
+                  <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase mb-1">{selectedClient.name}</h3>
                   <div className="flex items-center gap-3">
                     <span className={`pill text-[10px] font-black uppercase tracking-widest ${getRiskPill(selectedClient.riskLevel)}`}>{selectedClient.riskLevel} STRAT</span>
                     <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">{selectedClient.house}</span>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedClient(null)} className="w-10 h-10 rounded-2xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-all shadow-xl active:scale-90">
+              <button onClick={() => setSelectedClient(null)} className="w-10 h-10 rounded-2xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-hc-text transition-all shadow-xl active:scale-90">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -223,7 +223,7 @@ export function RiskScoresPage({ weekData }: Props) {
               <div className="flex justify-end pt-4">
                 <button
                   onClick={() => setSelectedClient(null)}
-                  className="px-8 py-3.5 glass-light border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-white hover:border-hc-teal/30 transition-all active:scale-95 shadow-xl"
+                  className="px-8 py-3.5 glass-light border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-hc-text hover:border-hc-teal/30 transition-all active:scale-95 shadow-xl"
                 >
                   Close Terminal
                 </button>

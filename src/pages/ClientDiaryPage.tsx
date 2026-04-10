@@ -118,7 +118,7 @@ function ClientStats({ entries }: { entries: CareEntry[] }) {
     <div className="space-y-6 mb-8">
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-light border border-white/5 rounded-xl p-4 transition-all hover:scale-[1.02] shadow-lg">
-          <div className="text-2xl font-black text-white mb-0.5">{total}</div>
+          <div className="text-2xl font-black text-hc-text mb-0.5">{total}</div>
           <div className="section-header text-[10px]">Total Entries</div>
         </div>
         <div className={`glass-light border border-flag-red/20 rounded-xl p-4 transition-all hover:scale-[1.02] shadow-lg ${red > 0 ? 'glow-red' : ''}`}>
@@ -145,7 +145,7 @@ function ClientStats({ entries }: { entries: CareEntry[] }) {
                 <div className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(20,184,166,0.2)]" 
                   style={{ width: `${(count / total) * 100}%`, background: `linear-gradient(90deg, ${typeColor(type)}99, ${typeColor(type)})` }} />
               </div>
-              <div className="text-xs font-black text-white w-8 text-right tabular-nums">{count}</div>
+              <div className="text-xs font-black text-hc-text w-8 text-right tabular-nums">{count}</div>
             </div>
           ))}
         </div>
@@ -288,7 +288,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
           <div className="text-[10px] font-black tracking-[0.3em] text-hc-teal uppercase">
             {pdfLoading ? 'Reading PDF…' : isDragging ? 'Drop it' : 'Client Diary'}
           </div>
-          <div className="text-white font-black text-xl tracking-tight">
+          <div className="text-hc-text font-black text-xl tracking-tight">
             {pdfLoading ? 'Parsing entries…' : 'Drop a diary PDF here'}
           </div>
           <div className="text-hc-muted text-xs max-w-xs leading-relaxed opacity-70">
@@ -300,7 +300,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
         </div>
         {pdfError && <div className="text-flag-red text-xs font-bold mt-2">{pdfError}</div>}
         <div className="h-px w-20 bg-white/5 my-5" />
-        <button onClick={() => setPage('upload')} className="text-[10px] text-hc-muted hover:text-white uppercase tracking-widest transition-colors">
+        <button onClick={() => setPage('upload')} className="text-[10px] text-hc-muted hover:text-hc-text uppercase tracking-widest transition-colors">
           Or sync from global import
         </button>
       </div>
@@ -322,7 +322,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             <svg className="w-16 h-16 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <div className="text-white font-black text-xl">Drop diary PDF</div>
+            <div className="text-hc-text font-black text-xl">Drop diary PDF</div>
           </div>
         </div>
       )}
@@ -347,7 +347,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search entries…"
-              className="w-full bg-hc-dark/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-hc-teal/50 focus:bg-hc-dark transition-all placeholder-hc-muted/50 shadow-inner"
+              className="w-full bg-hc-dark/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-hc-text focus:outline-none focus:border-hc-teal/50 focus:bg-hc-dark transition-all placeholder-hc-muted/50 shadow-inner"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
               <svg className="w-3.5 h-3.5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -366,7 +366,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                 className={`w-full text-left px-4 py-4 border-b border-white/5 transition-all duration-500 group active:scale-95
                   ${isSelected ? 'bg-hc-teal/10 accent-bar z-10' : 'hover:bg-white/5'}`}>
                 <div className="flex items-start justify-between gap-3 mb-2 relative z-10 transition-transform duration-500 group-hover:translate-x-1">
-                  <span className={`text-[14px] font-black tracking-tight leading-tight transition-colors group-hover:text-white
+                  <span className={`text-[14px] font-black tracking-tight leading-tight transition-colors group-hover:text-hc-text
                     ${isSelected ? 'text-hc-teal-light' : 'text-hc-text'}`}>
                     {name}
                   </span>
@@ -399,7 +399,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             <div className="w-24 h-24 rounded-3xl glass border border-white/10 flex items-center justify-center mb-8 glow-blue opacity-20 group">
               <span className="text-5xl grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110 group-hover:rotate-3">👤</span>
             </div>
-            <p className="text-white font-black tracking-[0.3em] uppercase text-xs opacity-40">Select a house to view notes</p>
+            <p className="text-hc-text font-black tracking-[0.3em] uppercase text-xs opacity-40">Select a house to view notes</p>
             <div className="h-px w-12 bg-white/10 my-4" />
             <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[0.4em] opacity-30">{allClients.length} people found</p>
           </div>
@@ -408,7 +408,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
             {/* Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter uppercase text-shimmer">{selectedClient}</h2>
+                <h2 className="text-xl md:text-2xl font-black text-hc-text mb-1 tracking-tighter uppercase text-shimmer">{selectedClient}</h2>
                 <div className="flex items-center gap-3">
                   <span className="pill pill-teal text-[10px] uppercase tracking-[0.2em] font-black shadow-xl">Care Entries</span>
                   {weekData && (
@@ -437,14 +437,14 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
               <div className="flex items-center gap-3">
                 <span className="section-header text-[9px] tracking-[0.3em] opacity-60">Filter:</span>
                 <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
                   <option value="">All Types</option>
                   {allTypes.map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
                 <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}
-                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
                   <option value="">All Types</option>
                   <option value="red">🔴 Red Flags Only</option>
                   <option value="amber">🟡 Amber Alerts</option>
@@ -456,7 +456,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
               
               {(typeFilter || severityFilter) && (
                 <button onClick={() => { setTypeFilter(''); setSeverityFilter(''); }}
-                  className="text-[9px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-white transition-colors underline decoration-white/10 underline-offset-8">
+                  className="text-[9px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-text transition-colors underline decoration-white/10 underline-offset-8">
                   Clear Filter
                 </button>
               )}
@@ -471,7 +471,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
               {selectedEntries.length === 0 ? (
                 <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
                   <div className="text-4xl mb-4 opacity-20 grayscale">🔍</div>
-                  <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Zero Intercepts</div>
+                  <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">Zero Intercepts</div>
                   <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Adjust sensor parameters to restore stream visibility</div>
                 </div>
               ) : selectedEntries.map((entry, idx) => (
@@ -505,7 +505,7 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                           )}
                         </div>
                       </div>
-                      <p className="text-[15px] text-hc-text font-medium leading-relaxed whitespace-pre-wrap italic group-hover/entry:text-white transition-colors opacity-90 group-hover:opacity-100 px-1">"{entry.entry}"</p>
+                      <p className="text-[15px] text-hc-text font-medium leading-relaxed whitespace-pre-wrap italic group-hover/entry:text-hc-text transition-colors opacity-90 group-hover:opacity-100 px-1">"{entry.entry}"</p>
                       {entry.flags.length > 0 && (
                         <div className="flex flex-wrap gap-2.5 mt-6">
                           {entry.flags.map((f, i) => (

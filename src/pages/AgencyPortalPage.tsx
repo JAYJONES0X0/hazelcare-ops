@@ -135,7 +135,7 @@ function WorkerPipeline({ status }: { status: WorkerStatus }) {
           <div key={step.key} className="flex-1 flex items-center gap-2">
             <div className="flex flex-col items-center gap-1.5 flex-1">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all duration-500
-                ${done ? 'bg-hc-teal border-hc-teal text-white shadow-lg' : current ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light shadow-lg animate-pulse' : 'bg-white/5 border-white/10 text-hc-muted opacity-40'}`}>
+                ${done ? 'bg-hc-teal border-hc-teal text-hc-text shadow-lg' : current ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light shadow-lg animate-pulse' : 'bg-white/5 border-white/10 text-hc-muted opacity-40'}`}>
                 {done ? '✓' : i + 1}
               </div>
               <span className={`text-[8px] font-black uppercase tracking-widest ${current ? 'text-hc-teal-light' : done ? 'text-hc-text/60' : 'text-hc-muted/40'}`}>{step.label}</span>
@@ -186,7 +186,7 @@ function ShiftBoard() {
         {(['all', 'open', 'submitted', 'confirmed'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] transition-all duration-500 ease-out active:scale-90
-              ${filter === f ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+              ${filter === f ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-hc-text hover:bg-white/5'}`}>
             {f === 'all' ? 'Entire Feed' : f}
           </button>
         ))}
@@ -204,7 +204,7 @@ function ShiftBoard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-4 flex-wrap mb-4 transition-transform duration-500 group-hover/shift:translate-x-1">
-                  <span className="text-xl font-black text-white group-hover/shift:text-hc-teal-light transition-colors tracking-tighter uppercase">{shift.house}</span>
+                  <span className="text-xl font-black text-hc-text group-hover/shift:text-hc-teal-light transition-colors tracking-tighter uppercase">{shift.house}</span>
                   <UrgencyBadge urgency={shift.urgency} />
                   <StatusBadge status={shift.status} />
                 </div>
@@ -221,7 +221,7 @@ function ShiftBoard() {
                 )}
               </div>
               <div className="text-right shrink-0 flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 md:pl-10 md:border-l md:border-white/5 relative">
-                <div className="text-4xl font-black text-white tabular-nums tracking-tighter shadow-2xl group-hover/shift:scale-110 transition-transform duration-700">{shift.hours}H</div>
+                <div className="text-4xl font-black text-hc-text tabular-nums tracking-tighter shadow-2xl group-hover/shift:scale-110 transition-transform duration-700">{shift.hours}H</div>
                 <div className="pill pill-teal text-[9px] font-black uppercase tracking-[0.3em] py-1 px-3 shadow-lg opacity-40 group-hover/shift:opacity-100 transition-all">TRANSMISSION LOAD</div>
               </div>
             </div>
@@ -248,14 +248,14 @@ function ShiftBoard() {
                           <input placeholder={f.placeholder}
                             value={(submitWorker as Record<string, string>)[f.key]}
                             onChange={e => setSubmitWorker(w => ({ ...w, [f.key]: e.target.value }))}
-                            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+                            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-hc-text placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
                         </div>
                       ))}
                     </div>
                     <div className="flex justify-end gap-4">
-                      <button onClick={() => setSelectedShift(null)} className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white transition-all">Cancel</button>
+                      <button onClick={() => setSelectedShift(null)} className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-hc-text transition-all">Cancel</button>
                       <button onClick={() => setSubmitted(true)}
-                        className="px-10 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-105 transition-all">
+                        className="px-10 py-3 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-105 transition-all">
                         Submit Worker Details →
                       </button>
                     </div>
@@ -266,9 +266,9 @@ function ShiftBoard() {
                     <div className="w-16 h-16 rounded-2xl bg-flag-green/10 border border-flag-green/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-flag-green/10">
                       <svg className="w-8 h-8 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <div className="text-lg font-black text-white uppercase tracking-tight mb-2">Request Sent</div>
+                    <div className="text-lg font-black text-hc-text uppercase tracking-tight mb-2">Request Sent</div>
                     <p className="text-sm text-hc-muted font-medium max-w-sm mx-auto mb-6">Hazel Care will check the worker's details and respond within 2 hours.</p>
-                    <button onClick={() => { setSubmitted(false); setSelectedShift(null); }} className="text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all underline decoration-hc-teal/30 underline-offset-8 decoration-2">Back to Shifts</button>
+                    <button onClick={() => { setSubmitted(false); setSelectedShift(null); }} className="text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] hover:text-hc-text transition-all underline decoration-hc-teal/30 underline-offset-8 decoration-2">Back to Shifts</button>
                   </div>
                 )}
               </div>
@@ -312,7 +312,7 @@ function WorkerPipelinePage() {
                       {w.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div className="text-lg font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1">{w.name}</div>
+                      <div className="text-lg font-black text-hc-text group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1">{w.name}</div>
                       <div className="flex items-center gap-2">
                         <StatusBadge status={w.status} />
                         <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">via {w.agency} Hub</span>
@@ -321,8 +321,8 @@ function WorkerPipelinePage() {
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4 text-hc-muted text-[10px] font-bold uppercase tracking-widest px-2">
-                    <div className="flex items-center gap-2">Role title: <span className="text-white/80">{w.role}</span></div>
-                    <div className="flex items-center gap-2">Phone: <span className="text-white/80 tabular-nums">{w.phone}</span></div>
+                    <div className="flex items-center gap-2">Role title: <span className="text-hc-text/80">{w.role}</span></div>
+                    <div className="flex items-center gap-2">Phone: <span className="text-hc-text/80 tabular-nums">{w.phone}</span></div>
                     {shift && (
                       <div className="flex items-center gap-2 text-hc-teal-light">
                         Assigned To: <span className="font-black underline decoration-hc-teal/30">{shift.house} — {shift.date}</span>
@@ -337,7 +337,7 @@ function WorkerPipelinePage() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">TRAINING AUDIT</span>
-                      <span className="text-[10px] font-black text-white/80 tabular-nums uppercase tracking-widest">VALID UNTIL {w.trainingExpiry}</span>
+                      <span className="text-[10px] font-black text-hc-text/80 tabular-nums uppercase tracking-widest">VALID UNTIL {w.trainingExpiry}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-50">LEGAL RTW STATUS</span>
@@ -351,7 +351,7 @@ function WorkerPipelinePage() {
                         <svg className="w-6 h-6 text-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                       </div>
                       <div>
-                        <div className="text-[11px] font-black text-white uppercase tracking-[0.1em] mb-1">Booking Blocked</div>
+                        <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.1em] mb-1">Booking Blocked</div>
                         <p className="text-xs font-medium text-flag-red/80 leading-relaxed italic">"This worker's DBS has expired. Please provide an updated DBS certificate before booking."</p>
                       </div>
                     </div>
@@ -374,7 +374,7 @@ function AgencyDirectory() {
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex items-center justify-between px-2">
         <div className="section-header text-[9px] tracking-[0.3em] opacity-60 uppercase">{AGENCIES.length} REGISTERED HUB NODES · RANKED BY VECTOR PERFORMANCE</div>
-        <button className="flex items-center gap-2 px-5 py-2 glass-light border border-hc-teal/20 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-white hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
+        <button className="flex items-center gap-2 px-5 py-2 glass-light border border-hc-teal/20 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-hc-text hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -392,7 +392,7 @@ function AgencyDirectory() {
                     {i + 1}
                   </div>
                   <div>
-                    <div className="text-xl font-black text-white group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1">{agency.name}</div>
+                    <div className="text-xl font-black text-hc-text group-hover:text-hc-teal-light transition-colors tracking-tighter leading-none mb-1">{agency.name}</div>
                     <div className="flex items-center gap-3">
                       <TierBadge tier={agency.tier} />
                       {agency.activeWorkers > 0 && (
@@ -402,9 +402,9 @@ function AgencyDirectory() {
                   </div>
                 </div>
                 <div className="text-hc-muted text-[10px] font-bold uppercase tracking-widest mt-4 flex flex-wrap gap-x-6 gap-y-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                  <div className="flex items-center gap-2">Link: <span className="text-white/80">{agency.contact}</span></div>
-                  <div className="flex items-center gap-2">Stream: <span className="text-white/80 lowercase">{agency.email}</span></div>
-                  <div className="flex items-center gap-2">Phone: <span className="text-white/80 tabular-nums">{agency.phone}</span></div>
+                  <div className="flex items-center gap-2">Link: <span className="text-hc-text/80">{agency.contact}</span></div>
+                  <div className="flex items-center gap-2">Stream: <span className="text-hc-text/80 lowercase">{agency.email}</span></div>
+                  <div className="flex items-center gap-2">Phone: <span className="text-hc-text/80 tabular-nums">{agency.phone}</span></div>
                 </div>
               </div>
 
@@ -414,7 +414,7 @@ function AgencyDirectory() {
                   <div className="section-header text-[8px] opacity-50 tracking-[0.2em]">FILL RATE</div>
                 </div>
                 <div className="group/stat">
-                  <div className="text-2xl font-black text-white/80 tabular-nums tracking-tighter transition-transform group-hover/stat:scale-110">{agency.responseTime}</div>
+                  <div className="text-2xl font-black text-hc-text/80 tabular-nums tracking-tighter transition-transform group-hover/stat:scale-110">{agency.responseTime}</div>
                   <div className="section-header text-[8px] opacity-50 tracking-[0.2em]">LATENCY</div>
                 </div>
                 <div className="group/stat">
@@ -440,9 +440,9 @@ function AgencyDirectory() {
                   ))}
                 </div>
                 <div className="flex flex-col md:flex-row gap-3">
-                  <button className="flex-1 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">Send Booking Request</button>
-                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">View History</button>
-                  <button className="px-8 glass-light border border-white/10 text-white/60 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Contact Agency</button>
+                  <button className="flex-1 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">Send Booking Request</button>
+                  <button className="px-8 glass-light border border-white/10 text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">View History</button>
+                  <button className="px-8 glass-light border border-white/10 text-hc-text/60 hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">Contact Agency</button>
                 </div>
               </div>
             )}
@@ -484,7 +484,7 @@ function RateCards() {
               {RATE_CARDS.map((r, idx) => (
                 <tr key={r.role} className={`group hover:bg-white/[0.03] transition-colors border-b border-white/5 ${idx === RATE_CARDS.length - 1 ? 'border-none' : ''}`}>
                   <td className="px-8 py-6">
-                    <div className="text-sm font-black text-white group-hover:text-hc-teal-light transition-colors uppercase tracking-tight">{r.role}</div>
+                    <div className="text-sm font-black text-hc-text group-hover:text-hc-teal-light transition-colors uppercase tracking-tight">{r.role}</div>
                     <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest mt-1 opacity-40">Cover Level</div>
                   </td>
                   <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted/60 uppercase tracking-widest italic">TBC</td>
@@ -549,7 +549,7 @@ export function AgencyPortalPage() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter text-shimmer">Agency Staff</h1>
+            <h1 className="text-xl md:text-2xl font-black text-hc-text tracking-tighter text-shimmer">Agency Staff</h1>
             {criticalShifts > 0 && (
               <span className="pill pill-red animate-pulse-soft text-xs font-black uppercase tracking-[0.08em] shadow-xl shadow-red-950/20 px-4">
                 {criticalShifts} Critical Gaps
@@ -580,11 +580,11 @@ export function AgencyPortalPage() {
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center justify-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500
-              ${tab === t.id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
+              ${tab === t.id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg' : 'text-hc-muted hover:text-hc-text hover:bg-white/5'}`}>
             {t.label}
             {t.badge !== undefined && t.badge > 0 && (
               <span className={`rounded-lg px-2 py-0.5 text-[9px] font-black shadow-inner
-                ${tab === t.id ? 'bg-hc-teal text-white' : 'bg-white/5 text-hc-muted'}`}>{t.badge}</span>
+                ${tab === t.id ? 'bg-hc-teal text-hc-text' : 'bg-white/5 text-hc-muted'}`}>{t.badge}</span>
             )}
           </button>
         ))}

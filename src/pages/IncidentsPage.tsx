@@ -51,7 +51,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
     <div className="p-6 lg:p-8 max-w-[2560px] mx-auto animate-in fade-in duration-700">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
           <div className="flex items-center gap-3">
             <span className="pill pill-red text-xs uppercase tracking-[0.08em] font-bold shadow-lg animate-pulse-soft">
               {totalActive} Active Incidents
@@ -89,8 +89,8 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
           return (
             <div key={stage.id} className="relative group cursor-default">
               <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-xs font-black uppercase tracking-[0.08em] transition-colors group-hover:text-white" style={{ color: stage.color }}>{stage.label}</span>
-                <span className="text-[10px] font-bold text-white/40 group-hover:text-white transition-colors">{count}</span>
+                <span className="text-xs font-black uppercase tracking-[0.08em] transition-colors group-hover:text-hc-text" style={{ color: stage.color }}>{stage.label}</span>
+                <span className="text-[10px] font-bold text-hc-text/40 group-hover:text-hc-text transition-colors">{count}</span>
               </div>
               <div className="h-2 rounded-full bg-hc-dark/60 overflow-hidden shadow-inner border border-white/5">
                 <div className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(255,255,255,0.1)]" 
@@ -113,7 +113,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">{stage.icon}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{stage.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-hc-text/80">{stage.label}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="pill pill-teal text-[9px] px-1.5 py-0 shadow-sm">{stage.items.length}</span>
@@ -129,7 +129,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     ${incident.severity === 'red' ? 'border-flag-red/30 glow-red shadow-flag-red/5 bg-flag-red/[0.02]' : 'border-flag-amber/20 bg-flag-amber/[0.01]'}`}
                 >
                   <div className="flex items-start justify-between gap-4 mb-3 relative z-10">
-                    <span className="text-[13px] font-black text-white leading-tight group-hover/card:text-hc-teal-light transition-colors tracking-tight uppercase">{incident.title}</span>
+                    <span className="text-[13px] font-black text-hc-text leading-tight group-hover/card:text-hc-teal-light transition-colors tracking-tight uppercase">{incident.title}</span>
                     {incident.severity === 'red' ? (
                       <div className="w-2.5 h-2.5 rounded-full bg-flag-red shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse shrink-0 mt-1" />
                     ) : (

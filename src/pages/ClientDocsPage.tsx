@@ -164,12 +164,12 @@ export function ClientDocsPage() {
     return (
       <div className="p-6 lg:p-10 max-w-6xl mx-auto animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
-          className="group flex items-center gap-2 text-hc-muted hover:text-white text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
+          className="group flex items-center gap-2 text-hc-muted hover:text-hc-text text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
           <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
           Back
         </button>
 
-        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Import Data</h1>
+        <h1 className="text-3xl font-extrabold text-hc-text mb-2 tracking-tight text-shimmer">Import Data</h1>
         <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium opacity-80 leading-relaxed">
           Upload person-centred "Emergency Admission Pack" PDF. The system will map all 21 premium domains of care and build a support plan automatically.
         </p>
@@ -178,7 +178,7 @@ export function ClientDocsPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isExtracting}
-            className="flex-1 flex items-center justify-center gap-3 btn-gradient disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:scale-[1.02]"
+            className="flex-1 flex items-center justify-center gap-3 btn-gradient disabled:opacity-50 text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:scale-[1.02]"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
             {isExtracting ? 'Processing...' : 'Upload Care Plan PDF'}
@@ -242,15 +242,15 @@ export function ClientDocsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Designation</div>
-                  <div className="text-sm font-black text-white truncate">{importPreview.name}</div>
+                  <div className="text-sm font-black text-hc-text truncate">{importPreview.name}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Temporal ID</div>
-                  <div className="text-sm font-black text-white tabular-nums">{importPreview.dob}</div>
+                  <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Net ID</div>
-                  <div className="text-sm font-black text-white tabular-nums">{importPreview.nhs}</div>
+                  <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.nhs}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
                   <div className="section-header text-xs opacity-90 mb-1">Domains</div>
@@ -259,11 +259,11 @@ export function ClientDocsPage() {
               </div>
               <div className="flex gap-4">
                 <button onClick={handleImport}
-                  className="flex-1 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">
+                  className="flex-1 btn-gradient text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">
                   Confirm & Sync Profile
                 </button>
                 <button onClick={() => setImportPreview(null)}
-                  className="px-8 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
+                  className="px-8 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
                   Cancel
                 </button>
               </div>
@@ -274,7 +274,7 @@ export function ClientDocsPage() {
         {!importPreview && (
           <div className="flex flex-col md:flex-row items-center gap-6">
             <button onClick={handlePreview} disabled={!importText.trim()}
-              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all">
+              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-hc-text text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all">
               Initiate Preview
             </button>
             {!importTarget && (
@@ -283,7 +283,7 @@ export function ClientDocsPage() {
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
-                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
                   <option value="">Add New Person</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -308,7 +308,7 @@ export function ClientDocsPage() {
       {/* Page header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">People & Support Plans</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight text-shimmer">People & Support Plans</h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className="pill pill-blue text-xs font-black uppercase tracking-wide">{clients.length} People</span>
             <span className="pill pill-teal text-xs font-black uppercase tracking-wide">{pbsCount} PBS Profiles</span>
@@ -320,21 +320,21 @@ export function ClientDocsPage() {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text"
             title="Default export orientation"
           >
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
           </select>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
+            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
             <svg className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             Import
           </button>
           <button onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
+            className="flex items-center gap-2.5 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -351,7 +351,7 @@ export function ClientDocsPage() {
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
             placeholder="Search people…"
-            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-10 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
+            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-10 py-3 text-sm text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
           />
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
             <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -363,7 +363,7 @@ export function ClientDocsPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
+          <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
           <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">{filterText ? 'Try a different search' : 'Click "Add Person" to get started'}</div>
         </div>
       ) : (
@@ -401,7 +401,7 @@ export function ClientDocsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <h2 className="text-2xl font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{client.name}</h2>
+                        <h2 className="text-2xl font-black text-hc-text tracking-tight group-hover:text-hc-teal-light transition-colors">{client.name}</h2>
                         {topRisk > 0 && (
                           <span className="pill text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse-soft"
                             style={{ background: riskColor + '22', color: riskColor, border: `1px solid ${riskColor}44` }}>
@@ -413,13 +413,13 @@ export function ClientDocsPage() {
                         {client.dob && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">DOB:</span>
-                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.dob}</span>
+                            <span className="text-[11px] font-bold text-hc-text/70 tabular-nums">{client.dob}</span>
                           </div>
                         )}
                         {client.nhs && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">NHS:</span>
-                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.nhs}</span>
+                            <span className="text-[11px] font-bold text-hc-text/70 tabular-nums">{client.nhs}</span>
                           </div>
                         )}
                         <div className="h-3 w-px bg-white/10 hidden md:block" />
@@ -468,12 +468,12 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openPBS(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
                             {hasPBS ? 'Edit' : 'Create'}
                           </button>
                           {hasPBS && (
                             <button onClick={() => printDoc(client, 'pbs')}
-                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              className="text-[10px] font-black text-hc-text/40 hover:text-hc-text transition-colors p-1.5">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </button>
                           )}
@@ -489,12 +489,12 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openRisk(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
                             {hasRisk ? 'Edit' : 'Create'}
                           </button>
                           {hasRisk && (
                             <button onClick={() => printDoc(client, 'risk')}
-                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              className="text-[10px] font-black text-hc-text/40 hover:text-hc-text transition-colors p-1.5">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </button>
                           )}
@@ -510,13 +510,13 @@ export function ClientDocsPage() {
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openCarePlan(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-hc-text'}`}>
                             {hasCarePlan ? `Update (${cpFilled}/${cpDomains.length})` : 'Create'}
                           </button>
                           {hasCarePlan && (
                             <>
                               <button onClick={() => printDoc(client, 'careplan')}
-                                className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5" title="Print care plan">
+                                className="text-[10px] font-black text-hc-text/40 hover:text-hc-text transition-colors p-1.5" title="Print care plan">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                               </button>
                               <button onClick={() => printDoc(client, 'easyread')}
@@ -531,12 +531,12 @@ export function ClientDocsPage() {
 
                     <div className="flex items-center gap-4 ml-auto">
                       <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
-                        className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:text-white transition-colors">
+                        className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:text-hc-text transition-colors">
                         Re-Sync
                       </button>
                       <div className="h-4 w-px bg-white/10" />
                       <button onClick={() => handleDelete(client.id, client.name)}
-                        className="text-[10px] font-black text-white/20 hover:text-flag-red transition-colors uppercase tracking-widest">
+                        className="text-[10px] font-black text-hc-text/20 hover:text-flag-red transition-colors uppercase tracking-widest">
                         Delete
                       </button>
                     </div>
@@ -556,7 +556,7 @@ export function ClientDocsPage() {
                         );
                       })}
                       {cpDomains.length > 12 && (
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center">+{cpDomains.length - 12} more protocol areas</span>
+                        <span className="text-[9px] font-black text-hc-text/30 uppercase tracking-widest flex items-center">+{cpDomains.length - 12} more protocol areas</span>
                       )}
                     </div>
                   </div>
@@ -583,7 +583,7 @@ export function ClientDocsPage() {
           </div>
           <button 
             onClick={() => { if(confirm('Are you sure? This will delete every person and every document. This cannot be undone.')) purgeSystemData(); }}
-            className="px-10 py-4 bg-flag-red text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-3 shadow-xl shadow-red-900/20 active:scale-95"
+            className="px-10 py-4 bg-flag-red text-hc-text rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-3 shadow-xl shadow-red-900/20 active:scale-95"
           >
             <Trash2 className="w-4 h-4" />
             Clear All
@@ -598,7 +598,7 @@ export function ClientDocsPage() {
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
             
             <div className="relative z-10">
-              <h2 className="text-3xl font-black text-white mb-2 tracking-tighter text-shimmer">Add New Person</h2>
+              <h2 className="text-3xl font-black text-hc-text mb-2 tracking-tighter text-shimmer">Add New Person</h2>
               <p className="text-hc-muted text-sm mb-8 font-medium opacity-80 leading-relaxed">
                 Add a new person to the system. You will be taken to the PBS builder straight away.
               </p>
@@ -613,7 +613,7 @@ export function ClientDocsPage() {
                     onChange={e => setNewName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                     placeholder="e.g. Sarah Johnson"
-                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-lg font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
+                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-lg font-bold text-hc-text focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-hc-teal/10 flex items-center justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
                     <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
@@ -623,11 +623,11 @@ export function ClientDocsPage() {
               
               <div className="flex gap-4">
                 <button onClick={() => { setShowNewModal(false); setNewName(''); }}
-                  className="flex-1 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
+                  className="flex-1 glass-light border border-white/10 text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
                   Cancel
                 </button>
                 <button onClick={handleCreate} disabled={!newName.trim()}
-                  className="flex-[2] btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
+                  className="flex-[2] btn-gradient disabled:opacity-20 disabled:grayscale text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
                   Create
                 </button>
               </div>

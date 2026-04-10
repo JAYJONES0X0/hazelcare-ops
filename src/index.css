@@ -35,6 +35,18 @@
   color: #e2e8f0;
 }
 
+/* ── Light theme: flip hardcoded white text to dark in main content ── */
+main .text-white,
+main [class*="text-white"] {
+  color: #1e293b !important;
+}
+/* Keep white text on coloured/dark surfaces within main */
+main .btn-gradient .text-white,
+main .btn-gradient-accent .text-white,
+main [style*="background: rgb(13,148"] .text-white,
+main [style*="background:#0d"] .text-white,
+main [style*="background: #0"] .text-white { color: #ffffff !important; }
+
 * { box-sizing: border-box; }
 
 body {

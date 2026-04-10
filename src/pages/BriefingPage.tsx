@@ -44,7 +44,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 animate-in fade-in duration-700">
         <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-3">Morning Briefing</div>
-        <h2 className="text-2xl font-black text-white mb-3 tracking-tighter">No data loaded</h2>
+        <h2 className="text-2xl font-black text-hc-text mb-3 tracking-tighter">No data loaded</h2>
         <p className="text-hc-muted text-sm mb-6 text-center max-w-sm">Sync this week's care records to generate your daily briefing.</p>
         <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl">Sync Records</button>
       </div>
@@ -90,9 +90,9 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
             <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">{dateStr}</span>
             <span className="pill pill-teal text-[10px] uppercase tracking-wider font-black">{shift} Update</span>
           </div>
-          <h1 className="text-xl font-black text-white tracking-tighter leading-tight mb-2">{greeting}, Service Team</h1>
+          <h1 className="text-xl font-black text-hc-text tracking-tighter leading-tight mb-2">{greeting}, Service Team</h1>
           <p className="text-hc-muted text-xs leading-relaxed">
-            <span className="text-white font-bold">{houseList.length} houses</span> · <span className="text-white font-bold">{weekData.totalEntries.toLocaleString()}</span> care entries this week · Service status{' '}
+            <span className="text-hc-text font-bold">{houseList.length} houses</span> · <span className="text-hc-text font-bold">{weekData.totalEntries.toLocaleString()}</span> care entries this week · Service status{' '}
             <span className="font-black" style={{color: scoreColor}}>{scoreLabel}</span>
           </p>
 
@@ -159,7 +159,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               <button type="button" onClick={() => toggleSection('interventions')} className="w-full flex items-center justify-between px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('interventions') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-flag-red animate-pulse" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Priority Interventions</span>
+                  <span className="text-xs font-black text-hc-text uppercase tracking-widest">Priority Interventions</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="pill pill-red text-[10px] font-black">{redFlags.length + overdueActions.length} urgent</span>
@@ -173,7 +173,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                     <div className="w-1.5 h-1.5 rounded-full bg-flag-red mt-1.5 shrink-0 animate-pulse" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] font-black text-white uppercase tracking-wide">{flag.house}</span>
+                        <span className="text-[11px] font-black text-hc-text uppercase tracking-wide">{flag.house}</span>
                         {flag.client && <span className="text-[10px] text-hc-teal-light font-semibold">{flag.client}</span>}
                       </div>
                       <p className="text-[11px] text-hc-muted leading-relaxed line-clamp-2">"{flag.entry.slice(0, 120)}"</p>
@@ -203,7 +203,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               <button type="button" onClick={() => toggleSection('clients')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('clients') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.5)'}} />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Client Support Focus</span>
+                  <span className="text-xs font-black text-hc-text uppercase tracking-widest">Client Support Focus</span>
                   <span className="text-[10px] text-hc-muted opacity-50">{priorityClients.length}</span>
                 </div>
                 <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('clients') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -217,7 +217,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                       {c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-white truncate">{c.name}</div>
+                      <div className="text-xs font-bold text-hc-text truncate">{c.name}</div>
                       <div className="text-[10px] text-hc-muted opacity-60 truncate">{c.house}</div>
                     </div>
                     <div className="flex gap-1.5 shrink-0">
@@ -237,7 +237,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               <button type="button" onClick={() => toggleSection('trends')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('trends') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 rounded-full bg-hc-purple" />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Care Patterns</span>
+                  <span className="text-xs font-black text-hc-text uppercase tracking-widest">Care Patterns</span>
                   <span className="text-[10px] text-hc-muted opacity-50">{trends.length}</span>
                 </div>
                 <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('trends') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -247,7 +247,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                   <div key={trend.id} className="px-4 py-2.5 flex items-start gap-3">
                     <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${trend.severity === 'critical' ? 'bg-flag-red' : trend.severity === 'warning' ? 'bg-flag-amber' : 'bg-hc-blue'}`} />
                     <div>
-                      <div className="text-xs font-bold text-white">{trend.title}
+                      <div className="text-xs font-bold text-hc-text">{trend.title}
                         {trend.metric && <span className="ml-2 text-[10px] font-black text-hc-muted opacity-60">{trend.metric}</span>}
                       </div>
                       <p className="text-[11px] text-hc-muted leading-relaxed opacity-70 mt-0.5">{trend.detail}</p>
@@ -268,7 +268,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
             <button type="button" onClick={() => toggleSection('houses')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('houses') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.5)'}} />
-                <span className="text-xs font-black text-white uppercase tracking-widest">House Overview</span>
+                <span className="text-xs font-black text-hc-text uppercase tracking-widest">House Overview</span>
                 <span className="text-[10px] text-hc-muted opacity-50">{houseList.length}</span>
               </div>
               <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('houses') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
@@ -287,7 +287,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
                     }}>
                     <div className="flex items-center gap-1.5 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: statusColor}} />
-                      <span className="text-[11px] font-bold text-white truncate">{house.name.replace(' House','')}</span>
+                      <span className="text-[11px] font-bold text-hc-text truncate">{house.name.replace(' House','')}</span>
                     </div>
                     <div className="text-[10px] text-hc-muted opacity-50">{house.entries.length} entries</div>
                     {(house.flags.red > 0 || house.flags.amber > 0) && (
@@ -325,7 +325,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               { id: 'client-docs', label: 'People & Plans', primary: false },
             ].map(nav => (
               <button key={nav.id} onClick={() => setPage(nav.id as Page)}
-                className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${nav.primary ? 'btn-gradient text-white' : 'text-hc-muted hover:text-white'}`}
+                className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${nav.primary ? 'btn-gradient text-hc-text' : 'text-hc-muted hover:text-hc-text'}`}
                 style={!nav.primary ? {background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)'} : {}}>
                 {nav.label}
               </button>

@@ -37,7 +37,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
 
           <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-3">Service Hub</div>
-          <h2 className="text-4xl font-black text-white mb-4 tracking-tighter text-center">No data loaded</h2>
+          <h2 className="text-4xl font-black text-hc-text mb-4 tracking-tighter text-center">No data loaded</h2>
           <p className="text-hc-muted text-base mb-10 text-center max-w-sm leading-relaxed">Sync this week's care records to see your full service overview — house statuses, flags, incidents, and team data.</p>
 
           <button onClick={() => setPage('upload')} className="btn-gradient px-10 py-4 rounded-2xl shadow-2xl text-sm font-black uppercase tracking-[0.08em] hover:scale-105 active:scale-95 transition-all">
@@ -53,7 +53,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             ].map(f => (
               <div key={f.label} className="glass-light border border-white/8 rounded-2xl p-4 text-center">
                 <div className="w-2 h-2 rounded-full mx-auto mb-2" style={{ background: f.color }} />
-                <div className="text-xs font-black text-white mb-1">{f.label}</div>
+                <div className="text-xs font-black text-hc-text mb-1">{f.label}</div>
                 <div className="text-[10px] text-hc-muted leading-relaxed opacity-70">{f.desc}</div>
               </div>
             ))}
@@ -70,10 +70,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <p className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-1">Hazel Care</p>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter">Service Hub</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-hc-text tracking-tighter">Service Hub</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setPage('briefing')} className="cursor-pointer px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] text-hc-muted border border-white/[0.08] hover:border-white/20 hover:text-white transition-all duration-200 backdrop-blur-xl" style={{background:'rgba(14,16,22,0.7)'}}>Morning Briefing</button>
+          <button onClick={() => setPage('briefing')} className="cursor-pointer px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] text-hc-muted border border-white/[0.08] hover:border-white/20 hover:text-hc-text transition-all duration-200 backdrop-blur-xl" style={{background:'rgba(14,16,22,0.7)'}}>Morning Briefing</button>
           <button onClick={() => setPage('staff-monitoring')} className="cursor-pointer px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] text-hc-teal-light border border-hc-teal/20 hover:border-hc-teal/40 hover:bg-hc-teal/5 transition-all duration-200 backdrop-blur-xl" style={{background:'rgba(14,16,22,0.7)'}}>Staff Intelligence</button>
           <button onClick={() => setPage('upload')} className="cursor-pointer btn-gradient px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] shadow-lg hover:scale-105 active:scale-95 transition-all duration-200">Sync Data</button>
         </div>
@@ -110,7 +110,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-1 h-5 rounded-full bg-hc-teal" style={{boxShadow:'0 0 12px rgba(20,184,166,0.6)'}} />
-          <h2 className="text-sm font-black text-white tracking-widest uppercase">House Status</h2>
+          <h2 className="text-sm font-black text-hc-text tracking-widest uppercase">House Status</h2>
           <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-50">{houseList.length} locations</span>
           <button
             type="button"
@@ -161,7 +161,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                   onClick={() => toggleHouse(house.name)}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-black text-white tracking-tight group-hover/house:text-hc-teal-light transition-colors duration-200">{house.name}</div>
+                    <div className="text-sm font-black text-hc-text tracking-tight group-hover/house:text-hc-teal-light transition-colors duration-200">{house.name}</div>
                     {house.coordinator && !collapsed && <div className="text-[10px] text-hc-muted mt-0.5 font-medium opacity-50 uppercase tracking-wide">{house.coordinator}</div>}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -244,7 +244,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                 style={{background:'rgba(20,184,166,0.08)', border:'1px solid rgba(20,184,166,0.15)'}}>
                 <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={btn.icon} /></svg>
               </div>
-              <div className="text-sm font-black text-white uppercase tracking-tight mb-1 group-hover/btn:text-hc-teal-light transition-colors duration-200">{btn.label}</div>
+              <div className="text-sm font-black text-hc-text uppercase tracking-tight mb-1 group-hover/btn:text-hc-teal-light transition-colors duration-200">{btn.label}</div>
               <div className="text-[10px] font-semibold text-hc-muted uppercase tracking-widest opacity-50 flex items-center justify-between">
                 {btn.desc}
                 <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
