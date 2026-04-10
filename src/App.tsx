@@ -343,8 +343,7 @@ export default function App() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [staffScopedAuthed, setStaffScopedAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
-  const theme = 'dark' as const;
-  const setTheme = (_t: 'dark' | 'light') => { /* dark-only, no-op */ };
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const uiScale = 1;
   const [staffMode, setStaffMode] = useState<Page | null>(null);
   const [staffLinkActive, setStaffLinkActive] = useState(false);

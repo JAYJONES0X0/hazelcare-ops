@@ -139,11 +139,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                 className="group/house relative rounded-2xl overflow-hidden transition-all duration-300"
                 style={{
                   background: hasRed
-                    ? 'linear-gradient(145deg, rgba(20,10,10,0.92), rgba(12,8,8,0.88))'
+                    ? 'linear-gradient(145deg, rgba(30,10,10,0.48), rgba(16,6,6,0.40))'
                     : hasAmber
-                    ? 'linear-gradient(145deg, rgba(20,16,8,0.92), rgba(12,10,6,0.88))'
-                    : 'linear-gradient(145deg, rgba(16,18,26,0.9), rgba(10,12,18,0.85))',
-                  backdropFilter: 'blur(28px)',
+                    ? 'linear-gradient(145deg, rgba(28,18,6,0.48), rgba(16,10,4,0.40))'
+                    : 'linear-gradient(145deg, rgba(12,16,24,0.52), rgba(8,11,18,0.46))',
+                  backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
+                  WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
                   border: `1px solid ${hasRed ? 'rgba(239,68,68,0.2)' : hasAmber ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.07)'}`,
                   boxShadow: hasRed
                     ? '0 8px 40px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.04)'
@@ -234,10 +235,11 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               onClick={() => setPage(btn.id as Page)}
               className="group/btn cursor-pointer text-left rounded-2xl p-5 transition-all duration-250 hover:-translate-y-0.5 active:scale-95"
               style={{
-                background: 'linear-gradient(145deg, rgba(16,18,26,0.9), rgba(10,12,18,0.85))',
-                backdropFilter: 'blur(28px)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                background: 'linear-gradient(145deg, rgba(12,16,24,0.52), rgba(8,11,18,0.46))',
+                backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
+                WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 0.5px rgba(255,255,255,0.04)',
               }}
               onMouseEnter={e => (e.currentTarget.style.border = '1px solid rgba(20,184,166,0.25)')}
               onMouseLeave={e => (e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)')}
