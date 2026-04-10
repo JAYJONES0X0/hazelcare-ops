@@ -47,17 +47,18 @@ const HOUSE_MAP: Record<string, string> = {
   'cottrell': 'Cottrell House',
   'old bakery': 'Flats (Old Bakery)',
   'management': 'Management',
-  'hazelcare': 'General',
+  'hazelcare': '',          // org-level umbrella — not a house
+  'supported living pc': '', // same
   'medical': 'Medical',
 };
 
 function normalizeHouse(raw: string): string {
-  if (!raw) return 'General';
+  if (!raw) return '';
   const lower = raw.toLowerCase().trim();
   for (const [key, value] of Object.entries(HOUSE_MAP)) {
-    if (lower.includes(key)) return value;
+    if (lower.includes(key)) return value; // empty string = org-level, not a real house
   }
-  return raw.trim() || 'General';
+  return raw.trim();
 }
 
 function isKnownHouse(raw: string): boolean {
@@ -134,9 +135,15 @@ function detectFlags(text: string): { severity: CareEntry['severity']; flags: st
 }
 
 function extractHouseFromCarers(carers: string): string {
-  const match = carers.match(/region:\s*([^,]+)/i);
-  if (match) return match[1].trim();
-  return 'General';
+  // Pull all "All carers in region: X" values
+  const all = [...carers.matchAll(/region:\s*([^,]+)/gi)].map(m => m[1].trim());
+  if (all.length === 0) return '';
+  // Prefer entries that are actual known houses (not org-level like "NC hazelcare")
+  const real = all.find(h => isKnownHouse(h));
+  if (real) return real;
+  // Fallback: first entry that doesn't look like an org umbrella
+  const nonOrg = all.find(h => !/hazelcare|nc hazel|supported living pc|head office/i.test(h));
+  return nonOrg || all[0];
 }
 
 function cleanCarerName(raw: string): string {
@@ -233,13 +240,14 @@ export function parseUniversalCSV(text: string): CareEntry[] {
     let house: string;
     let client: string;
     if (houseRaw) {
-      house = normalizeHouse(houseRaw);
+      house = normalizeHouse(houseRaw) || 'Unassigned';
       client = clientLooksLikeHouse ? '' : clientRaw;
     } else if (clientLooksLikeHouse) {
-      house = normalizeHouse(clientRaw);
+      house = normalizeHouse(clientRaw) || 'Unassigned';
       client = '';
     } else {
-      house = normalizeHouse(extractHouseFromCarers(carersRaw));
+      const fromCarers = normalizeHouse(extractHouseFromCarers(carersRaw));
+      house = fromCarers || 'Unassigned';
       client = clientRaw;
     }
 
@@ -353,7 +361,7 @@ export function buildWeekSummary(entries: CareEntry[]): WeekSummary {
       if (!clientDiary[entry.client]) clientDiary[entry.client] = [];
       clientDiary[entry.client].push(entry);
     }
-    const houseName = entry.house || 'General';
+    const houseName = entry.house || 'Unassigned';
     if (!houses[houseName]) {
       houses[houseName] = {
         name: houseName, coordinator: '', entries: [],
