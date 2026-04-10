@@ -2,61 +2,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── HAZELCARE OPS — LIGHT THEME ── */
-  --color-hc-navy: #f1f5f9;
-  --color-hc-navy-light: #f8fafc;
+  /* ── HAZELCARE OPS — DARK ONLY ── */
+  --color-hc-navy: #0e1117;
+  --color-hc-navy-light: #141821;
   --color-hc-teal: #0d9488;
-  --color-hc-teal-light: #0f766e;
-  --color-hc-teal-glow: #14b8a6;
-  --color-hc-dark: #1e293b;
-  --color-hc-darker: #0f172a;
-  --color-hc-card: #ffffff;
-  --color-hc-card-hover: #f8fafc;
-  --color-hc-border: #e2e8f0;
-  --color-hc-border-light: #f1f5f9;
-  --color-hc-text: #1e293b;
+  --color-hc-teal-light: #14b8a6;
+  --color-hc-teal-glow: #2dd4bf;
+  --color-hc-dark: #080b12;
+  --color-hc-darker: #050810;
+  --color-hc-card: #0d1118;
+  --color-hc-card-hover: #121720;
+  --color-hc-border: #1a2235;
+  --color-hc-border-light: #202c40;
+  --color-hc-text: #e8f0f7;
   --color-hc-muted: #64748b;
   --color-flag-red: #ef4444;
-  --color-flag-red-soft: rgba(239, 68, 68, 0.08);
+  --color-flag-red-soft: rgba(239, 68, 68, 0.12);
   --color-flag-amber: #f59e0b;
-  --color-flag-amber-soft: rgba(245, 158, 11, 0.08);
+  --color-flag-amber-soft: rgba(245, 158, 11, 0.12);
   --color-flag-green: #22c55e;
-  --color-flag-green-soft: rgba(34, 197, 94, 0.08);
+  --color-flag-green-soft: rgba(34, 197, 94, 0.12);
   --color-hc-blue: #3b82f6;
   --color-hc-purple: #8b5cf6;
   --color-hc-pink: #ec4899;
 }
 
-/* ── Sidebar stays dark — override variables in scope ── */
-.theme-dark {
-  --color-hc-text: #e2e8f0;
-  --color-hc-muted: #64748b;
-  --color-hc-teal-light: #14b8a6;
-  color: #e2e8f0;
-}
-
-/* ── Light theme: flip hardcoded white text to dark in main content ── */
-main .text-white,
-main [class*="text-white"] {
-  color: #1e293b !important;
-}
-/* Keep white text on coloured/dark surfaces within main */
-main .btn-gradient .text-white,
-main .btn-gradient-accent .text-white,
-main [style*="background: rgb(13,148"] .text-white,
-main [style*="background:#0d"] .text-white,
-main [style*="background: #0"] .text-white { color: #ffffff !important; }
-
 * { box-sizing: border-box; }
 
 body {
-  background:
-    radial-gradient(ellipse 80% 60% at 0% 0%,   rgba(13,148,136,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(139,92,246,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 0%,  rgba(236,72,153,0.07) 0%, transparent 55%),
-    #f1f5f9;
-  background-attachment: fixed;
-  color: #1e293b;
+  background: #070a11;
+  color: #e8f0f7;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
   font-size: 13px;
@@ -74,8 +49,8 @@ body {
 /* ─── SCROLL ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 20px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(13,148,136,0.4); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(20,184,166,0.3); }
 
 .scrollbar-thin {
   scrollbar-width: thin;
@@ -92,21 +67,21 @@ html { scroll-behavior: smooth; }
 /* Frosted glass — ambient orbs bleed through translucent surfaces */
 
 .glass {
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.07);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06);
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .glass-light {
-  background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(0,0,0,0.05);
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 .glass-teal {
-  background: linear-gradient(145deg, rgba(13,148,136,0.08), rgba(255,255,255,0.95));
-  border: 1px solid rgba(13,148,136,0.20);
-  box-shadow: 0 2px 16px rgba(13,148,136,0.08);
+  background: linear-gradient(145deg, rgba(13,148,136,0.10), #0f1520);
+  border: 1px solid rgba(20,184,166,0.18);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(20,184,166,0.08);
 }
 
 /* ─── CARD INTERACTIONS ─────────────────────────────────────── */
@@ -178,7 +153,7 @@ html { scroll-behavior: smooth; }
 
 /* ─── MESH BACKGROUND ───────────────────────────────────────── */
 .mesh-bg {
-  background: transparent;
+  background: #070a11;
 }
 .mesh-bg > * { position: relative; z-index: 1; }
 
@@ -233,20 +208,19 @@ html { scroll-behavior: smooth; }
 
 /* ─── TOOLBAR ───────────────────────────────────────────────── */
 .hc-app-toolbar {
-  background: rgba(255,255,255,0.85);
-  border-bottom: 1px solid rgba(0,0,0,0.07);
-  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-  backdrop-filter: blur(12px);
+  background: #0d1117;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
-.hc-app-toolbar select { color: #1e293b; }
-.hc-app-toolbar select option { background: #ffffff; color: #1e293b; }
-.hc-toolbar-divider { width: 1px; align-self: stretch; margin: 10px 0; background: rgba(0,0,0,0.08); }
+.hc-app-toolbar select { color: #e8f0f7; }
+.hc-app-toolbar select option { background: #0d1118; color: #e8f0f7; }
+.hc-toolbar-divider { width: 1px; align-self: stretch; margin: 10px 0; background: rgba(255,255,255,0.1); }
 .hc-app-toolbar select, .hc-app-toolbar button { min-height: 36px !important; }
 
 /* Sidebar nav active */
 .sidebar-nav-active {
-  background: linear-gradient(135deg, rgba(13,148,136,0.18), rgba(20,184,166,0.10));
-  border: 1px solid rgba(13,148,136,0.30);
+  background: linear-gradient(135deg, rgba(13,148,136,0.14), rgba(20,184,166,0.07));
+  border: 1px solid rgba(13,148,136,0.25);
   color: #14b8a6;
 }
 
@@ -276,7 +250,7 @@ html { scroll-behavior: smooth; }
 .section-header {
   font-size: 0.8125rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .accent-bar { border-left: 2px solid #14b8a6; }
@@ -286,8 +260,8 @@ html { scroll-behavior: smooth; }
   border: 1px solid transparent;
 }
 .interactive-row:hover {
-  background: rgba(13,148,136,0.05) !important;
-  border-color: rgba(13,148,136,0.15) !important;
+  background: rgba(20,28,44,0.7) !important;
+  border-color: rgba(30,48,72,0.6) !important;
 }
 
 /* Minimum readable size floor */

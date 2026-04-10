@@ -123,9 +123,9 @@ export function SettingsPage({ onSignOut }: Props) {
   }
 
   const card = 'rounded-2xl p-5 mb-4';
-  const cardStyle = { background: '#ffffff', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)' };
+  const cardStyle = { background: '#111827', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)' };
   const sectionLabel = 'text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2';
-  const inputClass = 'w-full bg-white border border-hc-border rounded-xl px-4 py-2.5 text-sm text-hc-text placeholder:text-hc-text/20 focus:outline-none focus:border-hc-teal/50 transition-colors';
+  const inputClass = 'w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-hc-teal/50 transition-colors';
   const fieldLabel = 'text-[10px] font-bold text-hc-muted uppercase tracking-wide mb-1.5 block';
 
   return (
@@ -134,12 +134,12 @@ export function SettingsPage({ onSignOut }: Props) {
       {/* Page header */}
       <div className="mb-8 flex items-center gap-4">
         {/* Avatar */}
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg text-hc-text"
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg text-white"
           style={{ background: 'linear-gradient(135deg,#0f766e,#14b8a6)', boxShadow: '0 0 24px rgba(20,184,166,0.3)' }}>
           {customLogo ? <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-2xl" /> : initials}
         </div>
         <div>
-          <h1 className="text-xl font-black text-hc-text tracking-tighter">{profile.name}</h1>
+          <h1 className="text-xl font-black text-white tracking-tighter">{profile.name}</h1>
           <p className="text-hc-muted text-xs font-medium">{profile.role} · {profile.org}</p>
         </div>
         <button
@@ -158,7 +158,7 @@ export function SettingsPage({ onSignOut }: Props) {
         <div className="mb-6 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
           style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.3)' }}>
           <div>
-            <div className="text-sm font-black text-hc-text mb-0.5">Sign out of Care Portal?</div>
+            <div className="text-sm font-black text-white mb-0.5">Sign out of Care Portal?</div>
             <div className="text-xs text-hc-muted">You will be returned to the login screen.</div>
           </div>
           <div className="flex gap-2">
@@ -231,7 +231,7 @@ export function SettingsPage({ onSignOut }: Props) {
             }
             {logoHover && (
               <div className="absolute inset-0 flex items-center justify-center rounded-2xl" style={{ background: 'rgba(0,0,0,0.6)' }}>
-                <svg className="w-6 h-6 text-hc-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
               </div>
             )}
           </button>
@@ -239,7 +239,7 @@ export function SettingsPage({ onSignOut }: Props) {
             onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); }} />
 
           <div className="flex-1">
-            <div className="text-sm font-bold text-hc-text mb-1">Organisation logo</div>
+            <div className="text-sm font-bold text-white mb-1">Organisation logo</div>
             <div className="text-xs text-hc-muted leading-relaxed mb-3">
               Shown in the sidebar and on login. Accepts PNG, JPG, or SVG. Max 1MB.
             </div>
@@ -269,7 +269,7 @@ export function SettingsPage({ onSignOut }: Props) {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold text-hc-text mb-0.5">Interface theme</div>
+            <div className="text-sm font-bold text-white mb-0.5">Interface theme</div>
             <div className="text-xs text-hc-muted">Precision dark — optimised for shift use</div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{background:'rgba(13,148,136,0.08)',border:'1px solid rgba(13,148,136,0.25)'}}>
@@ -361,7 +361,7 @@ export function SettingsPage({ onSignOut }: Props) {
         </div>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <div className="text-sm font-bold text-hc-text mb-0.5">Local storage</div>
+            <div className="text-sm font-bold text-white mb-0.5">Local storage</div>
             <div className="text-xs text-hc-muted">{storageInfo.keys} data keys · ~{storageInfo.estimatedKb} KB used · stored in this browser only</div>
           </div>
           <div className="w-20 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -378,7 +378,7 @@ export function SettingsPage({ onSignOut }: Props) {
             </button>
           ) : (
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-              <div className="text-xs text-hc-text font-semibold">This will delete all local data — diary imports, actions, incidents, coaching history. Cannot be undone.</div>
+              <div className="text-xs text-white font-semibold">This will delete all local data — diary imports, actions, incidents, coaching history. Cannot be undone.</div>
               <div className="flex gap-2 shrink-0">
                 <button type="button" onClick={clearAllData}
                   className="px-4 py-2 rounded-lg text-xs font-black uppercase cursor-pointer"
@@ -400,7 +400,7 @@ export function SettingsPage({ onSignOut }: Props) {
       <div className={card} style={{ ...cardStyle, marginBottom: 0 }}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-black text-hc-text mb-0.5">Hazel Care Ops Portal</div>
+            <div className="text-sm font-black text-white mb-0.5">Hazel Care Ops Portal</div>
             <div className="text-xs text-hc-muted">v1.0 · Built for CQC-regulated supported living services</div>
           </div>
           <div className="flex flex-col items-end gap-1">

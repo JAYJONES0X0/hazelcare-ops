@@ -523,18 +523,18 @@ export function TemplatesPage({ weekData }: Props) {
               selected === tpl.id
                 ? 'border-hc-teal/40 bg-hc-teal/10 glow-teal'
                 : recommendedTemplateIds.includes(tpl.id)
-                ? 'border-hc-teal/20 glass-light hover:border-hc-teal/30 hover:bg-hc-teal/5'
-                : 'border-hc-border glass-light hover:border-hc-teal/30 hover:bg-hc-teal/5'
+                ? 'border-hc-teal/20 glass-light hover:border-hc-teal/30 hover:bg-white/[0.02]'
+                : 'border-white/10 glass-light hover:border-hc-teal/30 hover:bg-white/[0.02]'
             }`}
             style={{ animationDelay: `${idx * 100}ms` }}
           >
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.03] blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-[0.08] transition-opacity" style={{ background: tpl.color }} />
-            <div className="text-3xl mb-4 flex items-center justify-center w-14 h-14 rounded-2xl glass border border-hc-border shadow-2xl">
+            <div className="text-3xl mb-4 flex items-center justify-center w-14 h-14 rounded-2xl glass border border-white/5 shadow-2xl">
               {tpl.icon}
             </div>
             <div className="text-sm font-black text-white mb-2 group-hover:text-hc-teal-light transition-colors tracking-tight leading-tight uppercase">{tpl.name}</div>
             <div className="text-[10px] font-medium text-hc-muted leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity mb-6">{tpl.desc}</div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-hc-border bg-black/5 px-2.5 py-1">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2.5 py-1">
               <span className="text-[9px] font-black uppercase tracking-wider text-hc-muted">{templateSignal(tpl.id).label}</span>
               <span className="text-[10px] font-black text-white tabular-nums">{templateSignal(tpl.id).value}</span>
             </div>
@@ -552,7 +552,7 @@ export function TemplatesPage({ weekData }: Props) {
 
       {generated && (
         <div className="animate-in zoom-in-95 duration-700">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 glass-light border border-hc-border p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 glass-light border border-white/5 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-xl">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0 shadow-lg glow-teal">
                 <span className="text-2xl">📄</span>
@@ -572,7 +572,7 @@ export function TemplatesPage({ weekData }: Props) {
               Print / Save as PDF
             </button>
           </div>
-          <div className="bg-white rounded-[3rem] overflow-hidden border-4 border-hc-border shadow-2xl p-1">
+          <div className="bg-white rounded-[3rem] overflow-hidden border-4 border-white/5 shadow-2xl p-1">
             <iframe ref={iframeRef} srcDoc={`<!DOCTYPE html><html><head><style>body{margin:0;padding:40px;background:#f8fafc;}@media print{body{padding:0;background:#fff;}}</style></head><body>${generated}</body></html>`} className="w-full" style={{ minHeight: '900px' }} title="Generated Template" />
           </div>
         </div>

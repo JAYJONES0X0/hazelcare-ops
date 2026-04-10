@@ -44,7 +44,7 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-white border border-hc-border rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
+  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
   return (
     <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
       <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
@@ -68,7 +68,7 @@ function NeedLevelSelector({ value, onChange }: { value: number; onChange: (v: n
             className={`flex-1 text-[10px] font-black uppercase tracking-widest py-3 px-2 rounded-xl border transition-all duration-500 shadow-lg active:scale-95
               ${value === i
                 ? `${pills[i]} scale-105 z-10 border-transparent shadow-xl`
-                : 'glass-light border-hc-border text-hc-muted hover:border-white/20 hover:text-white'
+                : 'glass-light border-white/5 text-hc-muted hover:border-white/20 hover:text-white'
             }`}
             style={value === i ? { boxShadow: `0 0 20px ${colors[i]}40` } : {}}>
             {label}
@@ -97,7 +97,7 @@ function RiskScoreWidget({ likelihood, impact, onLikelihood, onImpact }: {
   const impactLabels = ['', 'Insignificant', 'Tolerable', 'Undesirable', 'Severe', 'Catastrophic'];
 
   return (
-    <div className="glass border border-hc-border rounded-[2rem] p-8 mb-8 shadow-2xl relative overflow-hidden group">
+    <div className="glass border border-white/5 rounded-[2rem] p-8 mb-8 shadow-2xl relative overflow-hidden group">
       <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.03] blur-3xl group-hover:opacity-[0.08] transition-opacity" style={{ background: color }} />
       <p className="section-header text-[9px] font-black uppercase tracking-[0.3em] mb-8 text-shimmer">Risk Analysis</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -107,7 +107,7 @@ function RiskScoreWidget({ likelihood, impact, onLikelihood, onImpact }: {
             <span className="text-[10px] font-black text-white tabular-nums">{likelihood}</span>
           </div>
           <input type="range" min={1} max={5} value={likelihood} onChange={e => onLikelihood(Number(e.target.value))}
-            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-hc-border" />
+            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
         </div>
         <div className="group/slider">
           <div className="flex items-center justify-between mb-3 px-1 transition-transform group-hover/slider:translate-x-1">
@@ -115,10 +115,10 @@ function RiskScoreWidget({ likelihood, impact, onLikelihood, onImpact }: {
             <span className="text-[10px] font-black text-white tabular-nums">{impact}</span>
           </div>
           <input type="range" min={1} max={5} value={impact} onChange={e => onImpact(Number(e.target.value))}
-            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-hc-border" />
+            className="w-full h-2 bg-hc-dark/80 rounded-full appearance-none cursor-pointer accent-hc-teal shadow-inner border border-white/5" />
         </div>
       </div>
-      <div className="flex items-center gap-6 pt-6 border-t border-hc-border relative z-10">
+      <div className="flex items-center gap-6 pt-6 border-t border-white/5 relative z-10">
         <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Risk Score:</span>
         <span className="text-4xl font-black tabular-nums tracking-tighter" style={{ color, textShadow: `0 0 30px ${color}40` }}>{score}</span>
         <span className={`pill ${pill} text-[10px] font-black uppercase tracking-[0.2em] px-6 py-1.5 shadow-xl shadow-black/20 animate-shimmer`}>{label}</span>
@@ -137,7 +137,7 @@ function DomainEditor({ domain, onChange }: {
   return (
     <div className="animate-in slide-in-from-right-4 duration-700">
       <div className="flex items-center gap-6 mb-10 group">
-        <div className="w-16 h-16 rounded-2xl glass border-2 border-hc-border flex items-center justify-center text-3xl shadow-2xl transition-transform group-hover:scale-110 duration-500">
+        <div className="w-16 h-16 rounded-2xl glass border-2 border-white/10 flex items-center justify-center text-3xl shadow-2xl transition-transform group-hover:scale-110 duration-500">
           {DOMAIN_ICONS[domain.title] || '📄'}
         </div>
         <div>
@@ -173,7 +173,7 @@ function DomainEditor({ domain, onChange }: {
       <Field label="Risk Management & Mitigation" value={domain.riskMitigation} onChange={v => up({ riskMitigation: v })}
         area rows={4} placeholder="Describe specific actions staff should take to reduce this risk and what to watch out for..." />
 
-      <div className="border-t border-hc-border pt-10 mt-16 space-y-8">
+      <div className="border-t border-white/10 pt-10 mt-16 space-y-8">
         <p className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Review Details</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Field label="Next Review Date" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
@@ -338,10 +338,10 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
   return (
     <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-hc-border z-20 shadow-2xl backdrop-blur-3xl">
+      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
         <button onClick={onBack}
           className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
-          <span className="w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center group-hover:bg-white/5 transition-all">
+          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </span>
           Back
@@ -383,7 +383,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-hc-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
             title="Export page orientation"
           >
             <option value="portrait">Portrait</option>
@@ -411,13 +411,13 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
 
       <div className="flex flex-1 overflow-hidden mesh-bg">
         {/* Domain sidebar */}
-        <div className="w-72 flex-shrink-0 border-r border-hc-border overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
-          <div className="p-6 border-b border-hc-border bg-black/5">
+        <div className="w-72 flex-shrink-0 border-r border-white/5 overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
+          <div className="p-6 border-b border-white/5 bg-black/20">
             <p className="section-header text-[9px] tracking-[0.3em] opacity-40 uppercase">Care Areas</p>
           </div>
           <div className="py-2">
             <button onClick={() => { setShowOverview(true); setActiveDomain(null); }}
-              className={`w-full text-left px-6 py-5 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden border-b border-hc-border active:scale-95
+              className={`w-full text-left px-6 py-5 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden border-b border-white/5 active:scale-95
                 ${showOverview && activeDomain === null ? 'bg-hc-teal/10 text-hc-teal-light shadow-[inset_0_0_20px_rgba(20,184,166,0.05)]' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
               {showOverview && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#14b8a6] z-10" />}
               <span className="text-xl group-hover:scale-110 transition-transform duration-500 relative z-10">📊</span>
@@ -454,7 +454,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
             {(showOverview || activeDomain === null) && (
               <div className="animate-in fade-in duration-700">
                 <div className="mb-12 flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-3xl glass border-2 border-hc-border flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
+                  <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
                     📊
                   </div>
                   <div>
@@ -478,7 +478,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                   </div>
                 </div>
 
-                <div className="mt-16 pt-10 border-t border-hc-border">
+                <div className="mt-16 pt-10 border-t border-white/10">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-2">
                     <div>
                       <h3 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">Care Areas</h3>
@@ -502,7 +502,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                           persist(next);
                           return next;
                         });
-                      }} className="px-5 py-2.5 glass-light border border-hc-border text-hc-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:text-white transition-all active:scale-95">Deactivate All</button>
+                      }} className="px-5 py-2.5 glass-light border border-white/10 text-hc-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:text-white transition-all active:scale-95">Deactivate All</button>
                     </div>
                   </div>
 
@@ -522,8 +522,8 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                         <div key={i}
                           className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] border transition-all duration-500 cursor-pointer card-glow group/node animate-in slide-in-from-bottom-2 active:scale-[0.98]
                             ${domain.enabled 
-                              ? 'glass-light border-hc-border bg-white/[0.02] hover:bg-hc-teal/5 hover:border-hc-teal/40' 
-                              : 'border-hc-border bg-hc-dark/40 opacity-40 hover:opacity-60'
+                              ? 'glass-light border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-hc-teal/40' 
+                              : 'border-white/5 bg-hc-dark/40 opacity-40 hover:opacity-60'
                             }`}
                           style={{ animationDelay: `${i * 30}ms` }}
                           onClick={() => { setActiveDomain(i); setShowOverview(false); }}>
@@ -531,7 +531,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                           {/* Node Toggle */}
                           <button onClick={e => { e.stopPropagation(); toggleDomain(i); }}
                             className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 border-2 transition-all duration-500 shadow-xl group-hover/node:scale-110
-                              ${domain.enabled ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light' : 'border-hc-border bg-black/5 text-transparent'}`}>
+                              ${domain.enabled ? 'bg-hc-teal/20 border-hc-teal text-hc-teal-light' : 'border-white/10 bg-black/20 text-transparent'}`}>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
@@ -555,7 +555,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                             )}
                           </div>
 
-                          <div className={`w-8 h-8 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted opacity-0 group-hover/node:opacity-100 group-hover/node:translate-x-1 transition-all duration-500`}>
+                          <div className={`w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted opacity-0 group-hover/node:opacity-100 group-hover/node:translate-x-1 transition-all duration-500`}>
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                           </div>
                         </div>
@@ -563,7 +563,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
                     })}
                   </div>
                 </div>
-                <div className="mt-16 pt-10 border-t border-hc-border">
+                <div className="mt-16 pt-10 border-t border-white/10">
                   <SignaturePanel sigs={sigs} onChange={setSigs} />
                 </div>
               </div>
@@ -579,12 +579,12 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
 
             {/* Navigation */}
             {activeDomain !== null && !showOverview && (
-              <div className="flex justify-between mt-16 pt-8 border-t border-hc-border relative z-10">
+              <div className="flex justify-between mt-16 pt-8 border-t border-white/5 relative z-10">
                 <button onClick={() => {
                   if (activeDomain > 0) setActiveDomain(activeDomain - 1);
                   else { setShowOverview(true); setActiveDomain(null); }
                 }}
-                  className="flex items-center gap-3 px-8 py-4 glass-light border border-hc-border text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-hc-teal/5 active:scale-90 shadow-xl">
+                  className="flex items-center gap-3 px-8 py-4 glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-white/[0.03] active:scale-90 shadow-xl">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   Previous Area
                 </button>
