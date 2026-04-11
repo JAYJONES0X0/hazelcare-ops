@@ -561,27 +561,80 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       {!weekData && !importLoading && (
         <div
           onClick={() => importFileRef.current?.click()}
-          className="cursor-pointer flex flex-col items-center justify-center py-20 text-center rounded-[2rem] animate-in zoom-in duration-700 relative overflow-hidden transition-all duration-300"
+          className="cursor-pointer flex flex-col items-center justify-center py-16 text-center rounded-[2rem] animate-in zoom-in duration-700 relative overflow-hidden transition-all duration-300 group"
           style={{
-            background: importDragging ? 'rgba(20,184,166,0.06)' : '#111827',
-            border: importDragging ? '2px dashed rgba(20,184,166,0.5)' : '2px dashed rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+            background: importDragging ? 'rgba(20,184,166,0.05)' : '#0d1117',
+            border: importDragging ? '2px dashed rgba(20,184,166,0.45)' : '1px solid rgba(255,255,255,0.06)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
           }}
         >
-          <div className="relative z-10 max-w-md mx-auto">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 mx-auto" style={{background:'rgba(20,184,166,0.08)',border:'1px solid rgba(20,184,166,0.2)'}}>
-              <svg className="w-10 h-10 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.4}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+          {/* Illustrated empty state */}
+          <div className="relative mb-6 transition-transform duration-500 group-hover:-translate-y-1">
+            <svg width="260" height="176" viewBox="0 0 260 176" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Ambient glow */}
+              <ellipse cx="130" cy="108" rx="88" ry="48" fill="rgba(13,148,136,0.07)"/>
+              {/* Back doc */}
+              <rect x="90" y="22" width="96" height="120" rx="8" fill="#0f1825" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+              {/* Main doc */}
+              <rect x="74" y="16" width="96" height="120" rx="8" fill="#141e2e" stroke="rgba(20,184,166,0.18)" strokeWidth="1"/>
+              {/* Header bar */}
+              <rect x="74" y="16" width="96" height="22" rx="8" fill="rgba(20,184,166,0.09)"/>
+              <rect x="74" y="28" width="96" height="10" fill="rgba(20,184,166,0.09)"/>
+              <circle cx="86" cy="27" r="3" fill="rgba(20,184,166,0.55)"/>
+              <circle cx="96" cy="27" r="3" fill="rgba(255,255,255,0.12)"/>
+              <circle cx="106" cy="27" r="3" fill="rgba(255,255,255,0.08)"/>
+              <rect x="114" y="23" width="44" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
+              {/* CSV rows */}
+              <rect x="84" y="48" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="48" width="30" height="5" rx="2" fill="rgba(20,184,166,0.38)"/>
+              <line x1="84" y1="56" x2="152" y2="56" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+              <rect x="84" y="61" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="61" width="52" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
+              <line x1="84" y1="69" x2="152" y2="69" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+              <rect x="84" y="74" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="74" width="18" height="5" rx="2" fill="rgba(239,68,68,0.5)"/>
+              <line x1="84" y1="82" x2="152" y2="82" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+              <rect x="84" y="87" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="87" width="46" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
+              <line x1="84" y1="95" x2="152" y2="95" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+              <rect x="84" y="100" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="100" width="34" height="5" rx="2" fill="rgba(245,158,11,0.42)"/>
+              <line x1="84" y1="108" x2="152" y2="108" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+              <rect x="84" y="113" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
+              <rect x="84" y="113" width="58" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
+              {/* Flag badge RED */}
+              <rect x="156" y="70" width="42" height="18" rx="9" fill="rgba(239,68,68,0.11)" stroke="rgba(239,68,68,0.28)" strokeWidth="1"/>
+              <circle cx="165" cy="79" r="3" fill="#ef4444"/>
+              <rect x="171" y="76" width="20" height="4" rx="2" fill="rgba(239,68,68,0.5)"/>
+              <rect x="171" y="81" width="13" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+              {/* Score badge TEAL */}
+              <rect x="156" y="96" width="42" height="18" rx="9" fill="rgba(20,184,166,0.10)" stroke="rgba(20,184,166,0.26)" strokeWidth="1"/>
+              <circle cx="165" cy="105" r="3" fill="#14b8a6"/>
+              <rect x="171" y="102" width="20" height="4" rx="2" fill="rgba(20,184,166,0.48)"/>
+              <rect x="171" y="107" width="12" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
+              {/* Upload circle */}
+              <circle cx="202" cy="48" r="19" fill="rgba(20,184,166,0.08)" stroke="rgba(20,184,166,0.22)" strokeWidth="1.5"/>
+              <path d="M202 57 L202 41 M197 47 L202 41 L207 47" stroke="#14b8a6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <line x1="196" y1="59" x2="208" y2="59" stroke="rgba(20,184,166,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+              {/* Sparkles */}
+              <circle cx="58" cy="40" r="2" fill="rgba(20,184,166,0.45)"/>
+              <circle cx="216" cy="128" r="1.5" fill="rgba(139,92,246,0.5)"/>
+              <circle cx="46" cy="116" r="1.5" fill="rgba(245,158,11,0.4)"/>
+              <circle cx="228" cy="64" r="1" fill="rgba(255,255,255,0.3)"/>
+            </svg>
+          </div>
+
+          <div className="relative z-10 max-w-xs mx-auto">
+            <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-2">Staff Intelligence</div>
+            <div className="text-xl font-black text-white mb-2 tracking-tighter">Drop your diary CSV here</div>
+            <div className="text-sm text-hc-muted mb-6 leading-relaxed">
+              Export from CarePlanner, drop it here. Every entry scored, flags raised, call scripts ready.
             </div>
-            <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-3">Staff Intelligence</div>
-            <div className="text-2xl font-black text-white mb-3 tracking-tighter">Drop your diary CSV here</div>
-            <div className="text-sm text-hc-muted mb-2 leading-relaxed max-w-sm">
-              Export the weekly diary from CarePlanner, drop the CSV file here — or click to browse.
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-hc-teal-light transition-all duration-200 group-hover:border-hc-teal/40" style={{background:'rgba(20,184,166,0.08)',border:'1px solid rgba(20,184,166,0.22)'}}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Browse or drag &amp; drop
             </div>
-            <div className="text-xs text-hc-muted opacity-40 mb-8">Accepts .csv · .txt · .tsv</div>
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest text-hc-teal-light" style={{background:'rgba(20,184,166,0.08)',border:'1px solid rgba(20,184,166,0.25)'}}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-              Click to browse or drag &amp; drop
-            </div>
+            <div className="text-[10px] text-hc-muted/30 mt-3">.csv · .txt · .tsv</div>
           </div>
         </div>
       )}
