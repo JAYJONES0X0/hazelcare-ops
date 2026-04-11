@@ -379,6 +379,295 @@ function generateSafeguardingReport(data: WeekSummary, mon: TemplateImportContex
   return html;
 }
 
+// ── NEW TEMPLATES ────────────────────────────────────────────────────
+
+function generateCareReview(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#0369a1';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Care Review', `REVIEW DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    <tr><td style="padding:10px 15px;background:#f0f9ff;font-weight:700;width:200px;border:1px solid #e0f2fe;text-transform:uppercase;font-size:11px;">Client Name</td><td style="padding:10px 15px;border:1px solid #e0f2fe;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#f0f9ff;font-weight:700;border:1px solid #e0f2fe;text-transform:uppercase;font-size:11px;">Date of Review</td><td style="padding:10px 15px;border:1px solid #e0f2fe;">${new Date().toLocaleDateString('en-GB')}</td></tr>
+    <tr><td style="padding:10px 15px;background:#f0f9ff;font-weight:700;border:1px solid #e0f2fe;text-transform:uppercase;font-size:11px;">Reviewing Manager</td><td style="padding:10px 15px;border:1px solid #e0f2fe;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#f0f9ff;font-weight:700;border:1px solid #e0f2fe;text-transform:uppercase;font-size:11px;">Next Review Due</td><td style="padding:10px 15px;border:1px solid #e0f2fe;"></td></tr>
+  </table>
+  ${['Current Support Needs','Changes Since Last Review','Goals & Outcomes','Risk Updates','Family/Advocate Input','Actions Required'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #e0f2fe;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateComplaintConcern(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#b45309';
+  const complaints = Object.values(data.houses).flatMap(h=>h.entries).filter(e=>e.category==='incident'||e.category==='other');
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Complaint & Concern Record', `DATE: ${new Date().toLocaleDateString('en-GB')} · ${complaints.length} FLAGGED ENTRIES`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    <tr><td style="padding:10px 15px;background:#fffbeb;font-weight:700;width:200px;border:1px solid #fde68a;text-transform:uppercase;font-size:11px;">Type</td><td style="padding:10px 15px;border:1px solid #fde68a;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#fffbeb;font-weight:700;border:1px solid #fde68a;text-transform:uppercase;font-size:11px;">Received By</td><td style="padding:10px 15px;border:1px solid #fde68a;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#fffbeb;font-weight:700;border:1px solid #fde68a;text-transform:uppercase;font-size:11px;">Date Received</td><td style="padding:10px 15px;border:1px solid #fde68a;">${new Date().toLocaleDateString('en-GB')}</td></tr>
+    <tr><td style="padding:10px 15px;background:#fffbeb;font-weight:700;border:1px solid #fde68a;text-transform:uppercase;font-size:11px;">Client / Subject</td><td style="padding:10px 15px;border:1px solid #fde68a;"></td></tr>
+  </table>
+  ${['Details of Complaint / Concern','Investigation Steps Taken','Response to Complainant','Outcome & Resolution','Lessons Learned / Actions'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  if (complaints.length > 0) {
+    html += `<h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:24px 0 12px;text-transform:uppercase;">Flagged Diary Entries</h2>`;
+    for (const e of complaints.slice(0,10)) html += `<div style="border:1px solid #fde68a;border-radius:8px;margin-bottom:10px;overflow:hidden;"><div style="background:#fffbeb;padding:8px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #fde68a;"><span style="font-weight:900;font-size:11px;">${ex(e.house)} · ${ex(e.client)}</span><span style="font-weight:700;font-size:11px;">${ex(e.date)}</span></div><div style="padding:12px 14px;font-size:12px;line-height:1.5;">${ex(truncate(e.entry,300))}</div></div>`;
+  }
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateCQCReport(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#1d4ed8';
+  const houses = Object.values(data.houses).sort((a,b)=>a.name.localeCompare(b.name));
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('CQC Regulatory Report', `PERIOD: ${ex(data.dateFrom||'___')} — ${ex(data.dateTo||'___')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#1d4ed8;">${data.totalEntries}</div><div style="font-size:9px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Total Entries</div></div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#ef4444;">${data.allFlags.red.length}</div><div style="font-size:9px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Red Flags</div></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#f59e0b;">${data.allFlags.amber.length}</div><div style="font-size:9px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Amber Flags</div></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#22c55e;">${houses.length}</div><div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Houses</div></div>
+  </div>
+  ${['Safe','Effective','Caring','Responsive','Well-Led'].map(domain=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">CQC Domain: ${domain}</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;">
+    <tr><td style="padding:8px 12px;background:#eff6ff;font-weight:700;width:200px;border:1px solid #bfdbfe;">Rating</td><td style="padding:8px 12px;border:1px solid #bfdbfe;"></td></tr>
+    <tr><td style="padding:8px 12px;background:#eff6ff;font-weight:700;border:1px solid #bfdbfe;">Evidence</td><td style="padding:8px 12px;border:1px solid #bfdbfe;min-height:60px;"></td></tr>
+  </table>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateHouseMeeting(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#0f766e';
+  const houses = Object.values(data.houses).sort((a,b)=>a.name.localeCompare(b.name));
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('House Meeting', `DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    <tr><td style="padding:10px 15px;background:#f0fdfa;font-weight:700;width:180px;border:1px solid #99f6e4;text-transform:uppercase;font-size:11px;">House</td><td style="padding:10px 15px;border:1px solid #99f6e4;">${houses.map(h=>ex(h.name)).join(' / ')}</td></tr>
+    <tr><td style="padding:10px 15px;background:#f0fdfa;font-weight:700;border:1px solid #99f6e4;text-transform:uppercase;font-size:11px;">Chair</td><td style="padding:10px 15px;border:1px solid #99f6e4;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#f0fdfa;font-weight:700;border:1px solid #99f6e4;text-transform:uppercase;font-size:11px;">Attendees</td><td style="padding:10px 15px;border:1px solid #99f6e4;">${data.carers.slice(0,10).join(', ')}</td></tr>
+  </table>
+  ${['Agenda','Client Updates','Staffing Matters','Compliance & Safety','Maintenance & Environment','Actions & Owners','Date of Next Meeting'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:${s==='Actions & Owners'?'100':'70'}px;border:1px solid #99f6e4;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateFamilyFeedback(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#7c3aed';
+  const feedbackEntries = Object.values(data.houses).flatMap(h=>h.entries).filter(e=>e.category==='other'||e.category==='daily_support');
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Family & Client Feedback', `PERIOD: ${ex(data.dateFrom||'___')} — ${ex(data.dateTo||'___')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    <tr><td style="padding:10px 15px;background:#f5f3ff;font-weight:700;width:200px;border:1px solid #ddd6fe;text-transform:uppercase;font-size:11px;">Client / Family Name</td><td style="padding:10px 15px;border:1px solid #ddd6fe;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#f5f3ff;font-weight:700;border:1px solid #ddd6fe;text-transform:uppercase;font-size:11px;">Feedback Method</td><td style="padding:10px 15px;border:1px solid #ddd6fe;"></td></tr>
+    <tr><td style="padding:10px 15px;background:#f5f3ff;font-weight:700;border:1px solid #ddd6fe;text-transform:uppercase;font-size:11px;">Recorded By</td><td style="padding:10px 15px;border:1px solid #ddd6fe;"></td></tr>
+  </table>
+  ${['Feedback Summary','Positive Feedback','Areas for Improvement','Actions Taken / Planned'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #ddd6fe;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  if (feedbackEntries.length > 0) {
+    html += `<h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:24px 0 12px;text-transform:uppercase;">Diary Feedback Entries</h2>`;
+    for (const e of feedbackEntries.slice(0,8)) html += `<div style="border:1px solid #ddd6fe;border-radius:8px;margin-bottom:10px;overflow:hidden;"><div style="background:#f5f3ff;padding:8px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #ddd6fe;"><span style="font-weight:900;font-size:11px;">${ex(e.client)}</span><span style="font-weight:700;font-size:11px;">${ex(e.date)}</span></div><div style="padding:12px 14px;font-size:12px;line-height:1.5;">${ex(truncate(e.entry,300))}</div></div>`;
+  }
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateGPAppointment(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#0891b2';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('GP Appointment Record', `DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Client Name',''],['Date of Appointment',new Date().toLocaleDateString('en-GB')],['GP / Practice',''],['Accompanying Staff',''],['Appointment Type','Routine / Urgent / Follow-up']].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#ecfeff;font-weight:700;width:200px;border:1px solid #a5f3fc;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #a5f3fc;">${v}</td></tr>`).join('')}
+  </table>
+  ${['Reason for Appointment','GP Findings & Diagnosis','Medications Prescribed / Changed','Follow-up Instructions','Actions for Care Team'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #a5f3fc;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateMedicationReview(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#0369a1';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Medication Review', `DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Client Name',''],['Review Date',new Date().toLocaleDateString('en-GB')],['Prescriber / GP',''],['Pharmacist',''],['Reviewing Manager','']].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#f0f9ff;font-weight:700;width:200px;border:1px solid #bae6fd;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #bae6fd;">${v}</td></tr>`).join('')}
+  </table>
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 12px;text-transform:uppercase;">Current Medications</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+    <tr style="background:#f0f9ff;">${['Medication','Dose','Frequency','Route','Reviewed','Changes'].map(h=>`<th style="padding:8px 10px;border:1px solid #bae6fd;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;">${h}</th>`).join('')}</tr>
+    ${[1,2,3,4,5].map(()=>`<tr>${Array(6).fill('<td style="padding:8px 10px;border:1px solid #bae6fd;height:32px;"></td>').join('')}</tr>`).join('')}
+  </table>
+  ${['Clinical Findings','Recommended Changes','Pharmacy Actions','Next Review Date'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:70px;border:1px solid #bae6fd;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateMedicationTransaction(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#0891b2';
+  const medEntries = Object.values(data.houses).flatMap(h=>h.medication);
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Medication Transaction Log', `PERIOD: ${ex(data.dateFrom||'___')} — ${ex(data.dateTo||'___')} · ${medEntries.length} ENTRIES`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+    <tr style="background:#ecfeff;">${['Date','Client','House','Type','Medication','Quantity','Witnessed By','Notes'].map(h=>`<th style="padding:8px 10px;border:1px solid #a5f3fc;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;">${h}</th>`).join('')}</tr>`;
+  if (medEntries.length > 0) {
+    for (const e of medEntries.slice(0,20)) html += `<tr><td style="padding:8px 10px;border:1px solid #a5f3fc;">${ex(e.date)}</td><td style="padding:8px 10px;border:1px solid #a5f3fc;">${ex(e.client)}</td><td style="padding:8px 10px;border:1px solid #a5f3fc;">${ex(e.house)}</td><td style="padding:8px 10px;border:1px solid #a5f3fc;">${ex(e.category)}</td><td style="padding:8px 10px;border:1px solid #a5f3fc;" colspan="4">${ex(truncate(e.entry,120))}</td></tr>`;
+  } else {
+    html += `<tr><td colspan="8" style="padding:20px;border:1px solid #a5f3fc;text-align:center;color:#94a3b8;font-size:12px;">No medication entries in this period</td></tr>`;
+  }
+  html += `</table>`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateFinanceAudit(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#059669';
+  const financeEntries = Object.values(data.houses).flatMap(h=>h.entries).filter(e=>e.category==='finance');
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Finance Audit & Transaction Record', `DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Auditor',''],['Period Covered',`${ex(data.dateFrom||'___')} — ${ex(data.dateTo||'___')}`],['Houses Covered',Object.values(data.houses).map(h=>ex(h.name)).join(', ')]].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#f0fdf4;font-weight:700;width:200px;border:1px solid #bbf7d0;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #bbf7d0;">${v}</td></tr>`).join('')}
+  </table>
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 12px;text-transform:uppercase;">Transaction Log</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+    <tr style="background:#f0fdf4;">${['Date','Client','House','Description','Amount £','Receipt','Authorised By'].map(h=>`<th style="padding:8px 10px;border:1px solid #bbf7d0;text-align:left;font-size:10px;text-transform:uppercase;">${h}</th>`).join('')}</tr>`;
+  if (financeEntries.length > 0) {
+    for (const e of financeEntries.slice(0,15)) html += `<tr><td style="padding:8px 10px;border:1px solid #bbf7d0;">${ex(e.date)}</td><td style="padding:8px 10px;border:1px solid #bbf7d0;">${ex(e.client)}</td><td style="padding:8px 10px;border:1px solid #bbf7d0;">${ex(e.house)}</td><td style="padding:8px 10px;border:1px solid #bbf7d0;" colspan="4">${ex(truncate(e.entry,120))}</td></tr>`;
+  } else {
+    html += `<tr><td colspan="7" style="padding:20px;border:1px solid #bbf7d0;text-align:center;color:#94a3b8;">No finance entries in this period</td></tr>`;
+  }
+  html += `</table>
+  ${['Discrepancies Found','Audit Conclusion','Recommendations'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;">${s}</h2>
+  <div style="min-height:70px;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateRepairsMaintenance(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#78350f';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Repairs & Maintenance Log', `DATE: ${new Date().toLocaleDateString('en-GB')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+    <tr style="background:#fef3c7;">${['Date Reported','House','Location','Description','Priority','Contractor','Date Complete','Cost £','Sign-off'].map(h=>`<th style="padding:8px 10px;border:1px solid #fde68a;text-align:left;font-size:10px;text-transform:uppercase;">${h}</th>`).join('')}</tr>
+    ${[1,2,3,4,5,6,7,8].map(()=>`<tr>${Array(9).fill('<td style="padding:8px 10px;border:1px solid #fde68a;height:32px;"></td>').join('')}</tr>`).join('')}
+  </table>
+  ${['Outstanding Items','Health & Safety Concerns','Contractor Notes','Manager Sign-off'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;">${s}</h2>
+  <div style="min-height:70px;border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateWeeklyQualityReport(data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#1e40af';
+  const houses = Object.values(data.houses).sort((a,b)=>a.name.localeCompare(b.name));
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Weekly Quality Report — Regional', `WEEK: ${ex(data.dateFrom||'___')} — ${ex(data.dateTo||'___')}`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#1d4ed8;">${data.totalEntries}</div><div style="font-size:9px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Entries</div></div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#ef4444;">${data.allFlags.red.length}</div><div style="font-size:9px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Red</div></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#f59e0b;">${data.allFlags.amber.length}</div><div style="font-size:9px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Amber</div></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:28px;font-weight:900;color:#22c55e;">${houses.length}</div><div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;">Houses</div></div>
+  </div>
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:0 0 16px;text-transform:uppercase;">House Summary</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px;">
+    <tr style="background:#eff6ff;">${['House','Entries','Red','Amber','Green','Quality Score','Comments'].map(h=>`<th style="padding:8px 10px;border:1px solid #bfdbfe;text-align:left;font-size:10px;text-transform:uppercase;">${h}</th>`).join('')}</tr>
+    ${houses.map(h=>`<tr><td style="padding:8px 10px;border:1px solid #bfdbfe;font-weight:700;">${ex(h.name)}</td><td style="padding:8px 10px;border:1px solid #bfdbfe;">${h.entries.length}</td><td style="padding:8px 10px;border:1px solid #bfdbfe;color:#ef4444;font-weight:700;">${h.flags.red}</td><td style="padding:8px 10px;border:1px solid #bfdbfe;color:#f59e0b;font-weight:700;">${h.flags.amber}</td><td style="padding:8px 10px;border:1px solid #bfdbfe;color:#22c55e;font-weight:700;">${h.flags.green}</td><td style="padding:8px 10px;border:1px solid #bfdbfe;">${Math.round((h.flags.green/(h.entries.length||1))*100)}/100</td><td style="padding:8px 10px;border:1px solid #bfdbfe;"></td></tr>`).join('')}
+  </table>
+  ${['Key Highlights','Concerns Requiring Action','Regional Manager Comments','Actions & Deadlines'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generatePIP(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#b45309';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Performance Improvement Plan', `STRICTLY CONFIDENTIAL`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Employee Name',''],['Job Title',''],['Manager',''],['HR Representative',''],['PIP Start Date',new Date().toLocaleDateString('en-GB')],['PIP Review Date',''],['PIP End Date','']].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#fffbeb;font-weight:700;width:220px;border:1px solid #fde68a;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #fde68a;">${v}</td></tr>`).join('')}
+  </table>
+  ${['Reason for PIP / Performance Concerns','Specific Improvement Goals (SMART)','Support & Resources Provided','Measurement Criteria','Consequences of Non-Improvement','Employee Response','Manager Sign-off & Date'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:${s.includes('SMART')||s.includes('Measurement')?'120':'80'}px;border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateProbationReview(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#059669';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Probation Review', `FIRST 3 MONTHS — CONFIDENTIAL`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Employee Name',''],['Job Title',''],['Start Date',''],['Review Date',new Date().toLocaleDateString('en-GB')],['Reviewing Manager',''],['Outcome','Pass / Extended / Failed']].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#f0fdf4;font-weight:700;width:200px;border:1px solid #bbf7d0;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #bbf7d0;">${v}</td></tr>`).join('')}
+  </table>
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 12px;text-transform:uppercase;">Performance Assessment</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;">
+    <tr style="background:#f0fdf4;">${['Area','Rating (1–5)','Comments'].map(h=>`<th style="padding:8px 10px;border:1px solid #bbf7d0;text-align:left;font-size:10px;text-transform:uppercase;">${h}</th>`).join('')}</tr>
+    ${['Punctuality & Attendance','Communication','Client Care Quality','Following Procedures','Team Working','Initiative & Attitude'].map(area=>`<tr><td style="padding:8px 10px;border:1px solid #bbf7d0;font-weight:600;">${area}</td><td style="padding:8px 10px;border:1px solid #bbf7d0;"></td><td style="padding:8px 10px;border:1px solid #bbf7d0;"></td></tr>`).join('')}
+  </table>
+  ${['Strengths Observed','Areas Requiring Development','Training Completed','Outstanding Training / Actions','Employee Comments','Manager Decision & Rationale'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+function generateExitInterview(_data: WeekSummary, mon: TemplateImportContext | null): string {
+  const COLOR = '#64748b';
+  let html = `<div style="font-family:'Segoe UI',Tahoma,sans-serif;max-width:900px;margin:0 auto;color:#1e293b;background:#fff;min-height:100%;display:flex;flex-direction:column;padding:40px;">`;
+  html += renderHeader('Exit Interview Record', `STRICTLY CONFIDENTIAL`, COLOR);
+  html += monitoringContextBlock(mon);
+  html += `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+    ${[['Employee Name',''],['Job Title',''],['Department / House',''],['Length of Service',''],['Last Working Day',''],['Interviewer',''],['Interview Date',new Date().toLocaleDateString('en-GB')]].map(([k,v])=>`<tr><td style="padding:10px 15px;background:#f8fafc;font-weight:700;width:200px;border:1px solid #e2e8f0;text-transform:uppercase;font-size:11px;">${k}</td><td style="padding:10px 15px;border:1px solid #e2e8f0;">${v}</td></tr>`).join('')}
+  </table>
+  ${['Primary Reason for Leaving','What Did You Enjoy About Working Here?','What Could We Improve?','Management & Support — Feedback','Would You Return / Recommend Us as an Employer?','Any Concerns Not Previously Raised?','Interviewer Observations'].map(s=>`
+  <h2 style="font-size:14px;font-weight:800;color:${COLOR};border-bottom:2px solid ${COLOR};padding-bottom:5px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.05em;">${s}</h2>
+  <div style="min-height:80px;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:13px;color:#94a3b8;">___</div>`).join('')}`;
+  html += FOOTER_HTML + `</div>`;
+  return html;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function generateTemplate(type: TemplateType, data: WeekSummary, importCtx: TemplateImportContext | null): string {
   const mon = importCtx?.source === 'staff-monitoring' ? importCtx : null;
   let html: string;
@@ -406,6 +695,48 @@ function generateTemplate(type: TemplateType, data: WeekSummary, importCtx: Temp
       break;
     case 'finance':
       html = generateFinanceReport(data, mon);
+      break;
+    case 'care_review':
+      html = generateCareReview(data, mon);
+      break;
+    case 'complaint_concern':
+      html = generateComplaintConcern(data, mon);
+      break;
+    case 'cqc_report':
+      html = generateCQCReport(data, mon);
+      break;
+    case 'house_meeting':
+      html = generateHouseMeeting(data, mon);
+      break;
+    case 'family_feedback':
+      html = generateFamilyFeedback(data, mon);
+      break;
+    case 'gp_appointment':
+      html = generateGPAppointment(data, mon);
+      break;
+    case 'medication_review':
+      html = generateMedicationReview(data, mon);
+      break;
+    case 'medication_transaction':
+      html = generateMedicationTransaction(data, mon);
+      break;
+    case 'finance_audit':
+      html = generateFinanceAudit(data, mon);
+      break;
+    case 'repairs_maintenance':
+      html = generateRepairsMaintenance(data, mon);
+      break;
+    case 'weekly_quality_report':
+      html = generateWeeklyQualityReport(data, mon);
+      break;
+    case 'performance_improvement':
+      html = generatePIP(data, mon);
+      break;
+    case 'probation_review':
+      html = generateProbationReview(data, mon);
+      break;
+    case 'exit_interview':
+      html = generateExitInterview(data, mon);
       break;
     default:
       html = generateQualityMeeting(data, mon);
