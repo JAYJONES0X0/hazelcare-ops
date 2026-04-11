@@ -3,6 +3,8 @@ import { consumeOnce } from './_lib/durable-once.js';
 import { STAFF_SAC_COOKIE, signStaffSacCookie } from './_lib/staff-sac-cookie.js';
 
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
+const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
 const verifyBuckets = new Map();
 
 function isRateLimited(key, max, windowMs) {
@@ -31,20 +33,41 @@ function parseToken(token) {
   }
 }
 
+/** Fetch token stored in Redis by short link ID */
+async function fetchTokenByLinkId(linkId) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+  const url = `${UPSTASH_URL}/get/${encodeURIComponent(`slink:${linkId}`)}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } });
+  if (!res.ok) return null;
+  const body = await res.json().catch(() => null);
+  return body?.result || null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   if (!STAFF_LINK_SECRET) return res.status(500).json({ valid: false });
 
-  const { token, code, toolId } = req.body || {};
-  if (!token || !code || !toolId) return res.status(400).json({ valid: false });
-  if (isRateLimited(`staff:${String(token).slice(0, 24)}`, 8, 10 * 60 * 1000)) {
+  const { token: rawToken, id: linkId, code, toolId } = req.body || {};
+
+  // Must have either a short link ID or a raw token
+  if ((!linkId && !rawToken) || !code || !toolId) return res.status(400).json({ valid: false });
+
+  const rateLimitKey = linkId ? `staff:id:${linkId}` : `staff:${String(rawToken).slice(0, 24)}`;
+  if (isRateLimited(rateLimitKey, 8, 10 * 60 * 1000)) {
     return res.status(429).json({ valid: false });
+  }
+
+  // Resolve token: from Redis if linkId, else use rawToken directly
+  let token = rawToken;
+  if (linkId) {
+    token = await fetchTokenByLinkId(linkId);
+    if (!token) return res.json({ valid: false, reason: 'expired' });
   }
 
   const payload = parseToken(token);
   if (!payload) return res.json({ valid: false });
   if (payload.toolId !== toolId) return res.json({ valid: false });
-  if (!payload.exp || Date.now() > payload.exp) return res.json({ valid: false });
+  if (!payload.exp || Date.now() > payload.exp) return res.json({ valid: false, reason: 'expired' });
   if (!payload.jti) return res.json({ valid: false });
 
   const normalizedCode = String(code).toUpperCase().replace(/[^A-Z0-9]/g, '');

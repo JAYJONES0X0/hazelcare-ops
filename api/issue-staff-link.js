@@ -6,6 +6,8 @@ const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 const STAFF_LINK_TTL_MINUTES = Number(process.env.STAFF_LINK_TTL_MINUTES || '30');
 const APP_ORIGIN = process.env.APP_ORIGIN || '';
+const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
 
 const STAFF_TOOLS = new Set(['notes', 'handover', 'actions', 'incidents']);
 
@@ -17,7 +19,6 @@ function hmac(payload) {
   return crypto.createHmac('sha256', STAFF_LINK_SECRET).update(payload).digest('base64url');
 }
 
-
 function generateAccessCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let out = '';
@@ -26,6 +27,22 @@ function generateAccessCode() {
     out += chars.charAt(crypto.randomInt(0, chars.length));
   }
   return out;
+}
+
+/** Generate a short 8-char alphanumeric link ID */
+function generateLinkId() {
+  return crypto.randomBytes(5).toString('base64url').slice(0, 8).toUpperCase();
+}
+
+/** Store token in Upstash Redis with TTL. Falls back to embedding token in URL if Redis unavailable. */
+async function storeToken(linkId, token, ttlSeconds) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return false;
+  const url = `${UPSTASH_URL}/set/${encodeURIComponent(`slink:${linkId}`)}/${encodeURIComponent(token)}?EX=${ttlSeconds}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+  });
+  return res.ok;
 }
 
 export default async function handler(req, res) {
@@ -44,9 +61,10 @@ export default async function handler(req, res) {
   const code = generateAccessCode();
   const normalizedCode = code.replace(/-/g, '');
   const now = Date.now();
+  const ttlMs = STAFF_LINK_TTL_MINUTES * 60 * 1000;
   const payloadObj = {
     toolId,
-    exp: now + STAFF_LINK_TTL_MINUTES * 60 * 1000,
+    exp: now + ttlMs,
     jti: crypto.randomBytes(12).toString('hex'),
     codeHash: crypto.createHash('sha256').update(`${normalizedCode}:${STAFF_LINK_SECRET}`).digest('hex'),
   };
@@ -55,7 +73,14 @@ export default async function handler(req, res) {
   const token = `${payload}.${sig}`;
 
   const origin = APP_ORIGIN || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
-  const link = `${origin}#staff/${toolId}?t=${token}`;
+
+  // Try to use a short link ID via Redis
+  const linkId = generateLinkId();
+  const stored = await storeToken(linkId, token, Math.ceil(ttlMs / 1000) + 60);
+
+  const link = stored
+    ? `${origin}#staff/${toolId}?id=${linkId}`      // clean short URL
+    : `${origin}#staff/${toolId}?t=${token}`;        // fallback: embed token
 
   return res.json({ link, code, expiresAt: payloadObj.exp });
 }

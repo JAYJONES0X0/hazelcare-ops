@@ -13,6 +13,7 @@ function LoginGate({
   sacRequired,
   staffToolId,
   staffToken,
+  staffLinkId,
   onStaffSacComplete,
   clearStaffUrlToken,
 }: {
@@ -20,6 +21,7 @@ function LoginGate({
   sacRequired?: boolean;
   staffToolId?: string | null;
   staffToken?: string | null;
+  staffLinkId?: string | null;
   onStaffSacComplete?: () => void;
   clearStaffUrlToken?: () => void;
 }) {
@@ -73,16 +75,20 @@ function LoginGate({
   function handleSac(e: React.FormEvent) {
     e.preventDefault();
     const formatted = sac.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 12);
-    if (!staffToken || !staffToolId) {
+    if ((!staffToken && !staffLinkId) || !staffToolId) {
       setError('Invalid or expired staff link');
       return;
     }
     setLoading(true);
     setError('');
+    // Send short id if available (clean URL), otherwise fall back to full token
+    const body = staffLinkId
+      ? { id: staffLinkId, code: formatted, toolId: staffToolId }
+      : { token: staffToken, code: formatted, toolId: staffToolId };
     fetch('/api/verify-staff-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: staffToken, code: formatted, toolId: staffToolId }),
+      body: JSON.stringify(body),
       credentials: 'include',
     })
       .then((res) => res.json())
@@ -346,6 +352,7 @@ export default function App() {
   const [staffLinkActive, setStaffLinkActive] = useState(false);
   const [sacVerified, setSacVerified] = useState(false);
   const [staffToken, setStaffToken] = useState<string | null>(null);
+  const [staffLinkId, setStaffLinkId] = useState<string | null>(null);
   const [staffToolId, setStaffToolId] = useState<string | null>(null);
 
   const refreshStaffSacFromServer = useCallback(() => {
@@ -361,6 +368,7 @@ export default function App() {
       window.history.replaceState(null, '', `#staff/${staffToolId}`);
     }
     setStaffToken(null);
+    setStaffLinkId(null);
   }, [staffToolId]);
 
   useEffect(() => {
@@ -385,22 +393,21 @@ export default function App() {
       const hash = window.location.hash;
       const match = hash.match(/^#staff\/(\w+)/);
       const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
-      const token = urlParams.get('t');
+      const token = urlParams.get('t');   // legacy: full jwt in URL
+      const linkId = urlParams.get('id'); // new: short redis-backed ID
 
       if (match && STAFF_PAGES[match[1]]) {
         setStaffMode(STAFF_PAGES[match[1]]);
         setStaffLinkActive(true);
         setStaffToolId(match[1]);
-        if (token) {
-          setStaffToken(token);
-        } else {
-          setStaffToken(null);
-        }
+        setStaffLinkId(linkId || null);
+        setStaffToken(token || null);
       } else {
         void fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
         setStaffMode(null);
         setStaffLinkActive(false);
         setStaffToken(null);
+        setStaffLinkId(null);
         setStaffToolId(null);
         setSacVerified(false);
       }
@@ -416,7 +423,7 @@ export default function App() {
     }
     let cancelled = false;
     (async () => {
-      if (staffToken) {
+      if (staffToken || staffLinkId) {
         await fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
       }
       const r = await fetch(`/api/staff-sac-status?toolId=${encodeURIComponent(staffToolId)}`, { credentials: 'include' });
@@ -426,7 +433,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [staffLinkActive, staffToolId, staffToken]);
+  }, [staffLinkActive, staffToolId, staffToken, staffLinkId]);
 
   useEffect(() => {
     // Dark-only: always remove light class
@@ -469,6 +476,7 @@ export default function App() {
         }}
         sacRequired={staffLinkActive && !sacVerified}
         staffToken={staffToken}
+        staffLinkId={staffLinkId}
         staffToolId={staffToolId}
         onStaffSacComplete={refreshStaffSacFromServer}
         clearStaffUrlToken={clearStaffUrlToken}
