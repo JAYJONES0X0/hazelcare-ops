@@ -1,5 +1,6 @@
 import type { WeekSummary, Action, Incident } from '../lib/types';
 import type { Page } from '../App';
+import { ORG_CONFIG } from '../lib/config';
 import { useCollapseStore } from '../lib/collapse-store';
 
 interface Props {
@@ -69,9 +70,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
-import { ORG_CONFIG } from '../lib/config';
-
-// ...
           <p className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-1">{ORG_CONFIG.name}</p>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter">Service Hub</h1>
         </div>

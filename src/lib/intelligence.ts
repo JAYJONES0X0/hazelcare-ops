@@ -4,7 +4,7 @@
  */
 
 import type { FullClient, CarePlanData, RiskData } from './client-store';
-import { emptyCarePlan, emptyRisk } from './client-store';
+import { emptyRisk } from './client-store';
 
 export interface IntelAnalysisResult {
   client: Partial<FullClient>;

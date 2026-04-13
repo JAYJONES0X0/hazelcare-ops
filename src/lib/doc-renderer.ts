@@ -2,7 +2,7 @@
 // DOC RENDERER — Refined for Person-Centered Precision
 // ============================================================
 import { LEVEL_OF_NEED_LABELS } from './client-store';
-import type { FullClient, RiskItem } from './client-store';
+import type { FullClient } from './client-store';
 import type { Sig } from '../components/SignaturePad';
 import { ORG_CONFIG } from './config';
 export type ExportLayout = 'portrait' | 'landscape';
@@ -209,7 +209,7 @@ function riskWidget(likelihood: number, impact: number) {
 }
 
 function riskMatrix(likelihood: number, impact: number) {
-  const cells = [];
+  const cells: string[] = [];
   for (let i = 5; i >= 1; i--) { // Impact (Y)
     for (let j = 1; j <= 5; j++) { // Likelihood (X)
       const { color } = riskInfo(j, i);

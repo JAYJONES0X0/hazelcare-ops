@@ -11,7 +11,6 @@ import {
   flattenWeekEntries,
   type MonitoringFilters,
 } from '../lib/staff-monitoring';
-import { buildExportRecommendations } from '../lib/export-recommendations';
 import { buildCallPrepScript, type CallPrepVariant } from '../lib/call-prep';
 import {
   saveMonitoringRun,
@@ -33,7 +32,7 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { Sparkles, LayoutGrid, Users, ShieldAlert, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History } from 'lucide-react';
+import { Sparkles, LayoutGrid, ShieldAlert, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -134,15 +133,14 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   }, [onDataParsed, weekData]);
 
   const [house, setHouse] = useState<string>('all');
-  const [dateFrom, setDateFrom] = useState(def.dateFrom);
-  const [dateTo, setDateTo] = useState(def.dateTo);
+  const [dateFrom] = useState(def.dateFrom);
+  const [dateTo] = useState(def.dateTo);
   const [selectedEscId, setSelectedEscId] = useState<string | null>(null);
   const [callVariant, setCallVariant] = useState<CallPrepVariant>('coaching');
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [outcomeType, setOutcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
   const [hourlyDismissed, setHourlyDismissed] = useState(false);
   const [hourlyTick, setHourlyTick] = useState(0);
-  const [linkBusy, setLinkBusy] = useState<string | null>(null);
 
   // Staff rubric detail panel
   const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
@@ -170,12 +168,6 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   );
 
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
-  const exportHints = useMemo(() => buildExportRecommendations(snapshot), [snapshot]);
-
-  const houseOptions = useMemo(() => {
-    if (!weekData) return ['all'];
-    return ['all', ...Object.keys(weekData.houses).sort()];
-  }, [weekData]);
 
   const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
 
@@ -221,14 +213,11 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   }, [snapshot, house, dateFrom, dateTo]);
 
   async function copyStaffTool(tool: string) {
-    setLinkBusy(tool);
     try {
       const { link, code } = await generateStaffLink(tool);
       await navigator.clipboard.writeText(`${ORG_CONFIG.name} staff access\nLink: ${link}\nSecure Access Code: ${code}`);
     } catch {
       /* ignore */
-    } finally {
-      setLinkBusy(null);
     }
   }
 
