@@ -48,7 +48,6 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState('');
   const [importDragging, setImportDragging] = useState(false);
-  const importFileRef = useRef<HTMLInputElement>(null);
 
   const handleImportFile = useCallback(async (file: File) => {
     setImportError('');
@@ -260,7 +259,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
           </div>
         </div>
       )}
-      <input ref={importFileRef} type="file" accept=".csv,.txt,.tsv" className="hidden"
+      <input type="file" accept=".csv,.txt,.tsv" className="hidden" id="daily-sync-input"
         onChange={e => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); }} />
 
       {/* ── Page header ── */}
@@ -280,7 +279,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
             <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-300 ${allPanelsClosed ? '' : 'rotate-90'}`} />
             {allPanelsClosed ? 'Expand' : 'Collapse'}
           </button>
-          <button type="button" onClick={() => importFileRef.current?.click()} disabled={importLoading}
+          <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
             className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer shadow-xl hover:scale-105 active:scale-95 transition-all">
             <RefreshCw className={`w-3.5 h-3.5 ${importLoading ? 'animate-spin' : ''}`} />
             {importLoading ? 'Analysing…' : 'Sync daily CSV'}
