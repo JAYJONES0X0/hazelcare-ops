@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ORG_CONFIG } from './lib/config';
 
 // Staff share link pages — these can be opened standalone via hash
 const STAFF_PAGES: Record<string, Page> = {
@@ -149,10 +150,10 @@ function LoginGate({
           <div className="flex items-center gap-3 mb-14">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
               style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)' }}>
-              <img src={customLogo || '/logo-icon-dark.png'} alt="Logo" className="h-7 w-7 object-contain rounded-lg" />
+              <img src={customLogo || ORG_CONFIG.logoIcon} alt="Logo" className="h-7 w-7 object-contain rounded-lg" />
             </div>
             <div>
-              <div className="text-sm font-black text-white tracking-tight">Hazel Care</div>
+              <div className="text-sm font-black text-white tracking-tight">{ORG_CONFIG.name}</div>
               <div className="text-[10px] text-hc-teal font-semibold uppercase tracking-widest">Operations Portal</div>
             </div>
           </div>
@@ -207,9 +208,9 @@ function LoginGate({
 
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <img src={customLogo || '/logo-icon-dark.png'} alt="Logo" className="h-9 w-9 rounded-xl" />
+            <img src={customLogo || ORG_CONFIG.logoIcon} alt="Logo" className="h-9 w-9 rounded-xl" />
             <div>
-              <div className="text-sm font-black text-white">Hazel Care</div>
+              <div className="text-sm font-black text-white">{ORG_CONFIG.name}</div>
               <div className="text-[10px] text-hc-teal/80 font-semibold uppercase tracking-widest">Operations Portal</div>
             </div>
           </div>
@@ -273,7 +274,7 @@ function LoginGate({
                 <div>
                   <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">Work Email</label>
                   <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                    placeholder="you@hazelcare.co.uk" autoFocus className={inputClass} />
+                    placeholder={`you@${ORG_CONFIG.domain}`} autoFocus className={inputClass} />
                 </div>
                 {error && <div className="text-flag-red text-xs font-semibold">{error}</div>}
                 <button type="submit" disabled={loading}
@@ -489,7 +490,6 @@ export default function App() {
     return (
       <StaffStandaloneView 
         page={staffMode} 
-        generateStaffLink={generateStaffLink} 
         onSignOut={async () => {
           await fetch('/api/session', { method: 'DELETE', credentials: 'include' });
           await fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
@@ -525,7 +525,7 @@ export default function App() {
   return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />;
 }
 
-function StaffStandaloneView({ page, onSignOut }: { page: Page; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; onSignOut: () => void }) {
+function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () => void }) {
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
 
@@ -542,11 +542,11 @@ function StaffStandaloneView({ page, onSignOut }: { page: Page; generateStaffLin
       <div className="glass border-b border-white/10 px-6 py-4 flex items-center justify-between z-20 shadow-2xl backdrop-blur-3xl">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center shadow-lg glow-teal">
-            <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-6 w-6 rounded-md" />
+            <img src={ORG_CONFIG.logoIcon} alt={ORG_CONFIG.name} className="h-6 w-6 rounded-md" />
           </div>
           <div>
             <div className="text-base font-black text-white tracking-tighter uppercase text-shimmer">{TOOL_LABELS[page] || 'Staff Tool'}</div>
-            <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Hazel Care — Staff Access</div>
+            <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">{ORG_CONFIG.name} — Staff Access</div>
           </div>
         </div>
         <button onClick={onSignOut}
@@ -594,7 +594,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   async function copyStaffLink(toolId: string) {
     try {
       const { link, code } = await generateStaffLink(toolId);
-      const payload = `Hazel Care staff access\nLink: ${link}\nSecure Access Code: ${code}`;
+      const payload = `${ORG_CONFIG.name} staff access\nLink: ${link}\nSecure Access Code: ${code}`;
       await navigator.clipboard.writeText(payload);
       setShowShareModal(toolId);
       setTimeout(() => setShowShareModal(null), 2000);
@@ -616,10 +616,10 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
         setTheme={setTheme}
         onSignOut={onSignOut}
       />
-      <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin pt-16 lg:pt-0">
+      <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin">
         {/* Staff share buttons on Staff Tools pages */}
         {(page === 'notes' || page === 'handover' || page === 'actions' || page === 'incidents') && (
-          <div className="px-8 pt-6 flex justify-end animate-in fade-in duration-1000">
+          <div className="px-6 pt-6 flex justify-end animate-in fade-in duration-1000 relative z-20">
             <button
               onClick={() => copyStaffLink(page)}
               className="group flex items-center gap-3 px-6 py-3 glass-light border border-white/10 text-hc-muted hover:text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl"
@@ -630,7 +630,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           </div>
         )}
 
-        <div className="relative z-10 min-h-[calc(100vh-100px)] w-full flex flex-col items-center">
+        <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
           {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}

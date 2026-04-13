@@ -84,6 +84,8 @@ export interface RiskItem {
   earlyWarnings: string[];
   controls: string[];
   dynamicControls: string[];
+  secondaryRisk: string;
+  contingencyPlan: string;
   leastRestrictive: string;
   likelihood: number; // 1-5
   impact: number; // 1-5
@@ -353,6 +355,8 @@ export function emptyRisk_item(): RiskItem {
     earlyWarnings: [''],
     controls: [''],
     dynamicControls: ['Remain calm and use non-confrontational communication.', 'Provide space where possible to reduce stimulation.', 'Offer reassurance and acknowledge feelings.'],
+    secondaryRisk: '',
+    contingencyPlan: '',
     leastRestrictive: '',
     likelihood: 3,
     impact: 3,

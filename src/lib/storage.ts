@@ -1,6 +1,7 @@
 import type { AppState, Action, CareEntry, Incident, WeekSummary } from './types';
 
 const STORAGE_KEY = 'hazelcare-ops';
+const WEEK_DATA_KEY = 'hc-week-data-v2';
 const CLIENTS_KEY = 'hc-clients-v2';
 const STAFF_NOTES_KEY = 'hazelcare-staff-notes';
 let sessionWeekData: WeekSummary | null = null;
@@ -62,11 +63,21 @@ function save(state: Partial<AppState>) {
 }
 
 export function loadWeekData(): WeekSummary | null {
+  if (sessionWeekData) return sessionWeekData;
+  try {
+    const raw = localStorage.getItem(WEEK_DATA_KEY);
+    if (raw) sessionWeekData = JSON.parse(raw) as WeekSummary;
+  } catch { /* ignore */ }
   return sessionWeekData;
 }
 
 export function saveWeekData(data: WeekSummary | null) {
   sessionWeekData = data;
+  if (data) {
+    try { localStorage.setItem(WEEK_DATA_KEY, JSON.stringify(data)); } catch { /* quota error — ignore */ }
+  } else {
+    try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
+  }
 }
 
 function entryFingerprint(entry: CareEntry): string {
@@ -210,7 +221,15 @@ export function saveIncidents(incidents: Incident[]) {
 
 export function clearWeekData() {
   sessionWeekData = null;
-  save({ weekData: null });
+  try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      delete parsed.weekData;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    }
+  } catch { /* ignore */ }
 }
 
 export function clearActions() {
@@ -232,6 +251,7 @@ export function clearSelectedData(type: 'diary' | 'actions' | 'incidents') {
 
 export function clearAllData() {
   sessionWeekData = null;
+  localStorage.removeItem(WEEK_DATA_KEY);
   localStorage.removeItem(STORAGE_KEY);
 }
 
@@ -266,7 +286,7 @@ export function exportOpsSnapshot(): OpsSnapshot {
     staffNotes = [];
   }
 
-  // weekData is excluded — it lives in React state only (too large for localStorage)
+  // weekData is stored separately in WEEK_DATA_KEY (localStorage) — loaded lazily
   const appState = load();
   return {
     version: 1,
@@ -303,6 +323,7 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   };
 
   sessionWeekData = null;
+  localStorage.removeItem(WEEK_DATA_KEY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   localStorage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
   localStorage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));

@@ -69,7 +69,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
-          <p className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-1">Hazel Care</p>
+import { ORG_CONFIG } from '../lib/config';
+
+// ...
+          <p className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-1">{ORG_CONFIG.name}</p>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter">Service Hub</h1>
         </div>
         <div className="flex flex-wrap gap-2">

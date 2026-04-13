@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import type { Page } from '../App';
 import type { WeekSummary, Action, Incident } from '../lib/types';
+import { ORG_CONFIG } from '../lib/config';
 
 interface Props {
   page: Page;
@@ -91,15 +92,15 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <img
-              src={customLogo || '/logo-icon-dark.png'}
-              alt="Hazelcare"
+              src={customLogo || ORG_CONFIG.logoIcon}
+              alt={ORG_CONFIG.name}
               className="h-7 w-7 rounded-lg object-cover relative z-10"
             />
             <div className="absolute inset-0 rounded-lg bg-hc-teal/20 blur-md" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[11px] font-black tracking-tight text-white truncate">Care Portal</div>
-            <div className="text-[9px] text-hc-muted font-medium truncate">Hazel Care Ltd</div>
+            <div className="text-[9px] text-hc-muted font-medium truncate">{ORG_CONFIG.fullName}</div>
           </div>
           {/* Live status dot */}
           <div className="flex items-center gap-1 shrink-0">
@@ -196,8 +197,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
                 const name = localStorage.getItem('hc-profile-v1');
                 try {
                   const p = name ? JSON.parse(name) : null;
-                  return p?.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'HC';
-                } catch { return 'HC'; }
+                  return p?.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || ORG_CONFIG.shortName;
+                } catch { return ORG_CONFIG.shortName; }
               })()}
             </div>
             <span className="text-[11px] font-semibold text-hc-muted group-hover:text-white transition-colors truncate">Settings</span>
@@ -217,10 +218,10 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
 
         {/* Quick links */}
         <div className="flex gap-1.5">
-          <a href="https://www.hazelcare.co.uk" target="_blank" rel="noopener noreferrer"
+          <a href={`https://www.${ORG_CONFIG.domain}`} target="_blank" rel="noopener noreferrer"
             className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
             style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
-            Hazel Care
+            {ORG_CONFIG.name}
           </a>
           <a href="https://login.nourishcare.com" target="_blank" rel="noopener noreferrer"
             className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
@@ -247,7 +248,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <img src="/logo-icon-dark.png" alt="Hazelcare" className="h-6 w-6 rounded-lg" />
+        <img src={ORG_CONFIG.logoIcon} alt={ORG_CONFIG.name} className="h-6 w-6 rounded-lg" />
         <span className="text-sm font-black text-white tracking-tight">Care Portal</span>
         {redFlags > 0 && <span className="pill pill-red ml-auto">{redFlags}</span>}
       </div>

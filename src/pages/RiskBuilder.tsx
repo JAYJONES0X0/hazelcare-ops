@@ -162,12 +162,27 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
               onChange={v => up({ earlyWarnings: v })} placeholder="e.g. Attempting to stand without support" />
           </div>
 
-          <ListField label="Actions to Manage Risk" items={risk.controls}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6">
+            <Field label="Secondary Risks" value={risk.secondaryRisk} onChange={v => up({ secondaryRisk: v })} area rows={3}
+              placeholder="Does managing this risk create other risks? (e.g. social isolation)" />
+            <Field label="Contingency Plan" value={risk.contingencyPlan} onChange={v => up({ contingencyPlan: v })} area rows={3}
+              placeholder="What must staff do if the primary controls fail?" />
+          </div>
+
+          <ListField label="Primary Controls" items={risk.controls}
             onChange={v => up({ controls: v })} placeholder="e.g. Staff to provide steadying support" />
           
-          <Field label="Review Trigger" value={risk.reviewTrigger}
-            onChange={v => up({ reviewTrigger: v })}
-            placeholder="e.g. Following any fall or change in Mobility, Movement & Exercise" />
+          <ListField label="Dynamic Controls" items={risk.dynamicControls}
+            onChange={v => up({ dynamicControls: v })} placeholder="e.g. Postpone activity if person is too fatigued" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-6">
+            <Field label="Least Restrictive Practice" value={risk.leastRestrictive}
+              onChange={v => up({ leastRestrictive: v })} area rows={3}
+              placeholder="Explain why this is the least restrictive option..." />
+            <Field label="Review Trigger" value={risk.reviewTrigger}
+              onChange={v => up({ reviewTrigger: v })}
+              placeholder="e.g. Following any fall or change in Mobility, Movement & Exercise" />
+          </div>
 
           {/* Score */}
           <div className="glass border-2 border-white/5 rounded-[2.5rem] p-8 mt-10 shadow-2xl relative overflow-hidden group/score">

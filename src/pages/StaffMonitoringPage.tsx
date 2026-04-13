@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import type { Page } from '../App';
+import { ORG_CONFIG } from '../lib/config';
 import { scoreEntry } from '../lib/entry-rubric';
 import {
   computeStaffMonitoring,
@@ -32,6 +33,7 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
+import { Sparkles, LayoutGrid, Users, ShieldAlert, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -53,32 +55,24 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
     setImportError('');
     setImportLoading(true);
     try {
-      // No size limit — CarePlanner exports can be very large (10MB+)
       let text = '';
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
       if (ext === 'pdf') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pdfjsLib = await import('pdfjs-dist') as any;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
         const buf = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const tc = await page.getTextContent();
-          // Reconstruct table structure by grouping items by Y coordinate (row),
-          // then sorting each row by X coordinate (column order).
-          // This preserves the tabular layout CarePlanner PDFs use.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const items = tc.items as any[];
           const rowMap = new Map<number, { x: number; str: string }[]>();
           for (const it of items) {
             if (!it.str?.trim()) continue;
-            // transform[5] = Y position, transform[4] = X position
-            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4; // bucket to 4pt rows
+            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4;
             if (!rowMap.has(y)) rowMap.set(y, []);
             rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
           }
-          // Sort rows top→bottom (descending Y in PDF coords), cells left→right
           const sortedRows = [...rowMap.entries()]
             .sort((a, b) => b[0] - a[0])
             .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
@@ -89,22 +83,55 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       }
       if (!text.trim()) { setImportError('File appears empty.'); return; }
 
-      // Yield to browser before heavy synchronous parse (prevents freeze on large files)
       await new Promise<void>(res => setTimeout(res, 10));
 
       const envelope = buildEnvelopeFromRaw(file.name, text);
       if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
-        onDataParsed(envelope.weekSummary);
-        setImportError('');
+        // INTELLIGENT MERGE: If we have existing data, merge instead of overwrite
+        if (weekData) {
+          const merged: WeekSummary = JSON.parse(JSON.stringify(weekData));
+          let newAdded = 0;
+          
+          // Helper to create entry fingerprint
+          const getHash = (e: CareEntry) => `${e.date}-${e.carer}-${e.client}-${(e.entry || '').slice(0, 40)}`;
+          const existingHashes = new Set(flattenWeekEntries(weekData).map(getHash));
+
+          Object.entries(envelope.weekSummary.houses).forEach(([houseName, houseData]) => {
+            if (!merged.houses[houseName]) {
+              merged.houses[houseName] = houseData;
+              newAdded += houseData.entries.length;
+            } else {
+              houseData.entries.forEach(e => {
+                if (!existingHashes.has(getHash(e))) {
+                  merged.houses[houseName].entries.push(e);
+                  newAdded++;
+                }
+              });
+            }
+          });
+
+          if (newAdded > 0) {
+            // Re-flatten and re-calculate all stats/flags
+            const allEntries = flattenWeekEntries(merged);
+            merged.totalEntries = allEntries.length;
+            onDataParsed(merged);
+            setImportError(`Merged ${newAdded} new entries into existing intelligence.`);
+          } else {
+            setImportError('No new unique entries found in this file.');
+          }
+        } else {
+          onDataParsed(envelope.weekSummary);
+          setImportError('');
+        }
       } else {
-        setImportError(`Parsed 0 entries. Check your file has columns like: Date, Carer/Staff, Client, Entry/Notes. Got: ${envelope.warnings.slice(0, 2).join('; ') || 'no recognisable columns'}`);
+        setImportError(`Parsed 0 entries. Check your file has columns like: Date, Carer/Staff, Client, Entry/Notes.`);
       }
     } catch (e) {
       setImportError(`Could not read file: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setImportLoading(false);
     }
-  }, [onDataParsed]);
+  }, [onDataParsed, weekData]);
 
   const [house, setHouse] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState(def.dateFrom);
@@ -173,12 +200,8 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
   const onRecompute = useCallback(() => {
     saveMonitoringRun(`${snapshot.windowLabel} · ${snapshot.dataFreshness.entryCount} entries`, snapshot.escalations.length);
-
-    // Detect growth alerts BEFORE recording new scores (compare vs prior history)
     const alerts = detectGrowthAlerts(snapshot.staff);
     if (alerts.length > 0) setGrowthAlerts(alerts);
-
-    // Now record this run's scores and gaps
     recordCoachingEvents(snapshot.staff.map((s) => ({ carer: s.carer, topGaps: s.topGaps })));
     recordModuleScores(snapshot.staff.map((s) => ({ carer: s.carer, qualityScore: s.qualityScore, moduleBreakdown: s.moduleBreakdown })));
 
@@ -201,7 +224,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
     setLinkBusy(tool);
     try {
       const { link, code } = await generateStaffLink(tool);
-      await navigator.clipboard.writeText(`Hazel Care staff access\nLink: ${link}\nSecure Access Code: ${code}`);
+      await navigator.clipboard.writeText(`${ORG_CONFIG.name} staff access\nLink: ${link}\nSecure Access Code: ${code}`);
     } catch {
       /* ignore */
     } finally {
@@ -217,9 +240,9 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   function exportMonitoringPack() {
     const meta = buildCoordinatorPackMeta(snapshot, 'staff-monitoring', { entryCount: filteredEntries.length });
     const day = new Date().toISOString().slice(0, 10);
-    downloadText(`hazelcare-evidence-${day}.csv`, careEntriesToEvidenceCsv(filteredEntries), 'text/csv;charset=utf-8');
-    downloadText(`hazelcare-evidence-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
-    downloadText(`hazelcare-evidence-${day}.html`, buildCoordinatorEvidenceHtml(filteredEntries, meta), 'text/html;charset=utf-8');
+    downloadText(`${ORG_CONFIG.storagePrefix}-evidence-${day}.csv`, careEntriesToEvidenceCsv(filteredEntries), 'text/csv;charset=utf-8');
+    downloadText(`${ORG_CONFIG.storagePrefix}-evidence-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
+    downloadText(`${ORG_CONFIG.storagePrefix}-evidence-${day}.html`, buildCoordinatorEvidenceHtml(filteredEntries, meta), 'text/html;charset=utf-8');
   }
 
   const entriesByStaff = useMemo(() => {
@@ -292,7 +315,7 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       `Please adopt this style going forward. Any questions, catch me at handover.`,
       ``,
       `Regards,`,
-      `Abraham`,
+      `Management Team`,
     ].join('\n');
     void navigator.clipboard.writeText(msg);
     setCoachCopied(true);
@@ -307,11 +330,11 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
     >
       {/* Drag overlay */}
       {importDragging && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{background:'rgba(10,12,18,0.9)',backdropFilter:'blur(8px)'}}>
-          <div className="rounded-[2rem] p-12 flex flex-col items-center gap-4" style={{border:'2px dashed rgba(20,184,166,0.6)',boxShadow:'0 0 60px rgba(20,184,166,0.2)'}}>
-            <svg className="w-16 h-16 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            <div className="text-white font-black text-xl">Drop diary CSV here</div>
-            <div className="text-hc-muted text-xs opacity-60">Release to import and analyse</div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{background:'rgba(10,12,18,0.95)',backdropFilter:'blur(12px)'}}>
+          <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 glass border-2 border-hc-teal/40 shadow-[0_0_100px_rgba(20,184,166,0.3)]">
+            <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
+            <div className="text-white font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
+            <div className="text-hc-muted text-xs font-black tracking-widest opacity-60 uppercase">Merging with current operational data</div>
           </div>
         </div>
       )}
@@ -319,120 +342,94 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         onChange={e => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); }} />
 
       {/* ── Page header ── */}
-      <div className="mb-6 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+      <div className="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter text-shimmer">Staff Intelligence</h1>
-          <p className="text-hc-muted text-sm font-medium mt-1">
-            Drop your diary CSV here — scores every entry, flags weak notes, generates call scripts and coaching rewrites.
+          <h1 className="text-2xl md:text-4xl font-black text-white tracking-tighter text-shimmer flex items-center gap-4">
+            Staff Intelligence
+            <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1">Operational Engine</span>
+          </h1>
+          <p className="text-hc-muted text-sm font-medium mt-2 max-w-2xl opacity-80 leading-relaxed">
+            Clinical analysis of daily diary exports. Every entry is scored to protect {ORG_CONFIG.name} registration and drive documentation quality.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => allPanelsClosed ? expandAllPanels(PANEL_IDS) : collapseAllPanels(PANEL_IDS)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
-            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-white/5 hover:bg-white/5 text-hc-muted"
           >
-            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allPanelsClosed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-300 ${allPanelsClosed ? '' : 'rotate-90'}`} />
             {allPanelsClosed ? 'Expand all' : 'Collapse all'}
           </button>
           <button
             type="button"
             onClick={() => importFileRef.current?.click()}
             disabled={importLoading}
-            className="px-4 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide cursor-pointer"
+            className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer shadow-xl hover:scale-105 active:scale-95 transition-all"
           >
-            {importLoading ? 'Parsing entries…' : weekData ? 'Import new CSV' : 'Import diary CSV'}
+            <RefreshCw className={`w-3.5 h-3.5 ${importLoading ? 'animate-spin' : ''}`} />
+            {importLoading ? 'Analysing stream…' : 'Sync daily CSV'}
           </button>
           <button
             type="button"
-            onClick={async () => {
-              setImportError('');
-              setImportLoading(true);
-              try {
-                const res = await fetch('/demo-diary.csv');
-                const text = await res.text();
-                const envelope = buildEnvelopeFromRaw('demo-diary.csv', text);
-                if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
-                  onDataParsed(envelope.weekSummary);
-                } else {
-                  setImportError('Demo load failed — check console');
-                }
-              } catch (e) {
-                setImportError(`Demo error: ${e instanceof Error ? e.message : 'Unknown'}`);
-              } finally {
-                setImportLoading(false);
-              }
-            }}
-            disabled={importLoading}
-            className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors"
-            style={{background:'rgba(139,92,246,0.1)',border:'1px solid rgba(139,92,246,0.3)',color:'#a78bfa'}}
-          >
-            Load demo data
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onRecompute();
-              setPage('templates');
-            }}
-            className="px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-wide text-hc-muted hover:text-white transition-colors"
-            style={{background:'rgba(255,255,255,0.03)'}}
+            onClick={() => { onRecompute(); setPage('templates'); }}
+            className="px-5 py-2.5 rounded-xl glass-light border border-white/10 text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white transition-all shadow-lg"
           >
             Templates
           </button>
         </div>
       </div>
 
-      {/* Import error */}
+      {/* Import error/status */}
       {importError && (
-        <div className="mb-4 px-4 py-3 rounded-xl text-xs text-flag-red font-semibold" style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)'}}>
+        <div className={`mb-8 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-4 duration-500 ${importError.includes('Merged') ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/20' : 'bg-flag-red/10 text-flag-red border border-flag-red/20'}`}>
+          <div className={`w-2 h-2 rounded-full ${importError.includes('Merged') ? 'bg-hc-teal animate-pulse' : 'bg-flag-red'}`} />
           {importError}
         </div>
       )}
 
       {/* Header strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {[
-          { label: 'Window', value: snapshot.windowLabel, color: 'text-hc-teal-light' },
-          { label: 'Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-white' },
-          { label: 'Last entry', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white' },
-          { label: 'Computed', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl px-4 py-3" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-            <div className="text-[10px] font-bold text-hc-muted uppercase tracking-wider mb-1">{label}</div>
-            <div className={`text-sm font-bold ${color} truncate`}>{value}</div>
+          { label: 'Intelligence Window', value: snapshot.windowLabel, color: 'text-hc-teal-light', icon: <Activity className="w-4 h-4" /> },
+          { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-white', icon: <FileText className="w-4 h-4" /> },
+          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white', icon: <RefreshCw className="w-4 h-4" /> },
+          { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted', icon: <History className="w-4 h-4" /> },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} className="glass-light border border-white/10 rounded-2xl px-6 py-5 shadow-2xl relative overflow-hidden group/stat transition-all hover:scale-[1.02] hover:bg-white/5">
+            <div className="absolute top-0 right-0 p-4 opacity-10 text-hc-teal group-hover/stat:scale-125 transition-transform group-hover/stat:opacity-20">{icon}</div>
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-60">{label}</div>
+            <div className={`text-xl font-black ${color} truncate tracking-tighter`}>{value}</div>
           </div>
         ))}
       </div>
 
       {/* Hourly prompt */}
       {hourlyDue && !hourlyDismissed && (
-        <div className="mb-6 border border-flag-amber/40 bg-flag-amber/10 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-white font-semibold">Has anything changed in the last hour?</div>
-          <div className="flex gap-2">
+        <div className="mb-8 glass border border-flag-amber/30 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-right-10 duration-700 glow-amber-soft">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-flag-amber/10 border border-flag-amber/20 flex items-center justify-center shrink-0">
+              <span className="text-xl">⚠️</span>
+            </div>
+            <div>
+              <div className="text-sm text-white font-black uppercase tracking-wide">Sync Required</div>
+              <div className="text-xs text-hc-muted font-medium mt-0.5">Operational data is over 60 minutes old. Sync latest exports from CarePlanner.</div>
+            </div>
+          </div>
+          <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => {
-                touchHourlyCheck();
-                setHourlyTick((t) => t + 1);
-                setHourlyDismissed(true);
-                setPage('upload');
-              }}
-              className="px-3 py-1.5 rounded-lg bg-flag-amber/20 text-flag-amber text-[10px] font-black uppercase"
+              onClick={() => { touchHourlyCheck(); setHourlyTick((t) => t + 1); setHourlyDismissed(true); setPage('upload'); }}
+              className="px-5 py-2.5 rounded-xl bg-flag-amber/20 hover:bg-flag-amber/30 text-flag-amber text-[10px] font-black uppercase tracking-widest transition-all"
             >
-              Import update
+              Start Sync
             </button>
             <button
               type="button"
-              onClick={() => {
-                touchHourlyCheck();
-                setHourlyTick((t) => t + 1);
-                setHourlyDismissed(true);
-              }}
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] text-hc-muted uppercase"
+              onClick={() => { touchHourlyCheck(); setHourlyTick((t) => t + 1); setHourlyDismissed(true); }}
+              className="px-5 py-2.5 rounded-xl border border-white/10 text-[10px] text-hc-muted font-black uppercase tracking-widest hover:text-white"
             >
-              Nothing new
+              Dismiss
             </button>
           </div>
         </div>
@@ -440,22 +437,24 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
       {/* Growth Alerts banner */}
       {growthAlerts.length > 0 && (
-        <div className="mb-6 rounded-2xl p-4 space-y-3" style={{background:'rgba(34,197,94,0.05)',border:'1px solid rgba(34,197,94,0.25)'}}>
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-flag-green shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-            <span className="text-sm font-black text-flag-green">Growth Detected — Send Positive Reinforcement</span>
-            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] text-hc-muted hover:text-white cursor-pointer">Dismiss</button>
+        <div className="mb-10 glass border border-flag-green/30 rounded-[2rem] p-6 space-y-4 glow-teal-soft">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-flag-green shrink-0 animate-pulse" />
+            <span className="text-base font-black text-white tracking-tight uppercase">High-Performance Indicators</span>
+            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white cursor-pointer transition-colors">Dismiss</button>
           </div>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {growthAlerts.map((a) => (
-              <div key={`${a.carer}-${a.module}`} className="rounded-xl p-3 flex items-start justify-between gap-3" style={{background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)'}}>
-                <div>
-                  <div className="text-sm font-bold text-white mb-0.5">{a.carer}</div>
-                  <div className="text-xs text-hc-muted">
-                    <span className="text-flag-green font-semibold">{a.module}</span> improved{' '}
-                    <span className="font-black text-white">{a.previousScore} → {a.currentScore}</span>
-                    {' '}(+{a.delta} pts vs last {Math.min(5, 1)} sessions)
+              <div key={`${a.carer}-${a.module}`} className="glass-light border border-flag-green/20 rounded-2xl p-4 flex flex-col gap-3 group/alert">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-sm font-black text-white mb-0.5">{a.carer}</div>
+                    <div className="text-xs text-hc-muted font-medium">
+                      <span className="text-flag-green font-bold">{a.module}</span> improved{' '}
+                      <span className="font-black text-white">{a.previousScore} → {a.currentScore}</span>
+                    </div>
                   </div>
+                  <div className="text-[10px] font-black text-flag-green bg-flag-green/10 px-2 py-0.5 rounded-lg">+{a.delta} PTS</div>
                 </div>
                 <button
                   type="button"
@@ -464,14 +463,9 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     setCopiedGrowthAlert(`${a.carer}-${a.module}`);
                     setTimeout(() => setCopiedGrowthAlert(null), 2500);
                   }}
-                  className="shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide cursor-pointer transition-colors"
-                  style={{
-                    background: copiedGrowthAlert === `${a.carer}-${a.module}` ? 'rgba(34,197,94,0.25)' : 'rgba(34,197,94,0.1)',
-                    border: '1px solid rgba(34,197,94,0.35)',
-                    color: '#22c55e',
-                  }}
+                  className="w-full mt-auto py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-flag-green/30 text-flag-green hover:bg-flag-green/10"
                 >
-                  {copiedGrowthAlert === `${a.carer}-${a.module}` ? '✓ Copied' : 'Copy message'}
+                  {copiedGrowthAlert === `${a.carer}-${a.module}` ? '✓ Copied' : 'Copy reinforcement message'}
                 </button>
               </div>
             ))}
@@ -479,188 +473,20 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         </div>
       )}
 
-      {/* Filters */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-      <button type="button" onClick={() => togglePanel('filters')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('filters') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-4 rounded-full bg-hc-muted/40" />
-          <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Filters</span>
-          <span className="text-[9px] text-hc-muted opacity-40">{house !== 'all' ? house : 'All houses'} · {dateFrom}→{dateTo}</span>
-        </div>
-        <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('filters') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-      </button>
-      {!isPanelCollapsed('filters') && <div className="p-4">
-        <div className="flex flex-wrap gap-4 items-end">
-          <label className="flex flex-col gap-1.5 min-w-[180px] flex-1">
-            <span className="text-xs font-semibold text-hc-muted uppercase tracking-wide">House</span>
-            <select
-              value={house}
-              onChange={(e) => setHouse(e.target.value)}
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
-            >
-              {houseOptions.map((h) => (
-                <option key={h} value={h}>
-                  {h === 'all' ? 'All houses' : h}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 min-w-[150px]">
-            <span className="text-xs font-semibold text-hc-muted uppercase tracking-wide">From</span>
-            <input
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 min-w-[150px]">
-            <span className="text-xs font-semibold text-hc-muted uppercase tracking-wide">Until</span>
-            <input
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              placeholder="DD/MM/YYYY"
-              className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              const d = defaultMondayWindow();
-              setDateFrom(d.dateFrom);
-              setDateTo(d.dateTo);
-            }}
-            className="px-4 py-2.5 rounded-xl border border-hc-teal/40 text-hc-teal-light text-xs font-semibold uppercase tracking-wide hover:bg-hc-teal/10 transition-colors"
-          >
-            Reset to this week
-          </button>
-        </div>
-      </div>}
-      </div>
-
-      {/* Export recommendations */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-        <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between gap-2 px-5 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{borderBottom: isPanelCollapsed('export-hints') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 rounded-full bg-hc-teal/60" />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">What to export next from CarePlanner</span>
-          </div>
-          <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('export-hints') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-        </button>
-        {!isPanelCollapsed('export-hints') && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-5">
-          {exportHints.map((h) => (
-            <div key={h.id} className="bg-black/20 border border-white/5 rounded-xl p-3">
-              <div className="text-xs font-bold text-hc-teal-light mb-1">{h.label}</div>
-              <div className="text-xs text-hc-muted leading-relaxed">{h.detail}</div>
-              <div className="text-xs text-hc-muted/50 mt-1.5 italic">{h.carePlannerHint}</div>
-            </div>
-          ))}
-        </div>}
-      </div>
-
-      {!weekData && !importLoading && (
-        <div
-          onClick={() => importFileRef.current?.click()}
-          className="cursor-pointer flex flex-col items-center justify-center py-16 text-center rounded-[2rem] animate-in zoom-in duration-700 relative overflow-hidden transition-all duration-300 group"
-          style={{
-            background: importDragging ? 'rgba(20,184,166,0.05)' : '#0d1117',
-            border: importDragging ? '2px dashed rgba(20,184,166,0.45)' : '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
-          }}
-        >
-          {/* Illustrated empty state */}
-          <div className="relative mb-6 transition-transform duration-500 group-hover:-translate-y-1">
-            <svg width="260" height="176" viewBox="0 0 260 176" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Ambient glow */}
-              <ellipse cx="130" cy="108" rx="88" ry="48" fill="rgba(13,148,136,0.07)"/>
-              {/* Back doc */}
-              <rect x="90" y="22" width="96" height="120" rx="8" fill="#0f1825" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-              {/* Main doc */}
-              <rect x="74" y="16" width="96" height="120" rx="8" fill="#141e2e" stroke="rgba(20,184,166,0.18)" strokeWidth="1"/>
-              {/* Header bar */}
-              <rect x="74" y="16" width="96" height="22" rx="8" fill="rgba(20,184,166,0.09)"/>
-              <rect x="74" y="28" width="96" height="10" fill="rgba(20,184,166,0.09)"/>
-              <circle cx="86" cy="27" r="3" fill="rgba(20,184,166,0.55)"/>
-              <circle cx="96" cy="27" r="3" fill="rgba(255,255,255,0.12)"/>
-              <circle cx="106" cy="27" r="3" fill="rgba(255,255,255,0.08)"/>
-              <rect x="114" y="23" width="44" height="7" rx="2" fill="rgba(255,255,255,0.06)"/>
-              {/* CSV rows */}
-              <rect x="84" y="48" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="48" width="30" height="5" rx="2" fill="rgba(20,184,166,0.38)"/>
-              <line x1="84" y1="56" x2="152" y2="56" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-              <rect x="84" y="61" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="61" width="52" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
-              <line x1="84" y1="69" x2="152" y2="69" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-              <rect x="84" y="74" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="74" width="18" height="5" rx="2" fill="rgba(239,68,68,0.5)"/>
-              <line x1="84" y1="82" x2="152" y2="82" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-              <rect x="84" y="87" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="87" width="46" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
-              <line x1="84" y1="95" x2="152" y2="95" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-              <rect x="84" y="100" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="100" width="34" height="5" rx="2" fill="rgba(245,158,11,0.42)"/>
-              <line x1="84" y1="108" x2="152" y2="108" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
-              <rect x="84" y="113" width="68" height="5" rx="2" fill="rgba(255,255,255,0.07)"/>
-              <rect x="84" y="113" width="58" height="5" rx="2" fill="rgba(255,255,255,0.11)"/>
-              {/* Flag badge RED */}
-              <rect x="156" y="70" width="42" height="18" rx="9" fill="rgba(239,68,68,0.11)" stroke="rgba(239,68,68,0.28)" strokeWidth="1"/>
-              <circle cx="165" cy="79" r="3" fill="#ef4444"/>
-              <rect x="171" y="76" width="20" height="4" rx="2" fill="rgba(239,68,68,0.5)"/>
-              <rect x="171" y="81" width="13" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
-              {/* Score badge TEAL */}
-              <rect x="156" y="96" width="42" height="18" rx="9" fill="rgba(20,184,166,0.10)" stroke="rgba(20,184,166,0.26)" strokeWidth="1"/>
-              <circle cx="165" cy="105" r="3" fill="#14b8a6"/>
-              <rect x="171" y="102" width="20" height="4" rx="2" fill="rgba(20,184,166,0.48)"/>
-              <rect x="171" y="107" width="12" height="3" rx="1.5" fill="rgba(255,255,255,0.08)"/>
-              {/* Upload circle */}
-              <circle cx="202" cy="48" r="19" fill="rgba(20,184,166,0.08)" stroke="rgba(20,184,166,0.22)" strokeWidth="1.5"/>
-              <path d="M202 57 L202 41 M197 47 L202 41 L207 47" stroke="#14b8a6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <line x1="196" y1="59" x2="208" y2="59" stroke="rgba(20,184,166,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
-              {/* Sparkles */}
-              <circle cx="58" cy="40" r="2" fill="rgba(20,184,166,0.45)"/>
-              <circle cx="216" cy="128" r="1.5" fill="rgba(139,92,246,0.5)"/>
-              <circle cx="46" cy="116" r="1.5" fill="rgba(245,158,11,0.4)"/>
-              <circle cx="228" cy="64" r="1" fill="rgba(255,255,255,0.3)"/>
-            </svg>
-          </div>
-
-          <div className="relative z-10 max-w-xs mx-auto">
-            <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-2">Staff Intelligence</div>
-            <div className="text-xl font-black text-white mb-2 tracking-tighter">Drop your diary CSV here</div>
-            <div className="text-sm text-hc-muted mb-6 leading-relaxed">
-              Export from CarePlanner, drop it here. Every entry scored, flags raised, call scripts ready.
-            </div>
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-hc-teal-light transition-all duration-200 group-hover:border-hc-teal/40" style={{background:'rgba(20,184,166,0.08)',border:'1px solid rgba(20,184,166,0.22)'}}>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-              Browse or drag &amp; drop
-            </div>
-            <div className="text-[10px] text-hc-muted/30 mt-3">.csv · .txt · .tsv</div>
-          </div>
-        </div>
-      )}
-
-      {!weekData && importLoading && (
-        <div className="flex items-center justify-center py-20 rounded-[2rem]" style={{border:'1px solid rgba(255,255,255,0.06)'}}>
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 rounded-full border-2 border-hc-teal/30 border-t-hc-teal animate-spin" />
-            <div className="text-sm font-black text-white">Reading and scoring entries…</div>
-          </div>
-        </div>
-      )}
-
       {weekData && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.4fr] gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.4fr] gap-8">
           {/* Houses */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-            <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">House Health</span>
-                <span className="text-[9px] text-hc-muted opacity-40">{snapshot.houses.length}</span>
+          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-hc-teal/5 blur-[60px] pointer-events-none" />
+            <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 rounded-full bg-hc-teal glow-teal" />
+                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">House Health</span>
+                <span className="pill pill-teal text-[10px] px-2.5">{snapshot.houses.length}</span>
               </div>
-              <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('houses') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('houses') ? '' : 'rotate-90'}`} />
             </button>
-            {!isPanelCollapsed('houses') && <div className="space-y-2 max-h-[420px] overflow-y-auto scrollbar-thin px-4 pb-4">
+            {!isPanelCollapsed('houses') && <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin px-6 pb-6 relative z-10">
               {snapshot.houses.map((h) => {
                 const isActive = house === h.name;
                 const hasEsc = !!h.tierWorst;
@@ -669,49 +495,46 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     key={h.name}
                     type="button"
                     onClick={() => setHouse(h.name)}
-                    className="w-full text-left rounded-xl p-3.5 transition-all duration-200 cursor-pointer"
+                    className="w-full text-left rounded-2xl p-4 transition-all duration-300 cursor-pointer group/house"
                     style={{
-                      background: isActive ? 'rgba(20,184,166,0.1)' : hasEsc ? 'rgba(245,158,11,0.04)' : 'rgba(255,255,255,0.025)',
-                      border: isActive ? '1px solid rgba(20,184,166,0.45)' : hasEsc ? '1px solid rgba(245,158,11,0.25)' : '1px solid rgba(255,255,255,0.07)',
-                      boxShadow: isActive ? '0 0 16px rgba(20,184,166,0.1)' : 'none',
+                      background: isActive ? 'rgba(20,184,166,0.12)' : hasEsc ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
+                      border: isActive ? '1px solid rgba(20,184,166,0.4)' : hasEsc ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(255,255,255,0.06)',
+                      boxShadow: isActive ? '0 8px 24px rgba(20,184,166,0.1)' : 'none',
                     }}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-sm font-bold text-white">{h.name}</span>
-                      {hasEsc && <span className="pill pill-amber text-[10px]">T{h.tierWorst}</span>}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-base font-black text-white tracking-tight group-hover/house:text-hc-teal-light transition-colors">{h.name}</span>
+                      {hasEsc && <span className="pill pill-red text-[9px] font-black tracking-widest animate-pulse-soft">TIER {h.tierWorst}</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-hc-muted">
-                      <span>{h.entryCount} entries</span>
-                      <span>·</span>
-                      <span>{h.staffCount} staff</span>
-                      <span>·</span>
-                      <span className={h.avgQuality >= 70 ? 'text-flag-green' : h.avgQuality >= 45 ? 'text-flag-amber' : 'text-flag-red'}>Q:{h.avgQuality}</span>
-                    </div>
-                    <div className="flex gap-2 mt-1.5">
-                      {h.redFlags > 0 && <span className="text-xs text-flag-red font-semibold">{h.redFlags} red</span>}
-                      {h.amberFlags > 0 && <span className="text-xs text-flag-amber font-semibold">{h.amberFlags} amber</span>}
+                    <div className="grid grid-cols-2 gap-y-2 text-[11px] text-hc-muted font-bold uppercase tracking-widest">
+                      <div className="flex items-center gap-2"><span className="text-white">{h.entryCount}</span> Entries</div>
+                      <div className="flex items-center gap-2"><span className="text-white">{h.staffCount}</span> Staff</div>
+                      <div className="flex items-center gap-2">
+                        Quality: <span className={h.avgQuality >= 70 ? 'text-flag-green' : h.avgQuality >= 45 ? 'text-flag-amber' : 'text-flag-red'}>{h.avgQuality}%</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {h.redFlags > 0 && <span className="text-flag-red">R:{h.redFlags}</span>}
+                        {h.amberFlags > 0 && <span className="text-flag-amber">A:{h.amberFlags}</span>}
+                      </div>
                     </div>
                   </button>
                 );
               })}
-              {snapshot.houses.length === 0 && <div className="text-xs text-hc-muted opacity-40 text-center py-6">No house data for this filter</div>}
             </div>}
           </div>
 
-          {/* Staff leaderboard */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-            <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Staff Quality</span>
-                <span className="text-[9px] text-hc-muted opacity-40">{snapshot.staff.length} carers</span>
+          {/* Staff quality */}
+          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-hc-blue/5 blur-[60px] pointer-events-none" />
+            <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 rounded-full bg-hc-blue glow-blue" />
+                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Staff Quality</span>
+                <span className="pill pill-blue text-[10px] px-2.5">{snapshot.staff.length}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] text-hc-muted opacity-40">Click staff to expand</span>
-                <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('staff') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-              </div>
+              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('staff') ? '' : 'rotate-90'}`} />
             </button>
-            {!isPanelCollapsed('staff') && <div className="space-y-2 max-h-[420px] overflow-y-auto scrollbar-thin px-4 pb-4">
+            {!isPanelCollapsed('staff') && <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin px-6 pb-6 relative z-10">
               {snapshot.staff.map((s) => {
                 const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
                 const isExpanded = selectedStaffCard === s.carer;
@@ -720,240 +543,203 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
                     <button
                       type="button"
                       onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}
-                      className="w-full text-left rounded-xl p-3.5 cursor-pointer transition-all duration-200"
+                      className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all duration-300 group/staff"
                       style={{
-                        background: s.isRepeatTarget ? 'rgba(239,68,68,0.05)' : isExpanded ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.025)',
-                        border: s.isRepeatTarget ? '1px solid rgba(239,68,68,0.3)' : isExpanded ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                        background: s.isRepeatTarget ? 'rgba(239,68,68,0.06)' : isExpanded ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.02)',
+                        border: s.isRepeatTarget ? '1px solid rgba(239,68,68,0.3)' : isExpanded ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
                       }}
                     >
-                      <div className="flex justify-between items-center gap-2 mb-1.5">
+                      <div className="flex justify-between items-center gap-3 mb-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-bold text-white truncate">{s.carer}</span>
+                          <span className="text-base font-black text-white truncate tracking-tight">{s.carer}</span>
                           {s.isRepeatTarget && (
-                            <span className="shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide" style={{background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>
-                              Critical Training Need
+                            <span className="shrink-0 text-[8px] font-black px-2 py-0.5 rounded bg-flag-red/20 text-flag-red border border-flag-red/30 uppercase tracking-widest animate-pulse">
+                              Urgent Training
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {s.handoverScore !== null && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{color:'#a78bfa',background:'rgba(139,92,246,0.12)'}}>H:{s.handoverScore}</span>
-                          )}
-                          {s.dailySupportScore !== null && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{color:'#38bdf8',background:'rgba(56,189,248,0.1)'}}>1:1:{s.dailySupportScore}</span>
-                          )}
-                          <span className="text-xs font-black px-2.5 py-1 rounded-lg" style={{color: scoreHex, background:`${scoreHex}20`}}>
+                          <span className="text-[13px] font-black px-3 py-1 rounded-xl" style={{color: scoreHex, background:`${scoreHex}15`, border:`1px solid ${scoreHex}30`}}>
                             {s.qualityScore}
                           </span>
                         </div>
                       </div>
-                      <div className="text-xs text-hc-muted flex flex-wrap gap-x-3 gap-y-0.5">
-                        <span>{s.entryCount} notes</span>
-                        <span>avg {s.avgEntryChars}ch</span>
-                        <span>{Math.round(s.shortEntryRatio * 100)}% short</span>
-                        <span>R{s.redCount} A{s.amberCount}</span>
-                      </div>
-                      {s.tier && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <svg className="w-3 h-3 text-flag-amber shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                          <span className="text-flag-amber text-xs font-semibold">Tier {s.tier}: {s.reasons[0]}</span>
+                      <div className="grid grid-cols-2 gap-y-1 text-[10px] text-hc-muted font-bold uppercase tracking-widest">
+                        <div>{s.entryCount} Notes</div>
+                        <div>{Math.round(s.shortEntryRatio * 100)}% Short</div>
+                        <div>Score: {s.qualityScore}%</div>
+                        <div className="flex gap-2">
+                          {s.redCount > 0 && <span className="text-flag-red">R:{s.redCount}</span>}
+                          {s.amberCount > 0 && <span className="text-flag-amber">A:{s.amberCount}</span>}
                         </div>
-                      )}
+                      </div>
                     </button>
 
-                    {/* Expanded rubric detail */}
                     {isExpanded && (
-                      <div className="mx-1 mb-1 rounded-b-xl p-3 space-y-2.5" style={{background:'rgba(59,130,246,0.04)',border:'1px solid rgba(59,130,246,0.15)',borderTop:'none',marginTop:'-2px'}}>
+                      <div className="mx-2 mb-2 rounded-b-2xl p-5 space-y-4 glass-light border border-hc-blue/20 border-top-none -mt-2 animate-in slide-in-from-top-4 duration-300">
                         {/* Module bars */}
-                        {s.moduleBreakdown.length > 0 && (
-                          <div className="space-y-1.5">
-                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1">Quality Modules</div>
-                            {s.moduleBreakdown.map((m) => {
-                              const mc = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
-                              return (
-                                <div key={m.name}>
-                                  <div className="flex justify-between items-center mb-0.5">
-                                    <span className="text-[10px] text-hc-muted">{m.name}</span>
-                                    <span className="text-[10px] font-bold" style={{color:mc}}>{m.score}</span>
-                                  </div>
-                                  <div className="h-1 rounded-full" style={{background:'rgba(255,255,255,0.06)'}}>
-                                    <div className="h-1 rounded-full transition-all duration-500" style={{width:`${m.score}%`,background:mc,boxShadow:`0 0 6px ${mc}60`}} />
-                                  </div>
+                        <div className="space-y-3">
+                          <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Competency Matrix</div>
+                          {s.moduleBreakdown.map((m) => {
+                            const mc = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
+                            return (
+                              <div key={m.name}>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-[10px] font-bold text-white/80">{m.name}</span>
+                                  <span className="text-[10px] font-black" style={{color:mc}}>{m.score}%</span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{width:`${m.score}%`,background:mc,boxShadow:`0 0 10px ${mc}40`}} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                         {/* Top gaps */}
                         {s.topGaps.length > 0 && (
-                          <div>
-                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1">What's Missing</div>
-                            <div className="space-y-0.5">
-                              {s.topGaps.slice(0, 4).map((g, i) => (
-                                <div key={i} className="flex items-start gap-1.5">
-                                  <span className="text-flag-amber shrink-0 mt-0.5">›</span>
-                                  <span className="text-[10px] text-hc-muted leading-relaxed">{g}</span>
+                          <div className="pt-2 border-t border-white/5">
+                            <div className="text-[9px] font-black text-flag-amber uppercase tracking-[0.2em] mb-2">Priority Gaps</div>
+                            <div className="space-y-1.5">
+                              {s.topGaps.slice(0, 3).map((g, i) => (
+                                <div key={i} className="flex items-start gap-2 text-[10px] font-medium text-hc-muted leading-relaxed">
+                                  <ChevronRight className="w-3 h-3 text-flag-amber shrink-0 mt-0.5" />
+                                  {g}
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
-                        {/* Repeat target gaps */}
-                        {s.repeatGaps.length > 0 && (
-                          <div>
-                            <div className="text-[9px] font-black uppercase tracking-widest mb-1" style={{color:'#ef4444'}}>Repeat Training Gaps (7-day)</div>
-                            <div className="space-y-0.5">
-                              {s.repeatGaps.slice(0, 3).map((g, i) => (
-                                <div key={i} className="flex items-start gap-1.5 px-2 py-1 rounded" style={{background:'rgba(239,68,68,0.06)'}}>
-                                  <span style={{color:'#ef4444'}} className="shrink-0">!</span>
-                                  <span className="text-[10px] leading-relaxed" style={{color:'#f87171'}}>{g}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {/* Quick action */}
                         <button
                           type="button"
                           onClick={() => { setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); }}
-                          className="w-full py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors cursor-pointer"
-                          style={{background:'rgba(139,92,246,0.1)',border:'1px solid rgba(139,92,246,0.25)',color:'#a78bfa'}}
+                          className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20"
                         >
-                          Open in Coaching Studio
+                          Coaching Studio
                         </button>
                       </div>
                     )}
                   </div>
                 );
               })}
-              {snapshot.staff.length === 0 && <div className="text-xs text-hc-muted opacity-40 text-center py-6">No staff data for this filter</div>}
             </div>}
           </div>
 
-          {/* Escalations + call prep */}
-          <div className="rounded-2xl overflow-hidden" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-            <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-4 rounded-full bg-flag-red" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Escalations & Call Prep</span>
-                <span className="text-[9px] text-hc-muted opacity-40">{snapshot.escalations.length}</span>
+          {/* Escalations */}
+          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative flex flex-col">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-flag-red/5 blur-[60px] pointer-events-none" />
+            <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 rounded-full bg-flag-red glow-red" />
+                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Escalations</span>
+                <span className="pill pill-red text-[10px] px-2.5">{snapshot.escalations.length}</span>
               </div>
-              <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('escalations') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('escalations') ? '' : 'rotate-90'}`} />
             </button>
-            {!isPanelCollapsed('escalations') && <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin px-4 pb-4">
-              {/* Tier legend */}
-              <div className="flex items-center gap-3 mb-3 px-1">
-                {[{t:1,label:'Coaching nudge',c:'#f59e0b'},{t:2,label:'Formal coaching',c:'#ef4444'},{t:3,label:'Immediate action',c:'#dc2626'}].map(({t,label,c}) => (
-                  <div key={t} className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{color:c,background:`${c}18`}}>T{t}</span>
-                    <span className="text-[9px] text-hc-muted">{label}</span>
-                  </div>
-                ))}
-              </div>
-              {snapshot.escalations.length === 0 && (
-                <div className="text-xs text-hc-muted opacity-60 py-2">No tiered escalations for this filter.</div>
-              )}
-              {snapshot.escalations.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  onClick={() => setSelectedEscId(e.id)}
-                  className="w-full text-left rounded-xl p-3 text-xs cursor-pointer transition-all duration-200"
-                  style={{
-                    background: selectedEscId === e.id ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.025)',
-                    border: selectedEscId === e.id ? '1px solid rgba(20,184,166,0.4)' : '1px solid rgba(255,255,255,0.07)',
-                  }}
-                >
-                  <span className="text-flag-red font-black">T{e.tier}</span> {e.carer} — {e.summary}
-                </button>
-              ))}
-            </div>}
+            
+            {!isPanelCollapsed('escalations') && (
+              <div className="flex-1 flex flex-col min-h-0 relative z-10">
+                <div className="px-6 pb-4 space-y-2 overflow-y-auto scrollbar-thin max-h-48 border-b border-white/5">
+                  {snapshot.escalations.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setSelectedEscId(e.id)}
+                      className="w-full text-left rounded-2xl p-4 transition-all duration-300 cursor-pointer group/esc"
+                      style={{
+                        background: selectedEscId === e.id ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: selectedEscId === e.id ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-black text-white tracking-tight">{e.carer}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${e.tier === 3 ? 'bg-flag-red text-white' : e.tier === 2 ? 'bg-flag-red/20 text-flag-red' : 'bg-flag-amber/20 text-flag-amber'}`}>TIER {e.tier}</span>
+                      </div>
+                      <div className="text-[11px] text-hc-muted font-bold truncate opacity-80">{e.summary}</div>
+                    </button>
+                  ))}
+                </div>
 
-            {!isPanelCollapsed('escalations') && selectedEsc && script && (
-              <div className="mt-3 rounded-xl p-4 space-y-3" style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    value={callVariant}
-                    onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
-                    className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
-                  >
-                    <option value="coaching">Coaching — warm, developmental</option>
-                    <option value="urgent">Urgent — Tier 3, formal</option>
-                    <option value="support-first">Support-first — curious before challenging</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void navigator.clipboard.writeText([script.title, '', ...script.lines].join('\n'));
-                    }}
-                    className="px-3 py-1 rounded-lg border border-hc-teal/40 text-[10px] text-hc-teal-light font-black uppercase"
-                  >
-                    Copy script
-                  </button>
-                </div>
-                <pre className="text-[10px] text-hc-muted whitespace-pre-wrap font-mono leading-relaxed max-h-56 overflow-y-auto scrollbar-thin">
-                  {script.lines.join('\n')}
-                </pre>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={linkBusy === selectedEsc.suggestedTool}
-                    onClick={() => void copyStaffTool(selectedEsc.suggestedTool)}
-                    className="px-3 py-2 rounded-xl btn-gradient text-[10px] font-black uppercase"
-                  >
-                    Staff link: {selectedEsc.suggestedTool}
-                  </button>
-                  <button type="button" onClick={() => void copyStaffTool('notes')} className="px-3 py-2 rounded-xl border border-white/10 text-[10px] text-hc-muted uppercase">
-                    Link: notes
-                  </button>
-                  <button type="button" onClick={() => void copyStaffTool('handover')} className="px-3 py-2 rounded-xl border border-white/10 text-[10px] text-hc-muted uppercase">
-                    Link: handover
-                  </button>
-                </div>
-                <div className="border-t border-white/10 pt-3 space-y-2">
-                  <div className="text-[10px] font-black text-hc-muted uppercase">Call outcome</div>
-                  <select
-                    value={outcomeType}
-                    onChange={(e) => setOutcomeType(e.target.value as typeof outcomeType)}
-                    className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
-                  >
-                    <option value="reached">Reached</option>
-                    <option value="voicemail">Voicemail</option>
-                    <option value="callback">Callback scheduled</option>
-                    <option value="refused">Refused / no answer</option>
-                    <option value="resolved">Resolved on call</option>
-                  </select>
-                  <textarea
-                    value={outcomeNotes}
-                    onChange={(e) => setOutcomeNotes(e.target.value)}
-                    placeholder="Brief notes…"
-                    className="w-full min-h-[60px] bg-hc-dark/60 border border-white/10 rounded-lg p-2 text-[11px] text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      saveCallOutcome(selectedEsc, outcomeType, outcomeNotes);
-                      setOutcomeNotes('');
-                    }}
-                    className="w-full py-2 rounded-xl border border-white/10 text-[10px] font-black uppercase text-hc-teal-light"
-                  >
-                    Log outcome
-                  </button>
-                </div>
+                {selectedEsc && script && (
+                  <div className="p-6 space-y-5 animate-in fade-in duration-500 overflow-y-auto scrollbar-thin">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Personalised Call Script</div>
+                      <select
+                        value={callVariant}
+                        onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
+                        className="bg-hc-dark border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-hc-teal/50"
+                      >
+                        <option value="message">WhatsApp / Chat Message</option>
+                        <option value="coaching">Supportive Call (Warm)</option>
+                        <option value="urgent">Urgent Call (Tier 3)</option>
+                        <option value="support-first">Curiosity First Call</option>
+                      </select>
+                    </div>
+
+                    <div className="glass-light border border-white/5 rounded-2xl p-5 relative group/script">
+                      <button 
+                        onClick={() => { 
+                          void navigator.clipboard.writeText([script.title, '', ...script.lines].join('\n')); 
+                          setCopiedGrowthAlert('script');
+                          setTimeout(() => setCopiedGrowthAlert(null), 2000);
+                        }}
+                        className="absolute top-4 right-4 opacity-0 group-hover/script:opacity-100 transition-opacity p-2 rounded-lg bg-hc-teal/20 text-hc-teal-light hover:bg-hc-teal/30"
+                      >
+                        {copiedGrowthAlert === 'script' ? <CheckCircle className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                      </button>
+                      <div className="space-y-3 font-mono text-[11px] text-white/90 leading-relaxed max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+                        {script.lines.map((l, i) => <div key={i} className={l.startsWith('You:') || l.startsWith('Subject:') ? 'text-hc-teal-light font-bold' : ''}>{l}</div>)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => void copyStaffTool(selectedEsc.suggestedTool)} className="btn-gradient py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
+                        Link: {selectedEsc.suggestedTool}
+                      </button>
+                      <button onClick={() => void copyStaffTool('handover')} className="glass-light border border-white/10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 text-hc-muted">
+                        Link: Handover
+                      </button>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">Log Clinical Outcome</div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <select
+                          value={outcomeType}
+                          onChange={(e) => setOutcomeType(e.target.value as any)}
+                          className="bg-hc-dark border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white"
+                        >
+                          <option value="reached">Reached</option>
+                          <option value="voicemail">Voicemail</option>
+                          <option value="callback">Callback</option>
+                          <option value="resolved">Resolved</option>
+                        </select>
+                        <button
+                          onClick={() => { saveCallOutcome(selectedEsc, outcomeType, outcomeNotes); setOutcomeNotes(''); }}
+                          className="btn-gradient py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl"
+                        >
+                          Save Record
+                        </button>
+                      </div>
+                      <textarea
+                        value={outcomeNotes}
+                        onChange={(e) => setOutcomeNotes(e.target.value)}
+                        placeholder="Log clinical notes from the call..."
+                        className="w-full bg-hc-dark/60 border border-white/10 rounded-xl p-4 text-xs text-white placeholder:text-hc-muted/30 focus:border-hc-teal/50 outline-none"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="mt-3 space-y-2">
+            <div className="p-6 mt-auto border-t border-white/5 bg-black/20">
               <button
-                type="button"
                 onClick={exportMonitoringPack}
-                className="w-full py-3 rounded-xl text-xs font-black uppercase text-white cursor-pointer transition-all duration-200 hover:opacity-90"
-                style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.1)'}}
+                className="w-full py-4 rounded-2xl glass border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.25em] hover:bg-hc-teal/5 transition-all shadow-2xl flex items-center justify-center gap-3 group"
               >
-                Download evidence pack
-              </button>
-              <button type="button" onClick={onRecompute} className="w-full py-2 text-[10px] text-hc-muted uppercase cursor-pointer hover:text-white transition-colors">
-                Save run & push template context
+                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                Audit Evidence Pack
               </button>
             </div>
           </div>
@@ -962,184 +748,154 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
 
       {/* ── COACHING STUDIO ─────────────────────────────────────────── */}
       {weekData && (
-        <div className="mt-8">
-          {/* Section header */}
+        <div className="mt-12 animate-in slide-in-from-bottom-8 duration-1000 delay-300">
           <button
             type="button"
             onClick={() => togglePanel('coaching')}
-            className="w-full flex items-center gap-3 mb-5 cursor-pointer group"
+            className="w-full flex items-center gap-4 mb-8 cursor-pointer group"
           >
-            <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6', boxShadow:'0 0 12px rgba(139,92,246,0.6)'}} />
-            <h2 className="text-sm font-black text-white uppercase tracking-widest">Note Coaching Studio</h2>
-            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-50 flex-1 text-left">Select staff → pick entry → generate gold standard → copy coaching message</span>
-            <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200 shrink-0" style={{transform: isPanelCollapsed('coaching') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            <div className="w-2 h-8 rounded-full bg-hc-purple glow-purple" />
+            <div className="text-left">
+              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Clinical Coaching Studio</h2>
+              <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] opacity-50">High-Precision Note Transformation Pipeline</p>
+            </div>
+            <ChevronRight className={`w-5 h-5 text-hc-muted/40 ml-auto transition-transform duration-300 ${isPanelCollapsed('coaching') ? '' : 'rotate-90'}`} />
           </button>
 
-          {!isPanelCollapsed('coaching') && <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            {/* Col 1 — Staff list */}
-            <div className="rounded-2xl p-4" style={{background:'linear-gradient(145deg,rgba(16,18,26,0.9),rgba(10,12,18,0.85))',backdropFilter:'blur(28px)',border:'1px solid rgba(255,255,255,0.07)',boxShadow:'0 8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05)'}}>
-              <div className="text-[10px] font-black tracking-[0.2em] text-hc-muted uppercase mb-3">Staff — lowest quality first</div>
-              <div className="space-y-1.5 max-h-48 overflow-y-auto scrollbar-thin mb-4">
-                {[...snapshot.staff].sort((a, b) => a.qualityScore - b.qualityScore).map(s => {
-                  const scoreColor = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
-                  const isActive = coachStaff === s.carer;
-                  return (
-                    <button key={s.carer} type="button"
-                      onClick={() => { setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); }}
-                      className="w-full text-left rounded-xl px-3 py-2.5 cursor-pointer transition-all duration-200"
-                      style={{
-                        background: isActive ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.02)',
-                        border: isActive ? '1px solid rgba(139,92,246,0.35)' : '1px solid rgba(255,255,255,0.05)',
-                      }}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-white truncate">{s.carer}</span>
-                        <span className="text-xs font-black px-2 py-0.5 rounded-lg shrink-0" style={{color: scoreColor, background:`${scoreColor}18`}}>{s.qualityScore}</span>
-                      </div>
-                      <div className="text-[10px] text-hc-muted mt-0.5 opacity-60">{s.entryCount} notes · {Math.round(s.shortEntryRatio * 100)}% short</div>
-                    </button>
-                  );
-                })}
-                {snapshot.staff.length === 0 && <div className="text-[10px] text-hc-muted opacity-40 text-center py-4">No staff data — sync records first</div>}
-              </div>
-
-              {/* Entry picker */}
-              {coachStaff && entriesByStaff[coachStaff] && (
-                <>
-                  <div className="text-[10px] font-black tracking-[0.2em] text-hc-muted uppercase mb-2">Entries for {coachStaff}</div>
-                  <div className="space-y-1 max-h-56 overflow-y-auto scrollbar-thin">
-                    {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 20).map((e, i) => {
-                      const isActive = coachEntry === e;
-                      const preview = e.entry.slice(0, 55);
-                      const es = scoreEntry(e).total;
-                      const ec = es >= 70 ? '#22c55e' : es >= 45 ? '#f59e0b' : '#ef4444';
-                      return (
-                        <button key={i} type="button"
-                          onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                          className="w-full text-left rounded-xl px-3 py-2 cursor-pointer transition-all duration-200"
-                          style={{
-                            background: isActive ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.02)',
-                            border: isActive ? '1px solid rgba(139,92,246,0.3)' : '1px solid rgba(255,255,255,0.04)',
-                          }}>
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className="text-[10px] text-hc-teal-light font-bold truncate">{e.date} · {e.client || 'Unknown'}</span>
-                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded shrink-0" style={{color:ec,background:`${ec}18`}}>{es}</span>
-                          </div>
-                          <div className="text-[10px] text-hc-muted leading-relaxed opacity-70">{preview}{e.entry.length > 55 ? '…' : ''}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-              {!coachStaff && <div className="text-[10px] text-hc-muted opacity-40 text-center py-4">Select a staff member above</div>}
-            </div>
-
-            {/* Col 2 — Raw entry */}
-            <div className="rounded-2xl p-4 flex flex-col" style={{background:'linear-gradient(145deg,rgba(16,18,26,0.9),rgba(10,12,18,0.85))',backdropFilter:'blur(28px)',border:'1px solid rgba(255,255,255,0.07)',boxShadow:'0 8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05)'}}>
-              <div className="text-[10px] font-black tracking-[0.2em] text-hc-muted uppercase mb-3">Original Entry</div>
-              {coachEntry ? (
-                <>
-                  <div className="flex items-center gap-2 flex-wrap mb-3">
-                    {coachEntry.date && <span className="pill pill-teal text-[10px]">{coachEntry.date}</span>}
-                    {coachEntry.client && <span className="pill pill-blue text-[10px]">{coachEntry.client}</span>}
-                    {coachEntry.type && <span className="pill" style={{background:'rgba(255,255,255,0.06)',color:'#94a3b8',border:'1px solid rgba(255,255,255,0.08)',fontSize:'10px'}}>{coachEntry.type}</span>}
-                    {(() => {
-                      const es = scoreEntry(coachEntry);
-                      const ec = es.total >= 70 ? '#22c55e' : es.total >= 45 ? '#f59e0b' : '#ef4444';
-                      return <span className="text-[10px] font-black px-2 py-0.5 rounded-lg ml-auto" style={{color:ec,background:`${ec}18`}}>Score: {es.total}/100</span>;
-                    })()}
-                  </div>
-                  {/* Rubric flags for this entry */}
-                  {(() => {
-                    const es = scoreEntry(coachEntry);
-                    const allMissing = es.modules.flatMap(m => m.missing).concat(es.flags);
-                    if (allMissing.length === 0) return null;
+          {!isPanelCollapsed('coaching') && (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Staff & Entry Selector */}
+              <div className="glass border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col max-h-[600px]">
+                <div className="text-[10px] font-black tracking-[0.25em] text-hc-muted uppercase mb-4 opacity-60">Selection Pipeline</div>
+                
+                {/* Staff List */}
+                <div className="space-y-2 mb-6 overflow-y-auto scrollbar-thin flex-shrink-0 max-h-48">
+                  {[...snapshot.staff].sort((a, b) => a.qualityScore - b.qualityScore).map(s => {
+                    const scoreColor = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
+                    const isActive = coachStaff === s.carer;
                     return (
-                      <div className="mb-3 space-y-1">
-                        {allMissing.slice(0, 3).map((gap, i) => (
-                          <div key={i} className="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg" style={{background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)'}}>
-                            <span className="text-flag-amber shrink-0">›</span>
-                            <span className="text-[10px] text-flag-amber/80 leading-snug">{gap}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <button key={s.carer} onClick={() => { setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); }}
+                        className={`w-full text-left rounded-xl px-4 py-3 transition-all duration-300 border ${isActive ? 'bg-hc-purple/10 border-hc-purple/40 shadow-lg' : 'bg-white/2 border-white/5 hover:bg-white/5'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-black text-white truncate tracking-tight">{s.carer}</span>
+                          <span className="text-[11px] font-black px-2 py-0.5 rounded-lg" style={{color: scoreColor, background:`${scoreColor}15`}}>{s.qualityScore}%</span>
+                        </div>
+                      </button>
                     );
-                  })()}
-                  <div className="flex-1 text-[11px] text-hc-muted leading-relaxed overflow-y-auto scrollbar-thin mb-4 pr-1" style={{maxHeight:'220px'}}>
-                    {coachEntry.entry}
-                  </div>
-                  <button type="button" onClick={generateGoldStandard} disabled={coachLoading}
-                    className="w-full py-3 rounded-xl cursor-pointer font-black text-xs uppercase tracking-widest transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                    style={{background:'linear-gradient(135deg,#7c3aed,#8b5cf6)',boxShadow:'0 4px 24px rgba(139,92,246,0.35)',color:'white'}}>
-                    {coachLoading ? 'Generating…' : '✦ Generate Gold Standard'}
-                  </button>
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-[10px] text-hc-muted opacity-40">
-                  Select an entry from the left panel
+                  })}
                 </div>
-              )}
-            </div>
 
-            {/* Col 3 — Rewrite + dispatch */}
-            <div className="rounded-2xl p-4 flex flex-col" style={{background:'linear-gradient(145deg,rgba(16,18,26,0.9),rgba(10,12,18,0.85))',backdropFilter:'blur(28px)',border:'1px solid rgba(255,255,255,0.07)',boxShadow:'0 8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05)'}}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-[10px] font-black tracking-[0.2em] text-hc-muted uppercase">Gold Standard Rewrite</div>
-                {coachRewrite && !coachLoading && (
-                  <span className="text-[10px] font-bold text-flag-green uppercase tracking-wide">Ready</span>
+                {/* Entry Picker */}
+                {coachStaff && (
+                  <div className="flex-1 flex flex-col min-h-0 border-t border-white/5 pt-6 animate-in fade-in duration-500">
+                    <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal-light uppercase mb-4">Select Target Entry</div>
+                    <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin pr-2">
+                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 20).map((e, i) => {
+                        const isActive = coachEntry === e;
+                        const es = scoreEntry(e).total;
+                        const ec = es >= 70 ? '#22c55e' : es >= 45 ? '#f59e0b' : '#ef4444';
+                        return (
+                          <button key={i} onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
+                            className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${isActive ? 'bg-hc-teal/10 border-hc-teal/40' : 'bg-white/2 border-white/5 hover:bg-white/5'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-black text-white/60 tracking-widest">{e.date} · {e.client}</span>
+                              <span className="text-[10px] font-black" style={{color:ec}}>{es}</span>
+                            </div>
+                            <div className="text-[11px] text-hc-muted leading-relaxed line-clamp-2">{e.entry}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
-              <textarea
-                ref={rewriteRef}
-                value={coachRewrite}
-                onChange={e => setCoachRewrite(e.target.value)}
-                placeholder={coachLoading ? 'Generating gold standard note…' : 'Rewrite will appear here. Click "Generate Gold Standard" to produce a first-person coaching example.'}
-                className="flex-1 w-full text-[11px] leading-relaxed resize-none focus:outline-none scrollbar-thin mb-4"
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: coachLoading ? '#6b7d94' : '#e2eaf2',
-                  minHeight: '240px',
-                }}
-              />
-              <button
-                type="button"
-                onClick={copyCoachingMessage}
-                disabled={!coachRewrite.trim() || coachLoading}
-                className="w-full py-3 rounded-xl cursor-pointer font-black text-xs uppercase tracking-widest transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-30"
-                style={{
-                  background: coachCopied ? 'linear-gradient(135deg,#16a34a,#22c55e)' : 'linear-gradient(135deg,#0f766e,#14b8a6)',
-                  boxShadow: coachCopied ? '0 4px 24px rgba(34,197,94,0.35)' : '0 4px 24px rgba(20,184,166,0.35)',
-                  color: 'white',
-                }}>
-                {coachCopied ? '✓ Coaching message copied' : 'Copy coaching message to clipboard'}
-              </button>
+
+              {/* Analysis & Source */}
+              <div className="glass border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-hc-purple/5 blur-[60px] pointer-events-none" />
+                <div className="text-[10px] font-black tracking-[0.25em] text-hc-muted uppercase mb-6 opacity-60">Source Analysis</div>
+                
+                {coachEntry ? (
+                  <div className="flex-1 flex flex-col min-h-0 animate-in zoom-in-95 duration-500">
+                    <div className="glass-light border border-white/5 rounded-2xl p-6 mb-6 flex-1 overflow-y-auto scrollbar-thin shadow-inner">
+                      <div className="text-sm text-white/90 leading-relaxed font-medium italic">"{coachEntry.entry}"</div>
+                    </div>
+                    
+                    {/* Rubric Gaps */}
+                    <div className="space-y-2 mb-8">
+                      {(() => {
+                        const es = scoreEntry(coachEntry);
+                        return es.modules.flatMap(m => m.missing).slice(0, 3).map((gap, i) => (
+                          <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-flag-amber/5 border border-flag-amber/20">
+                            <ShieldAlert className="w-4 h-4 text-flag-amber shrink-0" />
+                            <span className="text-[10px] font-bold text-flag-amber uppercase tracking-widest">{gap}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+
+                    <button onClick={generateGoldStandard} disabled={coachLoading}
+                      className="w-full py-4 rounded-2xl btn-gradient text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                      {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      Generate Gold Standard
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center opacity-30">
+                    <LayoutGrid className="w-12 h-12 mb-4 text-hc-muted" />
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Selection</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gold Output */}
+              <div className="glass border-2 border-hc-purple/30 rounded-[3rem] p-8 shadow-2xl flex flex-col relative overflow-hidden glow-purple-soft">
+                <div className="absolute inset-0 bg-hc-purple/5 pointer-events-none" />
+                <div className="text-[10px] font-black tracking-[0.25em] text-hc-purple uppercase mb-6 relative z-10">Output: Gold Standard Rewrite</div>
+                
+                <div className="flex-1 flex flex-col relative z-10">
+                  <textarea
+                    ref={rewriteRef}
+                    value={coachRewrite}
+                    onChange={e => setCoachRewrite(e.target.value)}
+                    placeholder={coachLoading ? "Clinical Brain is rewriting entry..." : "First-person clinical rewrite will appear here."}
+                    className="flex-1 w-full bg-transparent text-[13px] leading-relaxed text-white font-medium resize-none outline-none scrollbar-thin"
+                  />
+                  
+                  <div className="pt-8 mt-auto">
+                    <button onClick={copyCoachingMessage} disabled={!coachRewrite.trim() || coachLoading}
+                      className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 font-black text-[11px] uppercase tracking-[0.25em] shadow-2xl ${coachCopied ? 'bg-flag-green text-white scale-95' : 'bg-hc-purple text-white hover:bg-hc-purple-light'}`}>
+                      {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                      {coachCopied ? 'Dispatch Copied' : 'Copy Coaching Dispatch'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>}
+          )}
         </div>
       )}
 
       {/* Recent outcomes */}
-      <div className="mt-8 rounded-2xl overflow-hidden" style={{background:'#111827',border:'1px solid rgba(255,255,255,0.06)',boxShadow:'0 4px 24px rgba(0,0,0,0.35)'}}>
-        <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 rounded-full" style={{background:'#64748b'}} />
-            <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Recent Call Outcomes</span>
+      <div className="mt-12 glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
+        <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-6 rounded-full bg-hc-muted/40" />
+            <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Historical Audit Trail</span>
+            <span className="pill glass-light text-[10px] px-2.5 text-hc-muted">{loadCallOutcomes().length} Events</span>
           </div>
-          <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isPanelCollapsed('outcomes') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('outcomes') ? '' : 'rotate-90'}`} />
         </button>
-        {!isPanelCollapsed('outcomes') && <div className="px-4 pb-4 space-y-1 max-h-32 overflow-y-auto text-[10px] text-hc-muted">
-          {loadCallOutcomes()
-            .slice(0, 8)
-            .map((o) => (
-              <div key={o.id}>
-                {new Date(o.at).toLocaleString('en-GB')} — {o.carer}: {o.outcome}
-                {o.notes && ` — ${o.notes}`}
-              </div>
-            ))}
-          {loadCallOutcomes().length === 0 && <span className="opacity-50">None logged yet.</span>}
+        {!isPanelCollapsed('outcomes') && <div className="px-8 pb-8 space-y-3 relative z-10">
+          {loadCallOutcomes().slice(0, 10).map((o) => (
+            <div key={o.id} className="flex items-center gap-4 text-[11px] font-bold text-hc-muted border-b border-white/5 pb-2 last:border-0">
+              <span className="tabular-nums opacity-40">{new Date(o.at).toLocaleDateString('en-GB')}</span>
+              <span className="w-32 truncate text-white">{o.carer}</span>
+              <span className="pill text-[9px] uppercase tracking-widest bg-white/5 border border-white/10">{o.outcome}</span>
+              <span className="flex-1 truncate opacity-60 font-medium italic">{o.notes}</span>
+            </div>
+          ))}
+          {loadCallOutcomes().length === 0 && <div className="text-[10px] text-hc-muted opacity-40 text-center py-4">No logged outcomes in clinical history.</div>}
         </div>}
       </div>
     </div>

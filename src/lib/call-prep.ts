@@ -1,6 +1,7 @@
 import type { EscalationItem } from './staff-monitoring';
+import { ORG_CONFIG } from './config';
 
-export type CallPrepVariant = 'coaching' | 'urgent' | 'support-first';
+export type CallPrepVariant = 'coaching' | 'urgent' | 'support-first' | 'message';
 
 export interface CallPrepScript {
   title: string;
@@ -60,9 +61,37 @@ export function buildCallPrepScript(
 
   let lines: string[];
 
-  if (variant === 'urgent') {
+  if (variant === 'message') {
+    // Sharp, professional message for WhatsApp / CarePlanner Chat
     lines = [
-      `You: "Hi ${firstName}, it's [Your Name] from Hazel Care management. Have you got two minutes — it's important."`,
+      `Subject: URGENT: Documentation Standards - Feedback for ${firstName}`,
+      ``,
+      `Hi ${firstName},`,
+      ``,
+      `I have been reviewing the diary entries ${locationRef}. While the care you are delivering looks good, your documentation is currently not meeting the ${ORG_CONFIG.name} clinical standard.`,
+      ``,
+      `DATA SUMMARY:`,
+      `• Quality Score: ${esc.qualityScore}/100`,
+      `• Short Note Ratio: ${shortPct}%`,
+      `• Priority Gap: ${topGap}`,
+      ``,
+      `THE CONCERN:`,
+      `Your notes are currently showing ${notePattern}. These one-liners do not protect you or the service during a CQC inspection.`,
+      ``,
+      `REQUIRED STANDARD:`,
+      `We need first-person, descriptive notes that show your decision-making.`,
+      ``,
+      `EXAMPLE OF GOLD STANDARD:`,
+      `${goldExample}`,
+      ``,
+      `Please ensure your very next entry follows this format. I will be checking the dashboard in one hour for an update.`,
+      ``,
+      `Regards,`,
+      `Operations Team`,
+    ];
+  } else if (variant === 'urgent') {
+    lines = [
+      `You: "Hi ${firstName}, it's [Your Name] from ${ORG_CONFIG.name} management. Have you got two minutes — it's important."`,
       ``,
       `(Pause for response)`,
       ``,
@@ -96,7 +125,7 @@ export function buildCallPrepScript(
     ];
   } else if (variant === 'support-first') {
     lines = [
-      `You: "Hi ${firstName}, it's [Your Name] from Hazel Care — have you got a couple of minutes?"`,
+      `You: "Hi ${firstName}, it's [Your Name] from ${ORG_CONFIG.name} — have you got a couple of minutes?"`,
       ``,
       `(Pause for response)`,
       ``,
@@ -129,7 +158,7 @@ export function buildCallPrepScript(
   } else {
     // coaching — warm, direct, data-backed
     lines = [
-      `You: "Hi ${firstName}, it's [Your Name] from Hazel Care — have you got two minutes?"`,
+      `You: "Hi ${firstName}, it's [Your Name] from ${ORG_CONFIG.name} — have you got two minutes?"`,
       ``,
       `(Pause for response)`,
       ``,
@@ -166,7 +195,7 @@ export function buildCallPrepScript(
   }
 
   return {
-    title: `Call prep — ${esc.carer} [${variant}] · Q:${esc.qualityScore} · T${esc.tier}`,
+    title: `${variant === 'message' ? 'Message' : 'Call'} prep — ${esc.carer} · Q:${esc.qualityScore} · T${esc.tier}`,
     lines,
   };
 }

@@ -3,12 +3,12 @@ import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, deleteClient, emptyClient, purgeSystemData } from '../lib/client-store';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
-import { parseUniversalText } from '../lib/universal-import';
+import { analyzeIntel, analyzeIntelFallback } from '../lib/intelligence';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import type { FullClient } from '../lib/client-store';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle } from 'lucide-react';
 
 // Set up pdfjs worker for Vite
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -27,6 +27,7 @@ export function ClientDocsPage() {
   const [importResult, setImportResult] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; domainsDetected: number } | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +62,7 @@ export function ClientDocsPage() {
     if (!file) return;
 
     setIsExtracting(true);
-    setImportResult(['Reading PDF...']);
+    setImportResult(['Reading PDF Content...']);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -88,7 +89,7 @@ export function ClientDocsPage() {
       }
 
       setImportText(fullText);
-      setImportResult(['PDF text extracted successfully. Press "Preview Import" to continue.']);
+      setImportResult(['Document text extracted. Use "Clinical AI Analysis" for best results.']);
     } catch (err) {
       console.error('PDF extract error:', err);
       setImportResult(['Failed to read PDF. Try copy-pasting the text manually instead.']);
@@ -98,10 +99,37 @@ export function ClientDocsPage() {
     }
   };
 
-  const handlePreview = () => {
+  const handlePreview = async (useAI = false) => {
     if (!importText.trim()) return;
-    const result = parseUniversalText(importText);
-    setImportResult(result.warnings);
+    
+    if (useAI) {
+      setIsAnalyzing(true);
+      setImportResult(['Initiating Clinical AI Intelligence Pipeline...']);
+      try {
+        const result = await analyzeIntel(importText);
+        setImportResult([...result.gaps, 'Clinical analysis complete. Data mapped to CQC domains.']);
+        const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
+        setImportPreview({
+          name: result.client.name || 'Not detected',
+          dob: result.client.dob || 'Not detected',
+          nhs: result.client.nhs || 'Not detected',
+          domainsDetected,
+        });
+        (window as any)._lastIntel = result;
+      } catch (err: any) {
+        setImportResult(['AI Intelligence failed: ' + err.message, 'Switching to pattern-match fallback...']);
+        runLegacyPreview();
+      } finally {
+        setIsAnalyzing(false);
+      }
+    } else {
+      runLegacyPreview();
+    }
+  };
+
+  const runLegacyPreview = () => {
+    const result = analyzeIntelFallback(importText);
+    setImportResult(result.gaps);
     const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
     setImportPreview({
       name: result.client.name || 'Not detected',
@@ -109,12 +137,12 @@ export function ClientDocsPage() {
       nhs: result.client.nhs || 'Not detected',
       domainsDetected,
     });
+    (window as any)._lastIntel = result;
   };
 
   const handleImport = () => {
-    if (!importText.trim()) return;
-    const result = parseUniversalText(importText);
-    setImportResult(result.warnings);
+    const result = (window as any)._lastIntel;
+    if (!result) return;
 
     if (importTarget) {
       const all = loadClients();
@@ -125,6 +153,7 @@ export function ClientDocsPage() {
           ...result.client,
           name: existing.name || result.client.name || '',
           carePlan: result.carePlan,
+          risk: result.risk,
         };
         saveClient(updated as FullClient);
         refresh();
@@ -136,12 +165,14 @@ export function ClientDocsPage() {
       const client = emptyClient();
       Object.assign(client, result.client);
       client.carePlan = result.carePlan;
+      client.risk = result.risk;
       saveClient(client);
       refresh();
       setImportText('');
       setImportPreview(null);
       setSubView('list');
     }
+    (window as any)._lastIntel = null;
   };
 
   const printDoc = (client: FullClient, type: 'pbs' | 'risk' | 'careplan' | 'easyread') => {
@@ -169,19 +200,22 @@ export function ClientDocsPage() {
           Back
         </button>
 
-        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer">Import Data</h1>
+        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer flex items-center gap-3">
+          Intelligence Sync
+          <span className="pill pill-teal text-[10px] font-black uppercase tracking-widest px-3 py-1">Operational Pipeline</span>
+        </h1>
         <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium opacity-80 leading-relaxed">
-          Upload person-centred "Emergency Admission Pack" PDF. The system will map all 21 premium domains of care and build a support plan automatically.
+          Upload person-centred clinical documents or raw unstructured text. The AI Brain will map all 21 care domains and 15 risk areas automatically.
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={isExtracting}
-            className="flex-1 flex items-center justify-center gap-3 btn-gradient disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:scale-[1.02]"
+            disabled={isExtracting || isAnalyzing}
+            className="flex-1 flex items-center justify-center gap-3 glass border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:bg-white/5"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-            {isExtracting ? 'Processing...' : 'Upload Care Plan PDF'}
+            <FileText className="w-5 h-5 text-hc-teal-light" />
+            {isExtracting ? 'Extracting Text...' : 'Upload PDF Document'}
           </button>
           <input
             type="file"
@@ -194,12 +228,12 @@ export function ClientDocsPage() {
 
         <div className="glass-light border border-hc-teal/20 rounded-2xl px-6 py-4 mb-8 flex items-center gap-4 group">
           <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0">
-            <span className="text-xl">💡</span>
+            <Sparkles className="w-5 h-5 text-hc-teal-light animate-pulse" />
           </div>
           <div>
-            <p className="text-xs text-hc-teal-light font-black uppercase tracking-wide mb-0.5">Tip</p>
+            <p className="text-xs text-hc-teal-light font-black uppercase tracking-wide mb-0.5">Clinical Protocol</p>
             <p className="text-sm text-hc-muted font-medium italic opacity-90 group-hover:opacity-100 transition-opacity">
-              On mobile: Tap upload and select the PDF from your device. No extra steps needed.
+              For Social Worker reports or Hospital Discharge notes, use the "Clinical AI Analysis" button below for maximum precision.
             </p>
           </div>
         </div>
@@ -216,7 +250,7 @@ export function ClientDocsPage() {
             value={importText}
             onChange={e => setImportText(e.target.value)}
             rows={12}
-            placeholder="Or drop manual stream content here…"
+            placeholder="Paste raw unstructured clinical text here..."
             className="w-full bg-transparent p-6 text-hc-text font-mono text-sm leading-relaxed resize-y placeholder:text-hc-muted/60 focus:outline-none scrollbar-thin"
           />
         </div>
@@ -225,7 +259,11 @@ export function ClientDocsPage() {
           <div className="glass-light border border-white/5 rounded-2xl px-6 py-4 mb-6 space-y-1">
             {importResult.map((w, i) => (
               <p key={i} className="text-xs font-bold text-hc-muted/95 uppercase tracking-wide leading-relaxed flex items-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-hc-teal/40" /> {w}
+                {w.includes('AI Analysis Complete') || w.includes('Clinical analysis complete') 
+                  ? <CheckCircle className="w-3 h-3 text-flag-green" />
+                  : <span className="w-1 h-1 rounded-full bg-hc-teal/40" />
+                } 
+                {w}
               </p>
             ))}
           </div>
@@ -237,11 +275,11 @@ export function ClientDocsPage() {
             <div className="relative z-10">
               <p className="section-header text-[10px] mb-6 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-hc-teal animate-pulse" />
-                Preview
+                Detected Profile Structure
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Designation</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Clinical Designation</div>
                   <div className="text-sm font-black text-white truncate">{importPreview.name}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
@@ -249,22 +287,22 @@ export function ClientDocsPage() {
                   <div className="text-sm font-black text-white tabular-nums">{importPreview.dob}</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Net ID</div>
-                  <div className="text-sm font-black text-white tabular-nums">{importPreview.nhs}</div>
+                  <div className="section-header text-xs opacity-90 mb-1">CQC Domains</div>
+                  <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
                 </div>
                 <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Domains</div>
-                  <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
+                  <div className="section-header text-xs opacity-90 mb-1">Risk Logic</div>
+                  <div className="text-sm font-black text-hc-teal-light">ENABLED</div>
                 </div>
               </div>
               <div className="flex gap-4">
                 <button onClick={handleImport}
                   className="flex-1 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">
-                  Confirm & Sync Profile
+                  Commit Intelligence to Profile
                 </button>
                 <button onClick={() => setImportPreview(null)}
                   className="px-8 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
-                  Cancel
+                  Discard
                 </button>
               </div>
             </div>
@@ -273,18 +311,29 @@ export function ClientDocsPage() {
 
         {!importPreview && (
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <button onClick={handlePreview} disabled={!importText.trim()}
-              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all">
-              Initiate Preview
+            <button 
+              onClick={() => handlePreview(true)} 
+              disabled={!importText.trim() || isAnalyzing}
+              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all flex items-center justify-center gap-3 group"
+            >
+              {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
+              {isAnalyzing ? 'Clinical AI Working...' : 'Initiate Clinical AI Analysis'}
+            </button>
+            <button 
+              onClick={() => handlePreview(false)} 
+              disabled={!importText.trim() || isAnalyzing}
+              className="w-full md:w-auto glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-xl transition-all"
+            >
+              Basic Pattern Sync
             </button>
             {!importTarget && (
-              <div className="flex items-center gap-4 glass-light border border-white/5 px-5 py-3 rounded-2xl shadow-xl">
-                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Target Mapping:</span>
+              <div className="flex items-center gap-4 glass-light border border-white/5 px-5 py-3 rounded-2xl shadow-xl ml-auto">
+                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Target Map:</span>
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
                   className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
-                  <option value="">Add New Person</option>
+                  <option value="">New Clinical Profile</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
@@ -328,10 +377,8 @@ export function ClientDocsPage() {
           </select>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
             className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
-            <svg className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Import
+            <Sparkles className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" />
+            Intelligence Sync
           </button>
           <button onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
@@ -532,7 +579,7 @@ export function ClientDocsPage() {
                     <div className="flex items-center gap-4 ml-auto">
                       <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
                         className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:text-white transition-colors">
-                        Re-Sync
+                        Intelligence Sync
                       </button>
                       <div className="h-4 w-px bg-white/10" />
                       <button onClick={() => handleDelete(client.id, client.name)}
