@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import type { Page } from '../App';
@@ -33,7 +33,7 @@ import {
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { buildExportRecommendations } from '../lib/export-recommendations';
-import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, ShieldAlert, LayoutGrid } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -148,7 +148,6 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [coachRewrite, setCoachRewrite] = useState('');
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
-  const rewriteRef = useRef<HTMLTextAreaElement>(null);
 
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
@@ -536,7 +535,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                 <span className="text-hc-muted text-[10px] font-bold tabular-nums opacity-40">{new Date(o.at).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour: '2-digit', minute:'2-digit'})}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="pill text-[9px] uppercase tracking-widest bg-hc-purple/20 text-hc-purple border border-hc-purple/30">{o.outcome}</span>
+                <span className="pill pill-purple/20 text-hc-purple border border-hc-purple/30 text-[8px] uppercase tracking-widest">{o.outcome}</span>
                 <div className="text-[11px] text-hc-muted truncate italic opacity-80 flex-1">"{o.notes}"</div>
               </div>
             </div>

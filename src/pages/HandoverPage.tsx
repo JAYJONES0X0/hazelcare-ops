@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { uid } from '../lib/storage';
+import { ORG_CONFIG } from '../lib/config';
 
 interface HandoverItem {
   id: string;
@@ -115,9 +116,7 @@ export function HandoverPage() {
       }
       text += '\n';
     }
-import { ORG_CONFIG } from '../lib/config';
 
-// ...
     text += `${'─'.repeat(50)}\n`;
     text += `${ORG_CONFIG.fullName} | Confidential`;
     return text;
