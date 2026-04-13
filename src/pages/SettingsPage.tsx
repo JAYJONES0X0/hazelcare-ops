@@ -17,8 +17,8 @@ interface Profile {
 function loadProfile(): Profile {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
-    return raw ? { ...{ name: 'Abraham', role: 'Registered Manager', org: 'Hazel Care Ltd', email: '' }, ...JSON.parse(raw) } : { name: 'Abraham', role: 'Registered Manager', org: 'Hazel Care Ltd', email: '' };
-  } catch { return { name: 'Abraham', role: 'Registered Manager', org: 'Hazel Care Ltd', email: '' }; }
+    return raw ? { ...{ name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' }, ...JSON.parse(raw) } : { name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' };
+  } catch { return { name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' }; }
 }
 
 function saveProfile(p: Profile) {

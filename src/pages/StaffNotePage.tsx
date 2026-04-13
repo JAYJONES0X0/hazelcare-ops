@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { uid } from '../lib/storage';
+import { ORG_CONFIG } from '../lib/config';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -49,7 +50,7 @@ export const VOICE_LANGUAGES = [
   { code: 'ne-NP', label: 'नेपाली (Nepali)', flag: '🇳🇵' },
   { code: 'si-LK', label: 'සිංහල (Sinhala)', flag: '🇱🇰' },
   { code: 'ta-IN', label: 'தமிழ் (Tamil)', flag: '🇱🇰' },
-  { code: 'ur-PK', label: 'اردو (Urdu)', flag: '🇵🇰' },
+  { code: 'ur-PK', label: 'اردו (Urdu)', flag: '🇵🇰' },
   { code: 'gu-IN', label: 'ગુજરાતી (Gujarati)', flag: '🇮🇳' },
   { code: 'pa-Guru-IN', label: 'ਪੰਜਾਬੀ (Punjabi)', flag: '🇮🇳' },
   { code: 'ml-IN', label: 'മലയാളം (Malayalam)', flag: '🇮🇳' },
@@ -68,7 +69,7 @@ export const VOICE_LANGUAGES = [
   // Europe
   { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
   { code: 'ro-RO', label: 'Română', flag: '🇷🇴' },
-  { code: 'pt-PT', label: 'Português', flag: '🇵🇹' },
+  { code: 'pt-PT', label: 'Portุกês', flag: '🇵🇹' },
   { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
   { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'lt-LT', label: 'Lietuvių', flag: '🇱🇹' },
@@ -95,7 +96,7 @@ function useSpeechToText(onResult: (transcript: string) => void) {
   const start = useCallback(() => {
     if (!speechSupported) return;
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    const recognition = new SpeechRecognitionAPI();
+    const recognition = new (SpeechRecognitionAPI as SpeechRecognitionCtor)();
     recognition.lang = _voiceLang;
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -721,7 +722,7 @@ export function StaffNotePage() {
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
-                placeholder="Type or dictate in any language — HazelCare will translate and polish your note into professional English..."
+                placeholder={`Type or dictate in any language — ${ORG_CONFIG.name} will translate and polish your note into professional English...`}
                 className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
               />
             </div>
@@ -826,7 +827,7 @@ export function StaffNotePage() {
             <div className="glass-light border border-hc-teal/20 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-default">
               <div className="absolute top-0 left-0 w-1 h-full bg-hc-teal opacity-40 group-hover:opacity-100 transition-opacity" />
               <div className="text-[10px] font-black text-hc-teal-light mb-2 uppercase tracking-[0.3em] transition-transform group-hover:translate-x-1 duration-500">Helpful Tip</div>
-              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Write or dictate your notes in any language — HazelCare will translate and polish them into professional English for your records."</p>
+              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Write or dictate your notes in any language — {ORG_CONFIG.name} will translate and polish them into professional English for your records."</p>
             </div>
 
             {savedNotes.length > 0 && (

@@ -115,9 +115,11 @@ export function HandoverPage() {
       }
       text += '\n';
     }
+import { ORG_CONFIG } from '../lib/config';
 
+// ...
     text += `${'─'.repeat(50)}\n`;
-    text += `Hazel Care Ltd | Confidential`;
+    text += `${ORG_CONFIG.fullName} | Confidential`;
     return text;
   }
 

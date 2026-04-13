@@ -287,6 +287,6 @@ function buildPositiveMessage(firstName: string, module: string, prev: number, n
     ``,
     `Keep this up. This is the standard that protects our clients and our service.`,
     ``,
-    `Abraham`,
+    `Management Team`,
   ].join('\n');
 }

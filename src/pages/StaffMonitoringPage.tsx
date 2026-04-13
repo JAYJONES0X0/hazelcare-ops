@@ -21,6 +21,7 @@ import {
   recordCoachingEvents,
   recordModuleScores,
   detectGrowthAlerts,
+  type GrowthAlert,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
 import {
@@ -31,7 +32,8 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle } from 'lucide-react';
+import { buildExportRecommendations } from '../lib/export-recommendations';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, ShieldAlert, LayoutGrid } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -134,18 +136,23 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [hourlyTick, setHourlyTick] = useState(0);
 
   const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
-  const { collapseAll: collapseAllPanels, expandAll: expandAllPanels, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
+  const { isCollapsed: isPanelCollapsed, toggle: togglePanel, collapseAll: collapseAllPanels, expandAll: expandAllPanels, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
   const PANEL_IDS = ['filters', 'export-hints', 'houses', 'staff', 'escalations', 'coaching', 'outcomes'];
   const allPanelsClosed = allPanelsCollapsed(PANEL_IDS);
+
+  const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
+  const [copiedGrowthAlert, setCopiedGrowthAlert] = useState<string | null>(null);
 
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
   const [coachEntry, setCoachEntry] = useState<CareEntry | null>(null);
   const [coachRewrite, setCoachRewrite] = useState('');
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
+  const rewriteRef = useRef<HTMLTextAreaElement>(null);
 
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
+  const exportHints = useMemo(() => buildExportRecommendations(snapshot), [snapshot]);
 
   const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
 
@@ -169,7 +176,8 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
 
   const onRecompute = useCallback(() => {
     saveMonitoringRun(`${snapshot.windowLabel} · ${snapshot.dataFreshness.entryCount} entries`, snapshot.escalations.length);
-    detectGrowthAlerts(snapshot.staff);
+    const alerts = detectGrowthAlerts(snapshot.staff);
+    if (alerts.length > 0) setGrowthAlerts(alerts);
     recordCoachingEvents(snapshot.staff.map((s) => ({ carer: s.carer, topGaps: s.topGaps })));
     recordModuleScores(snapshot.staff.map((s) => ({ carer: s.carer, qualityScore: s.qualityScore, moduleBreakdown: s.moduleBreakdown })));
 
@@ -322,6 +330,68 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
         </div>
       )}
 
+      {/* ── Growth Alerts banner ── */}
+      {growthAlerts.length > 0 && (
+        <div className="mb-10 glass border border-flag-green/30 rounded-[2rem] p-6 space-y-4 glow-teal-soft">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-flag-green shrink-0 animate-pulse" />
+            <span className="text-base font-black text-white tracking-tight uppercase">High-Performance Indicators</span>
+            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white cursor-pointer transition-colors">Dismiss</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {growthAlerts.map((a) => (
+              <div key={`${a.carer}-${a.module}`} className="glass-light border border-flag-green/20 rounded-2xl p-4 flex flex-col gap-3 group/alert">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-sm font-black text-white mb-0.5">{a.carer}</div>
+                    <div className="text-xs text-hc-muted font-medium">
+                      <span className="text-flag-green font-bold">{a.module}</span> improved{' '}
+                      <span className="font-black text-white">{a.previousScore} → {a.currentScore}</span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-black text-flag-green bg-flag-green/10 px-2 py-0.5 rounded-lg">+{a.delta} PTS</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(a.message);
+                    setCopiedGrowthAlert(`${a.carer}-${a.module}`);
+                    setTimeout(() => setCopiedGrowthAlert(null), 2500);
+                  }}
+                  className="w-full mt-auto py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-flag-green/30 text-flag-green hover:bg-flag-green/10"
+                >
+                  {copiedGrowthAlert === `${a.carer}-${a.module}` ? '✓ Copied' : 'Copy reinforcement message'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Export Guidance ─────────────────────────────────────────── */}
+      {!allPanelsClosed && exportHints.length > 0 && (
+        <div className="mb-8 glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+          <button type="button" onClick={() => togglePanel('export-hints')} className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <Lightbulb className="w-4 h-4 text-hc-teal-light" />
+              <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Operational Intelligence: Next Steps</span>
+            </div>
+            <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform ${isPanelCollapsed('export-hints') ? '' : 'rotate-90'}`} />
+          </button>
+          {!isPanelCollapsed('export-hints') && (
+            <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in">
+              {exportHints.map((hint, i) => (
+                <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-2">
+                  <div className="text-[11px] font-black text-hc-teal-light uppercase tracking-wider">{hint.label}</div>
+                  <div className="text-[10px] text-hc-muted leading-relaxed font-medium">{hint.detail}</div>
+                  <div className="mt-auto pt-2 text-[9px] font-mono text-white/40">{hint.carePlannerHint}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── HIGH DENSITY COMMAND CENTER LAYOUT ── */}
       {weekData && (
         <div className="flex flex-col xl:flex-row gap-6">
@@ -451,20 +521,27 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
         </div>
       )}
 
-      <div className="mt-6 glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-4 bg-black/20 border-b border-white/5 flex items-center justify-between">
+      <div className="mt-12 glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+        <div className="px-6 py-5 bg-black/20 border-b border-white/5 flex items-center justify-between">
            <div className="flex items-center gap-3">
-            <History className="w-4 h-4 text-hc-muted" /><span className="text-[11px] font-black tracking-[0.2em] text-white uppercase">Audit Trail</span>
+            <History className="w-4 h-4 text-hc-muted" /><span className="text-[11px] font-black tracking-[0.2em] text-white uppercase">Historical Follow-up Log</span>
           </div>
-          <button onClick={exportMonitoringPack} className="text-[9px] font-black uppercase text-hc-teal-light hover:text-white flex items-center gap-1.5"><Download className="w-3 h-3" /> Evidence Pack</button>
+          <button onClick={exportMonitoringPack} className="flex items-center gap-2 px-5 py-2 rounded-xl glass-light border border-hc-teal/20 text-hc-teal-light text-[10px] font-black uppercase tracking-widest hover:bg-hc-teal/5 transition-all"><Download className="w-3.5 h-3.5" /> Evidence Pack</button>
         </div>
-        <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto scrollbar-thin">
+        <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto scrollbar-thin">
           {loadCallOutcomes().map((o) => (
-            <div key={o.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1">
-              <div className="flex justify-between font-black text-[11px] text-white"><span>{o.carer}</span><span className="text-hc-muted text-[9px]">{new Date(o.at).toLocaleTimeString('en-GB')}</span></div>
-              <div className="text-[10px] text-hc-muted truncate italic">"{o.notes}"</div>
+            <div key={o.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col gap-2 group/trail hover:bg-white/[0.04] transition-all">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-black text-sm text-white group-hover/trail:text-hc-teal-light transition-colors">{o.carer}</span>
+                <span className="text-hc-muted text-[10px] font-bold tabular-nums opacity-40">{new Date(o.at).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="pill text-[9px] uppercase tracking-widest bg-hc-purple/20 text-hc-purple border border-hc-purple/30">{o.outcome}</span>
+                <div className="text-[11px] text-hc-muted truncate italic opacity-80 flex-1">"{o.notes}"</div>
+              </div>
             </div>
           ))}
+          {loadCallOutcomes().length === 0 && <div className="text-[10px] text-hc-muted opacity-40 col-span-full text-center py-12">No clinical evidence or follow-ups logged yet.</div>}
         </div>
       </div>
     </div>
