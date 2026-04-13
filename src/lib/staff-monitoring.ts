@@ -1,5 +1,5 @@
 import type { CareEntry, WeekSummary } from './types';
-import { scoreEntry, aggregateModuleGaps, type ModuleScore } from './entry-rubric';
+import { scoreEntry, getTopGaps } from './entry-rubric';
 import { getRepeatTargets } from './staff-monitoring-store';
 
 export type EscalationTier = 1 | 2 | 3;
@@ -23,7 +23,7 @@ export interface StaffScorecard {
   tier: EscalationTier | null;
   reasons: string[];
   // Rubric detail
-  moduleBreakdown: ModuleScore[];   // averaged across entries
+  moduleBreakdown: { name: string; score: number; missing: string[] }[]; // averaged across entries
   topGaps: string[];                // most frequent missing items
   handoverScore: number | null;     // avg score for handover entries only
   dailySupportScore: number | null; // avg score for 1:1 entries only
@@ -32,8 +32,6 @@ export interface StaffScorecard {
   isRepeatTarget: boolean;
   repeatGaps: string[];
 }
-
-export type { ModuleScore };
 
 export interface HouseHealth {
   name: string;
@@ -231,11 +229,11 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       : null;
 
     // Module breakdown — average across all entries' modules by name
-    const moduleMap = new Map<string, { total: number; count: number; weight: number; missing: string[] }>();
+    const moduleMap = new Map<string, { total: number; count: number; missing: string[] }>();
     for (const e of list) {
       const result = scoreEntry(e);
       for (const m of result.modules) {
-        if (!moduleMap.has(m.name)) moduleMap.set(m.name, { total: 0, count: 0, weight: m.weight, missing: [] });
+        if (!moduleMap.has(m.name)) moduleMap.set(m.name, { total: 0, count: 0, missing: [] });
         const bucket = moduleMap.get(m.name)!;
         bucket.total += m.score;
         bucket.count += 1;
@@ -244,14 +242,13 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
         }
       }
     }
-    const moduleBreakdown: import('./entry-rubric').ModuleScore[] = [...moduleMap.entries()].map(([name, v]) => ({
+    const moduleBreakdown = [...moduleMap.entries()].map(([name, v]) => ({
       name,
-      score: Math.round(v.total / v.count),
-      weight: v.weight,
+      score: Math.round(v.total / Math.max(1, v.count)),
       missing: v.missing.slice(0, 3),
     }));
 
-    const topGaps = aggregateModuleGaps(list);
+    const topGaps = getTopGaps(list);
 
     // Blend rubric score with legacy length signals for tier calculation
     const blendedScore = Math.round(avgRubricScore * 0.7 + (100 - shortEntryRatio * 100) * 0.3);

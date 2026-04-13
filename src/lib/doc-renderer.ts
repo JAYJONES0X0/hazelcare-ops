@@ -163,11 +163,22 @@ function renderCover(title: string, client: FullClient, planDate: string) {
 }
 
 function renderSigBlock(sigs?: Sig[]) {
+  let profileName = 'Registered Manager';
+  let profileRole = 'Operations Manager';
+  
+  try {
+    const raw = localStorage.getItem('hc-profile-v1');
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p.name) profileName = p.name;
+      if (p.role) profileRole = p.role;
+    }
+  } catch { /* fallback */ }
+
   const rows = sigs && sigs.length
     ? sigs.filter((s) => s.include !== false)
     : [
-    { role: 'Completed By', name: 'Brooklyn Ruvinga', date: '', data: '' },
-    { role: 'Responsible Manager', name: '', date: '', data: '' },
+    { role: profileRole, name: profileName, date: '', data: '' },
     { role: 'Key Worker', name: '', date: '', data: '' }
   ];
   if (!rows.length) return '';

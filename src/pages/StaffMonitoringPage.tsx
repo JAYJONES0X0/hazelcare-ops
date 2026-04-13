@@ -21,7 +21,6 @@ import {
   recordCoachingEvents,
   recordModuleScores,
   detectGrowthAlerts,
-  type GrowthAlert,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
 import {
@@ -32,16 +31,15 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { Sparkles, LayoutGrid, ShieldAlert, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
-  generateStaffLink: (toolId: string) => Promise<{ link: string; code: string }>;
   onDataParsed: (data: WeekSummary) => void;
 }
 
-export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDataParsed }: Props) {
+export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
 
   // ── Inline import ─────────────────────────────────────────────────
@@ -82,16 +80,11 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
       }
       if (!text.trim()) { setImportError('File appears empty.'); return; }
 
-      await new Promise<void>(res => setTimeout(res, 10));
-
       const envelope = buildEnvelopeFromRaw(file.name, text);
       if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
-        // INTELLIGENT MERGE: If we have existing data, merge instead of overwrite
         if (weekData) {
           const merged: WeekSummary = JSON.parse(JSON.stringify(weekData));
           let newAdded = 0;
-          
-          // Helper to create entry fingerprint
           const getHash = (e: CareEntry) => `${e.date}-${e.carer}-${e.client}-${(e.entry || '').slice(0, 40)}`;
           const existingHashes = new Set(flattenWeekEntries(weekData).map(getHash));
 
@@ -110,23 +103,21 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           });
 
           if (newAdded > 0) {
-            // Re-flatten and re-calculate all stats/flags
-            const allEntries = flattenWeekEntries(merged);
-            merged.totalEntries = allEntries.length;
+            merged.totalEntries = flattenWeekEntries(merged).length;
             onDataParsed(merged);
-            setImportError(`Merged ${newAdded} new entries into existing intelligence.`);
+            setImportError(`Merged ${newAdded} new entries.`);
           } else {
-            setImportError('No new unique entries found in this file.');
+            setImportError('No new unique entries found.');
           }
         } else {
           onDataParsed(envelope.weekSummary);
           setImportError('');
         }
       } else {
-        setImportError(`Parsed 0 entries. Check your file has columns like: Date, Carer/Staff, Client, Entry/Notes.`);
+        setImportError(`Parsed 0 entries.`);
       }
     } catch (e) {
-      setImportError(`Could not read file: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setImportError(`Error: ${e instanceof Error ? e.message : 'Unknown'}`);
     } finally {
       setImportLoading(false);
     }
@@ -136,37 +127,24 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   const [dateFrom] = useState(def.dateFrom);
   const [dateTo] = useState(def.dateTo);
   const [selectedEscId, setSelectedEscId] = useState<string | null>(null);
-  const [callVariant, setCallVariant] = useState<CallPrepVariant>('coaching');
+  const [callVariant, setCallVariant] = useState<CallPrepVariant>('message');
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [outcomeType, setOutcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
   const [hourlyDismissed, setHourlyDismissed] = useState(false);
   const [hourlyTick, setHourlyTick] = useState(0);
 
-  // Staff rubric detail panel
   const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
-
-  // Collapse state for monitoring panels
-  const { isCollapsed: isPanelCollapsed, toggle: togglePanel, collapseAll: collapseAllPanels, expandAll: expandAllPanels, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
+  const { collapseAll: collapseAllPanels, expandAll: expandAllPanels, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
   const PANEL_IDS = ['filters', 'export-hints', 'houses', 'staff', 'escalations', 'coaching', 'outcomes'];
   const allPanelsClosed = allPanelsCollapsed(PANEL_IDS);
 
-  // Growth alerts
-  const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
-  const [copiedGrowthAlert, setCopiedGrowthAlert] = useState<string | null>(null);
-
-  // Coaching Studio
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
   const [coachEntry, setCoachEntry] = useState<CareEntry | null>(null);
   const [coachRewrite, setCoachRewrite] = useState('');
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
-  const rewriteRef = useRef<HTMLTextAreaElement>(null);
 
-  const filters: MonitoringFilters = useMemo(
-    () => ({ house: house as MonitoringFilters['house'], dateFrom, dateTo }),
-    [house, dateFrom, dateTo],
-  );
-
+  const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
 
   const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
@@ -186,45 +164,24 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   const hourlyDue = useMemo(() => {
     void hourlyTick;
     const last = lastHourlyCheckAt();
-    if (!last) return true;
-    return Date.now() - last > 3600000;
+    return !last || (Date.now() - last > 3600000);
   }, [hourlyTick]);
 
   const onRecompute = useCallback(() => {
     saveMonitoringRun(`${snapshot.windowLabel} · ${snapshot.dataFreshness.entryCount} entries`, snapshot.escalations.length);
-    const alerts = detectGrowthAlerts(snapshot.staff);
-    if (alerts.length > 0) setGrowthAlerts(alerts);
+    detectGrowthAlerts(snapshot.staff);
     recordCoachingEvents(snapshot.staff.map((s) => ({ carer: s.carer, topGaps: s.topGaps })));
     recordModuleScores(snapshot.staff.map((s) => ({ carer: s.carer, qualityScore: s.qualityScore, moduleBreakdown: s.moduleBreakdown })));
 
     const ctx: MonitoringTemplateContext = {
-      source: 'staff-monitoring',
-      at: new Date().toISOString(),
-      house: house === 'all' ? undefined : house,
-      dateFrom,
-      dateTo,
-      escalationCount: snapshot.escalations.length,
-      avgHouseQuality:
-        snapshot.houses.length > 0
-          ? Math.round(snapshot.houses.reduce((a, h) => a + h.avgQuality, 0) / snapshot.houses.length)
-          : undefined,
+      source: 'staff-monitoring', at: new Date().toISOString(), house: house === 'all' ? undefined : house,
+      dateFrom, dateTo, escalationCount: snapshot.escalations.length,
+      avgHouseQuality: snapshot.houses.length > 0 ? Math.round(snapshot.houses.reduce((a, h) => a + h.avgQuality, 0) / snapshot.houses.length) : undefined,
     };
     mergeMonitoringIntoTemplateContext(ctx);
   }, [snapshot, house, dateFrom, dateTo]);
 
-  async function copyStaffTool(tool: string) {
-    try {
-      const { link, code } = await generateStaffLink(tool);
-      await navigator.clipboard.writeText(`${ORG_CONFIG.name} staff access\nLink: ${link}\nSecure Access Code: ${code}`);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const filteredEntries = useMemo(() => {
-    if (!weekData) return [];
-    return filterEntries(flattenWeekEntries(weekData), filters);
-  }, [weekData, filters]);
+  const filteredEntries = useMemo(() => weekData ? filterEntries(flattenWeekEntries(weekData), filters) : [], [weekData, filters]);
 
   function exportMonitoringPack() {
     const meta = buildCoordinatorPackMeta(snapshot, 'staff-monitoring', { entryCount: filteredEntries.length });
@@ -237,27 +194,20 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
   const entriesByStaff = useMemo(() => {
     const map: Record<string, CareEntry[]> = {};
     for (const entry of filteredEntries) {
-      const carer = entry.carer || 'Unknown';
-      if (!map[carer]) map[carer] = [];
-      map[carer].push(entry);
+      const c = entry.carer || 'Unknown';
+      if (!map[c]) map[c] = [];
+      map[c].push(entry);
     }
     return map;
   }, [filteredEntries]);
 
   async function generateGoldStandard() {
     if (!coachEntry) return;
-    setCoachRewrite('');
-    setCoachLoading(true);
+    setCoachRewrite(''); setCoachLoading(true);
     try {
       const res = await fetch('/api/enhance-note', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          text: coachEntry.entry,
-          noteType: coachEntry.type || '1:1 Support',
-          clientName: coachEntry.client || '',
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: coachEntry.entry, noteType: coachEntry.category || '1:1 Support', clientName: coachEntry.client || '' }),
       });
       if (!res.ok || !res.body) throw new Error('Failed');
       const reader = res.body.getReader();
@@ -269,46 +219,23 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
         text += decoder.decode(value, { stream: true });
         setCoachRewrite(text);
       }
-    } catch {
-      setCoachRewrite('Error generating rewrite. Check your connection and try again.');
-    } finally {
-      setCoachLoading(false);
-    }
+    } catch { setCoachRewrite('Error generating rewrite.'); }
+    finally { setCoachLoading(false); }
   }
 
   function copyCoachingMessage() {
     if (!coachEntry || !coachRewrite.trim()) return;
     const staffName = coachStaff || 'Team Member';
     const msg = [
-      `Subject: Feedback on Documentation – Active Note Taking`,
-      ``,
-      `Hi ${staffName},`,
-      ``,
-      `I've been reviewing your recent care entries and wanted to give you some feedback to help us maintain the documentation standard that protects our service and our clients.`,
-      ``,
-      `You're clearly doing the work — I'd just like the notes to reflect that more fully. Moving forward, please:`,
-      ``,
-      `• Write in first person: "I supported..." rather than "Staff supported..."`,
-      `• Show your decision-making, especially during de-escalation or when a client refuses`,
-      `• Document the client's changing presentation throughout the shift`,
-      `• Name the techniques you used (e.g., "I gave her space to self-regulate")`,
-      ``,
-      `Here is an example based on your recent entry for ${coachEntry.client || 'the client'}:`,
-      ``,
-      `YOUR ENTRY:`,
-      coachEntry.entry,
-      ``,
-      `GOLD STANDARD VERSION:`,
-      coachRewrite.trim(),
-      ``,
-      `Please adopt this style going forward. Any questions, catch me at handover.`,
-      ``,
-      `Regards,`,
-      `Management Team`,
+      `Subject: Documentation Feedback - Standards of Care`, ``, `Hi ${staffName},`, ``,
+      `I've been reviewing your recent care entries. You're doing the work — I'd just like the notes to reflect that more fully. Moving forward, please:`, ``,
+      `• Write in first person ("I supported...")`, `• Show your decision-making`, `• Document presentation changes`, ``,
+      `Example based on your entry for ${coachEntry.client || 'the client'}:`, ``, `YOUR ENTRY:`, coachEntry.entry, ``,
+      `GOLD STANDARD:`, coachRewrite.trim(), ``, `Please adopt this style going forward.`, ``, `Regards,`, `Management Team`,
     ].join('\n');
     void navigator.clipboard.writeText(msg);
-    setCoachCopied(true);
-    setTimeout(() => setCoachCopied(false), 2500);
+    setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2500);
+    saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, outcomeType, outcomeNotes || 'Messaged via Chat. Pending review.');
   }
 
   return (
@@ -323,7 +250,6 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 glass border-2 border-hc-teal/40 shadow-[0_0_100px_rgba(20,184,166,0.3)]">
             <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
             <div className="text-white font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
-            <div className="text-hc-muted text-xs font-black tracking-widest opacity-60 uppercase">Merging with current operational data</div>
           </div>
         </div>
       )}
@@ -338,38 +264,27 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
             <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1">Operational Engine</span>
           </h1>
           <p className="text-hc-muted text-sm font-medium mt-2 max-w-2xl opacity-80 leading-relaxed">
-            Clinical analysis of daily diary exports. Every entry is scored to protect {ORG_CONFIG.name} registration and drive documentation quality.
+            Clinical analysis of daily diary exports. Every entry is scored to protect {ORG_CONFIG.name} registration.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => allPanelsClosed ? expandAllPanels(PANEL_IDS) : collapseAllPanels(PANEL_IDS)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-white/5 hover:bg-white/5 text-hc-muted"
-          >
+          <button type="button" onClick={() => allPanelsClosed ? expandAllPanels(PANEL_IDS) : collapseAllPanels(PANEL_IDS)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-white/5 hover:bg-white/5 text-hc-muted">
             <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-300 ${allPanelsClosed ? '' : 'rotate-90'}`} />
-            {allPanelsClosed ? 'Expand all' : 'Collapse all'}
+            {allPanelsClosed ? 'Expand' : 'Collapse'}
           </button>
-          <button
-            type="button"
-            onClick={() => importFileRef.current?.click()}
-            disabled={importLoading}
-            className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer shadow-xl hover:scale-105 active:scale-95 transition-all"
-          >
+          <button type="button" onClick={() => importFileRef.current?.click()} disabled={importLoading}
+            className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer shadow-xl hover:scale-105 active:scale-95 transition-all">
             <RefreshCw className={`w-3.5 h-3.5 ${importLoading ? 'animate-spin' : ''}`} />
-            {importLoading ? 'Analysing stream…' : 'Sync daily CSV'}
+            {importLoading ? 'Analysing…' : 'Sync daily CSV'}
           </button>
-          <button
-            type="button"
-            onClick={() => { onRecompute(); setPage('templates'); }}
-            className="px-5 py-2.5 rounded-xl glass-light border border-white/10 text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white transition-all shadow-lg"
-          >
+          <button type="button" onClick={() => { onRecompute(); setPage('templates'); }}
+            className="px-5 py-2.5 rounded-xl glass-light border border-white/10 text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white transition-all">
             Templates
           </button>
         </div>
       </div>
 
-      {/* Import error/status */}
       {importError && (
         <div className={`mb-8 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-4 duration-500 ${importError.includes('Merged') ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/20' : 'bg-flag-red/10 text-flag-red border border-flag-red/20'}`}>
           <div className={`w-2 h-2 rounded-full ${importError.includes('Merged') ? 'bg-hc-teal animate-pulse' : 'bg-flag-red'}`} />
@@ -385,507 +300,172 @@ export function StaffMonitoringPage({ weekData, setPage, generateStaffLink, onDa
           { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white', icon: <RefreshCw className="w-4 h-4" /> },
           { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted', icon: <History className="w-4 h-4" /> },
         ].map(({ label, value, color, icon }) => (
-          <div key={label} className="glass-light border border-white/10 rounded-2xl px-6 py-5 shadow-2xl relative overflow-hidden group/stat transition-all hover:scale-[1.02] hover:bg-white/5">
-            <div className="absolute top-0 right-0 p-4 opacity-10 text-hc-teal group-hover/stat:scale-125 transition-transform group-hover/stat:opacity-20">{icon}</div>
+          <div key={label} className="glass-light border border-white/10 rounded-2xl px-6 py-5 shadow-2xl relative overflow-hidden group/stat transition-all hover:scale-[1.02]">
+            <div className="absolute top-0 right-0 p-4 opacity-10 text-hc-teal group-hover/stat:scale-125 transition-transform">{icon}</div>
             <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-60">{label}</div>
             <div className={`text-xl font-black ${color} truncate tracking-tighter`}>{value}</div>
           </div>
         ))}
       </div>
 
-      {/* Hourly prompt */}
       {hourlyDue && !hourlyDismissed && (
         <div className="mb-8 glass border border-flag-amber/30 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between gap-4 animate-in slide-in-from-right-10 duration-700 glow-amber-soft">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-flag-amber/10 border border-flag-amber/20 flex items-center justify-center shrink-0">
-              <span className="text-xl">⚠️</span>
-            </div>
+            <div className="w-10 h-10 rounded-xl bg-flag-amber/10 flex items-center justify-center shrink-0">⚠️</div>
             <div>
               <div className="text-sm text-white font-black uppercase tracking-wide">Sync Required</div>
-              <div className="text-xs text-hc-muted font-medium mt-0.5">Operational data is over 60 minutes old. Sync latest exports from CarePlanner.</div>
+              <div className="text-xs text-hc-muted font-medium mt-0.5">Operational data is over 60 minutes old.</div>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => { touchHourlyCheck(); setHourlyTick((t) => t + 1); setHourlyDismissed(true); setPage('upload'); }}
-              className="px-5 py-2.5 rounded-xl bg-flag-amber/20 hover:bg-flag-amber/30 text-flag-amber text-[10px] font-black uppercase tracking-widest transition-all"
-            >
-              Start Sync
-            </button>
-            <button
-              type="button"
-              onClick={() => { touchHourlyCheck(); setHourlyTick((t) => t + 1); setHourlyDismissed(true); }}
-              className="px-5 py-2.5 rounded-xl border border-white/10 text-[10px] text-hc-muted font-black uppercase tracking-widest hover:text-white"
-            >
-              Dismiss
-            </button>
-          </div>
+          <button type="button" onClick={() => { touchHourlyCheck(); setHourlyTick((t) => t + 1); setHourlyDismissed(true); setPage('upload'); }}
+            className="px-5 py-2.5 rounded-xl bg-flag-amber/20 hover:bg-flag-amber/30 text-flag-amber text-[10px] font-black uppercase tracking-widest">Start Sync</button>
         </div>
       )}
 
-      {/* Growth Alerts banner */}
-      {growthAlerts.length > 0 && (
-        <div className="mb-10 glass border border-flag-green/30 rounded-[2rem] p-6 space-y-4 glow-teal-soft">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-flag-green shrink-0 animate-pulse" />
-            <span className="text-base font-black text-white tracking-tight uppercase">High-Performance Indicators</span>
-            <button type="button" onClick={() => setGrowthAlerts([])} className="ml-auto text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white cursor-pointer transition-colors">Dismiss</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {growthAlerts.map((a) => (
-              <div key={`${a.carer}-${a.module}`} className="glass-light border border-flag-green/20 rounded-2xl p-4 flex flex-col gap-3 group/alert">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-black text-white mb-0.5">{a.carer}</div>
-                    <div className="text-xs text-hc-muted font-medium">
-                      <span className="text-flag-green font-bold">{a.module}</span> improved{' '}
-                      <span className="font-black text-white">{a.previousScore} → {a.currentScore}</span>
-                    </div>
-                  </div>
-                  <div className="text-[10px] font-black text-flag-green bg-flag-green/10 px-2 py-0.5 rounded-lg">+{a.delta} PTS</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(a.message);
-                    setCopiedGrowthAlert(`${a.carer}-${a.module}`);
-                    setTimeout(() => setCopiedGrowthAlert(null), 2500);
-                  }}
-                  className="w-full mt-auto py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all glass-light border border-flag-green/30 text-flag-green hover:bg-flag-green/10"
-                >
-                  {copiedGrowthAlert === `${a.carer}-${a.module}` ? '✓ Copied' : 'Copy reinforcement message'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* ── HIGH DENSITY COMMAND CENTER LAYOUT ── */}
       {weekData && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_1.4fr] gap-8">
-          {/* Houses */}
-          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-hc-teal/5 blur-[60px] pointer-events-none" />
-            <button type="button" onClick={() => togglePanel('houses')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 rounded-full bg-hc-teal glow-teal" />
-                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">House Health</span>
-                <span className="pill pill-teal text-[10px] px-2.5">{snapshot.houses.length}</span>
-              </div>
-              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('houses') ? '' : 'rotate-90'}`} />
-            </button>
-            {!isPanelCollapsed('houses') && <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin px-6 pb-6 relative z-10">
-              {snapshot.houses.map((h) => {
-                const isActive = house === h.name;
-                const hasEsc = !!h.tierWorst;
-                return (
-                  <button
-                    key={h.name}
-                    type="button"
-                    onClick={() => setHouse(h.name)}
-                    className="w-full text-left rounded-2xl p-4 transition-all duration-300 cursor-pointer group/house"
-                    style={{
-                      background: isActive ? 'rgba(20,184,166,0.12)' : hasEsc ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
-                      border: isActive ? '1px solid rgba(20,184,166,0.4)' : hasEsc ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                      boxShadow: isActive ? '0 8px 24px rgba(20,184,166,0.1)' : 'none',
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-base font-black text-white tracking-tight group-hover/house:text-hc-teal-light transition-colors">{h.name}</span>
-                      {hasEsc && <span className="pill pill-red text-[9px] font-black tracking-widest animate-pulse-soft">TIER {h.tierWorst}</span>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-y-2 text-[11px] text-hc-muted font-bold uppercase tracking-widest">
-                      <div className="flex items-center gap-2"><span className="text-white">{h.entryCount}</span> Entries</div>
-                      <div className="flex items-center gap-2"><span className="text-white">{h.staffCount}</span> Staff</div>
-                      <div className="flex items-center gap-2">
-                        Quality: <span className={h.avgQuality >= 70 ? 'text-flag-green' : h.avgQuality >= 45 ? 'text-flag-amber' : 'text-flag-red'}>{h.avgQuality}%</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {h.redFlags > 0 && <span className="text-flag-red">R:{h.redFlags}</span>}
-                        {h.amberFlags > 0 && <span className="text-flag-amber">A:{h.amberFlags}</span>}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>}
-          </div>
-
-          {/* Staff quality */}
-          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-hc-blue/5 blur-[60px] pointer-events-none" />
-            <button type="button" onClick={() => togglePanel('staff')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 rounded-full bg-hc-blue glow-blue" />
-                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Staff Quality</span>
-                <span className="pill pill-blue text-[10px] px-2.5">{snapshot.staff.length}</span>
-              </div>
-              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('staff') ? '' : 'rotate-90'}`} />
-            </button>
-            {!isPanelCollapsed('staff') && <div className="space-y-3 max-h-[520px] overflow-y-auto scrollbar-thin px-6 pb-6 relative z-10">
-              {snapshot.staff.map((s) => {
-                const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
-                const isExpanded = selectedStaffCard === s.carer;
-                return (
-                  <div key={s.carer}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}
-                      className="w-full text-left rounded-2xl p-4 cursor-pointer transition-all duration-300 group/staff"
-                      style={{
-                        background: s.isRepeatTarget ? 'rgba(239,68,68,0.06)' : isExpanded ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.02)',
-                        border: s.isRepeatTarget ? '1px solid rgba(239,68,68,0.3)' : isExpanded ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                      }}
-                    >
-                      <div className="flex justify-between items-center gap-3 mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-base font-black text-white truncate tracking-tight">{s.carer}</span>
-                          {s.isRepeatTarget && (
-                            <span className="shrink-0 text-[8px] font-black px-2 py-0.5 rounded bg-flag-red/20 text-flag-red border border-flag-red/30 uppercase tracking-widest animate-pulse">
-                              Urgent Training
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px] font-black px-3 py-1 rounded-xl" style={{color: scoreHex, background:`${scoreHex}15`, border:`1px solid ${scoreHex}30`}}>
-                            {s.qualityScore}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-y-1 text-[10px] text-hc-muted font-bold uppercase tracking-widest">
-                        <div>{s.entryCount} Notes</div>
-                        <div>{Math.round(s.shortEntryRatio * 100)}% Short</div>
-                        <div>Score: {s.qualityScore}%</div>
-                        <div className="flex gap-2">
-                          {s.redCount > 0 && <span className="text-flag-red">R:{s.redCount}</span>}
-                          {s.amberCount > 0 && <span className="text-flag-amber">A:{s.amberCount}</span>}
-                        </div>
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="mx-2 mb-2 rounded-b-2xl p-5 space-y-4 glass-light border border-hc-blue/20 border-top-none -mt-2 animate-in slide-in-from-top-4 duration-300">
-                        {/* Module bars */}
-                        <div className="space-y-3">
-                          <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-60">Competency Matrix</div>
-                          {s.moduleBreakdown.map((m) => {
-                            const mc = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
-                            return (
-                              <div key={m.name}>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-[10px] font-bold text-white/80">{m.name}</span>
-                                  <span className="text-[10px] font-black" style={{color:mc}}>{m.score}%</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                  <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{width:`${m.score}%`,background:mc,boxShadow:`0 0 10px ${mc}40`}} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {/* Top gaps */}
-                        {s.topGaps.length > 0 && (
-                          <div className="pt-2 border-t border-white/5">
-                            <div className="text-[9px] font-black text-flag-amber uppercase tracking-[0.2em] mb-2">Priority Gaps</div>
-                            <div className="space-y-1.5">
-                              {s.topGaps.slice(0, 3).map((g, i) => (
-                                <div key={i} className="flex items-start gap-2 text-[10px] font-medium text-hc-muted leading-relaxed">
-                                  <ChevronRight className="w-3 h-3 text-flag-amber shrink-0 mt-0.5" />
-                                  {g}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => { setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); }}
-                          className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20"
-                        >
-                          Coaching Studio
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>}
-          </div>
-
-          {/* Escalations */}
-          <div className="glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative flex flex-col">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-flag-red/5 blur-[60px] pointer-events-none" />
-            <button type="button" onClick={() => togglePanel('escalations')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 rounded-full bg-flag-red glow-red" />
-                <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Escalations</span>
-                <span className="pill pill-red text-[10px] px-2.5">{snapshot.escalations.length}</span>
-              </div>
-              <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('escalations') ? '' : 'rotate-90'}`} />
-            </button>
-            
-            {!isPanelCollapsed('escalations') && (
-              <div className="flex-1 flex flex-col min-h-0 relative z-10">
-                <div className="px-6 pb-4 space-y-2 overflow-y-auto scrollbar-thin max-h-48 border-b border-white/5">
-                  {snapshot.escalations.map((e) => (
-                    <button
-                      key={e.id}
-                      type="button"
-                      onClick={() => setSelectedEscId(e.id)}
-                      className="w-full text-left rounded-2xl p-4 transition-all duration-300 cursor-pointer group/esc"
-                      style={{
-                        background: selectedEscId === e.id ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: selectedEscId === e.id ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-black text-white tracking-tight">{e.carer}</span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded ${e.tier === 3 ? 'bg-flag-red text-white' : e.tier === 2 ? 'bg-flag-red/20 text-flag-red' : 'bg-flag-amber/20 text-flag-amber'}`}>TIER {e.tier}</span>
-                      </div>
-                      <div className="text-[11px] text-hc-muted font-bold truncate opacity-80">{e.summary}</div>
-                    </button>
-                  ))}
+        <div className="flex flex-col xl:flex-row gap-6">
+          <div className="flex-1 flex flex-col gap-6">
+            <div className="glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-0">
+              <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-black/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-4 rounded-full bg-hc-blue glow-blue" />
+                  <span className="text-[11px] font-black tracking-[0.2em] text-white uppercase">Staff Quality Board</span>
                 </div>
-
-                {selectedEsc && script && (
-                  <div className="p-6 space-y-5 animate-in fade-in duration-500 overflow-y-auto scrollbar-thin">
-                    <div className="flex items-center justify-between">
-                      <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Personalised Call Script</div>
-                      <select
-                        value={callVariant}
-                        onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)}
-                        className="bg-hc-dark border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-hc-teal/50"
-                      >
-                        <option value="message">WhatsApp / Chat Message</option>
-                        <option value="coaching">Supportive Call (Warm)</option>
-                        <option value="urgent">Urgent Call (Tier 3)</option>
-                        <option value="support-first">Curiosity First Call</option>
-                      </select>
-                    </div>
-
-                    <div className="glass-light border border-white/5 rounded-2xl p-5 relative group/script">
-                      <button 
-                        onClick={() => { 
-                          void navigator.clipboard.writeText([script.title, '', ...script.lines].join('\n')); 
-                          setCopiedGrowthAlert('script');
-                          setTimeout(() => setCopiedGrowthAlert(null), 2000);
-                        }}
-                        className="absolute top-4 right-4 opacity-0 group-hover/script:opacity-100 transition-opacity p-2 rounded-lg bg-hc-teal/20 text-hc-teal-light hover:bg-hc-teal/30"
-                      >
-                        {copiedGrowthAlert === 'script' ? <CheckCircle className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                      </button>
-                      <div className="space-y-3 font-mono text-[11px] text-white/90 leading-relaxed max-h-64 overflow-y-auto pr-2 scrollbar-thin">
-                        {script.lines.map((l, i) => <div key={i} className={l.startsWith('You:') || l.startsWith('Subject:') ? 'text-hc-teal-light font-bold' : ''}>{l}</div>)}
+                <div className="flex gap-2">
+                  <span className="pill pill-red text-[9px]">{snapshot.escalations.length} Escalations</span>
+                  <span className="pill pill-blue text-[10px]">{snapshot.staff.length} Staff</span>
+                </div>
+              </div>
+              <div className="overflow-y-auto max-h-[500px] scrollbar-thin p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {snapshot.staff.map((s) => {
+                  const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
+                  const esc = snapshot.escalations.find(e => e.carer === s.carer);
+                  const isExpanded = selectedStaffCard === s.carer;
+                  return (
+                    <div key={s.carer} className={`rounded-xl border transition-all duration-300 ${isExpanded ? 'border-hc-blue/40 bg-hc-blue/5' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04]'}`}>
+                      <div className="p-3 flex items-start justify-between cursor-pointer" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-black text-white truncate">{s.carer}</span>
+                            {esc && <span className="px-1.5 py-0.5 rounded-md bg-flag-red/20 text-flag-red border border-flag-red/30 text-[8px] font-black uppercase">T{esc.tier}</span>}
+                          </div>
+                          <div className="text-[9px] text-hc-muted font-bold uppercase tracking-widest flex items-center gap-2">
+                            <span>{s.entryCount} N</span> <span className="opacity-50">|</span> <span>{Math.round(s.shortEntryRatio * 100)}% S</span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-black px-2 py-0.5 rounded-lg" style={{color: scoreHex, background:`${scoreHex}15`, border:`1px solid ${scoreHex}30`}}>{s.qualityScore}</span>
                       </div>
+                      {isExpanded && (
+                        <div className="px-3 pb-3 pt-1 border-t border-white/5 mt-1 animate-in fade-in">
+                           <div className="space-y-1.5 mb-3">
+                            {s.moduleBreakdown.map((m) => (
+                              <div key={m.name} className="flex items-center justify-between text-[9px] font-bold">
+                                <span className="text-white/60">{m.name}</span>
+                                <span style={{color: m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444'}}>{m.score}%</span>
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); setSelectedEscId(esc?.id || null); }}
+                            className="w-full py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20">Coaching Studio ➔</button>
+                        </div>
+                      )}
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="glass border border-white/10 rounded-2xl p-5 shadow-2xl">
+              <div className="text-[10px] font-black tracking-[0.2em] text-white uppercase mb-4 flex items-center gap-2"><div className="w-1.5 h-3 bg-hc-teal rounded-full" /> House Overview</div>
+              <div className="flex flex-wrap gap-2">
+                {snapshot.houses.map((h) => (
+                  <button key={h.name} onClick={() => setHouse(h.name === house ? 'all' : h.name)} 
+                    className={`px-3 py-2 rounded-xl border text-[10px] font-bold transition-colors ${house === h.name ? 'bg-hc-teal/20 border-hc-teal/50 text-white' : 'bg-white/5 border-white/10 text-hc-muted hover:text-white'}`}>{h.name} {h.avgQuality}%</button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => void copyStaffTool(selectedEsc.suggestedTool)} className="btn-gradient py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
-                        Link: {selectedEsc.suggestedTool}
-                      </button>
-                      <button onClick={() => void copyStaffTool('handover')} className="glass-light border border-white/10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 text-hc-muted">
-                        Link: Handover
-                      </button>
-                    </div>
-
-                    <div className="pt-4 border-t border-white/5 space-y-4">
-                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest opacity-60">Log Clinical Outcome</div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <select
-                          value={outcomeType}
-                          onChange={(e) => setOutcomeType(e.target.value as any)}
-                          className="bg-hc-dark border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-                        >
-                          <option value="reached">Reached</option>
-                          <option value="voicemail">Voicemail</option>
-                          <option value="callback">Callback</option>
-                          <option value="resolved">Resolved</option>
-                        </select>
-                        <button
-                          onClick={() => { saveCallOutcome(selectedEsc, outcomeType, outcomeNotes); setOutcomeNotes(''); }}
-                          className="btn-gradient py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl"
-                        >
-                          Save Record
-                        </button>
-                      </div>
-                      <textarea
-                        value={outcomeNotes}
-                        onChange={(e) => setOutcomeNotes(e.target.value)}
-                        placeholder="Log clinical notes from the call..."
-                        className="w-full bg-hc-dark/60 border border-white/10 rounded-xl p-4 text-xs text-white placeholder:text-hc-muted/30 focus:border-hc-teal/50 outline-none"
-                        rows={2}
-                      />
+          <div className="w-full xl:w-[450px] flex flex-col gap-6 shrink-0">
+            {coachStaff ? (
+              <div className="glass border-2 border-hc-purple/30 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden h-full min-h-[600px]">
+                <div className="absolute inset-0 bg-hc-purple/5 pointer-events-none" />
+                <div className="px-5 py-4 border-b border-hc-purple/20 flex items-center justify-between bg-black/20 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-hc-purple/20 text-hc-purple flex items-center justify-center font-black">{coachStaff.charAt(0)}</div>
+                    <div>
+                      <div className="text-xs font-black text-white leading-none">{coachStaff}</div>
+                      <div className="text-[9px] text-hc-purple uppercase tracking-widest font-bold mt-1">Coaching Studio</div>
                     </div>
                   </div>
-                )}
+                  <button onClick={() => setCoachStaff(null)} className="text-hc-muted hover:text-white"><Activity className="w-4 h-4" /></button>
+                </div>
+                <div className="p-5 flex-1 flex flex-col relative z-10 overflow-y-auto scrollbar-thin">
+                  <select className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-[10px] text-white outline-none mb-4"
+                    onChange={(e) => { const entry = entriesByStaff[coachStaff]?.find(x => x.entry === e.target.value); if (entry) { setCoachEntry(entry); setCoachRewrite(''); } }} value={coachEntry?.entry || ''}>
+                    <option value="">-- Choose entry --</option>
+                    {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 10).map((e, i) => (
+                      <option key={i} value={e.entry}>{e.date} ({scoreEntry(e).total}%)</option>
+                    ))}
+                  </select>
+                  {coachEntry && (
+                    <div className="animate-in fade-in flex-1 flex flex-col">
+                      <div className="bg-flag-amber/5 border border-flag-amber/20 rounded-xl p-3 mb-4">
+                         <div className="text-[9px] font-black text-flag-amber uppercase tracking-widest mb-1.5">Gaps</div>
+                         {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,2).map((gap, i) => <div key={i} className="text-[10px]">• {gap}</div>)}
+                      </div>
+                      <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-3 mb-4 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2">
+                        {coachLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Gold Standard
+                      </button>
+                      {coachRewrite && (
+                        <div className="flex-1 flex flex-col animate-in slide-in-from-bottom-4">
+                          <div className="flex gap-2 mb-3">
+                             <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[9px] text-white">
+                                <option value="message">WhatsApp / Chat</option><option value="coaching">Call Script</option>
+                              </select>
+                          </div>
+                          <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} className="flex-1 w-full bg-black/20 rounded-xl p-3 text-[10px] font-mono text-white/90 outline-none scrollbar-thin mb-3" />
+                          <div className="space-y-3 mb-4">
+                            <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Follow-up notes..." className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] text-white h-16 outline-none" />
+                            <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-[10px] text-white">
+                              <option value="reached">Messaged</option><option value="callback">Callback</option><option value="resolved">Resolved</option>
+                            </select>
+                          </div>
+                          <button onClick={copyCoachingMessage} className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase shadow-lg ${coachCopied ? 'bg-flag-green text-white' : 'bg-hc-purple text-white'}`}>
+                            {coachCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />} {coachCopied ? 'Copied' : 'Copy & Log'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="glass border border-white/10 rounded-2xl flex flex-col items-center justify-center h-full opacity-50 p-8 text-center">
+                <MessageSquare className="w-10 h-10 text-hc-muted mb-4" />
+                <div className="text-[11px] font-black text-white uppercase tracking-widest mb-2">Studio</div>
+                <div className="text-[10px] text-hc-muted leading-relaxed">Select staff to review.</div>
               </div>
             )}
-
-            <div className="p-6 mt-auto border-t border-white/5 bg-black/20">
-              <button
-                onClick={exportMonitoringPack}
-                className="w-full py-4 rounded-2xl glass border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.25em] hover:bg-hc-teal/5 transition-all shadow-2xl flex items-center justify-center gap-3 group"
-              >
-                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-                Audit Evidence Pack
-              </button>
-            </div>
           </div>
         </div>
       )}
 
-      {/* ── COACHING STUDIO ─────────────────────────────────────────── */}
-      {weekData && (
-        <div className="mt-12 animate-in slide-in-from-bottom-8 duration-1000 delay-300">
-          <button
-            type="button"
-            onClick={() => togglePanel('coaching')}
-            className="w-full flex items-center gap-4 mb-8 cursor-pointer group"
-          >
-            <div className="w-2 h-8 rounded-full bg-hc-purple glow-purple" />
-            <div className="text-left">
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter">Clinical Coaching Studio</h2>
-              <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] opacity-50">High-Precision Note Transformation Pipeline</p>
-            </div>
-            <ChevronRight className={`w-5 h-5 text-hc-muted/40 ml-auto transition-transform duration-300 ${isPanelCollapsed('coaching') ? '' : 'rotate-90'}`} />
-          </button>
-
-          {!isPanelCollapsed('coaching') && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Staff & Entry Selector */}
-              <div className="glass border border-white/10 rounded-[2rem] p-6 shadow-2xl flex flex-col max-h-[600px]">
-                <div className="text-[10px] font-black tracking-[0.25em] text-hc-muted uppercase mb-4 opacity-60">Selection Pipeline</div>
-                
-                {/* Staff List */}
-                <div className="space-y-2 mb-6 overflow-y-auto scrollbar-thin flex-shrink-0 max-h-48">
-                  {[...snapshot.staff].sort((a, b) => a.qualityScore - b.qualityScore).map(s => {
-                    const scoreColor = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
-                    const isActive = coachStaff === s.carer;
-                    return (
-                      <button key={s.carer} onClick={() => { setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); }}
-                        className={`w-full text-left rounded-xl px-4 py-3 transition-all duration-300 border ${isActive ? 'bg-hc-purple/10 border-hc-purple/40 shadow-lg' : 'bg-white/2 border-white/5 hover:bg-white/5'}`}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-black text-white truncate tracking-tight">{s.carer}</span>
-                          <span className="text-[11px] font-black px-2 py-0.5 rounded-lg" style={{color: scoreColor, background:`${scoreColor}15`}}>{s.qualityScore}%</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Entry Picker */}
-                {coachStaff && (
-                  <div className="flex-1 flex flex-col min-h-0 border-t border-white/5 pt-6 animate-in fade-in duration-500">
-                    <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal-light uppercase mb-4">Select Target Entry</div>
-                    <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin pr-2">
-                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 20).map((e, i) => {
-                        const isActive = coachEntry === e;
-                        const es = scoreEntry(e).total;
-                        const ec = es >= 70 ? '#22c55e' : es >= 45 ? '#f59e0b' : '#ef4444';
-                        return (
-                          <button key={i} onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                            className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${isActive ? 'bg-hc-teal/10 border-hc-teal/40' : 'bg-white/2 border-white/5 hover:bg-white/5'}`}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-black text-white/60 tracking-widest">{e.date} · {e.client}</span>
-                              <span className="text-[10px] font-black" style={{color:ec}}>{es}</span>
-                            </div>
-                            <div className="text-[11px] text-hc-muted leading-relaxed line-clamp-2">{e.entry}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Analysis & Source */}
-              <div className="glass border border-white/10 rounded-[2.5rem] p-8 shadow-2xl flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-hc-purple/5 blur-[60px] pointer-events-none" />
-                <div className="text-[10px] font-black tracking-[0.25em] text-hc-muted uppercase mb-6 opacity-60">Source Analysis</div>
-                
-                {coachEntry ? (
-                  <div className="flex-1 flex flex-col min-h-0 animate-in zoom-in-95 duration-500">
-                    <div className="glass-light border border-white/5 rounded-2xl p-6 mb-6 flex-1 overflow-y-auto scrollbar-thin shadow-inner">
-                      <div className="text-sm text-white/90 leading-relaxed font-medium italic">"{coachEntry.entry}"</div>
-                    </div>
-                    
-                    {/* Rubric Gaps */}
-                    <div className="space-y-2 mb-8">
-                      {(() => {
-                        const es = scoreEntry(coachEntry);
-                        return es.modules.flatMap(m => m.missing).slice(0, 3).map((gap, i) => (
-                          <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-flag-amber/5 border border-flag-amber/20">
-                            <ShieldAlert className="w-4 h-4 text-flag-amber shrink-0" />
-                            <span className="text-[10px] font-bold text-flag-amber uppercase tracking-widest">{gap}</span>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-
-                    <button onClick={generateGoldStandard} disabled={coachLoading}
-                      className="w-full py-4 rounded-2xl btn-gradient text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                      {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                      Generate Gold Standard
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center opacity-30">
-                    <LayoutGrid className="w-12 h-12 mb-4 text-hc-muted" />
-                    <div className="text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Selection</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Gold Output */}
-              <div className="glass border-2 border-hc-purple/30 rounded-[3rem] p-8 shadow-2xl flex flex-col relative overflow-hidden glow-purple-soft">
-                <div className="absolute inset-0 bg-hc-purple/5 pointer-events-none" />
-                <div className="text-[10px] font-black tracking-[0.25em] text-hc-purple uppercase mb-6 relative z-10">Output: Gold Standard Rewrite</div>
-                
-                <div className="flex-1 flex flex-col relative z-10">
-                  <textarea
-                    ref={rewriteRef}
-                    value={coachRewrite}
-                    onChange={e => setCoachRewrite(e.target.value)}
-                    placeholder={coachLoading ? "Clinical Brain is rewriting entry..." : "First-person clinical rewrite will appear here."}
-                    className="flex-1 w-full bg-transparent text-[13px] leading-relaxed text-white font-medium resize-none outline-none scrollbar-thin"
-                  />
-                  
-                  <div className="pt-8 mt-auto">
-                    <button onClick={copyCoachingMessage} disabled={!coachRewrite.trim() || coachLoading}
-                      className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-500 font-black text-[11px] uppercase tracking-[0.25em] shadow-2xl ${coachCopied ? 'bg-flag-green text-white scale-95' : 'bg-hc-purple text-white hover:bg-hc-purple-light'}`}>
-                      {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
-                      {coachCopied ? 'Dispatch Copied' : 'Copy Coaching Dispatch'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Recent outcomes */}
-      <div className="mt-12 glass border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative">
-        <button type="button" onClick={() => togglePanel('outcomes')} className="w-full flex items-center justify-between gap-2 p-6 cursor-pointer hover:bg-white/[0.02] transition-colors relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 rounded-full bg-hc-muted/40" />
-            <span className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Historical Audit Trail</span>
-            <span className="pill glass-light text-[10px] px-2.5 text-hc-muted">{loadCallOutcomes().length} Events</span>
+      <div className="mt-6 glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="px-6 py-4 bg-black/20 border-b border-white/5 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+            <History className="w-4 h-4 text-hc-muted" /><span className="text-[11px] font-black tracking-[0.2em] text-white uppercase">Audit Trail</span>
           </div>
-          <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isPanelCollapsed('outcomes') ? '' : 'rotate-90'}`} />
-        </button>
-        {!isPanelCollapsed('outcomes') && <div className="px-8 pb-8 space-y-3 relative z-10">
-          {loadCallOutcomes().slice(0, 10).map((o) => (
-            <div key={o.id} className="flex items-center gap-4 text-[11px] font-bold text-hc-muted border-b border-white/5 pb-2 last:border-0">
-              <span className="tabular-nums opacity-40">{new Date(o.at).toLocaleDateString('en-GB')}</span>
-              <span className="w-32 truncate text-white">{o.carer}</span>
-              <span className="pill text-[9px] uppercase tracking-widest bg-white/5 border border-white/10">{o.outcome}</span>
-              <span className="flex-1 truncate opacity-60 font-medium italic">{o.notes}</span>
+          <button onClick={exportMonitoringPack} className="text-[9px] font-black uppercase text-hc-teal-light hover:text-white flex items-center gap-1.5"><Download className="w-3 h-3" /> Evidence Pack</button>
+        </div>
+        <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto scrollbar-thin">
+          {loadCallOutcomes().map((o) => (
+            <div key={o.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-1">
+              <div className="flex justify-between font-black text-[11px] text-white"><span>{o.carer}</span><span className="text-hc-muted text-[9px]">{new Date(o.at).toLocaleTimeString('en-GB')}</span></div>
+              <div className="text-[10px] text-hc-muted truncate italic">"{o.notes}"</div>
             </div>
           ))}
-          {loadCallOutcomes().length === 0 && <div className="text-[10px] text-hc-muted opacity-40 text-center py-4">No logged outcomes in clinical history.</div>}
-        </div>}
+        </div>
       </div>
     </div>
   );

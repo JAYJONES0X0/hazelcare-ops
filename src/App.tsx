@@ -648,7 +648,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'agency' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><AgencyPortalPage /></div>}
           {page === 'staff-monitoring' && (
             <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <StaffMonitoringPage weekData={weekData} setPage={setPage} generateStaffLink={generateStaffLink} onDataParsed={(data) => { setWeekData(data); saveWeekData(data); }} />
+              <StaffMonitoringPage weekData={weekData} setPage={setPage} onDataParsed={(data) => { setWeekData(data); saveWeekData(data); }} />
             </div>
           )}
           {page === 'settings' && (
