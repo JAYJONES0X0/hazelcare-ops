@@ -132,6 +132,32 @@ function inferClientFromFileName(fileName: string): string {
   return match ? match[1] : 'Unclear';
 }
 
+/** Extract date from CarePlanner filename patterns like:
+ *  ClientRoster-from-13_04_2026-to-13_04_2026.csv
+ *  Client-diary (19).csv
+ *  client_roster_2026-04-13.csv
+ * Returns [DD, MM, YYYY] if found, or null if no date detected */
+function extractDateFromFileName(fileName: string): { dateFrom: string; dateTo: string } | null {
+  const base = (fileName.split('/').pop() || fileName).replace(/\.[^.]+$/, '');
+
+  // Pattern 1: ClientRoster-from-DD_MM_YYYY-to-DD_MM_YYYY
+  const m1 = base.match(/from-(\d{2})[_-](\d{2})[_-](\d{4})/);
+  if (m1) {
+    const d = `${m1[1]}/${m1[2]}/${m1[3]}`;
+    const m2 = base.match(/to[_-](\d{2})[_-](\d{2})[_-](\d{4})/);
+    const d2 = m2 ? `${m2[1]}/${m2[2]}/${m2[3]}` : d;
+    return { dateFrom: d, dateTo: d2 };
+  }
+
+  // Pattern 2: client_roster_YYYY-MM-DD or diary_YYYY-MM-DD
+  const m3 = base.match(/(\d{4})[_-](\d{2})[_-](\d{2})/);
+  if (m3) {
+    return { dateFrom: `${m3[3]}/${m3[2]}/${m3[1]}`, dateTo: `${m3[3]}/${m3[2]}/${m3[1]}` };
+  }
+
+  return null;
+}
+
 function findClientIdByNameHint(nameHint: string): string | null {
   const hint = (nameHint || '').trim().toLowerCase();
   if (!hint || hint === 'unclear') return null;
@@ -313,6 +339,26 @@ function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImport
     merged.warnings.push(...env.warnings);
     merged.unmappedFields.push(...env.unmappedFields);
     merged.suggestedTargets.push(...env.suggestedTargets);
+  }
+
+  // Merge date range from filenames when weekSummary has no dateFrom/dateTo
+  if (merged.weekSummary && (!merged.weekSummary.dateFrom || !merged.weekSummary.dateTo)) {
+    for (const env of envelopes) {
+      if (env.weekSummary?.dateFrom && env.weekSummary.dateFrom !== merged.weekSummary.dateFrom) {
+        merged.weekSummary.dateFrom = env.weekSummary.dateFrom;
+      }
+      if (env.weekSummary?.dateTo && env.weekSummary.dateTo !== merged.weekSummary.dateTo) {
+        merged.weekSummary.dateTo = env.weekSummary.dateTo;
+      }
+    }
+    // Also try extracting from filenames directly if still missing
+    for (const env of envelopes) {
+      const extracted = extractDateFromFileName(env.source.fileName);
+      if (extracted) {
+        if (!merged.weekSummary.dateFrom) merged.weekSummary.dateFrom = extracted.dateFrom;
+        if (!merged.weekSummary.dateTo) merged.weekSummary.dateTo = extracted.dateTo;
+      }
+    }
   }
 
   merged.clientCandidates = merged.clientCandidates.filter((c, idx, arr) => {
