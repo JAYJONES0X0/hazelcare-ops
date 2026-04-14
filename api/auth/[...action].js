@@ -1,10 +1,10 @@
 import crypto from 'crypto';
-import { attachHcSessionCookie } from '../../_lib/attach-session.js';
-import { getAllowedLoginEmails, isLoginEmailAllowed } from '../../_lib/auth-login-allowlist.js';
-import { consumeOnce } from '../../_lib/durable-once.js';
-import { HC_SESSION_COOKIE, verifyHcSession, secureCookieSuffix } from '../../_lib/hc-session.js';
-import { parseCookies } from '../../_lib/parse-cookies.js';
-import { STAFF_SAC_COOKIE, verifyAnyStaffSacCookie } from '../../_lib/staff-sac-cookie.js';
+import { attachHcSessionCookie } from '../_lib/attach-session.js';
+import { getAllowedLoginEmails, isLoginEmailAllowed } from '../_lib/auth-login-allowlist.js';
+import { consumeOnce } from '../_lib/durable-once.js';
+import { HC_SESSION_COOKIE, verifyHcSession, secureCookieSuffix } from '../_lib/hc-session.js';
+import { parseCookies } from '../_lib/parse-cookies.js';
+import { STAFF_SAC_COOKIE, verifyAnyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || '';
 const AUTH_EMERGENCY_BYPASS = process.env.AUTH_EMERGENCY_BYPASS === '1';

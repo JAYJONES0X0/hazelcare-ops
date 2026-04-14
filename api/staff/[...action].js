@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { HC_SESSION_COOKIE, verifyHcSession } from '../../_lib/hc-session.js';
-import { parseCookies } from '../../_lib/parse-cookies.js';
-import { consumeOnce } from '../../_lib/durable-once.js';
-import { STAFF_SAC_COOKIE, signStaffSacCookie, verifyStaffSacCookie } from '../../_lib/staff-sac-cookie.js';
+import { HC_SESSION_COOKIE, verifyHcSession } from '../_lib/hc-session.js';
+import { parseCookies } from '../_lib/parse-cookies.js';
+import { consumeOnce } from '../_lib/durable-once.js';
+import { STAFF_SAC_COOKIE, signStaffSacCookie, verifyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
