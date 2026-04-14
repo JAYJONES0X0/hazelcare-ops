@@ -337,7 +337,7 @@ import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { SettingsPage } from './pages/SettingsPage';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
-import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents } from './lib/storage';
+import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
 
 
 export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings';
@@ -507,14 +507,14 @@ export default function App() {
   }
 
   // Staff-link sessions must never enter the full Ops shell.
-  if (staffScopedAuthed) {
-    if (staffLinkActive && staffMode) return null;
-    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
-    await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
-    setAuthed(false);
-    setStaffScopedAuthed(false);
-    return null;
-  }
+  useEffect(() => {
+    if (staffScopedAuthed && !(staffLinkActive && staffMode)) {
+      void fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+      void fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+      setAuthed(false);
+      setStaffScopedAuthed(false);
+    }
+  }, [staffScopedAuthed, staffLinkActive, staffMode]);
 
   async function handleSignOut() {
     await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });

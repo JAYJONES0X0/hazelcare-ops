@@ -1,4 +1,4 @@
-import type { AppState, Action, CareEntry, Incident, WeekSummary } from './types';
+import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember } from './types';
 
 const STORAGE_KEY = 'hazelcare-ops';
 const WEEK_DATA_KEY = 'hc-week-data-v2';

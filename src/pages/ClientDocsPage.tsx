@@ -8,7 +8,7 @@ import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import type { FullClient } from '../lib/client-store';
-import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, Download, ExternalLink, X } from 'lucide-react';
+import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X } from 'lucide-react';
 import { uid } from '../lib/storage';
 
 // Set up pdfjs worker for Vite
