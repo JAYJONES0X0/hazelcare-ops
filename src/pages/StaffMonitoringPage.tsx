@@ -211,7 +211,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
     if (!coachEntry) return;
     setCoachRewrite(''); setCoachLoading(true);
     try {
-      const res = await fetch('/api/enhance-note', {
+      const res = await fetch('/api/staff/enhance-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ text: coachEntry.entry, noteType: coachEntry.category || '1:1 Support', clientName: coachEntry.client || '' }),
       });

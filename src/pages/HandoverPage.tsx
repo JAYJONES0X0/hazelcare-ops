@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { uid } from '../lib/storage';
 import { ORG_CONFIG } from '../lib/config';
+import type { WeekSummary } from '../lib/types';
 
 interface HandoverItem {
   id: string;
@@ -20,6 +21,8 @@ interface Handover {
   staffOut: string;
   staffIn: string;
   items: HandoverItem[];
+  clientsOfConcern?: string;
+  redFlags?: string;
   createdAt: string;
 }
 
@@ -47,19 +50,57 @@ function saveHandovers(h: Handover[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(h));
 }
 
-export function HandoverPage() {
+export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
   const [house, setHouse] = useState(HOUSES[0]);
   const [shiftFrom, setShiftFrom] = useState('Day');
   const [shiftTo, setShiftTo] = useState('Night');
   const [staffOut, setStaffOut] = useState('');
   const [staffIn, setStaffIn] = useState('');
   const [items, setItems] = useState<HandoverItem[]>([]);
+  const [clientsOfConcern, setClientsOfConcern] = useState('');
+  const [redFlags, setRedFlags] = useState('');
   const [newText, setNewText] = useState('');
   const [newCategory, setNewCategory] = useState<HandoverItem['category']>('general');
   const [newSeverity, setNewSeverity] = useState<'red' | 'amber' | 'none'>('none');
   const [history, setHistory] = useState<Handover[]>(loadHandovers);
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Automated population from weekData
+  useEffect(() => {
+    if (!weekData) return;
+
+    // 1. Red Flags
+    const rfEntries = (weekData.allFlags.red || []).filter(e => e.house === house);
+    const rfText = rfEntries.map(e => `• [${e.client}] ${e.entry}`).join('\n');
+
+    // 2. Clients of Concern (Amber flags + keywords)
+    const concernKeywords = ['concern', 'incident', 'escalation', 'red flag', 'safeguarding', 'behaviour', 'refusal'];
+    const hData = weekData.houses[house];
+    if (!hData) return;
+
+    const concernEntries = hData.entries.filter(e => {
+      if (e.severity === 'red') return false; // already in red flags
+      if (e.severity === 'amber') return true;
+      const text = e.entry.toLowerCase();
+      return concernKeywords.some(k => text.includes(k));
+    });
+
+    const cocMap = new Map<string, string[]>();
+    concernEntries.forEach(e => {
+      const logs = cocMap.get(e.client) || [];
+      logs.push(e.entry);
+      cocMap.set(e.client, logs);
+    });
+
+    const cocText = Array.from(cocMap.entries())
+      .map(([client, logs]) => `• ${client}: ${logs.join('; ')}`)
+      .join('\n');
+
+    // Only set if field is currently empty to avoid overwriting user edits
+    if (rfText && !redFlags) setRedFlags(rfText);
+    if (cocText && !clientsOfConcern) setClientsOfConcern(cocText);
+  }, [weekData, house, redFlags, clientsOfConcern]);
 
   function addItem() {
     if (!newText.trim()) return;
@@ -90,6 +131,14 @@ export function HandoverPage() {
     text += `Shift: ${shiftFrom} → ${shiftTo}\n`;
     text += `Outgoing Staff: ${staffOut || '___'} | Incoming Staff: ${staffIn || '___'}\n`;
     text += `${'─'.repeat(50)}\n\n`;
+
+    if (redFlags.trim()) {
+      text += `CRITICAL RED FLAGS\n${redFlags.trim()}\n\n`;
+    }
+
+    if (clientsOfConcern.trim()) {
+      text += `CLIENTS OF CONCERN\n${clientsOfConcern.trim()}\n\n`;
+    }
 
     const grouped: Record<string, HandoverItem[]> = {};
     for (const item of items) {
@@ -134,6 +183,8 @@ export function HandoverPage() {
       date: new Date().toLocaleDateString('en-GB'),
       shiftFrom, shiftTo, house, staffOut, staffIn,
       items: [...items],
+      clientsOfConcern,
+      redFlags,
       createdAt: new Date().toISOString(),
     };
     const updated = [handover, ...history].slice(0, 50);
@@ -142,6 +193,8 @@ export function HandoverPage() {
     setItems([]);
     setStaffOut('');
     setStaffIn('');
+    setClientsOfConcern('');
+    setRedFlags('');
   }
 
   return (
@@ -190,6 +243,43 @@ export function HandoverPage() {
                 <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Incoming Staff</label>
                 <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
               </div>
+            </div>
+          </div>
+
+          {/* Automated Intelligence Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-light border border-flag-red/30 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-flag-red/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <label className="section-header text-[10px] mb-4 block text-flag-red font-black tracking-[0.2em] uppercase">
+                <span className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-flag-red animate-pulse" />
+                  Critical Red Flags
+                </span>
+              </label>
+              <textarea
+                value={redFlags}
+                onChange={e => setRedFlags(e.target.value)}
+                placeholder="Auto-populated from red flag alerts..."
+                className="w-full bg-hc-dark/40 border border-white/5 rounded-2xl p-4 text-[13px] text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-flag-red/50 shadow-inner transition-all resize-none font-medium min-h-[120px] scrollbar-thin"
+              />
+              <p className="mt-2 text-[9px] text-hc-muted uppercase tracking-wider font-bold opacity-60 italic">Scan of current week data for severe alerts</p>
+            </div>
+
+            <div className="glass-light border border-flag-amber/30 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-flag-amber/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <label className="section-header text-[10px] mb-4 block text-flag-amber font-black tracking-[0.2em] uppercase">
+                <span className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-flag-amber" />
+                  Clients of Concern
+                </span>
+              </label>
+              <textarea
+                value={clientsOfConcern}
+                onChange={e => setClientsOfConcern(e.target.value)}
+                placeholder="Auto-populated from amber alerts and keywords..."
+                className="w-full bg-hc-dark/40 border border-white/5 rounded-2xl p-4 text-[13px] text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-flag-amber/50 shadow-inner transition-all resize-none font-medium min-h-[120px] scrollbar-thin"
+              />
+              <p className="mt-2 text-[9px] text-hc-muted uppercase tracking-wider font-bold opacity-60 italic">Keywords: incident, escalation, safeguarding, behavior</p>
             </div>
           </div>
 

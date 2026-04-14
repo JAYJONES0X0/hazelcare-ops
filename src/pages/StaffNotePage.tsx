@@ -344,7 +344,7 @@ export function StaffNotePage() {
     setQuickResult('');
     setQuickLoading(true);
     try {
-      const res = await fetch('/api/enhance-note', {
+      const res = await fetch('/api/staff/enhance-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -438,7 +438,7 @@ export function StaffNotePage() {
     setEnhancedNote('');
     setEnhanceError('');
     try {
-      const res = await fetch('/api/enhance-note', {
+      const res = await fetch('/api/staff/enhance-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: source, noteType: selectedType.label, clientName: client }),

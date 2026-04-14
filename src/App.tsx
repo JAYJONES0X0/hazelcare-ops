@@ -52,7 +52,7 @@ function LoginGate({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -86,7 +86,7 @@ function LoginGate({
     const body = staffLinkId
       ? { id: staffLinkId, code: formatted, toolId: staffToolId }
       : { token: staffToken, code: formatted, toolId: staffToolId };
-    fetch('/api/verify-staff-link', {
+    fetch('/api/staff/verify-staff-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -113,7 +113,7 @@ function LoginGate({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, probe: true }),
@@ -358,7 +358,7 @@ export default function App() {
 
   const refreshStaffSacFromServer = useCallback(() => {
     if (!staffToolId) return;
-    void fetch(`/api/staff-sac-status?toolId=${encodeURIComponent(staffToolId)}`, { credentials: 'include' })
+    void fetch(`/api/staff/staff-sac-status?toolId=${encodeURIComponent(staffToolId)}`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setSacVerified(!!d.ok))
       .catch(() => setSacVerified(false));
@@ -374,7 +374,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch('/api/session', { credentials: 'include' })
+    void fetch('/api/auth/session', { credentials: 'include' })
       .then((r) => r.json())
       .then((d: { authed?: boolean; staffScoped?: boolean }) => {
         if (cancelled) return;
@@ -404,7 +404,7 @@ export default function App() {
         setStaffLinkId(linkId || null);
         setStaffToken(token || null);
       } else {
-        void fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+        void fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
         setStaffMode(null);
         setStaffLinkActive(false);
         setStaffToken(null);
@@ -425,9 +425,9 @@ export default function App() {
     let cancelled = false;
     (async () => {
       if (staffToken || staffLinkId) {
-        await fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+        await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
       }
-      const r = await fetch(`/api/staff-sac-status?toolId=${encodeURIComponent(staffToolId)}`, { credentials: 'include' });
+      const r = await fetch(`/api/staff/staff-sac-status?toolId=${encodeURIComponent(staffToolId)}`, { credentials: 'include' });
       const d = await r.json();
       if (!cancelled) setSacVerified(!!d.ok);
     })();
@@ -449,7 +449,7 @@ export default function App() {
   }, [uiScale]);
 
   const generateStaffLink = useCallback(async (toolId: string) => {
-    const res = await fetch('/api/issue-staff-link', {
+    const res = await fetch('/api/staff/issue-staff-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ toolId }),
@@ -491,8 +491,8 @@ export default function App() {
       <StaffStandaloneView 
         page={staffMode} 
         onSignOut={async () => {
-          await fetch('/api/session', { method: 'DELETE', credentials: 'include' });
-          await fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+          await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+          await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
           setAuthed(false);
           setStaffScopedAuthed(false);
           setStaffLinkActive(false);
@@ -509,15 +509,15 @@ export default function App() {
   // Staff-link sessions must never enter the full Ops shell.
   if (staffScopedAuthed) {
     if (staffLinkActive && staffMode) return null;
-    void fetch('/api/session', { method: 'DELETE', credentials: 'include' });
-    void fetch('/api/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+    await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
     setAuthed(false);
     setStaffScopedAuthed(false);
     return null;
   }
 
   async function handleSignOut() {
-    await fetch('/api/session', { method: 'DELETE', credentials: 'include' });
+    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
     setAuthed(false);
     setStaffScopedAuthed(false);
   }
@@ -526,6 +526,7 @@ export default function App() {
 }
 
 function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () => void }) {
+  const [weekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
 
@@ -559,7 +560,7 @@ function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () =>
       <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 scrollbar-thin">
         <div className="max-w-6xl mx-auto">
           {page === 'notes' && <StaffNotePage />}
-          {page === 'handover' && <HandoverPage />}
+          {page === 'handover' && <HandoverPage weekData={weekData} />}
           {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
           {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
         </div>
@@ -639,7 +640,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
-          {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage /></div>}
+          {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage /></div>}
           {page === 'reports' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ReportsPage weekData={weekData} setPage={setPage} /></div>}
           {page === 'risk' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RiskScoresPage weekData={weekData} /></div>}

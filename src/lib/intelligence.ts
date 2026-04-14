@@ -18,7 +18,7 @@ export interface IntelAnalysisResult {
  * This is the "Brain" of the ops engine.
  */
 export async function analyzeIntel(rawText: string): Promise<IntelAnalysisResult> {
-  const res = await fetch('/api/analyze-intel', {
+  const res = await fetch('/api/staff/analyze-intel', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: rawText }),

@@ -88,7 +88,7 @@ export function SettingsPage({ onSignOut }: Props) {
     if (pwNew.length < 8) { setPwError('Password must be at least 8 characters'); return; }
     setPwLoading(true);
     try {
-      const res = await fetch('/api/change-password', {
+      const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
