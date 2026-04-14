@@ -1,17 +1,6 @@
 // ============================================================
-// COMPLIANCE STORE — Staff management with DBS/training dates
+// COMPLIANCE STORE — Service Audits (Staff now in main store)
 // ============================================================
-
-export interface ComplianceStaff {
-  id: string;
-  name: string;
-  role: string;
-  house: string;
-  dbsExpiry: string;       // DD/MM/YYYY
-  trainingExpiry: string;  // DD/MM/YYYY
-  nextSupervision: string; // DD/MM/YYYY
-  supervisionFreq: number; // weeks
-}
 
 export interface ComplianceAudit {
   id: string;
@@ -23,16 +12,7 @@ export interface ComplianceAudit {
   notes: string;
 }
 
-const STAFF_KEY = 'hazelcare-compliance-staff';
 const AUDIT_KEY = 'hazelcare-compliance-audits';
-
-export function loadComplianceStaff(): ComplianceStaff[] {
-  try { return JSON.parse(localStorage.getItem(STAFF_KEY) || '[]'); } catch { return []; }
-}
-
-export function saveComplianceStaff(staff: ComplianceStaff[]) {
-  localStorage.setItem(STAFF_KEY, JSON.stringify(staff));
-}
 
 export function loadComplianceAudits(): ComplianceAudit[] {
   try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || '[]'); } catch { return []; }

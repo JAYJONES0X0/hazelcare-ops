@@ -573,7 +573,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
-  const [staff] = useState<StaffMember[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
 
   function handleDataParsed(data: WeekSummary) {
@@ -590,6 +590,11 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   function handleUpdateIncidents(updated: Incident[]) {
     setIncidents(updated);
     saveIncidents(updated);
+  }
+
+  function handleUpdateStaff(updated: StaffMember[]) {
+    setStaff(updated);
+    saveStaff(updated);
   }
 
   async function copyStaffLink(toolId: string) {
@@ -638,7 +643,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
-          {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} /></div>}
+          {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage /></div>}

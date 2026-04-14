@@ -219,6 +219,14 @@ export function saveIncidents(incidents: Incident[]) {
   save({ incidents });
 }
 
+export function loadStaff(): StaffMember[] {
+  return load().staff;
+}
+
+export function saveStaff(staff: StaffMember[]) {
+  save({ staff });
+}
+
 export function clearWeekData() {
   sessionWeekData = null;
   try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }

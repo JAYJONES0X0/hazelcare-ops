@@ -82,6 +82,7 @@ export interface StaffMember {
   dbsExpiry?: string;
   trainingExpiry?: string;
   nextSupervision?: string;
+  supervisionFreq?: number; // weeks
   sicknessThisMonth: number;
   latenessThisMonth: number;
   status: 'active' | 'sickness' | 'leave' | 'suspended';
