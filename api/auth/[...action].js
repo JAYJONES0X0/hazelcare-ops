@@ -132,33 +132,40 @@ export default async function handler(req, res) {
 }
 
 async function handleLogin(req, res) {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
-  if (!AUTH_PASSWORD) return res.status(500).json({ ok: false, recognized: false });
+  if (!AUTH_PASSWORD) return res.status(500).json({ ok: false, recognized: false, error: 'Server configuration error' });
 
   const ip = getClientIp(req);
   if (isRateLimited(`login:${ip}`, 20, 15 * 60 * 1000)) {
-    return res.status(429).json({ ok: false });
+    return res.status(429).json({ ok: false, error: 'Too many attempts' });
   }
 
   const { email, password, probe } = req.body || {};
   if (!email) return res.status(400).json({ ok: false, recognized: false });
-  if (typeof email !== 'string' || !email.includes('@')) return res.status(400).json({ ok: false });
+  if (typeof email !== 'string' || !email.includes('@')) return res.status(400).json({ ok: false, error: 'Invalid email format' });
   const normalizedEmail = email.trim().toLowerCase();
-  if (getAllowedLoginEmails().length === 0) {
+  
+  const allowedEmails = getAllowedLoginEmails();
+  if (allowedEmails.length === 0) {
     return res.status(503).json({
       ok: false,
       recognized: false,
       error: 'Login allowlist not configured. Set AUTH_LOGIN_EMAIL in the server environment.',
     });
   }
+  
   const recognized = isLoginEmailAllowed(normalizedEmail);
+  
   if (probe) {
     if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
     return res.json({ ok: true, recognized: true });
   }
+  
   if (!password) return res.status(400).json({ ok: false, recognized });
   if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
-  if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false, recognized: true });
+  if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false, recognized: true, error: 'Incorrect password' });
 
   attachHcSessionCookie(res);
   return res.json({ ok: true, skip2fa: AUTH_EMERGENCY_BYPASS });
