@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { put } from '@vercel/blob';
 import { HC_SESSION_COOKIE, verifyHcSession } from '../../_lib/hc-session.js';
 import { parseCookies } from '../../_lib/parse-cookies.js';
 import { consumeOnce } from '../../_lib/durable-once.js';
@@ -209,7 +210,32 @@ export default async function handler(req, res) {
     case 'staff-sac-status': return handleStaffSacStatus(req, res);
     case 'analyze-intel': return handleAnalyzeIntel(req, res);
     case 'enhance-note': return handleEnhanceNote(req, res);
+    case 'upload-document': return handleUploadDocument(req, res);
     default: return res.status(404).json({ error: 'Unknown staff action' });
+  }
+}
+
+async function handleUploadDocument(req, res) {
+  if (!setCors(req, res)) return res.status(403).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+
+  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
+  const cookies = parseCookies(req);
+  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const filename = req.query.filename || 'document';
+  
+  try {
+    const blob = await put(filename, req, {
+      access: 'public',
+    });
+    return res.status(200).json(blob);
+  } catch (error) {
+    console.error('Blob upload error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
 

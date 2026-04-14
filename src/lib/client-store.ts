@@ -170,11 +170,20 @@ export interface SupportPlanData {
 }
 
 // ─── FULL CLIENT ───────────────────────────────────────────────────────────────
+export interface ClientDocument {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  uploadedAt: string;
+}
+
 export interface FullClient extends ClientBasic {
   pbs: PBSData | null;
   risk: RiskData | null;
   carePlan: CarePlanData | null;
   supportPlan: SupportPlanData | null;
+  documents: ClientDocument[];
 }
 
 // ─── STORAGE ───────────────────────────────────────────────────────────────────
@@ -424,6 +433,7 @@ export function emptyClient(): FullClient {
     risk: emptyRisk(today),
     carePlan: null,
     supportPlan: null,
+    documents: [],
   };
 }
 
