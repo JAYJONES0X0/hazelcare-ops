@@ -71,7 +71,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
     if (!weekData) return;
 
     // 1. Red Flags
-    const rfEntries = (weekData.allFlags.red || []).filter(e => e.house === house);
+    const rfEntries = (weekData.allFlags?.red ?? []).filter(e => e.house === house);
     const rfText = rfEntries.map(e => `• [${e.client}] ${e.entry}`).join('\n');
 
     // 2. Clients of Concern (Amber flags + keywords)

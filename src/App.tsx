@@ -1,5 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
 import { ORG_CONFIG } from './lib/config';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(e: Error) { return { error: e?.message || String(e) }; }
+  componentDidCatch(e: Error, info: ErrorInfo) { console.error('[ErrorBoundary]', e, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 mesh-bg gap-4">
+          <div className="text-flag-red font-black text-lg">App crashed</div>
+          <pre className="text-hc-muted text-xs bg-black/40 p-4 rounded-xl max-w-xl overflow-auto">{this.state.error}</pre>
+          <button onClick={() => this.setState({ error: null })} className="btn-gradient px-6 py-2 rounded-xl text-xs font-black">Retry</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Staff share link pages — these can be opened standalone via hash
 const STAFF_PAGES: Record<string, Page> = {
@@ -460,6 +478,16 @@ export default function App() {
     return { link: data.link as string, code: data.code as string };
   }, []);
 
+  // Staff-link SAC cookies must never let a scoped session bleed into the full Ops shell.
+  // MUST be before any early returns — hooks cannot be called after conditional returns.
+  useEffect(() => {
+    if (!authed) return;
+    if (staffScopedAuthed && !(staffLinkActive && staffMode)) {
+      void fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+      setStaffScopedAuthed(false);
+    }
+  }, [authed, staffScopedAuthed, staffLinkActive, staffMode]);
+
   if (!sessionLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center mesh-bg">
@@ -488,8 +516,8 @@ export default function App() {
   // Staff standalone mode — minimal layout, just the tool
   if (staffLinkActive && staffMode) {
     return (
-      <StaffStandaloneView 
-        page={staffMode} 
+      <StaffStandaloneView
+        page={staffMode}
         onSignOut={async () => {
           await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
           await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
@@ -506,15 +534,14 @@ export default function App() {
     );
   }
 
-  // Staff-link sessions must never enter the full Ops shell.
-  useEffect(() => {
-    if (staffScopedAuthed && !(staffLinkActive && staffMode)) {
-      void fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
-      void fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
-      setAuthed(false);
-      setStaffScopedAuthed(false);
-    }
-  }, [staffScopedAuthed, staffLinkActive, staffMode]);
+  // While we're clearing a stale SAC cookie, hold on the spinner — never render a blank screen.
+  if (staffScopedAuthed && !(staffLinkActive && staffMode)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center mesh-bg">
+        <div className="w-12 h-12 rounded-full border-4 border-hc-teal/20 border-t-hc-teal animate-spin" />
+      </div>
+    );
+  }
 
   async function handleSignOut() {
     await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
@@ -522,7 +549,7 @@ export default function App() {
     setStaffScopedAuthed(false);
   }
 
-  return <FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />;
+  return <ErrorBoundary><FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} /></ErrorBoundary>;
 }
 
 function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () => void }) {
@@ -646,7 +673,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
-          {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage /></div>}
+          {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'reports' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ReportsPage weekData={weekData} setPage={setPage} /></div>}
           {page === 'risk' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RiskScoresPage weekData={weekData} /></div>}
           {page === 'client-docs' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDocsPage /></div>}
@@ -654,7 +681,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'agency' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><AgencyPortalPage /></div>}
           {page === 'staff-monitoring' && (
             <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <StaffMonitoringPage weekData={weekData} setPage={setPage} onDataParsed={(data) => { setWeekData(data); saveWeekData(data); }} />
+              <StaffMonitoringPage staff={staff} weekData={weekData} setPage={setPage} onDataParsed={(data) => { setWeekData(data); saveWeekData(data); }} />
             </div>
           )}
           {page === 'settings' && (

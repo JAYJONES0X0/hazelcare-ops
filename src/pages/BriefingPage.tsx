@@ -57,8 +57,8 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
   const shift = hour < 14 ? 'Day Shift' : hour < 22 ? 'Late Shift' : 'Night Shift';
   const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  const redFlags = weekData.allFlags.red;
-  const amberFlags = weekData.allFlags.amber;
+  const redFlags = weekData.allFlags?.red ?? [];
+  const amberFlags = weekData.allFlags?.amber ?? [];
   const houseList = Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber));
 
   const overdueActions = actions.filter(a => a.status !== 'completed' && a.priority === 'critical');

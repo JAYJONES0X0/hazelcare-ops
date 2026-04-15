@@ -5,7 +5,6 @@ import {
   HAZELCARE_HOUSES, ROLES, AUDIT_TYPES,
   type ComplianceAudit,
 } from '../lib/compliance-store';
-import { loadStaff, saveStaff } from '../lib/storage';
 import type { StaffMember } from '../lib/types';
 
 // ============================================================
@@ -186,9 +185,13 @@ function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: numb
 // ============================================================
 type Tab = 'overview' | 'staff' | 'audits';
 
-export function CompliancePage() {
+interface Props {
+  staff: StaffMember[];
+  onUpdate: (staff: StaffMember[]) => void;
+}
+
+export function CompliancePage({ staff, onUpdate }: Props) {
   const [tab, setTab] = useState<Tab>('overview');
-  const [staffList, setStaffList] = useState<StaffMember[]>(loadStaff);
   const [audits, setAudits] = useState<ComplianceAudit[]>(loadComplianceAudits);
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null);
   const [editAudit, setEditAudit] = useState<ComplianceAudit | null>(null);
@@ -196,18 +199,15 @@ export function CompliancePage() {
   const [houseFilter, setHouseFilter] = useState('all');
 
   function saveStaffRecord(s: StaffMember) {
-    const updated = staffList.find(x => x.id === s.id)
-      ? staffList.map(x => x.id === s.id ? s : x)
-      : [...staffList, s];
-    setStaffList(updated);
-    saveStaff(updated);
+    const updated = staff.find(x => x.id === s.id)
+      ? staff.map(x => x.id === s.id ? s : x)
+      : [...staff, s];
+    onUpdate(updated);
     setEditStaff(null);
   }
 
   function deleteStaffRecord(id: string) {
-    const updated = staffList.filter(s => s.id !== id);
-    setStaffList(updated);
-    saveStaff(updated);
+    onUpdate(staff.filter(s => s.id !== id));
     setDeleteConfirm(null);
   }
 
@@ -230,7 +230,7 @@ export function CompliancePage() {
   const items = useMemo(() => {
     const out: { label: string; house: string; person: string; date: string; type: string; status: 'ok' | 'due_soon' | 'overdue'; notes?: string }[] = [];
 
-    for (const s of staffList) {
+    for (const s of staff) {
       if (s.dbsExpiry) out.push({ label: `DBS Renewal — ${s.name}`, house: s.house, person: s.name, date: s.dbsExpiry, type: 'DBS', status: staffStatus(s.dbsExpiry, 60) });
       if (s.trainingExpiry) out.push({ label: `Staff Training — ${s.name}`, house: s.house, person: s.name, date: s.trainingExpiry, type: 'Training', status: staffStatus(s.trainingExpiry, 30) });
       if (s.nextSupervision) out.push({ label: `Staff Supervision — ${s.name}`, house: s.house, person: s.name, date: s.nextSupervision, type: 'Supervision', status: staffStatus(s.nextSupervision, 7) });
@@ -242,7 +242,7 @@ export function CompliancePage() {
     }
 
     return out;
-  }, [staffList, audits]);
+  }, [staff, audits]);
 
   const overdue = items.filter(i => i.status === 'overdue');
   const dueSoon = items.filter(i => i.status === 'due_soon');
@@ -250,7 +250,7 @@ export function CompliancePage() {
   const compRate = items.length > 0 ? Math.round((ok.length / items.length) * 100) : 100;
   const compColor = compRate >= 90 ? '#22c55e' : compRate >= 70 ? '#f59e0b' : '#ef4444';
 
-  const filteredStaff = houseFilter === 'all' ? staffList : staffList.filter(s => s.house === houseFilter);
+  const filteredStaff = houseFilter === 'all' ? staff : staff.filter(s => s.house === houseFilter);
 
   const housesInAudits = [...new Set(audits.map(a => a.house))].sort();
 
@@ -312,7 +312,7 @@ export function CompliancePage() {
       {/* === OVERVIEW TAB === */}
       {tab === 'overview' && (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {staffList.length === 0 && audits.length === 0 && (
+          {staff.length === 0 && audits.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 text-center glass border border-white/5 rounded-[2.5rem]">
               <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 glow-blue opacity-30 group">
                 <svg className="w-10 h-10 text-hc-muted group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
@@ -400,9 +400,9 @@ export function CompliancePage() {
               <span className="section-header text-[10px] tracking-[0.2em]">Filter by House</span>
               <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)}
                 className="bg-hc-dark/80 border border-white/10 rounded-xl px-5 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[220px]">
-                <option value="all">All Staff Members ({staffList.length})</option>
+                <option value="all">All Staff Members ({staff.length})</option>
                 {HAZELCARE_HOUSES.map(h => {
-                  const c = staffList.filter(s => s.house === h).length;
+                  const c = staff.filter(s => s.house === h).length;
                   return c > 0 ? <option key={h} value={h}>{h} ({c})</option> : null;
                 })}
               </select>

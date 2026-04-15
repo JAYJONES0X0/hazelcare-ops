@@ -66,7 +66,15 @@ export function loadWeekData(): WeekSummary | null {
   if (sessionWeekData) return sessionWeekData;
   try {
     const raw = localStorage.getItem(WEEK_DATA_KEY);
-    if (raw) sessionWeekData = JSON.parse(raw) as WeekSummary;
+    if (raw) {
+      const parsed = JSON.parse(raw) as WeekSummary;
+      // Discard any data that's missing required fields — it's stale
+      if (!parsed.allFlags) {
+        localStorage.removeItem(WEEK_DATA_KEY);
+        return null;
+      }
+      sessionWeekData = parsed;
+    }
   } catch { /* ignore */ }
   return sessionWeekData;
 }

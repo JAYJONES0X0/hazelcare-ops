@@ -64,8 +64,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
     return () => window.removeEventListener('hc-logo-change', handler);
   }, []);
 
-  const redFlags = weekData?.allFlags.red.length ?? 0;
-  const amberFlags = weekData?.allFlags.amber.length ?? 0;
+  const redFlags = weekData?.allFlags?.red?.length ?? 0;
+  const amberFlags = weekData?.allFlags?.amber?.length ?? 0;
   const openActions = actions.filter(a => a.status !== 'completed').length;
   const activeIncidents = incidents.filter(i => i.stage !== 'closed').length;
 

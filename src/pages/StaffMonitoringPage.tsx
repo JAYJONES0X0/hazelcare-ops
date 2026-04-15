@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useCollapseStore } from '../lib/collapse-store';
-import type { WeekSummary, CareEntry } from '../lib/types';
+import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
 import { scoreEntry } from '../lib/entry-rubric';
@@ -36,12 +36,13 @@ import { buildExportRecommendations } from '../lib/export-recommendations';
 import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb } from 'lucide-react';
 
 interface Props {
+  staff: StaffMember[];
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
   onDataParsed: (data: WeekSummary) => void;
 }
 
-export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) {
+export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
 
   // ── Inline import ─────────────────────────────────────────────────
