@@ -115,11 +115,12 @@ function verifyRecovery(userCode) {
 }
 
 export default async function handler(req, res) {
-  const { action } = req.query;
-  // Vercel may pass action as string or array depending on version
-  const route = Array.isArray(action) ? action[0] : action;
+  // Extract route from URL path — Vercel catch-all may not populate req.query.action
+  const urlPath = (req.url || '').split('?')[0];
+  const segments = urlPath.replace(/^\/api\/auth\/?/, '').split('/').filter(Boolean);
+  const route = segments[0] || (req.query?.action ? (Array.isArray(req.query.action) ? req.query.action[0] : req.query.action) : null);
 
-  if (!route) return res.status(404).json({ error: 'Not found', debug: { action, type: typeof action } });
+  if (!route) return res.status(404).json({ error: 'Auth route not found' });
 
   switch (route) {
     case 'login': return handleLogin(req, res);

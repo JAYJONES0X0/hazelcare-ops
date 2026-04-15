@@ -199,10 +199,12 @@ async function fetchTokenByLinkId(linkId) {
 }
 
 export default async function handler(req, res) {
-  const { action } = req.query;
-  const route = Array.isArray(action) ? action[0] : action;
+  // Extract route from URL path — Vercel catch-all may not populate req.query.action
+  const urlPath = (req.url || '').split('?')[0];
+  const segments = urlPath.replace(/^\/api\/staff\/?/, '').split('/').filter(Boolean);
+  const route = segments[0] || (req.query?.action ? (Array.isArray(req.query.action) ? req.query.action[0] : req.query.action) : null);
 
-  if (!route) return res.status(404).json({ error: 'Not found' });
+  if (!route) return res.status(404).json({ error: 'Staff route not found' });
 
   switch (route) {
     case 'issue-staff-link': return handleIssueStaffLink(req, res);
