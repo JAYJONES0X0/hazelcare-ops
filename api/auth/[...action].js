@@ -116,9 +116,10 @@ function verifyRecovery(userCode) {
 
 export default async function handler(req, res) {
   const { action } = req.query;
-  const route = action?.[0];
+  // Vercel may pass action as string or array depending on version
+  const route = Array.isArray(action) ? action[0] : action;
 
-  if (!route) return res.status(404).json({ error: 'Not found' });
+  if (!route) return res.status(404).json({ error: 'Not found', debug: { action, type: typeof action } });
 
   switch (route) {
     case 'login': return handleLogin(req, res);

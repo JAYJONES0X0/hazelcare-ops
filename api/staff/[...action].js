@@ -200,7 +200,7 @@ async function fetchTokenByLinkId(linkId) {
 
 export default async function handler(req, res) {
   const { action } = req.query;
-  const route = action?.[0];
+  const route = Array.isArray(action) ? action[0] : action;
 
   if (!route) return res.status(404).json({ error: 'Not found' });
 
