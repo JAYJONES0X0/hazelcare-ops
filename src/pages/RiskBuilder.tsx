@@ -5,6 +5,7 @@ import { buildRiskHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
+import { Sparkles, ChevronRight } from 'lucide-react';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 
@@ -378,11 +379,14 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button type="button" className="px-5 py-2.5 rounded-xl glass-light border border-hc-purple/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-purple-light hover:text-white hover:bg-hc-purple/10 flex items-center gap-2 transition-all shadow-md">
+            <Sparkles className="w-4 h-4" /> Synthesise from Intelligence
+          </button>
           <button
             onClick={() => importFileRef.current?.click()}
             disabled={importing}
-            className="px-4 py-2 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.08em] text-hc-teal-light disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal-light hover:bg-hc-teal/10 hover:text-white transition-colors disabled:opacity-50"
           >
             {importing ? 'Importing...' : 'Import dataset'}
           </button>
@@ -396,15 +400,18 @@ export function RiskBuilder({ clientId, onBack }: Props) {
               if (f) importRiskDataset(f);
             }}
           />
-          <select
-            value={exportLayout}
-            onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
-            title="Export page orientation"
-          >
-            <option value="portrait">Portrait</option>
-            <option value="landscape">Landscape</option>
-          </select>
+          <div className="relative group">
+            <select
+              value={exportLayout}
+              onChange={e => setExportLayout(e.target.value as ExportLayout)}
+              className="appearance-none bg-black/40 border border-white/10 hover:border-hc-teal/50 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white outline-none cursor-pointer transition-colors shadow-inner"
+              title="Export page orientation"
+            >
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-hc-muted pointer-events-none rotate-90" />
+          </div>
           <button onClick={generatePDF}
             className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
