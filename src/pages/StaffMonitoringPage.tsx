@@ -31,7 +31,6 @@ import {
   buildCoordinatorEvidenceHtml,
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
-import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { buildExportRecommendations } from '../lib/export-recommendations';
 import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, UserCheck, Zap } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
@@ -43,88 +42,23 @@ interface Props {
   onDataParsed: (data: WeekSummary) => void;
 }
 
-export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataParsed }: Props) {
+function entryTypeLabel(category?: string, rawType?: string): { label: string; icon: string; colorClass: string } {
+  const cat = (category || '').toLowerCase();
+  const t = (rawType || '').toLowerCase();
+  if (cat === 'handover' || t.includes('handover')) return { label: 'Handover', icon: '🔄', colorClass: 'text-hc-teal-light bg-hc-teal/10 border-hc-teal/20' };
+  if (cat === 'daily_support' || t.includes('task note') || t.includes('daily 1:1') || t.includes('1:1')) return { label: 'Task Note', icon: '✅', colorClass: 'text-sky-400 bg-sky-500/10 border-sky-500/20' };
+  if (cat === 'medication' || t.includes('medication')) return { label: 'Medication', icon: '💊', colorClass: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
+  if (cat === 'safeguarding' || t.includes('safeguard')) return { label: 'Safeguarding', icon: '🛡️', colorClass: 'text-flag-red bg-flag-red/10 border-flag-red/20' };
+  if (cat === 'incident' || t.includes('incident') || t.includes('abc')) return { label: 'Incident', icon: '🚨', colorClass: 'text-flag-red bg-flag-red/10 border-flag-red/20' };
+  if (cat === 'finance' || t.includes('expense') || t.includes('mileage')) return { label: 'Finance', icon: '💷', colorClass: 'text-flag-green bg-flag-green/10 border-flag-green/20' };
+  if (cat === 'staff' || t.includes('senior support') || t.includes('supervision')) return { label: 'Staff Note', icon: '👤', colorClass: 'text-hc-purple-light bg-hc-purple/10 border-hc-purple/20' };
+  return { label: 'Entry', icon: '📋', colorClass: 'text-hc-muted bg-white/5 border-white/10' };
+}
+
+export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<Props, 'onDataParsed'> & { onDataParsed?: (data: WeekSummary) => void }) {
   const def = useMemo(() => defaultMondayWindow(), []);
 
-  // ── Inline import ─────────────────────────────────────────────────
-  const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
-  const [importDragging, setImportDragging] = useState(false);
-
-  const handleImportFile = useCallback(async (file: File) => {
-    setImportError('');
-    setImportLoading(true);
-    try {
-      let text = '';
-      const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      if (ext === 'pdf') {
-        const pdfjsLib = await import('pdfjs-dist') as any;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-        const buf = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const tc = await page.getTextContent();
-          const items = tc.items as any[];
-          const rowMap = new Map<number, { x: number; str: string }[]>();
-          for (const it of items) {
-            if (!it.str?.trim()) continue;
-            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4;
-            if (!rowMap.has(y)) rowMap.set(y, []);
-            rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
-          }
-          const sortedRows = [...rowMap.entries()]
-            .sort((a, b) => b[0] - a[0])
-            .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
-          text += sortedRows.join('\n') + '\n';
-        }
-      } else {
-        text = await file.text();
-      }
-      if (!text.trim()) { setImportError('File appears empty.'); return; }
-
-      const envelope = buildEnvelopeFromRaw(file.name, text);
-      if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
-        if (weekData) {
-          const merged: WeekSummary = JSON.parse(JSON.stringify(weekData));
-          let newAdded = 0;
-          const getHash = (e: CareEntry) => `${e.date}-${e.carer}-${e.client}-${(e.entry || '').slice(0, 40)}`;
-          const existingHashes = new Set(flattenWeekEntries(weekData).map(getHash));
-
-          Object.entries(envelope.weekSummary.houses).forEach(([houseName, houseData]) => {
-            if (!merged.houses[houseName]) {
-              merged.houses[houseName] = houseData;
-              newAdded += houseData.entries.length;
-            } else {
-              houseData.entries.forEach(e => {
-                if (!existingHashes.has(getHash(e))) {
-                  merged.houses[houseName].entries.push(e);
-                  newAdded++;
-                }
-              });
-            }
-          });
-
-          if (newAdded > 0) {
-            merged.totalEntries = flattenWeekEntries(merged).length;
-            onDataParsed(merged);
-            setImportError(`Merged ${newAdded} new entries.`);
-          } else {
-            setImportError('No new unique entries found.');
-          }
-        } else {
-          onDataParsed(envelope.weekSummary);
-          setImportError('');
-        }
-      } else {
-        setImportError(`Parsed 0 entries.`);
-      }
-    } catch (e) {
-      setImportError(`Error: ${e instanceof Error ? e.message : 'Unknown'}`);
-    } finally {
-      setImportLoading(false);
-    }
-  }, [onDataParsed, weekData]);
+  // (Import handled centrally via UploadPage)
 
   const [house, setHouse] = useState<string>('all');
   const [dateFrom] = useState(def.dateFrom);
@@ -251,21 +185,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
 
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-500"
-      onDragOver={e => { e.preventDefault(); setImportDragging(true); }}
-      onDragLeave={() => setImportDragging(false)}
-      onDrop={e => { e.preventDefault(); setImportDragging(false); const f = e.dataTransfer.files[0]; if (f) void handleImportFile(f); }}
     >
-      {/* Drag overlay */}
-      {importDragging && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{background:'rgba(10,12,18,0.95)',backdropFilter:'blur(12px)'}}>
-          <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 glass border-2 border-hc-teal/40 shadow-[0_0_100px_rgba(20,184,166,0.3)]">
-            <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
-            <div className="text-white font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
-          </div>
-        </div>
-      )}
-      <input type="file" accept=".csv,.txt,.tsv,.pdf" className="hidden" id="daily-sync-input"
-        onChange={e => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); }} />
+
 
       {/* ── Page header ── */}
       <div className="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -291,20 +212,15 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
             <Sparkles className="w-4 h-4" /> Synthesise from Intelligence
           </button>
 
-          <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
+          <button type="button" onClick={() => setPage('upload')}
             className="flex items-center gap-2.5 px-6 py-2.5 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer shadow-xl hover:scale-105 active:scale-95 transition-all">
-            <RefreshCw className={`w-3.5 h-3.5 ${importLoading ? 'animate-spin' : ''}`} />
-            {importLoading ? 'Analysing…' : 'Sync daily CSV'}
+            <RefreshCw className="w-3.5 h-3.5" />
+            Sync Daily CSV
           </button>
         </div>
       </div>
 
-      {importError && (
-        <div className={`mb-8 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-wide flex items-center gap-3 animate-in slide-in-from-top-4 duration-500 ${importError.includes('Merged') ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/20' : 'bg-flag-red/10 text-flag-red border border-flag-red/20'}`}>
-          <div className={`w-2 h-2 rounded-full ${importError.includes('Merged') ? 'bg-hc-teal animate-pulse' : 'bg-flag-red'}`} />
-          {importError}
-        </div>
-      )}
+
 
       {/* Header strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -402,6 +318,16 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
                   const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
                   const isExpanded = selectedStaffCard === s.carer;
                   
+                  // Entry type breakdown for this carer
+                  const staffEntries = entriesByStaff[s.carer] || [];
+                  const typeCounts: Record<string, { count: number; icon: string; colorClass: string }> = {};
+                  staffEntries.forEach(e => {
+                    const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
+                    if (!typeCounts[label]) typeCounts[label] = { count: 0, icon, colorClass };
+                    typeCounts[label].count++;
+                  });
+                  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count);
+                  
                   // Recharts Data Prep
                   const radarData = s.moduleBreakdown.map(m => ({ 
                     subject: m.name, 
@@ -417,8 +343,17 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
                             {s.carer.charAt(0)}
                           </div>
                           <div>
-                            <div className="text-xl font-black tracking-tight mb-1">{s.carer}</div>
-                            <div className="flex items-center gap-3 text-[10px] uppercase font-bold tracking-widest text-hc-muted">
+                            <div className="text-xl font-black tracking-tight mb-1.5">{s.carer}</div>
+                            {/* Entry type breakdown chips */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {typeEntries.slice(0, 5).map(([label, { count, icon, colorClass }]) => (
+                                <span key={label} className={`inline-flex items-center gap-0.5 text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
+                                  {icon} {count}× {label}
+                                </span>
+                              ))}
+                              {typeEntries.length === 0 && <span className="text-[9px] text-hc-muted opacity-50">No entries loaded</span>}
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px] uppercase font-bold tracking-widest text-hc-muted mt-2">
                               <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {s.entryCount} Logs</span>
                               <span className="opacity-30">|</span>
                               <span>{Math.round(s.shortEntryRatio * 100)}% Short</span>
@@ -509,15 +444,37 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
                   <button onClick={() => setCoachStaff(null)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-colors cursor-pointer border border-white/5"><Activity className="w-4 h-4" /></button>
                 </div>
                 <div className="p-6 flex-1 flex flex-col relative z-10 overflow-y-auto scrollbar-thin bg-black/10">
-                  <div className="relative mb-5 group">
-                    <select className="w-full appearance-none bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white outline-none cursor-pointer hover:border-hc-teal/50 transition-colors shadow-inner"
-                      onChange={(e) => { const entry = entriesByStaff[coachStaff]?.find(x => x.entry === e.target.value); if (entry) { setCoachEntry(entry); setCoachRewrite(''); } }} value={coachEntry?.entry || ''}>
-                      <option value="">-- Analyze Note Evidence --</option>
-                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 10).map((e, i) => (
-                        <option key={i} value={e.entry}>{e.date} (Quality: {scoreEntry(e).total}%) - {e.client}</option>
-                      ))}
-                    </select>
-                    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-hc-muted pointer-events-none rotate-90" />
+                  <div className="mb-5">
+                    <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                      <FileText className="w-3 h-3" /> Select Entry to Analyse
+                    </div>
+                    <div className="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-thin pr-0.5">
+                      {[...(entriesByStaff[coachStaff] || [])]
+                        .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
+                        .slice(0, 15)
+                        .map((e, i) => {
+                          const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
+                          const score = scoreEntry(e).total;
+                          const isSelected = coachEntry?.id === e.id;
+                          return (
+                            <div key={i}
+                              onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
+                              className={`cursor-pointer rounded-xl px-3 py-2.5 flex items-center gap-3 transition-all border ${isSelected ? 'bg-hc-teal/10 border-hc-teal/30 shadow-[0_0_10px_rgba(20,184,166,0.1)]' : 'bg-black/30 border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}
+                            >
+                              <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>{icon} {label}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[10px] font-bold text-white/90 truncate">{e.client || 'General'} &middot; {e.date}</div>
+                                <div className="text-[9px] text-hc-muted truncate opacity-70">{(e.entry || '').slice(0, 65)}…</div>
+                              </div>
+                              <span className="shrink-0 text-[10px] font-black tabular-nums" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
+                            </div>
+                          );
+                        })
+                      }
+                      {!(entriesByStaff[coachStaff]?.length) && (
+                        <div className="text-center py-6 text-[10px] text-hc-muted opacity-40">No entries available for this staff member</div>
+                      )}
+                    </div>
                   </div>
 
                   {coachEntry && (
