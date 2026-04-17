@@ -255,7 +255,7 @@ export function CompliancePage({ staff, onUpdate }: Props) {
   const housesInAudits = [...new Set(audits.map(a => a.house))].sort();
 
   return (
-    <div className="p-6 lg:p-10 max-w-[2560px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-10 max-w-6xl mx-auto animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>

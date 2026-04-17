@@ -48,7 +48,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[2560px] mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto animate-in fade-in duration-700">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>

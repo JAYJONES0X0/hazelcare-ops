@@ -962,7 +962,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-[2560px] mx-auto">
+    <div className="p-6 lg:p-10 w-full animate-in fade-in duration-700 scrollbar-thin max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
