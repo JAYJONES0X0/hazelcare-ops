@@ -81,9 +81,9 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
     setMobileOpen(false);
   }
 
-  const navItemBase = 'w-full px-2.5 py-2 rounded-lg flex items-center gap-2.5 text-[11px] font-semibold tracking-wide transition-all cursor-pointer border-l-2';
-  const navItemActive = `${navItemBase} bg-hc-teal/10 text-hc-teal-light border-hc-teal pl-[9px]`;
-  const navItemInactive = `${navItemBase} text-hc-muted hover:text-white hover:bg-white/[0.04] border-transparent pl-[9px]`;
+  const navItemBase = 'w-full px-2.5 py-2 rounded-lg flex items-center gap-2.5 text-[11px] font-semibold tracking-wide transition-all cursor-pointer';
+  const navItemActive = `${navItemBase} sidebar-nav-active`;
+  const navItemInactive = `${navItemBase} text-hc-muted hover:text-white hover:bg-white/[0.04] border border-transparent`;
 
   const sidebarContent = (
     <>
@@ -223,7 +223,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
             style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
             {ORG_CONFIG.name}
           </a>
-          <a href="https://login.nourishcare.com" target="_blank" rel="noopener noreferrer"
+          <a href="https://www.care-planner.co.uk" target="_blank" rel="noopener noreferrer"
             className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
             style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
             CarePlanner

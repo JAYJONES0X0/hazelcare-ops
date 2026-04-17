@@ -373,7 +373,7 @@ function AgencyDirectory() {
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex items-center justify-between px-2">
-        <div className="section-header text-[9px] tracking-[0.3em] opacity-60 uppercase">{AGENCIES.length} REGISTERED HUB NODES · RANKED BY VECTOR PERFORMANCE</div>
+        <div className="section-header text-[9px] tracking-[0.3em] opacity-60 uppercase">{AGENCIES.length} REGISTERED HUB ENTITIES · RANKED BY VECTOR PERFORMANCE</div>
         <button className="flex items-center gap-2 px-5 py-2 glass-light border border-hc-teal/20 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-white hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
       </div>
 
@@ -396,7 +396,7 @@ function AgencyDirectory() {
                     <div className="flex items-center gap-3">
                       <TierBadge tier={agency.tier} />
                       {agency.activeWorkers > 0 && (
-                        <span className="pill pill-teal text-[9px] font-black px-3 py-0.5 shadow-lg shadow-hc-teal/10 animate-pulse-soft">{agency.activeWorkers} ACTIVE NODES</span>
+                        <span className="pill pill-teal text-[9px] font-black px-3 py-0.5 shadow-lg shadow-hc-teal/10 animate-pulse-soft">{agency.activeWorkers} ACTIVE WORKERS</span>
                       )}
                     </div>
                   </div>

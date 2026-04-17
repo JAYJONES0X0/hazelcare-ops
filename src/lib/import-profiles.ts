@@ -32,7 +32,7 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   }
 
   if (ext === 'csv' && (lower.includes('diary entry') || lower.includes('incident type') || lower.includes('display from'))) {
-    return { id: 'nourish-csv-diary', type: 'diary', confidence: 0.95 };
+    return { id: 'legacy-csv-diary', type: 'diary', confidence: 0.95 };
   }
   if (
     lower.includes('weekly activity plan') ||
@@ -43,7 +43,7 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
     return { id: 'daily-support-notes', type: 'diary', confidence: 0.72 };
   }
   if (ext === 'pdf' && (lower.includes('client diary') || lower.includes('diary for') || lower.includes('display from'))) {
-    return { id: 'nourish-pdf-diary', type: 'diary', confidence: 0.82 };
+    return { id: 'legacy-pdf-diary', type: 'diary', confidence: 0.82 };
   }
   if (ext === 'pdf' && (/emergency admission pack/i.test(rawText) || /care plan\s*[–-]\s*.+report run on/i.test(rawText))) {
     return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.9 };

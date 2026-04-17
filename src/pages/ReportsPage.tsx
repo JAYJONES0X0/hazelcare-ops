@@ -334,7 +334,7 @@ function EntryLogReport({ weekData }: { weekData: WeekSummary }) {
       </div>
 
       <div className="space-y-2 mb-10">
-        <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">TELEMETRY FEED — {filtered.length} NODES CAPTURED</div>
+        <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">TELEMETRY FEED — {filtered.length} ENTRIES CAPTURED</div>
         {filtered.slice(0, 200).map((e, i) => <EntryRow key={i} entry={e} />)}
         {filtered.length > 200 && (
           <div className="text-center py-10 glass border border-white/5 rounded-2xl">

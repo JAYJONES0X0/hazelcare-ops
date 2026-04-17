@@ -6,7 +6,7 @@ import { emptyCarePlan, emptyRisk, emptyRisk_item, CARE_PLAN_DOMAINS } from './c
 
 // Maps legacy industry jargon to Premium Hazel Care Domains
 const DOMAIN_MAP: Record<string, string> = {
-  'ACCOMMODATION CLEANLINESS AND COMFORT': 'Environment & Physical Safety',
+  'ACCOMMODATION CLEANLINESS': 'Environment & Physical Safety',
   'BREATHING': 'Respiratory Health & Support',
   'COMMUNICATION AND SENSES': 'Communication & Sensory Integration',
   'COMPANIONSHIP, SOCIAL INTERACTION AND RECREATION': 'Social Engagement & Relationships',
