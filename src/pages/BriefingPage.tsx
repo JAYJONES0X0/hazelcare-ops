@@ -76,7 +76,7 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
   const RING = 88; // px
 
   return (
-    <div className="p-4 lg:p-6 w-full max-w-6xl mx-auto animate-in fade-in duration-700">
+    <div className="p-4 lg:p-6 xl:px-12 2xl:px-20 w-full animate-in fade-in duration-700">
 
       {/* ── Header ── */}
       <div className="rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"

@@ -53,7 +53,7 @@ export function RiskScoresPage({ weekData }: Props) {
   }
 
   return (
-    <div className="p-6 lg:p-10 w-full max-w-6xl mx-auto animate-in fade-in duration-1000">
+    <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-1000">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer uppercase leading-none">Risk Overview</h1>

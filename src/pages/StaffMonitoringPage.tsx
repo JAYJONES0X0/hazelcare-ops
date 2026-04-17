@@ -250,7 +250,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
   }
 
   return (
-    <div className="p-6 lg:p-10 w-full max-w-6xl mx-auto animate-in fade-in duration-500"
+    <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-500"
       onDragOver={e => { e.preventDefault(); setImportDragging(true); }}
       onDragLeave={() => setImportDragging(false)}
       onDrop={e => { e.preventDefault(); setImportDragging(false); const f = e.dataTransfer.files[0]; if (f) void handleImportFile(f); }}
@@ -397,7 +397,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage, onDataPa
 
             {/* Staff Quality Board */}
             <div className="glass border border-white/10 rounded-2xl shadow-2xl flex flex-col min-h-[500px]">
-              <div className="flex-1 p-5 grid grid-cols-1 gap-4">
+              <div className="flex-1 p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {snapshot.staff.map((s) => {
                   const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
                   const isExpanded = selectedStaffCard === s.carer;
