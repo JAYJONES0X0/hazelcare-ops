@@ -146,6 +146,34 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
         </div>
       </div>
 
+      {/* Entry type composition strip */}
+      {weekData.entryTypes && Object.keys(weekData.entryTypes).length > 0 && (() => {
+        const ICONS: Record<string, string> = {
+          'Handover note generated via Mobile App': '🔄',
+          'Handover': '🔄',
+          'Task note generated via Mobile App': '✅',
+          'Senior support worker role': '👤',
+          'Medication collected': '💊',
+          'Medication ordered': '💊',
+          'Medication audit': '💊',
+          'Expenses/Mileage': '💷',
+          'Safeguarding': '🛡️',
+        };
+        const sorted = Object.entries(weekData.entryTypes)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8);
+        return (
+          <div className="flex items-center gap-2 flex-wrap mb-4 px-1">
+            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] shrink-0">Dataset:</span>
+            {sorted.map(([type, count]) => (
+              <span key={type} className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-white/60">
+                {ICONS[type] || '📋'} {count}× {type.replace(' generated via Mobile App', '').replace('note', '').trim()}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* ── Two column body ── */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
 
@@ -168,13 +196,21 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
               </button>
               {!isSectionCollapsed('interventions') && <div className="divide-y divide-white/[0.04]">
                 {redFlags.slice(0, 8).map((flag, i) => (
-                  <div key={`rf${i}`} className="px-4 py-3 flex items-start gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    <div key={`rf${i}`} className="px-4 py-3 flex items-start gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group"
                     onClick={() => setPage('reports')}>
                     <div className="w-1.5 h-1.5 rounded-full bg-flag-red mt-1.5 shrink-0 animate-pulse" />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-[11px] font-black text-white uppercase tracking-wide">{flag.house}</span>
                         {flag.client && <span className="text-[10px] text-hc-teal-light font-semibold">{flag.client}</span>}
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wide"
+                          style={{
+                            background: flag.category === 'safeguarding' ? 'rgba(239,68,68,0.15)' : flag.category === 'incident' ? 'rgba(239,68,68,0.12)' : flag.category === 'medication' ? 'rgba(6,182,212,0.1)' : 'rgba(255,255,255,0.05)',
+                            color: flag.category === 'safeguarding' || flag.category === 'incident' ? '#f87171' : flag.category === 'medication' ? '#67e8f9' : '#94a3b8',
+                            borderColor: flag.category === 'safeguarding' || flag.category === 'incident' ? 'rgba(239,68,68,0.25)' : flag.category === 'medication' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.08)',
+                          }}>
+                          {flag.category === 'safeguarding' ? '🛡️ Safeguarding' : flag.category === 'incident' ? '🚨 Incident' : flag.category === 'medication' ? '💊 Medication' : flag.category === 'handover' ? '🔄 Handover' : flag.type || '📋 Entry'}
+                        </span>
                       </div>
                       <p className="text-[11px] text-hc-muted leading-relaxed line-clamp-2">"{flag.entry.slice(0, 120)}"</p>
                       <div className="flex flex-wrap gap-1.5 mt-1.5">

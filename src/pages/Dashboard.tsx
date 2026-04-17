@@ -107,6 +107,33 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         ))}
       </div>
 
+      {/* Dataset composition strip */}
+      {weekData.entryTypes && Object.keys(weekData.entryTypes).length > 0 && (() => {
+        const ICONS: Record<string, string> = {
+          'Handover note generated via Mobile App': '🔄',
+          'Handover': '🔄',
+          'Task note generated via Mobile App': '✅',
+          'Senior support worker role': '👤',
+          'Medication collected': '💊',
+          'Medication ordered': '💊',
+          'Medication returned': '💊',
+          'Medication audit': '💊',
+          'Expenses/Mileage': '💷',
+          'Safeguarding': '🛡️',
+        };
+        const sorted = Object.entries(weekData.entryTypes).sort((a, b) => b[1] - a[1]).slice(0, 9);
+        return (
+          <div className="flex items-center gap-2 flex-wrap mb-6 p-3 rounded-2xl" style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
+            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] shrink-0">Loaded Dataset:</span>
+            {sorted.map(([type, count]) => (
+              <span key={type} className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-white/60 hover:text-white/90 transition-colors">
+                {ICONS[type] || '📋'} {count}× {type.replace(' generated via Mobile App', '').replace('note', '').trim()}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Houses Grid */}
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-5">
@@ -180,13 +207,15 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                 {!collapsed && (
                   <div className="px-5 pb-5">
                     {/* Mini stats */}
-                    <div className="grid grid-cols-4 gap-1 mb-4">
+                    <div className="grid grid-cols-2 gap-1 mb-3">
                       {[
-                        { n: house.entries.length, l: 'Notes', c: '#94a3b8' },
-                        { n: house.incidents.length, l: 'Incid.', c: '#ef4444' },
-                        { n: house.safeguarding.length, l: 'Safe.', c: '#f59e0b' },
-                        { n: house.medication.length, l: 'Meds', c: '#14b8a6' },
-                      ].map(s => (
+                        { n: house.handovers.length,    l: 'Handovers', c: '#14b8a6' },
+                        { n: house.dailySupport.length, l: '1:1 / Task',c: '#60a5fa' },
+                        { n: house.incidents.length,    l: 'Incidents',  c: '#ef4444' },
+                        { n: house.medication.length,   l: 'Medication', c: '#06b6d4' },
+                        { n: house.safeguarding.length, l: 'Safeguard',  c: '#f59e0b' },
+                        { n: house.staffPerformance.length, l: 'Staff', c: '#a78bfa' },
+                      ].filter(s => s.n > 0).slice(0, 4).map(s => (
                         <div key={s.l} className="text-center rounded-xl py-2 px-1"
                           style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.05)'}}>
                           <div className="text-base font-black tabular-nums leading-none" style={{color: s.c}}>{s.n}</div>

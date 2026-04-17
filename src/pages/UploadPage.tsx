@@ -1080,6 +1080,98 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 </div>
               </div>
 
+              {/* Entry type breakdown — the key missing piece */}
+              {preview.envelope.diaryEntries && preview.envelope.diaryEntries.length > 0 && (() => {
+                const entries = preview.envelope.diaryEntries!;
+                // Count by category
+                const catMap: Record<string, number> = {};
+                const houseSet = new Set<string>();
+                const clientSet = new Set<string>();
+                entries.forEach(e => {
+                  const cat = (e.category || 'other') as string;
+                  catMap[cat] = (catMap[cat] || 0) + 1;
+                  if (e.house && e.house !== 'Unassigned') houseSet.add(e.house);
+                  if (e.client && e.client.trim()) clientSet.add(e.client.trim());
+                });
+                const ENTRY_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+                  handover:     { label: 'Handover', icon: '🔄', color: 'text-hc-teal-light' },
+                  daily_support:{ label: 'Task Note / 1:1', icon: '✅', color: 'text-sky-400' },
+                  medication:   { label: 'Medication', icon: '💊', color: 'text-cyan-400' },
+                  safeguarding: { label: 'Safeguarding', icon: '🛡️', color: 'text-flag-red' },
+                  incident:     { label: 'Incident', icon: '🚨', color: 'text-flag-red' },
+                  finance:      { label: 'Finance / Mileage', icon: '💷', color: 'text-flag-green' },
+                  staff:        { label: 'Staff Note', icon: '👤', color: 'text-hc-purple-light' },
+                  other:        { label: 'Other', icon: '📋', color: 'text-hc-muted' },
+                };
+                const sorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+                const redCount = entries.filter(e => e.severity === 'red').length;
+                const amberCount = entries.filter(e => e.severity === 'amber').length;
+                return (
+                  <div className="mb-6 glass-light border border-hc-teal/15 rounded-2xl p-5">
+                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+                      Parsed Content — {entries.length.toLocaleString()} entries detected
+                    </div>
+
+                    {/* Entry type counts */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                      {sorted.map(([cat, count]) => {
+                        const info = ENTRY_LABELS[cat] || ENTRY_LABELS.other;
+                        return (
+                          <div key={cat} className="bg-black/30 border border-white/5 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                            <span className="text-base shrink-0">{info.icon}</span>
+                            <div className="min-w-0">
+                              <div className={`text-sm font-black tabular-nums ${info.color}`}>{count}</div>
+                              <div className="text-[9px] font-bold text-hc-muted uppercase tracking-wide truncate">{info.label}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Flags row */}
+                    {(redCount > 0 || amberCount > 0) && (
+                      <div className="flex gap-3 mb-4">
+                        {redCount > 0 && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-flag-red/10 border border-flag-red/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-flag-red animate-pulse" />
+                            <span className="text-[10px] font-black text-flag-red uppercase tracking-wide">{redCount} Red Flag{redCount !== 1 ? 's' : ''}</span>
+                          </div>
+                        )}
+                        {amberCount > 0 && (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-flag-amber/10 border border-flag-amber/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-flag-amber" />
+                            <span className="text-[10px] font-black text-flag-amber uppercase tracking-wide">{amberCount} Amber Flag{amberCount !== 1 ? 's' : ''}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Houses + clients detected */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.15em] mb-1.5">Houses Detected ({houseSet.size})</div>
+                        <div className="flex flex-wrap gap-1">
+                          {[...houseSet].slice(0, 10).map(h => (
+                            <span key={h} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/70">{h}</span>
+                          ))}
+                          {houseSet.size > 10 && <span className="text-[9px] text-hc-muted">+{houseSet.size - 10} more</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.15em] mb-1.5">Clients Detected ({clientSet.size})</div>
+                        <div className="flex flex-wrap gap-1">
+                          {[...clientSet].slice(0, 8).map(c => (
+                            <span key={c} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-hc-teal/10 border border-hc-teal/15 text-hc-teal-light">{c}</span>
+                          ))}
+                          {clientSet.size > 8 && <span className="text-[9px] text-hc-muted">+{clientSet.size - 8} more</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-3 md:col-span-2">
                   <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Intent Preset</label>
