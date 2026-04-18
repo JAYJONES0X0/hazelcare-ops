@@ -223,17 +223,17 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
 
       {/* Header strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
         {[
           { label: 'Intelligence Window', value: snapshot.windowLabel, color: 'text-hc-teal-light', icon: <Activity className="w-5 h-5 text-hc-teal opacity-50" /> },
           { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-white', icon: <FileText className="w-5 h-5 text-white opacity-20" /> },
           { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-white', icon: <RefreshCw className="w-5 h-5 text-white opacity-20" /> },
           { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted', icon: <History className="w-5 h-5 text-hc-muted opacity-50" /> },
         ].map(({ label, value, color, icon }) => (
-          <div key={label} className="glass-light border border-white/10 rounded-2xl p-5 shadow-lg relative overflow-hidden group/stat transition-all hover:bg-white/[0.04]">
-            <div className="absolute top-4 right-4">{icon}</div>
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 opacity-80">{label}</div>
-            <div className={`text-2xl font-black ${color} tracking-tight`}>{value}</div>
+          <div key={label} className="glass-light border border-white/10 rounded-xl p-4 shadow-lg relative overflow-hidden group/stat transition-all hover:bg-white/[0.04]">
+            <div className="absolute top-3 right-3 opacity-80 scale-75">{icon}</div>
+            <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-80">{label}</div>
+            <div className={`text-xl font-black ${color} tracking-tight`}>{value}</div>
           </div>
         ))}
       </div>
@@ -296,24 +296,24 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           <div className="flex flex-col gap-6">
             
             {/* Filter Hub */}
-            <div className="glass border border-white/10 rounded-2xl px-5 py-4 shadow-xl flex items-center justify-between gap-4">
+            <div className="glass border border-white/10 rounded-xl px-4 py-3 shadow-xl flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <UserCheck className="w-4 h-4 text-hc-teal" />
-                <span className="text-[11px] font-black tracking-[0.2em] text-white uppercase">Clinical Focus Hub</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Clinical Focus Hub</span>
               </div>
-              <div className="flex bg-black/40 border border-white/10 rounded-xl overflow-hidden p-1 shadow-inner">
+              <div className="flex bg-black/40 border border-white/10 rounded-lg overflow-hidden p-0.5 shadow-inner">
                  {snapshot.houses.length > 0 ? [{ name: 'all', avgQuality: 100 }, ...snapshot.houses].map((h) => (
                   <button key={h.name} onClick={() => setHouse(h.name)} 
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${house === h.name ? 'bg-hc-teal/20 text-hc-teal-light shadow-md' : 'text-hc-muted hover:text-white'}`}>
+                    className={`px-3 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-widest transition-all ${house === h.name ? 'bg-hc-teal/20 text-hc-teal-light shadow-md' : 'text-hc-muted hover:text-white'}`}>
                     {h.name === 'all' ? 'Network' : `${h.name} ${h.avgQuality}%`}
                   </button>
-                )) : <div className="px-4 py-1.5 text-[10px] text-hc-muted truncate">No active houses</div>}
+                )) : <div className="px-3 py-1 text-[9px] text-hc-muted truncate">No active houses</div>}
               </div>
             </div>
 
             {/* Staff Quality Board */}
-            <div className="glass border border-white/10 rounded-2xl shadow-2xl flex flex-col min-h-[500px]">
-              <div className="flex-1 p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="glass border border-white/10 rounded-xl shadow-2xl flex flex-col min-h-[500px]">
+              <div className="flex-1 p-3 grid grid-cols-1 xl:grid-cols-2 gap-2">
                 {snapshot.staff.map((s) => {
                   const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
                   const isExpanded = selectedStaffCard === s.carer;
@@ -336,82 +336,82 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                   }));
 
                   return (
-                    <div key={s.carer} className={`rounded-2xl border transition-all duration-500 overflow-hidden ${isExpanded ? 'border-hc-teal text-white shadow-[0_0_30px_rgba(20,184,166,0.15)] bg-hc-navy' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] shadow-md'}`}>
-                      <div className="p-5 flex items-center justify-between cursor-pointer group" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
-                        <div className="flex items-center gap-5">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-black shrink-0 transition-colors ${isExpanded ? 'bg-hc-teal text-white shadow-lg shadow-hc-teal/20' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
+                    <div key={s.carer} className={`rounded-xl border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-hc-teal text-white shadow-[0_0_20px_rgba(20,184,166,0.15)] bg-hc-navy' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] shadow-sm'}`}>
+                      <div className="px-4 py-3 flex items-center justify-between cursor-pointer group" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? 'bg-hc-teal text-white shadow-lg shadow-hc-teal/20' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
                             {s.carer.charAt(0)}
                           </div>
-                          <div>
-                            <div className="text-xl font-black tracking-tight mb-1.5">{s.carer}</div>
+                          <div className="min-w-0 mr-4">
+                            <div className="text-sm font-black tracking-tight mb-1 truncate">{s.carer}</div>
                             {/* Entry type breakdown chips */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {typeEntries.slice(0, 5).map(([label, { count, icon, colorClass }]) => (
-                                <span key={label} className={`inline-flex items-center gap-0.5 text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {typeEntries.slice(0, 4).map(([label, { count, icon, colorClass }]) => (
+                                <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
                                   {icon} {count}× {label}
                                 </span>
                               ))}
-                              {typeEntries.length === 0 && <span className="text-[9px] text-hc-muted opacity-50">No entries loaded</span>}
+                              {typeEntries.length === 0 && <span className="text-[8px] text-hc-muted opacity-50">No entries loaded</span>}
                             </div>
-                            <div className="flex items-center gap-3 text-[10px] uppercase font-bold tracking-widest text-hc-muted mt-2">
-                              <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {s.entryCount} Logs</span>
+                            <div className="flex items-center gap-2 text-[8px] uppercase font-bold tracking-widest text-hc-muted mt-1.5">
+                              <span className="flex items-center gap-1"><FileText className="w-2.5 h-2.5" /> {s.entryCount} Logs</span>
                               <span className="opacity-30">|</span>
                               <span>{Math.round(s.shortEntryRatio * 100)}% Short</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3 shrink-0">
                            {/* Quality Bar Visualiser */}
-                           <div className="hidden md:flex flex-col items-end gap-1.5 min-w-[150px]">
-                              <div className="flex justify-between w-full text-[9px] font-black uppercase text-hc-muted">
+                           <div className="hidden md:flex flex-col items-end gap-1 min-w-[120px]">
+                              <div className="flex justify-between w-full text-[8px] font-black uppercase text-hc-muted">
                                 <span>Quality Index</span>
                                 <span style={{ color: scoreHex }}>{s.qualityScore}%</span>
                               </div>
-                              <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                              <div className="w-full bg-black/40 h-1 rounded-full overflow-hidden border border-white/5 shadow-inner">
                                 <div className="h-full rounded-full transition-all duration-1000 ease-in-out" style={{ width: `${s.qualityScore}%`, backgroundColor: scoreHex, boxShadow: `0 0 10px ${scoreHex}` }} />
                               </div>
                            </div>
-                           <ChevronRight className={`w-5 h-5 text-hc-muted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-hc-teal' : ''}`} />
+                           <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-hc-teal' : ''}`} />
                         </div>
                       </div>
 
                       {/* Expandable Panel w/ Radar Chart */}
                       {isExpanded && (
-                        <div className="px-5 pb-5 animate-in slide-in-from-top-4">
-                           <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent w-full mb-6" />
-                           <div className="grid grid-cols-1 md:grid-cols-[1fr,300px] gap-8">
+                        <div className="px-4 pb-4 animate-in slide-in-from-top-4">
+                           <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent w-full mb-4" />
+                           <div className="grid grid-cols-1 md:grid-cols-[1fr,250px] gap-6">
                              
                              <div>
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted mb-4 flex items-center gap-2"><Zap className="w-3 h-3 text-hc-teal" /> Clinical Module Breakdown</h3>
-                                <div className="space-y-3">
+                                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-3 flex items-center gap-1.5"><Zap className="w-3 h-3 text-hc-teal" /> Clinical Module Breakdown</h3>
+                                <div className="space-y-2">
                                   {s.moduleBreakdown.map((m) => {
                                     const mColor = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
                                     return (
-                                      <div key={m.name} className="flex flex-col gap-1.5">
-                                        <div className="flex justify-between text-[10px] font-black text-white/80">
+                                      <div key={m.name} className="flex flex-col gap-1">
+                                        <div className="flex justify-between text-[9px] font-black text-white/80">
                                           <span>{m.name}</span>
                                           <span style={{color: mColor}}>{m.score}%</span>
                                         </div>
                                         <div className="w-full bg-black/30 h-1 rounded-full overflow-hidden">
                                           <div className="h-full bg-white/20 transition-all rounded-full" style={{ width: `${m.score}%`, backgroundColor: mColor }} />
                                         </div>
-                                        {m.missing.length > 0 && <div className="text-[9px] text-hc-muted font-medium pt-1 truncate">Missing: {m.missing.join(', ')}</div>}
+                                        {m.missing.length > 0 && <div className="text-[8px] text-hc-muted font-medium pt-0.5 truncate">Missing: {m.missing.join(', ')}</div>}
                                       </div>
                                     )
                                   })}
                                 </div>
                                 <button onClick={(e) => { e.stopPropagation(); setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                                  className="mt-6 w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-hc-teal/10 text-hc-teal border border-hc-teal/30 hover:bg-hc-teal hover:text-white shadow-[0_4px_14px_rgba(20,184,166,0.2)]">
+                                  className="mt-4 w-full py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all bg-hc-teal/10 text-hc-teal border border-hc-teal/30 hover:bg-hc-teal hover:text-white shadow-[0_4px_14px_rgba(20,184,166,0.2)]">
                                   Open in Coaching Studio ➔
                                 </button>
                              </div>
 
                              {/* Recharts Radar for visual impact */}
-                             <div className="bg-black/20 rounded-2xl border border-white/5 flex items-center justify-center p-3 relative h-[250px]">
+                             <div className="bg-black/20 rounded-xl border border-white/5 flex items-center justify-center p-2 relative h-[200px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                                     <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: 700 }} />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 700 }} />
                                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                     <Radar name={s.carer} dataKey="A" stroke="#14b8a6" fill="#0d9488" fillOpacity={0.4} />
                                   </RadarChart>
