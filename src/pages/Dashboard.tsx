@@ -185,12 +185,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
                 {/* Header — always visible, click to collapse */}
                 <div
-                  className="flex items-center justify-between gap-2 p-5 cursor-pointer"
+                  className="flex items-center justify-between gap-2 px-4 py-3 cursor-pointer"
                   onClick={() => toggleHouse(house.name)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-black text-white tracking-tight group-hover/house:text-hc-teal-light transition-colors duration-200">{house.name}</div>
-                    {house.coordinator && !collapsed && <div className="text-[10px] text-hc-muted mt-0.5 font-medium opacity-50 uppercase tracking-wide">{house.coordinator}</div>}
+                    {house.coordinator && !collapsed && <div className="text-[9px] text-hc-muted mt-0.5 font-bold uppercase tracking-wide">{house.coordinator}</div>}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {totalIssues > 0 && (
@@ -205,9 +205,9 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
                 {/* Collapsable body */}
                 {!collapsed && (
-                  <div className="px-5 pb-5">
+                  <div className="px-4 pb-4">
                     {/* Mini stats */}
-                    <div className="grid grid-cols-2 gap-1 mb-3">
+                    <div className="grid grid-cols-2 gap-1 mb-2.5">
                       {[
                         { n: house.handovers.length,    l: 'Handovers', c: '#14b8a6' },
                         { n: house.dailySupport.length, l: '1:1 / Task',c: '#60a5fa' },
@@ -216,10 +216,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                         { n: house.safeguarding.length, l: 'Safeguard',  c: '#f59e0b' },
                         { n: house.staffPerformance.length, l: 'Staff', c: '#a78bfa' },
                       ].filter(s => s.n > 0).slice(0, 4).map(s => (
-                        <div key={s.l} className="text-center rounded-xl py-2 px-1"
+                        <div key={s.l} className="text-center rounded-lg py-1.5 px-1"
                           style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.05)'}}>
-                          <div className="text-base font-black tabular-nums leading-none" style={{color: s.c}}>{s.n}</div>
-                          <div className="text-[9px] font-bold mt-1 uppercase tracking-wide" style={{color:'#4a5568'}}>{s.l}</div>
+                          <div className="text-sm font-black tabular-nums leading-none" style={{color: s.c}}>{s.n}</div>
+                          <div className="text-[8px] font-bold mt-1 uppercase tracking-wide" style={{color:'#4a5568'}}>{s.l}</div>
                         </div>
                       ))}
                     </div>

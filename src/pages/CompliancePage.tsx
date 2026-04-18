@@ -181,9 +181,129 @@ function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: numb
 }
 
 // ============================================================
+// FOUNDER CHECKLIST MODULE
+// ============================================================
+const FOUNDER_CHECKLIST = [
+  {
+    category: 'Legal Documents',
+    items: [
+      { id: 'tos', label: 'Terms of Service written for actual product' },
+      { id: 'privacy', label: 'Privacy Policy matching real data flows' },
+      { id: 'eula', label: 'EULA if users licence rather than own product' },
+      { id: 'dpa', label: 'Data Processing Agreement before enterprise talks' }
+    ]
+  },
+  {
+    category: 'Data Privacy Compliance',
+    items: [
+      { id: 'gdpr', label: 'GDPR compliance (European users)' },
+      { id: 'ccpa', label: 'CCPA compliance (California users)' },
+      { id: 'dpdp', label: 'India DPDP Act (Indian users)' },
+      { id: 'coppa', label: 'COPPA compliance (Under 13s)' }
+    ]
+  },
+  {
+    category: 'IP Protection',
+    items: [
+      { id: 'tm_search', label: 'Trademark search before launch' },
+      { id: 'app_filed', label: 'Application filed same day you go live' },
+      { id: 'ip_assign', label: 'IP assignment signed by every developer/contractor' },
+      { id: 'oss_audit', label: 'Open source licence audit (check GPL/AGPL)' }
+    ]
+  },
+  {
+    category: 'Regulatory Compliance',
+    items: [
+      { id: 'hipaa', label: 'HIPAA (US Health app requirement)' },
+      { id: 'fca_sec', label: 'FCA, SEC, or equivalent (Finance apps)' },
+      { id: 'child_prot', label: 'Child protection frameworks (Children\'s apps)' },
+      { id: 'market_law', label: 'Consumer protection law (Marketplaces)' }
+    ]
+  },
+  {
+    category: 'App Store Rules',
+    items: [
+      { id: 'apple_nutr', label: 'Apple privacy nutrition labels accurately reflect data' },
+      { id: 'gp_safety', label: 'Google Play data safety section accurately reflects data' },
+      { id: 'iap_pol', label: 'IAP implementation complies with platform policies' },
+      { id: 'priv_url', label: 'Functioning privacy policy URL in both store listings' }
+    ]
+  }
+];
+
+function FounderChecklist() {
+  const [checked, setChecked] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('founder_checklist') || '[]'); } catch { return []; }
+  });
+
+  const toggle = (id: string) => {
+    const next = checked.includes(id) ? checked.filter(x => x !== id) : [...checked, id];
+    setChecked(next);
+    localStorage.setItem('founder_checklist', JSON.stringify(next));
+  };
+
+  const total = FOUNDER_CHECKLIST.reduce((acc, cat) => acc + cat.items.length, 0);
+  const prog = Math.round((checked.length / total) * 100);
+
+  return (
+    <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+      <div className="glass border border-hc-purple/30 rounded-2xl p-6 mb-6 relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-purple/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
+          <div className="w-16 h-16 rounded-xl bg-hc-purple/10 border border-hc-purple/20 flex flex-col items-center justify-center shrink-0 shadow-lg glow-purple">
+            <span className="text-xl font-black text-white">{prog}%</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Launch Readiness Matrix</h2>
+            <p className="text-[10px] text-hc-muted font-bold tracking-widest uppercase">"Six months to build it. One week to protect it. Do the week."</p>
+          </div>
+          <div className="w-full md:w-64 h-2 bg-black/50 rounded-full overflow-hidden border border-white/5">
+            <div className="h-full bg-hc-purple transition-all duration-700" style={{ width: `${prog}%`, boxShadow: '0 0 10px rgba(139,92,246,0.6)' }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        {FOUNDER_CHECKLIST.map((cat, i) => {
+          const catChecked = cat.items.filter(item => checked.includes(item.id)).length;
+          const isComplete = catChecked === cat.items.length;
+          
+          return (
+            <div key={cat.category} className={`glass-light border rounded-2xl p-5 shadow-xl transition-colors duration-500 card-glow
+              ${isComplete ? 'border-hc-teal/30 bg-hc-teal/[0.02]' : 'border-white/5'}`}
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] ${isComplete ? 'text-hc-teal-light' : 'text-white'}`}>{cat.category}</h3>
+                <span className="text-[10px] font-black tabular-nums text-hc-muted">{catChecked} / {cat.items.length}</span>
+              </div>
+              
+              <div className="space-y-2">
+                {cat.items.map(item => {
+                  const isChecked = checked.includes(item.id);
+                  return (
+                    <div key={item.id} onClick={() => toggle(item.id)} className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5">
+                      <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border transition-colors duration-300
+                        ${isChecked ? 'bg-hc-teal border-hc-teal shadow-[0_0_8px_rgba(20,184,166,0.5)]' : 'bg-black/50 border-white/20 group-hover:border-white/40'}`}>
+                        {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </div>
+                      <span className={`text-[11px] font-bold leading-relaxed transition-colors duration-300 ${isChecked ? 'text-hc-muted line-through' : 'text-white/80'}`}>{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
-type Tab = 'overview' | 'staff' | 'audits';
+type Tab = 'overview' | 'staff' | 'audits' | 'founder';
 
 interface Props {
   staff: StaffMember[];
@@ -300,11 +420,11 @@ export function CompliancePage({ staff, onUpdate }: Props) {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/5 shadow-xl mb-6 w-fit mx-auto md:mx-0">
-        {(['overview', 'staff', 'audits'] as const).map(id => (
+        {(['overview', 'staff', 'audits', 'founder'] as const).map(id => (
           <button key={id} onClick={() => setTab(id)}
             className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.25rem] transition-all duration-500 ease-out active:scale-95
               ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-            {id === 'overview' ? 'Overview' : id === 'staff' ? 'Staff Records' : 'Audit Logs'}
+            {id === 'overview' ? 'Overview' : id === 'staff' ? 'Staff Records' : id === 'audits' ? 'Audit Logs' : 'Legal Checklist'}
           </button>
         ))}
       </div>
@@ -598,6 +718,9 @@ export function CompliancePage({ staff, onUpdate }: Props) {
           )}
         </div>
       )}
+
+      {/* === FOUNDER LEGAL LOG TAB === */}
+      {tab === 'founder' && <FounderChecklist />}
 
       {/* Modals */}
       {editStaff && <StaffModal staff={editStaff} onSave={saveStaffRecord} onClose={() => setEditStaff(null)} />}

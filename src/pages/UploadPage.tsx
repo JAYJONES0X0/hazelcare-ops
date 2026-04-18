@@ -1063,19 +1063,19 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       {step === 'preview' && preview && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Intelligence Layer: Decision Matrix */}
-          <div className="glass border border-hc-teal/30 rounded-[2.5rem] p-8 mb-8 relative overflow-hidden shadow-2xl">
+          <div className="glass border border-hc-teal/30 rounded-2xl p-5 mb-6 relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
             
             <div className="relative z-10">
-              <div className="flex items-center gap-5 mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shadow-lg glow-teal text-4xl">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-12 h-12 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shadow-lg glow-teal text-3xl">
                   {detectedInfo.icon}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h2 className="text-xl font-black text-white tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
+                  <div className="flex items-center gap-2 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                    <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] opacity-90">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
+                    <p className="text-[10px] font-semibold text-hc-muted uppercase tracking-[0.08em] opacity-90">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
                   </div>
                 </div>
               </div>
@@ -1107,22 +1107,22 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 const redCount = entries.filter(e => e.severity === 'red').length;
                 const amberCount = entries.filter(e => e.severity === 'amber').length;
                 return (
-                  <div className="mb-6 glass-light border border-hc-teal/15 rounded-2xl p-5">
-                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <div className="mb-5 glass-light border border-hc-teal/15 rounded-xl p-4">
+                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
                       Parsed Content — {entries.length.toLocaleString()} entries detected
                     </div>
 
                     {/* Entry type counts */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 mb-3">
                       {sorted.map(([cat, count]) => {
                         const info = ENTRY_LABELS[cat] || ENTRY_LABELS.other;
                         return (
-                          <div key={cat} className="bg-black/30 border border-white/5 rounded-xl px-3 py-2.5 flex items-center gap-2">
-                            <span className="text-base shrink-0">{info.icon}</span>
-                            <div className="min-w-0">
-                              <div className={`text-sm font-black tabular-nums ${info.color}`}>{count}</div>
+                          <div key={cat} className="bg-black/30 border border-white/5 rounded-lg px-2.5 py-1.5 flex items-center gap-2 hover:border-white/10 transition-colors">
+                            <span className="text-sm shrink-0">{info.icon}</span>
+                            <div className="min-w-0 flex-1 flex justify-between items-center gap-1">
                               <div className="text-[9px] font-bold text-hc-muted uppercase tracking-wide truncate">{info.label}</div>
+                              <div className={`text-xs font-black tabular-nums ${info.color}`}>{count}</div>
                             </div>
                           </div>
                         );
@@ -1131,17 +1131,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
                     {/* Flags row */}
                     {(redCount > 0 || amberCount > 0) && (
-                      <div className="flex gap-3 mb-4">
+                      <div className="flex gap-2 mb-3">
                         {redCount > 0 && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-flag-red/10 border border-flag-red/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-flag-red animate-pulse" />
-                            <span className="text-[10px] font-black text-flag-red uppercase tracking-wide">{redCount} Red Flag{redCount !== 1 ? 's' : ''}</span>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-flag-red/10 border border-flag-red/20">
+                            <span className="w-1 h-1 rounded-full bg-flag-red animate-pulse" />
+                            <span className="text-[9px] font-black text-flag-red uppercase tracking-wide">{redCount} Red Flag{redCount !== 1 ? 's' : ''}</span>
                           </div>
                         )}
                         {amberCount > 0 && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-flag-amber/10 border border-flag-amber/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-flag-amber" />
-                            <span className="text-[10px] font-black text-flag-amber uppercase tracking-wide">{amberCount} Amber Flag{amberCount !== 1 ? 's' : ''}</span>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-flag-amber/10 border border-flag-amber/20">
+                            <span className="w-1 h-1 rounded-full bg-flag-amber" />
+                            <span className="text-[9px] font-black text-flag-amber uppercase tracking-wide">{amberCount} Amber Flag{amberCount !== 1 ? 's' : ''}</span>
                           </div>
                         )}
                       </div>
@@ -1172,21 +1172,21 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 );
               })()}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-3 md:col-span-2">
-                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Intent Preset</label>
-                  <div className="glass-light border border-white/10 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <button onClick={() => applyIntentPreset('risk_quality_all_houses')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'risk_quality_all_houses' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Risk + Quality (All Houses)</button>
-                    <button onClick={() => applyIntentPreset('client_docs_plus_risk')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'client_docs_plus_risk' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Client Docs + Risk</button>
-                    <button onClick={() => applyIntentPreset('incident_governance_pack')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'incident_governance_pack' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Incident Governance</button>
-                    <button onClick={() => applyIntentPreset('custom')} className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide border ${intentPreset === 'custom' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/10 text-hc-muted'}`}>Custom</button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Intent Preset</label>
+                  <div className="glass-light border border-white/10 rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
+                    <button onClick={() => applyIntentPreset('risk_quality_all_houses')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'risk_quality_all_houses' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Risk & Quality</button>
+                    <button onClick={() => applyIntentPreset('client_docs_plus_risk')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'client_docs_plus_risk' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Client Docs</button>
+                    <button onClick={() => applyIntentPreset('incident_governance_pack')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'incident_governance_pack' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Incident Governance</button>
+                    <button onClick={() => applyIntentPreset('custom')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'custom' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Custom setup</button>
                   </div>
                 </div>
 
                 {/* Decision Row 1: Target Mapping */}
-                <div className="space-y-3">
-                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
-                  <div className="glass-light border border-white/10 rounded-2xl p-4 group hover:border-hc-teal/30 transition-all space-y-2">
+                <div className="space-y-2">
+                  <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
+                  <div className="glass-light border border-white/10 rounded-xl p-3 flex flex-col gap-2 h-[100px] overflow-y-auto scrollbar-thin">
                     {(['templates', 'reports', 'client-docs'] as ImportTarget[]).map(target => (
                       <label key={target} className="flex items-center gap-2 text-sm text-white font-bold uppercase tracking-wide">
                         <input
@@ -1204,13 +1204,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="section-header text-xs opacity-90 uppercase tracking-[0.08em] ml-1">Client Resolution</label>
-                  <div className="glass-light border border-white/10 rounded-2xl p-4 space-y-3 group hover:border-hc-teal/30 transition-all">
+                <div className="space-y-2">
+                  <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Client Resolution</label>
+                  <div className="glass-light border border-white/10 rounded-xl p-3 space-y-2 group hover:border-hc-teal/30 transition-all h-[100px] overflow-y-auto scrollbar-thin">
                     <select
                       value={clientMode}
                       onChange={e => setClientMode(e.target.value as ClientMode)}
-                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner uppercase"
                     >
                       <option value="auto">Auto Match</option>
                       <option value="specific">Specific Client</option>
@@ -1220,20 +1220,16 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       value={targetClient || ''}
                       onChange={e => setImportTargetClient(e.target.value || null)}
                       disabled={clientMode !== 'specific'}
-                      className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner disabled:opacity-40"
+                      className="w-full bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1.5 text-xs font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner disabled:opacity-40"
                     >
                       <option value="">Select client...</option>
                       {loadClients().map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                     {preview.clientName && (
-                      <div className="text-sm text-hc-muted">
-                        Detected candidate: <span className="text-white font-bold">{preview.clientName}</span>
+                      <div className="text-[10px] text-hc-muted truncate">
+                        Detected: <span className="text-white font-bold">{preview.clientName}</span>
                       </div>
                     )}
-                    <div className="text-xs text-hc-muted/80 leading-relaxed">
-                      Use <span className="text-white font-semibold">Global Import</span> to create/update from the dataset directly.
-                      Use <span className="text-white font-semibold">Specific Client</span> when you want to pin import to one person.
-                    </div>
                   </div>
                 </div>
 
