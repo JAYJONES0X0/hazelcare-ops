@@ -1,7 +1,7 @@
 import type { EscalationItem } from './staff-monitoring';
 import { ORG_CONFIG } from './config';
 
-export type CallPrepVariant = 'coaching' | 'urgent' | 'support-first' | 'message';
+export type CallPrepVariant = 'coaching' | 'urgent' | 'support-first' | 'message' | 'email';
 
 export interface CallPrepScript {
   title: string;
@@ -62,32 +62,61 @@ export function buildCallPrepScript(
   let lines: string[];
 
   if (variant === 'message') {
-    // Sharp, professional message for WhatsApp / CarePlanner Chat
+    // Direct message — suitable for CarePlanner Chat, SMS or internal messenger
     lines = [
-      `Subject: URGENT: Documentation Standards - Feedback for ${firstName}`,
-      ``,
       `Hi ${firstName},`,
       ``,
-      `I have been reviewing the diary entries ${locationRef}. While the care you are delivering looks good, your documentation is currently not meeting the ${ORG_CONFIG.name} clinical standard.`,
+      `Quick note on your recent documentation — your quality score is currently at ${esc.qualityScore}/100 and ${shortPct}% of entries are too brief.`,
       ``,
-      `DATA SUMMARY:`,
-      `• Quality Score: ${esc.qualityScore}/100`,
-      `• Short Note Ratio: ${shortPct}%`,
-      `• Priority Gap: ${topGap}`,
+      `The main gap is: ${topGap}.`,
       ``,
-      `THE CONCERN:`,
-      `Your notes are currently showing ${notePattern}. These one-liners do not protect you or the service during a CQC inspection.`,
+      `Your entries are showing ${notePattern}. This doesn't cover you during a CQC review.`,
       ``,
-      `REQUIRED STANDARD:`,
-      `We need first-person, descriptive notes that show your decision-making.`,
-      ``,
-      `EXAMPLE OF GOLD STANDARD:`,
+      `Next entry standard expected:`,
       `${goldExample}`,
       ``,
-      `Please ensure your very next entry follows this format. I will be checking the dashboard in one hour for an update.`,
+      `Please adopt this going forward. I'll review your next shift notes.`,
       ``,
-      `Regards,`,
-      `Operations Team`,
+      `— ${ORG_CONFIG.name} Operations`,
+    ];
+  } else if (variant === 'email') {
+    // Formal email — professional, structured, paper-trail ready
+    lines = [
+      `To: ${firstName} [Insert email]`,
+      `Subject: Documentation Standards Review — Action Required`,
+      ``,
+      `Dear ${firstName},`,
+      ``,
+      `I am writing following a review of your care diary entries ${locationRef} for the current period.`,
+      ``,
+      `While I have no concern regarding the quality of care you are delivering, your written documentation is currently not meeting the clinical standard required by ${ORG_CONFIG.name} and expected under CQC inspection.`,
+      ``,
+      `REVIEW SUMMARY`,
+      `──────────────────────────────`,
+      `Quality Score:       ${esc.qualityScore} / 100`,
+      `Total Entries:       ${esc.entryCount}`,
+      `Short Note Ratio:    ${shortPct}%`,
+      `Priority Gap:        ${topGap}`,
+      ``,
+      `WHAT HAS BEEN OBSERVED`,
+      `──────────────────────────────`,
+      `Your notes are currently presenting as ${notePattern}. Written records of this standard do not adequately evidence the care delivered and do not protect you, the client, or the service in the event of an audit or complaint.`,
+      ``,
+      `REQUIRED STANDARD`,
+      `──────────────────────────────`,
+      `All entries must be written in the first person, reflect individual client presentation, and show the decision-making behind the care delivered. Below is an example of a gold standard entry based on your current caseload:`,
+      ``,
+      `"${goldExample}"`,
+      ``,
+      `ACTION REQUIRED`,
+      `──────────────────────────────`,
+      `Please ensure your next and all subsequent diary entries meet this standard. This email constitutes a formal coaching contact and will be retained on your supervision record.`,
+      ``,
+      `If you have any questions or require support with documentation, please speak with your line manager at your next shift or contact the operations team directly.`,
+      ``,
+      `Yours sincerely,`,
+      ``,
+      `${ORG_CONFIG.name} Operations`,
     ];
   } else if (variant === 'urgent') {
     lines = [
@@ -194,8 +223,9 @@ export function buildCallPrepScript(
     ];
   }
 
+  const channelLabel = variant === 'message' ? 'Message' : variant === 'email' ? 'Email' : 'Call Script';
   return {
-    title: `${variant === 'message' ? 'Message' : 'Call'} prep — ${esc.carer} · Q:${esc.qualityScore} · T${esc.tier}`,
+    title: `${channelLabel} — ${esc.carer} · Q:${esc.qualityScore} · T${esc.tier}`,
     lines,
   };
 }

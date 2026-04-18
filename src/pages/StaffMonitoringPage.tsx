@@ -175,19 +175,28 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
   function copyCoachingMessage() {
     if (!coachEntry || !coachRewrite.trim()) return;
-    const staffName = coachStaff || 'Team Member';
-    const msg = [
-      `Subject: Documentation Feedback - Standards of Care`, ``, `Hi ${staffName},`, ``,
-      `I've been reviewing your recent care entries. You're doing the work — I'd just like the notes to reflect that more fully. Moving forward, please:`, ``,
-      `• Write in first person ("I supported...")`, `• Show your decision-making`, `• Document presentation changes`, ``,
-      `Example based on your entry for ${coachEntry.client || 'the client'}:`, ``, `YOUR ENTRY:`, coachEntry.entry, ``,
-      `FEEDBACK / STANDARD EXPECTATION:`, coachRewrite.trim(), ``, `Please adopt this style going forward.`, ``, `Regards,`, `Management Team`,
-    ].join('\n');
-    void navigator.clipboard.writeText(msg);
-    setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2500);
-    saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, outcomeType, outcomeNotes || 'Messaged via Chat. Pending review.');
-    
-    // Explicitly log the coaching feedback loop
+
+    // Use the generated script if available (all 5 variants), otherwise fall back to local AI rewrite
+    const dispatchContent = script ? script.lines.join('\n') : coachRewrite.trim();
+
+    const channelOutcomeNote =
+      callVariant === 'email' ? 'Formal email drafted and copied. Awaiting confirmation of send.' :
+      callVariant === 'message' ? 'Direct message copied. Staff in 24hr monitoring queue.' :
+      callVariant === 'urgent' ? 'Urgent call script copied. Manager notified to call immediately.' :
+      callVariant === 'support-first' ? 'Support-first call script copied. Wellbeing check initiated.' :
+      'Manager coaching call script copied. Pending delivery.';
+
+    void navigator.clipboard.writeText(dispatchContent);
+    setCoachCopied(true);
+    setTimeout(() => setCoachCopied(false), 2500);
+
+    saveCallOutcome(
+      selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house },
+      outcomeType,
+      outcomeNotes || channelOutcomeNote,
+    );
+
+    // Route to 24hr active tracking pipeline
     if (coachStaff) {
       logCoachingAction(coachStaff);
       setTrackingList(loadActiveTracking());
@@ -460,10 +469,14 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                             <div className="flex flex-col animate-in slide-in-from-bottom-4 duration-500">
                               <div className="flex gap-2 mb-3">
                                  <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white font-bold tracking-wide outline-none cursor-pointer">
-                                    <option value="message">WhatsApp Export</option><option value="coaching">Manager Call Script</option>
+                                    <option value="message">Send Message (Chat / SMS)</option>
+                                    <option value="email">Email Draft (Formal)</option>
+                                    <option value="coaching">Manager Call Script</option>
+                                    <option value="urgent">Urgent Call Script</option>
+                                    <option value="support-first">Support-First Call Script</option>
                                   </select>
                               </div>
-                              <textarea readOnly value={script && callVariant === 'coaching' ? script.lines.join('\n') : coachRewrite} className="flex-1 w-full bg-black/40 border border-white/5 rounded-xl p-4 text-[11px] font-mono text-white/90 outline-none scrollbar-thin mb-4 min-h-[150px] leading-relaxed shadow-inner focus:border-hc-teal/50 transition-colors" />
+                              <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} className="flex-1 w-full bg-black/40 border border-white/5 rounded-xl p-4 text-[11px] font-mono text-white/90 outline-none scrollbar-thin mb-4 min-h-[150px] leading-relaxed shadow-inner focus:border-hc-teal/50 transition-colors" />
                               <div className="space-y-4 mb-5">
                                 <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Follow-up notes..." className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-[11px] text-white h-20 outline-none shadow-inner focus:border-hc-teal/50 transition-colors" />
                                 <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white outline-none cursor-pointer">
@@ -471,7 +484,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                                 </select>
                               </div>
                               <button onClick={copyCoachingMessage} className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[11px] uppercase tracking-widest shadow-xl ${coachCopied ? 'bg-flag-green text-white shadow-flag-green/20' : 'bg-hc-purple text-white hover:bg-hc-purple-light shadow-hc-purple/20'}`}>
-                                {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />} {coachCopied ? 'Logged to Tracking Queue' : 'Copy Dispatch & Route to Tracking'}
+                                {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                                {coachCopied ? 'Logged to Tracking Queue' : callVariant === 'email' ? 'Copy Email Draft & Route to Tracking' : callVariant === 'message' ? 'Copy Message & Route to Tracking' : 'Copy Call Script & Route to Tracking'}
                               </button>
                             </div>
                           )}
