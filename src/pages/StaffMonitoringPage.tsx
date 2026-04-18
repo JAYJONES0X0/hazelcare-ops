@@ -34,7 +34,7 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildExportRecommendations } from '../lib/export-recommendations';
-import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, UserCheck, Zap, Search } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, Zap, Search } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface Props {
@@ -72,7 +72,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const [hourlyDismissed, setHourlyDismissed] = useState(false);
   const [hourlyTick, setHourlyTick] = useState(0);
 
-  const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
+
   const { isCollapsed: isPanelCollapsed, toggle: togglePanel, collapseAll: collapseAllPanels, expandAll: expandAllPanels, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
   const PANEL_IDS = ['filters', 'export-hints', 'houses', 'staff', 'escalations', 'coaching', 'outcomes'];
   const allPanelsClosed = allPanelsCollapsed(PANEL_IDS);
@@ -311,7 +311,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
       )}
 
       {/* ── HIGH DENSITY COMMAND CENTER LAYOUT ── */}
-      {weekData && (() => {
+      {weekData && (<>{ (() => {
         const searchedStaff = snapshot.staff.filter(s => s.carer.toLowerCase().includes(searchQuery.toLowerCase()));
         const trackingNames = new Set(trackingList.map(t => t.carer));
         const activeMonitored = searchedStaff.filter(s => trackingNames.has(s.carer));
@@ -539,7 +539,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           </div>
         </div>
         );
-      })}
+      })()}</>)}
 
       {/* ── Export Guidance Panels ─────────────────────────────────────────── */}
       {!allPanelsClosed && exportHints.length > 0 && (
