@@ -12,6 +12,42 @@ const KEY = 'hc-staff-monitoring-runs-v1';
 const OUTCOMES_KEY = 'hc-staff-monitoring-outcomes-v1';
 const COACHING_EVENTS_KEY = 'hc-coaching-events-v1';
 const MODULE_HISTORY_KEY = 'hc-module-history-v1';
+const ACTIVE_TRACKING_KEY = 'hc-active-tracking-v1';
+
+// ── Coaching Pipeline (Active 24hr Monitoring) ────────────────
+
+export interface ActiveTrackingRecord {
+  carer: string;
+  coachedAt: string;        // ISO
+  monitoringUntil: string;  // ISO
+}
+
+export function loadActiveTracking(): ActiveTrackingRecord[] {
+  try {
+    const raw = localStorage.getItem(ACTIVE_TRACKING_KEY);
+    const parsed = raw ? (JSON.parse(raw) as ActiveTrackingRecord[]) : [];
+    // Prune expired records automatically on load
+    const now = Date.now();
+    const active = parsed.filter(p => new Date(p.monitoringUntil).getTime() > now);
+    if (active.length !== parsed.length) {
+      safeset(ACTIVE_TRACKING_KEY, JSON.stringify(active));
+    }
+    return active;
+  } catch { return []; }
+}
+
+export function logCoachingAction(carer: string): void {
+  const prev = loadActiveTracking().filter(r => r.carer !== carer);
+  const now = new Date();
+  const until = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+  const rec: ActiveTrackingRecord = { carer, coachedAt: now.toISOString(), monitoringUntil: until.toISOString() };
+  safeset(ACTIVE_TRACKING_KEY, JSON.stringify([rec, ...prev]));
+}
+
+export function removeActiveTracking(carer: string): void {
+  const prev = loadActiveTracking().filter(r => r.carer !== carer);
+  safeset(ACTIVE_TRACKING_KEY, JSON.stringify(prev));
+}
 
 // ── Coaching event (gap flag per carer per save) ──────────────────
 
@@ -255,6 +291,9 @@ export function detectGrowthAlerts(
   const best = new Map<string, GrowthAlert>();
   for (const a of alerts) {
     const prev = best.get(a.carer);
+    // If they have a growth alert, implicitly remove them from the 24hr punishment/coaching track
+    removeActiveTracking(a.carer);
+
     if (!prev || a.delta > prev.delta) best.set(a.carer, a);
   }
 

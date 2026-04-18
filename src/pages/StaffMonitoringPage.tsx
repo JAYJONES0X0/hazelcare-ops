@@ -21,6 +21,8 @@ import {
   recordCoachingEvents,
   recordModuleScores,
   detectGrowthAlerts,
+  loadActiveTracking,
+  logCoachingAction,
   type GrowthAlert,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
@@ -32,7 +34,7 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildExportRecommendations } from '../lib/export-recommendations';
-import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, UserCheck, Zap } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, UserCheck, Zap, Search } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface Props {
@@ -83,6 +85,9 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const [coachRewrite, setCoachRewrite] = useState('');
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [trackingList, setTrackingList] = useState(() => loadActiveTracking());
 
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
@@ -181,6 +186,12 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
     void navigator.clipboard.writeText(msg);
     setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2500);
     saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, outcomeType, outcomeNotes || 'Messaged via Chat. Pending review.');
+    
+    // Explicitly log the coaching feedback loop
+    if (coachStaff) {
+      logCoachingAction(coachStaff);
+      setTrackingList(loadActiveTracking());
+    }
   }
 
   return (
@@ -291,34 +302,26 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
       )}
 
       {/* ── HIGH DENSITY COMMAND CENTER LAYOUT ── */}
-      {weekData && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr,450px] gap-6">
-          <div className="flex flex-col gap-6">
-            
-            {/* Filter Hub */}
-            <div className="glass border border-white/10 rounded-xl px-4 py-3 shadow-xl flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <UserCheck className="w-4 h-4 text-hc-teal" />
-                <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">Clinical Focus Hub</span>
-              </div>
-              <div className="flex bg-black/40 border border-white/10 rounded-lg overflow-hidden p-0.5 shadow-inner">
-                 {snapshot.houses.length > 0 ? [{ name: 'all', avgQuality: 100 }, ...snapshot.houses].map((h) => (
-                  <button key={h.name} onClick={() => setHouse(h.name)} 
-                    className={`px-3 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-widest transition-all ${house === h.name ? 'bg-hc-teal/20 text-hc-teal-light shadow-md' : 'text-hc-muted hover:text-white'}`}>
-                    {h.name === 'all' ? 'Network' : `${h.name} ${h.avgQuality}%`}
-                  </button>
-                )) : <div className="px-3 py-1 text-[9px] text-hc-muted truncate">No active houses</div>}
-              </div>
-            </div>
+      {weekData && (() => {
+        const searchedStaff = snapshot.staff.filter(s => s.carer.toLowerCase().includes(searchQuery.toLowerCase()));
+        const trackingNames = new Set(trackingList.map(t => t.carer));
+        const activeMonitored = searchedStaff.filter(s => trackingNames.has(s.carer));
+        const needsReview = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore < 65);
+        const goodStanding = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore >= 65);
+        
+        const selectedStaff = snapshot.staff.find(s => s.carer === coachStaff);
 
-            {/* Staff Quality Board */}
-            <div className="glass border border-white/10 rounded-xl shadow-2xl flex flex-col min-h-[500px]">
-              <div className="flex-1 p-3 grid grid-cols-1 xl:grid-cols-2 gap-2">
-                {snapshot.staff.map((s) => {
+        const renderStaffQueue = (list: typeof searchedStaff, title: string, colorClass: string, borderClass: string, emptyMsg: string) => (
+          <div className="mb-6">
+            <div className={`text-[10px] font-black uppercase tracking-widest mb-3 pl-2 flex items-center gap-2 ${colorClass}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${colorClass.replace('text-', 'bg-').split(' ')[0]}`} />
+              {title} — {list.length}
+            </div>
+            <div className="space-y-2">
+              {list.length === 0 && <div className="px-4 py-3 text-[10px] text-zinc-500 font-medium italic">{emptyMsg}</div>}
+              {list.map(s => {
                   const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
-                  const isExpanded = selectedStaffCard === s.carer;
-                  
-                  // Entry type breakdown for this carer
+                  const isExpanded = coachStaff === s.carer;
                   const staffEntries = entriesByStaff[s.carer] || [];
                   const typeCounts: Record<string, { count: number; icon: string; colorClass: string }> = {};
                   staffEntries.forEach(e => {
@@ -326,189 +329,188 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                     if (!typeCounts[label]) typeCounts[label] = { count: 0, icon, colorClass };
                     typeCounts[label].count++;
                   });
-                  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count);
+                  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count).slice(0, 3);
                   
-                  // Recharts Data Prep
-                  const radarData = s.moduleBreakdown.map(m => ({ 
-                    subject: m.name, 
-                    A: m.score, 
-                    fullMark: 100 
-                  }));
-
                   return (
-                    <div key={s.carer} className={`rounded-xl border transition-all duration-300 overflow-hidden ${isExpanded ? 'border-hc-teal text-white shadow-[0_0_20px_rgba(20,184,166,0.15)] bg-hc-navy' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] shadow-sm'}`}>
-                      <div className="px-4 py-3 flex items-center justify-between cursor-pointer group" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? 'bg-hc-teal text-white shadow-lg shadow-hc-teal/20' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
-                            {s.carer.charAt(0)}
-                          </div>
-                          <div className="min-w-0 mr-4">
-                            <div className="text-sm font-black tracking-tight mb-1 truncate">{s.carer}</div>
-                            {/* Entry type breakdown chips */}
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {typeEntries.slice(0, 4).map(([label, { count, icon, colorClass }]) => (
-                                <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
-                                  {icon} {count}× {label}
-                                </span>
-                              ))}
-                              {typeEntries.length === 0 && <span className="text-[8px] text-hc-muted opacity-50">No entries loaded</span>}
+                    <div key={s.carer} onClick={() => setCoachStaff(s.carer)}
+                      className={`cursor-pointer rounded-xl border transition-all duration-300 overflow-hidden px-4 py-3 group ${isExpanded ? borderClass + ' bg-black/40 shadow-lg' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06]'}`}>
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                          <div className="flex items-center gap-3 w-full">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? borderClass.replace('border-','bg-').replace('/30','') + ' text-black' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
+                              {s.carer.charAt(0)}
                             </div>
-                            <div className="flex items-center gap-2 text-[8px] uppercase font-bold tracking-widest text-hc-muted mt-1.5">
-                              <span className="flex items-center gap-1"><FileText className="w-2.5 h-2.5" /> {s.entryCount} Logs</span>
-                              <span className="opacity-30">|</span>
-                              <span>{Math.round(s.shortEntryRatio * 100)}% Short</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-black tracking-tight mb-1 truncate">{s.carer}</div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {typeEntries.map(([label, { count, icon, colorClass }]) => (
+                                  <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
+                                    {icon} {count}× {label}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span style={{ color: scoreHex }} className="text-[10px] font-black">{s.qualityScore}%</span>
+                              <div className="w-12 bg-black/40 h-1 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                           {/* Quality Bar Visualiser */}
-                           <div className="hidden md:flex flex-col items-end gap-1 min-w-[120px]">
-                              <div className="flex justify-between w-full text-[8px] font-black uppercase text-hc-muted">
-                                <span>Quality Index</span>
-                                <span style={{ color: scoreHex }}>{s.qualityScore}%</span>
-                              </div>
-                              <div className="w-full bg-black/40 h-1 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                                <div className="h-full rounded-full transition-all duration-1000 ease-in-out" style={{ width: `${s.qualityScore}%`, backgroundColor: scoreHex, boxShadow: `0 0 10px ${scoreHex}` }} />
-                              </div>
-                           </div>
-                           <ChevronRight className={`w-4 h-4 text-hc-muted transition-transform duration-300 ${isExpanded ? 'rotate-90 text-hc-teal' : ''}`} />
-                        </div>
-                      </div>
-
-                      {/* Expandable Panel w/ Radar Chart */}
-                      {isExpanded && (
-                        <div className="px-4 pb-4 animate-in slide-in-from-top-4">
-                           <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent w-full mb-4" />
-                           <div className="grid grid-cols-1 md:grid-cols-[1fr,250px] gap-6">
-                             
-                             <div>
-                                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-3 flex items-center gap-1.5"><Zap className="w-3 h-3 text-hc-teal" /> Clinical Module Breakdown</h3>
-                                <div className="space-y-2">
-                                  {s.moduleBreakdown.map((m) => {
-                                    const mColor = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
-                                    return (
-                                      <div key={m.name} className="flex flex-col gap-1">
-                                        <div className="flex justify-between text-[9px] font-black text-white/80">
-                                          <span>{m.name}</span>
-                                          <span style={{color: mColor}}>{m.score}%</span>
-                                        </div>
-                                        <div className="w-full bg-black/30 h-1 rounded-full overflow-hidden">
-                                          <div className="h-full bg-white/20 transition-all rounded-full" style={{ width: `${m.score}%`, backgroundColor: mColor }} />
-                                        </div>
-                                        {m.missing.length > 0 && <div className="text-[8px] text-hc-muted font-medium pt-0.5 truncate">Missing: {m.missing.join(', ')}</div>}
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                                  className="mt-4 w-full py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all bg-hc-teal/10 text-hc-teal border border-hc-teal/30 hover:bg-hc-teal hover:text-white shadow-[0_4px_14px_rgba(20,184,166,0.2)]">
-                                  Open in Coaching Studio ➔
-                                </button>
-                             </div>
-
-                             {/* Recharts Radar for visual impact */}
-                             <div className="bg-black/20 rounded-xl border border-white/5 flex items-center justify-center p-2 relative h-[200px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                                    <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 700 }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                    <Radar name={s.carer} dataKey="A" stroke="#14b8a6" fill="#0d9488" fillOpacity={0.4} />
-                                  </RadarChart>
-                                </ResponsiveContainer>
-                             </div>
-
-                           </div>
-                        </div>
-                      )}
                     </div>
                   );
-                })}
+              })}
+            </div>
+          </div>
+        );
+
+        return (
+        <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-6 md:h-[850px]">
+          
+          {/* MASTER PANE: Staff Queue */}
+          <div className="glass border border-white/10 rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-[850px]">
+            <div className="p-4 border-b border-white/10 bg-black/40 flex flex-col gap-3 shrink-0">
+               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+                 {snapshot.houses.length > 0 ? [{ name: 'all', avgQuality: 100 }, ...snapshot.houses].map((h) => (
+                  <button key={h.name} onClick={() => setHouse(h.name)} 
+                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${house === h.name ? 'bg-hc-teal/20 text-hc-teal-light shadow-md border border-hc-teal/30' : 'text-hc-muted hover:text-white border border-transparent'}`}>
+                    {h.name === 'all' ? 'Network' : h.name + ' ' + h.avgQuality + '%'}
+                  </button>
+                )) : <div className="px-3 py-1 text-[9px] text-hc-muted">No active houses</div>}
+               </div>
+              <div className="relative">
+                <Search className="w-4 h-4 text-hc-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                <input type="text" placeholder="Search intelligently..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
+                  className="w-full bg-black/40 border border-white/10 text-white text-[11px] font-bold rounded-xl pl-9 pr-3 py-2.5 outline-none focus:border-hc-teal transition-colors shadow-inner" />
               </div>
             </div>
-            
+
+            <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
+               {renderStaffQueue(needsReview, 'Needs Review', 'text-flag-amber', 'border-flag-amber/30', 'No staff currently require immediate review.')}
+               {renderStaffQueue(activeMonitored, 'Active Monitoring', 'text-hc-teal', 'border-hc-teal/30', 'No staff currently in the 24-hr tracking pipeline.')}
+               {renderStaffQueue(goodStanding, 'Good Standing', 'text-white/60', 'border-white/10', 'No data.')}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-6 w-full lg:sticky top-4 self-start">
-            {coachStaff ? (
-              <div className="glass border border-hc-teal/40 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5),0_0_0_1px_rgba(20,184,166,0.1)] flex flex-col relative overflow-hidden h-[800px]">
+          {/* DETAIL PANE: Coaching Studio */}
+          <div className="flex flex-col gap-6 overflow-hidden max-h-[850px] w-full">
+            {selectedStaff ? (
+              <div className="glass border border-hc-teal/40 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5),0_0_0_1px_rgba(20,184,166,0.1)] flex flex-col relative overflow-hidden h-full">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-hc-teal to-hc-blue" />
-                <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-black/20 relative z-10 backdrop-blur-xl">
+                
+                <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-black/20 relative z-10 backdrop-blur-xl shrink-0">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-hc-teal/20 text-hc-teal shadow-inner border border-hc-teal/30 flex items-center justify-center text-lg font-black">{coachStaff.charAt(0)}</div>
+                    <div className="w-10 h-10 rounded-xl bg-hc-teal/20 text-hc-teal shadow-inner border border-hc-teal/30 flex items-center justify-center text-lg font-black">{coachStaff!.charAt(0)}</div>
                     <div>
                       <div className="text-sm font-black text-white leading-none tracking-tight">{coachStaff}</div>
                       <div className="text-[9px] text-hc-teal-light uppercase tracking-[0.2em] font-bold mt-1">Local Coaching Studio</div>
                     </div>
                   </div>
-                  <button onClick={() => setCoachStaff(null)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-colors cursor-pointer border border-white/5"><Activity className="w-4 h-4" /></button>
+                  <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-colors cursor-pointer border border-white/5"><Activity className="w-4 h-4" /></button>
                 </div>
-                <div className="p-6 flex-1 flex flex-col relative z-10 overflow-y-auto scrollbar-thin bg-black/10">
-                  <div className="mb-5">
-                    <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
-                      <FileText className="w-3 h-3" /> Select Entry to Analyse
-                    </div>
-                    <div className="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-thin pr-0.5">
-                      {[...(entriesByStaff[coachStaff] || [])]
-                        .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
-                        .slice(0, 15)
-                        .map((e, i) => {
-                          const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
-                          const score = scoreEntry(e).total;
-                          const isSelected = coachEntry?.id === e.id;
-                          return (
-                            <div key={i}
-                              onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                              className={`cursor-pointer rounded-xl px-3 py-2.5 flex items-center gap-3 transition-all border ${isSelected ? 'bg-hc-teal/10 border-hc-teal/30 shadow-[0_0_10px_rgba(20,184,166,0.1)]' : 'bg-black/30 border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}
-                            >
-                              <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>{icon} {label}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[10px] font-bold text-white/90 truncate">{e.client || 'General'} &middot; {e.date}</div>
-                                <div className="text-[9px] text-hc-muted truncate opacity-70">{(e.entry || '').slice(0, 65)}…</div>
-                              </div>
-                              <span className="shrink-0 text-[10px] font-black tabular-nums" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
-                            </div>
-                          );
-                        })
-                      }
-                      {!(entriesByStaff[coachStaff]?.length) && (
-                        <div className="text-center py-6 text-[10px] text-hc-muted opacity-40">No entries available for this staff member</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {coachEntry && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 flex-1 flex flex-col duration-500">
-                      <div className="bg-gradient-to-br from-flag-amber/10 to-transparent border border-flag-amber/20 rounded-xl p-4 mb-5 shadow-lg shadow-flag-amber/5">
-                         <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.2em] mb-2 flex items-center gap-2"><Zap className="w-3 h-3" /> Missing Context Vectors</div>
-                         {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,3).map((gap, i) => <div key={i} className="text-[11px] font-medium text-white/80 leading-relaxed max-w-[90%] mb-1">• {gap}</div>)}
+                
+                <div className="flex-1 flex flex-col md:flex-row relative z-10 overflow-hidden bg-black/10">
+                   
+                   <div className="flex-1 flex flex-col border-r border-white/5 overflow-y-auto scrollbar-thin p-6">
+                      <div className="mb-5">
+                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                          <FileText className="w-3 h-3" /> Select Entry to Analyse
+                        </div>
+                        <div className="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-thin pr-0.5">
+                          {[...(entriesByStaff[coachStaff!] || [])]
+                            .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
+                            .slice(0, 15)
+                            .map((e, i) => {
+                              const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
+                              const score = scoreEntry(e).total;
+                              const isSelected = coachEntry?.id === e.id;
+                              return (
+                                <div key={i}
+                                  onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
+                                  className={`cursor-pointer rounded-xl px-3 py-2.5 flex items-center gap-3 transition-all border ${isSelected ? 'bg-hc-teal/10 border-hc-teal/30 shadow-[0_0_10px_rgba(20,184,166,0.1)]' : 'bg-black/30 border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}
+                                >
+                                  <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>{icon} {label}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[10px] font-bold text-white/90 truncate">{e.client || 'General'} &middot; {e.date}</div>
+                                    <div className="text-[9px] text-hc-muted truncate opacity-70">{(e.entry || '').slice(0, 65)}…</div>
+                                  </div>
+                                  <span className="shrink-0 text-[10px] font-black tabular-nums" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
+                                </div>
+                              );
+                            })
+                          }
+                          {!(entriesByStaff[coachStaff!]?.length) && (
+                            <div className="text-center py-6 text-[10px] text-hc-muted opacity-40">No entries available for this staff member</div>
+                          )}
+                        </div>
                       </div>
-                      
-                      <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-4 mb-5 rounded-xl btn-gradient text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(20,184,166,0.2)] flex items-center justify-center gap-3 disabled:opacity-50 hover:shadow-[0_0_30px_rgba(20,184,166,0.4)]">
-                        {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Synthesise Gold Standard
-                      </button>
 
-                      {coachRewrite && (
-                        <div className="flex-1 flex flex-col animate-in slide-in-from-bottom-4 duration-500">
-                          <div className="flex gap-2 mb-3">
-                             <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white font-bold tracking-wide outline-none cursor-pointer">
-                                <option value="message">WhatsApp Export</option><option value="coaching">Manager Call Script</option>
-                              </select>
+                      {coachEntry && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col duration-500 pb-10">
+                          <div className="bg-gradient-to-br from-flag-amber/10 to-transparent border border-flag-amber/20 rounded-xl p-4 mb-5 shadow-lg shadow-flag-amber/5">
+                             <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.2em] mb-2 flex items-center gap-2"><Zap className="w-3 h-3" /> Missing Context Vectors</div>
+                             {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,3).map((gap, i) => <div key={i} className="text-[11px] font-medium text-white/80 leading-relaxed max-w-[90%] mb-1">• {gap}</div>)}
                           </div>
-                          <textarea readOnly value={script && callVariant === 'coaching' ? script.lines.join('\n') : coachRewrite} className="flex-1 w-full bg-black/40 border border-white/5 rounded-xl p-4 text-[11px] font-mono text-white/90 outline-none scrollbar-thin mb-4 leading-relaxed shadow-inner focus:border-hc-teal/50 transition-colors" />
-                          <div className="space-y-4 mb-5">
-                            <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Follow-up notes..." className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-[11px] text-white h-20 outline-none shadow-inner focus:border-hc-teal/50 transition-colors" />
-                            <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white outline-none cursor-pointer">
-                              <option value="reached">Resolved via Message</option><option value="callback">Callback Scheduled</option><option value="resolved">Coaching Delivered</option>
-                            </select>
-                          </div>
-                          <button onClick={copyCoachingMessage} className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[11px] uppercase tracking-widest shadow-xl ${coachCopied ? 'bg-flag-green text-white shadow-flag-green/20' : 'bg-hc-purple text-white hover:bg-hc-purple-light shadow-hc-purple/20'}`}>
-                            {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />} {coachCopied ? 'Copied to Clipboard' : 'Copy Dispatch & Log'}
+                          
+                          <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-4 mb-5 rounded-xl btn-gradient text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(20,184,166,0.2)] flex items-center justify-center gap-3 disabled:opacity-50 hover:shadow-[0_0_30px_rgba(20,184,166,0.4)]">
+                            {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Synthesise Gold Standard
                           </button>
+
+                          {coachRewrite && (
+                            <div className="flex flex-col animate-in slide-in-from-bottom-4 duration-500">
+                              <div className="flex gap-2 mb-3">
+                                 <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white font-bold tracking-wide outline-none cursor-pointer">
+                                    <option value="message">WhatsApp Export</option><option value="coaching">Manager Call Script</option>
+                                  </select>
+                              </div>
+                              <textarea readOnly value={script && callVariant === 'coaching' ? script.lines.join('\n') : coachRewrite} className="flex-1 w-full bg-black/40 border border-white/5 rounded-xl p-4 text-[11px] font-mono text-white/90 outline-none scrollbar-thin mb-4 min-h-[150px] leading-relaxed shadow-inner focus:border-hc-teal/50 transition-colors" />
+                              <div className="space-y-4 mb-5">
+                                <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Follow-up notes..." className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-[11px] text-white h-20 outline-none shadow-inner focus:border-hc-teal/50 transition-colors" />
+                                <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white outline-none cursor-pointer">
+                                  <option value="reached">Resolved via Message</option><option value="callback">Callback Scheduled</option><option value="resolved">Coaching Delivered</option>
+                                </select>
+                              </div>
+                              <button onClick={copyCoachingMessage} className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[11px] uppercase tracking-widest shadow-xl ${coachCopied ? 'bg-flag-green text-white shadow-flag-green/20' : 'bg-hc-purple text-white hover:bg-hc-purple-light shadow-hc-purple/20'}`}>
+                                {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />} {coachCopied ? 'Logged to Tracking Queue' : 'Copy Dispatch & Route to Tracking'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
+                   </div>
+
+                   <div className="w-full md:w-[320px] shrink-0 bg-black/20 p-6 overflow-y-auto scrollbar-thin border-l border-white/5 z-0">
+                     <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-4 flex items-center gap-1.5"><Zap className="w-3 h-3 text-hc-teal" /> Performance Architecture</h3>
+                     
+                     <div className="bg-black/20 rounded-xl border border-white/5 flex items-center justify-center relative h-[250px] mb-6 shadow-inner">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart cx="50%" cy="50%" outerRadius="65%" data={selectedStaff.moduleBreakdown.map(m => ({ subject: m.name, A: m.score, fullMark: 100 }))}>
+                            <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 7, fontWeight: 700 }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                            <Radar name={selectedStaff.carer} dataKey="A" stroke="#14b8a6" fill="#0d9488" fillOpacity={0.4} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                     </div>
+
+                     <div className="space-y-3">
+                        {selectedStaff.moduleBreakdown.map((m) => {
+                          const mColor = m.score >= 70 ? '#22c55e' : m.score >= 45 ? '#f59e0b' : '#ef4444';
+                          return (
+                            <div key={m.name} className="flex flex-col gap-1">
+                              <div className="flex justify-between text-[9px] font-black text-white/80">
+                                <span>{m.name}</span>
+                                <span style={{color: mColor}}>{m.score}%</span>
+                              </div>
+                              <div className="w-full bg-black/30 h-1.5 rounded-full overflow-hidden shadow-inner border border-white/5">
+                                <div className="h-full bg-white/20 transition-all rounded-full" style={{ width: m.score + '%', backgroundColor: mColor }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                     </div>
+                   </div>
+
                 </div>
               </div>
             ) : (
@@ -516,13 +518,14 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-6">
                   <Activity className="w-8 h-8 text-hc-muted" />
                 </div>
-                <div className="text-sm font-black text-white uppercase tracking-[0.2em] mb-3">Coaching Studio Offline</div>
-                <div className="text-[11px] text-hc-muted leading-relaxed max-w-[200px]">Select a staff member from the Quality Board to initiate gap analysis.</div>
+                <div className="text-sm font-black text-white uppercase tracking-[0.2em] mb-3">Select a Staff Member</div>
+                <div className="text-[11px] text-hc-muted leading-relaxed max-w-[250px]">Choose a record from the Master Queue on the left to initiate structural analysis and coaching sequence.</div>
               </div>
             )}
           </div>
         </div>
-      )}
+        );
+      })}
 
       {/* ── Export Guidance Panels ─────────────────────────────────────────── */}
       {!allPanelsClosed && exportHints.length > 0 && (
