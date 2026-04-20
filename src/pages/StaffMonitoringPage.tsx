@@ -162,14 +162,19 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
       // Generates a structural coaching rewrite entirely locally to prevent PHI network transmission.
       const rubrics = scoreEntry(coachEntry);
       const gaps = rubrics.modules.flatMap(m => m.missing);
+      const isHouseNote = coachEntry.client?.toLowerCase().includes('unassigned') || coachEntry.category === 'staff' || coachEntry.category === 'handover';
       
       let rewrite = '';
       if (gaps.length === 0) {
         rewrite = `Great entry! No major gaps detected.\n\nOriginal Text:\n${coachEntry.entry}`;
       } else {
+        const example = isHouseNote 
+          ? `Example Professional Structure:\n"Staff completed full property checks of the communal areas. All residents observed and welfare checks completed. No safeguarding concerns identified during this period."`
+          : `Example Professional Structure:\n"I supported ${coachEntry.client || 'the individual'} with ${coachEntry.category || 'their needs'}. I observed [presentation/mood]. I then took [specific action] to ensure they were comfortable and safe. Changes reported to [role]."`;
+
         rewrite = `[Locally Synthesised Feedback]\n\nBased on ${ORG_CONFIG.name} Quality Standards, this entry is missing crucial context. When writing about ${coachEntry.client || 'the individual'}, explicitly detail:\n\n` +
           gaps.map((g, i) => `${i + 1}. ${g}`).join('\n') +
-          `\n\nExample Professional Structure:\n"I supported ${coachEntry.client || 'the individual'} with ${coachEntry.category || 'their needs'}. I observed [presentation/mood]. I then took [specific action] to ensure they were comfortable and safe. Changes reported to [role]."\n\nPlease review your notes to meet these core components.`;
+          `\n\n${example}\n\nPlease review your notes to meet these core components.`;
       }
       
       // Simulate think time 

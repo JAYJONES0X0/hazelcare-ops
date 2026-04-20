@@ -15,10 +15,11 @@ function resolveHouseLabel(houseLabel: string): string {
   return `at ${houseLabel}`;
 }
 
-function buildNotePattern(reasons: string[], avgChars: number): string {
+function buildNotePattern(reasons: string[], avgChars: number, isHouseNote: boolean): string {
   const joined = reasons.join(' ').toLowerCase();
   if (joined.includes('short') || joined.includes('length') || avgChars < 40) {
-    return `very brief entries — sometimes just a single line like "care provided" or "staff supported" with no detail behind it`;
+    const example = isHouseNote ? '"staff supported residents"' : '"care provided"';
+    return `very brief entries — sometimes just a single line like ${example} with no detail behind it`;
   }
   if (joined.includes('first') || joined.includes('person')) {
     return `entries written in third person — "staff supported…", "carer prompted…" — rather than in your own voice`;
@@ -29,8 +30,13 @@ function buildNotePattern(reasons: string[], avgChars: number): string {
   return `entries that don't show the decision-making behind the care — someone reading them can't tell what you did or why`;
 }
 
-function buildGoldExample(reasons: string[]): string {
+function buildGoldExample(reasons: string[], isHouseNote: boolean): string {
   const joined = reasons.join(' ').toLowerCase();
+  
+  if (isHouseNote) {
+    return `"Staff completed full property checks of the communal areas, kitchen, and lounge. No hazards identified and property remains in good condition. All residents observed in the lounge periodically throughout the afternoon; engagement was positive and no safeguarding concerns were noted. Staff supported with meal preparation."`;
+  }
+
   if (joined.includes('short') || joined.includes('length') || joined.includes('brief')) {
     return `"I prompted James with his morning routine. He declined at first, saying he wanted to stay in bed. I gave him ten minutes, checked back in, and he agreed to get up. I supported him with washing and dressing — he needed prompting at each stage but completed tasks independently once prompted. Mood appeared flat this morning, I noted this for the next shift."`;
   }
@@ -48,8 +54,13 @@ export function buildCallPrepScript(
   const firstName = esc.carer.split(' ')[0] || esc.carer;
   const locationRef = resolveHouseLabel(houseLabel);
   const shortPct = Math.round(esc.shortEntryRatio * 100);
-  const notePattern = buildNotePattern(esc.reasons, esc.avgEntryChars);
-  const goldExample = buildGoldExample(esc.reasons);
+  
+  // A House Note is flagged if "Voice & Accountability" is NOT one of the reasons, 
+  // or if the house label indicates a house-wide context.
+  const isHouseNote = !esc.reasons.some(r => r.toLowerCase().includes('first person') || r.toLowerCase().includes('voice'));
+  
+  const notePattern = buildNotePattern(esc.reasons, esc.avgEntryChars, isHouseNote);
+  const goldExample = buildGoldExample(esc.reasons, isHouseNote);
   const topGap = esc.topGaps[0] || esc.reasons[0] || 'documentation detail';
 
   const fileNote = [

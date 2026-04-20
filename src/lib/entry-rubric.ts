@@ -28,19 +28,31 @@ function normalizeEntry(entry: string): string {
  * Determines if a note is a Core (House) note or a 1:1 (Client) note.
  * Based on CarePlanner formatting where 1:1s are client-specific handovers.
  */
-function determineNoteType(entryRaw: string, clientName: string): 'core' | '1to1' {
-  const e = entryRaw.toLowerCase();
-  const isUnassigned = clientName.toLowerCase() === 'unassigned' || clientName === '';
+function determineNoteType(entry: CareEntry): 'core' | '1to1' {
+  const e = (entry.entry || '').toLowerCase();
+  const c = (entry.client || '').toLowerCase().trim();
+  const t = (entry.category || '').toLowerCase();
+
+  // 1. Explicit Category Override
+  // Staff notes, handovers, and health/safety are always House/Core level.
+  if (t === 'staff' || t === 'handover' || t === 'health_safety' || t === 'finance') {
+    return 'core';
+  }
+
+  // 2. Client-based detection
+  // Any variation of "Unassigned" or a missing client implies a House note.
+  const isUnassigned = c.includes('unassigned') || c === '' || c === 'general' || c === 'house';
   
   if (isUnassigned || e.includes('core staff') || e.includes('communal') || e.includes('kitchen, lounge')) {
     return 'core';
   }
+
   return '1to1';
 }
 
 export function scoreEntry(entry: CareEntry): EntryScore {
   const e = normalizeEntry(entry.entry || '');
-  const noteType = determineNoteType(entry.entry || '', entry.client || '');
+  const noteType = determineNoteType(entry);
   
   const modules: RubricModule[] = [];
 
