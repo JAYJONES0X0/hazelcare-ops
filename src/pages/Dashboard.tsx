@@ -1,16 +1,19 @@
-import type { WeekSummary, Action, Incident } from '../lib/types';
+import type { WeekSummary, Action, Incident, StaffMember, Shift } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
 import { useCollapseStore } from '../lib/collapse-store';
+import { staffStatus } from '../lib/compliance-store';
 
 interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
   actions: Action[];
   incidents: Incident[];
+  staff: StaffMember[];
+  shifts: Shift[];
 }
 
-export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
+export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts }: Props) {
   // Hooks must be unconditional — compute safe defaults for the null case
   const houseList = weekData
     ? Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber))
@@ -24,6 +27,13 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   }
   const openActions = weekData ? actions.filter(a => a.status === 'open' || a.status === 'in_progress') : [];
   const activeIncidents = weekData ? incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved') : [];
+
+  // Compliance analysis for assigned shifts
+  const complianceGaps = shifts.filter((s: Shift) => {
+    const sMember = staff.find((sm: StaffMember) => sm.id === s.staffId);
+    if (!sMember) return false;
+    return staffStatus(sMember.dbsExpiry || '', 0) === 'overdue';
+  });
 
   if (!weekData) {
     return (
@@ -79,6 +89,29 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           <button onClick={() => setPage('upload')} className="cursor-pointer btn-gradient px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.08em] shadow-lg hover:scale-105 active:scale-95 transition-all duration-200">Sync Data</button>
         </div>
       </div>
+
+      {/* Compliance Gap Alert */}
+      {complianceGaps.length > 0 && (
+        <div className="mb-8 p-6 rounded-[2rem] bg-flag-red/10 border border-flag-red/30 flex items-center justify-between shadow-[0_0_50px_rgba(239,68,68,0.15)] animate-in slide-in-from-top-4 duration-1000 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-hc-dark/40 backdrop-blur-2xl -z-10" />
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-flag-red/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-14 h-14 rounded-2xl bg-flag-red/20 flex items-center justify-center text-2xl shadow-xl shadow-red-950/20 border border-flag-red/40 animate-pulse-soft">🚨</div>
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-3">
+                Critical Compliance Gaps Detected
+                <span className="pill pill-red text-[10px] font-black uppercase px-3 shadow-lg">{complianceGaps.length} Shifts</span>
+              </h3>
+              <p className="text-xs text-flag-red/80 font-bold uppercase tracking-widest mt-1">Assignments detected with expired DBS credentials</p>
+              <p className="text-[11px] text-hc-muted leading-relaxed mt-2 max-w-xl">Hazel Care expects all staff to have valid DBS clearance before starting a shift. Non-compliant assignments must be corrected immediately to maintain CQC safety standards.</p>
+            </div>
+          </div>
+          <button onClick={() => setPage('roster')} className="relative z-10 px-8 py-3 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-red/30 transition-all shadow-xl active:scale-95 group/btn">
+            Fix Gaps Now
+            <svg className="w-4 h-4 ml-2 inline-block transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+          </button>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">

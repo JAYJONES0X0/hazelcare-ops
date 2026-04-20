@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import type { WeekSummary, CareEntry, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
+import { ORG_CONFIG } from '../lib/config';
 import { escapeHtml } from '../lib/html-escape';
 
 /** Escape user-derived strings embedded in report HTML. */
@@ -89,7 +90,7 @@ function renderHeader(title: string, subtitle: string, color: string) {
     <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
       <img src="/logo-icon-dark.png" style="height: 38px; width: 38px; border-radius: 8px; object-fit: contain;" />
       <div style="text-align: left;">
-        <div style="font-weight: 900; font-size: 13px; color: ${color}; line-height: 1; letter-spacing: -0.02em;">HAZEL CARE</div>
+        <div style="font-weight: 900; font-size: 13px; color: ${color}; line-height: 1; letter-spacing: -0.02em;">${ORG_CONFIG.name.toUpperCase()}</div>
         <div style="font-weight: 800; font-size: 7px; color: ${color}; opacity: 0.6; letter-spacing: 0.2em; margin-top: 3px;">OPERATIONS</div>
       </div>
     </div>

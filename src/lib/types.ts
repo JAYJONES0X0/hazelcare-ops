@@ -88,6 +88,16 @@ export interface StaffMember {
   status: 'active' | 'sickness' | 'leave' | 'suspended';
 }
 
+export interface Shift {
+  id: string;
+  staffId?: string;
+  house: string;
+  date: string; // DD/MM/YYYY
+  type: 'day' | 'night' | 'long_day';
+  hours: number;
+  status: 'open' | 'filled' | 'confirmed';
+}
+
 // ============================================================
 // HOUSE & WEEK SUMMARIES
 // ============================================================
@@ -185,4 +195,5 @@ export interface AppState {
   actions: Action[];
   incidents: Incident[];
   staff: StaffMember[];
+  shifts: Shift[];
 }

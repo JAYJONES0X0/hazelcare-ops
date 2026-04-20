@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { StaffMember } from '../lib/types';
-import { uid, HAZELCARE_HOUSES, ROLES, staffStatus, daysUntil } from '../lib/compliance-store';
+import { uid, HAZELCARE_HOUSES, ROLES, staffStatus, daysUntil, STAFF_TEMPLATES, loadLegalDocument, saveLegalDocument, type LegalDocument } from '../lib/compliance-store';
+import { ORG_CONFIG } from '../lib/config';
 
 interface Props {
   staff: StaffMember[];
@@ -99,6 +100,125 @@ function StaffModal({ staff, onSave, onClose }: { staff: StaffMember; onSave: (s
   );
 }
 
+function StaffDocumentDrawer({ staff, onClose }: { staff: StaffMember; onClose: () => void }) {
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [docContent, setDocContent] = useState('');
+  const [isDraft, setIsDraft] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  function synthesise(templateId: string) {
+    const template = STAFF_TEMPLATES[templateId];
+    if (!template) return;
+
+    const dbsS = staffStatus(staff.dbsExpiry || '', 60);
+    const trainS = staffStatus(staff.trainingExpiry || '', 30);
+
+    let content = template
+      .replace(/{{ORG_NAME}}/g, ORG_CONFIG.fullName)
+      .replace(/{{STAFF_NAME}}/g, staff.name)
+      .replace(/{{STAFF_ROLE}}/g, staff.role)
+      .replace(/{{STAFF_HOUSE}}/g, staff.house)
+      .replace(/{{STAFF_DBS}}/g, staff.dbsExpiry || '[MISSING]')
+      .replace(/{{STAFF_DBS_STATUS}}/g, dbsS === 'ok' ? 'VALID' : dbsS === 'due_soon' ? 'DUE SOON' : 'EXPIRED / MISSING')
+      .replace(/{{STAFF_TRAINING_STATUS}}/g, trainS === 'ok' ? 'COMPLIANT' : 'GAPS IDENTIFIED')
+      .replace(/{{DATE}}/g, new Date().toLocaleDateString('en-GB'))
+      .replace(/{{REVIEWER_NAME}}/g, '[Manager Name]');
+
+    const docId = `staff-${staff.id}-${templateId}`;
+    const existing = loadLegalDocument(docId);
+    
+    setActiveDocId(docId);
+    setDocContent(existing ? existing.content : content);
+    setIsDraft(existing ? existing.isDraft : true);
+  }
+
+  function save() {
+    if (!activeDocId) return;
+    const doc: LegalDocument = {
+      id: activeDocId,
+      title: activeDocId.split('-').pop()?.toUpperCase() || 'DOCUMENT',
+      lastUpdated: new Date().toLocaleDateString('en-GB'),
+      content: docContent,
+      isDraft,
+    };
+    saveLegalDocument(doc);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-dark/95 backdrop-blur-3xl border-l border-white/10 z-[60] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-2xl font-black text-white tracking-tighter">Staff Intelligence</h2>
+              <span className="pill pill-teal text-[10px] font-black uppercase tracking-widest px-3 shadow-lg glow-teal animate-shimmer">Live Synthesis</span>
+            </div>
+            <p className="text-hc-muted text-xs font-bold uppercase tracking-widest opacity-60">Generating documentation for {staff.name}</p>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-all hover:rotate-90">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {Object.keys(STAFF_TEMPLATES).map(id => (
+            <button key={id} onClick={() => synthesise(id)}
+              className={`p-4 rounded-2xl border text-center transition-all duration-500 group relative overflow-hidden ${activeDocId?.endsWith(id) ? 'bg-hc-teal/20 border-hc-teal shadow-2xl scale-105' : 'glass-light border-white/5 hover:border-white/20'}`}>
+              <div className="text-[10px] font-black text-white uppercase tracking-widest relative z-10">{id}</div>
+              <div className="text-[8px] font-bold text-hc-muted mt-1 uppercase tracking-widest relative z-10 opacity-60 group-hover:opacity-100">Draft Builder</div>
+            </button>
+          ))}
+        </div>
+
+        {activeDocId && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="glass-light border border-white/10 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${isDraft ? 'bg-flag-amber' : 'bg-flag-green'}`} />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">{isDraft ? 'DRAFT BUILD' : 'FINALIZED'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setIsDraft(!isDraft)} className="px-5 py-2 glass-light border border-white/10 text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] rounded-xl transition-all">Toggle Status</button>
+                  <button onClick={save} className={`px-6 py-2 text-[9px] font-black text-white uppercase tracking-[0.2em] rounded-xl transition-all shadow-xl ${copied ? 'bg-flag-green' : 'btn-gradient hover:scale-105 active:scale-95'}`}>
+                    {copied ? 'SAVED ✓' : 'SAVE DRAFT'}
+                  </button>
+                </div>
+              </div>
+              <textarea
+                value={docContent}
+                onChange={e => setDocContent(e.target.value)}
+                className="w-full bg-hc-dark/40 border border-white/5 rounded-2xl p-6 text-[13px] text-hc-text/90 font-mono leading-loose min-h-[500px] focus:outline-none focus:border-hc-teal/30 scrollbar-thin resize-none italic"
+              />
+            </div>
+            
+            <div className="p-6 glass border border-flag-amber/20 bg-flag-amber/[0.03] rounded-[2rem] flex items-start gap-4">
+              <span className="text-2xl animate-pulse">📝</span>
+              <div>
+                <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Intelligence Note</div>
+                <p className="text-xs text-hc-muted leading-relaxed italic opacity-80">
+                  This document has been synthesized from organizational data and UK HR templates. Review carefully before printing or providing to the employee.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!activeDocId && (
+          <div className="flex flex-col items-center justify-center py-32 opacity-20 hover:opacity-100 transition-opacity duration-1000 group">
+            <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-700">🧠</div>
+            <div className="text-sm font-black text-white uppercase tracking-widest mb-2">Select a framework</div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">To begin synthesizing intelligence for {staff.name}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: 'ok' | 'due_soon' | 'overdue' }) {
   if (status === 'overdue') return <span className="pill pill-red text-[8px] font-black px-2 shadow-lg animate-pulse-soft">OVERDUE</span>;
   if (status === 'due_soon') return <span className="pill pill-amber text-[8px] font-black px-2 shadow-lg">DUE SOON</span>;
@@ -110,6 +230,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
   const [houseFilter, setHouseFilter] = useState('all');
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [docDrawerMember, setDocDrawerMember] = useState<StaffMember | null>(null);
 
   const houses = [...new Set(staff.map(s => s.house))].sort();
   if (houses.length === 0) houses.push(...HAZELCARE_HOUSES);
@@ -299,6 +420,10 @@ export function StaffPage({ staff, onUpdate }: Props) {
                         <button onClick={() => setEditMember(member)} className="w-8 h-8 rounded-lg glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-white hover:bg-hc-teal/10 hover:border-hc-teal/30 transition-all shadow-lg group/btn">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
+                        <button onClick={() => setDocDrawerMember(member)} className="w-8 h-8 rounded-lg glass border border-hc-teal/10 flex items-center justify-center text-hc-teal-light hover:text-white hover:bg-hc-teal/20 hover:border-hc-teal/40 transition-all shadow-lg group/btn relative overflow-hidden" title="Staff Intelligence Docs">
+                          <div className="absolute inset-0 bg-hc-teal/5 animate-shimmer" />
+                          <svg className="w-4 h-4 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                        </button>
                         {deleteConfirm === member.id ? (
                           <div className="flex gap-1">
                             <button onClick={() => deleteMember(member.id)} className="px-3 py-1 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[8px] font-black uppercase tracking-widest rounded-lg">DEL</button>
@@ -332,6 +457,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
       )}
 
       {editMember && <StaffModal staff={editMember} onSave={saveMember} onClose={() => setEditMember(null)} />}
+      {docDrawerMember && <StaffDocumentDrawer staff={docDrawerMember} onClose={() => setDocDrawerMember(null)} />}
     </div>
   );
 }

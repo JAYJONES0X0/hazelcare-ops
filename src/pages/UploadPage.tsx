@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Activity, FileText, RefreshCw, Download } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
@@ -915,12 +916,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       if (mergedWeekData) onDataParsed(mergedWeekData);
     }
 
-    const target = destination || result.page;
     const warnings = result.warnings.length ? ` Warnings: ${result.warnings.join(' | ')}` : '';
     const manual = result.requiresManualClientSelection ? ' Client confidence is low; verify selected client.' : '';
     setResultMsg(`${result.messages.join(' ')}${manual}${warnings}`);
     setStep('done');
-    setTimeout(() => setPage(target), 1500);
   };
 
   // ─── Reset ───────────────────────────────────────────────────────────────────
@@ -962,7 +961,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700 scrollbar-thin">
+    <div className="p-6 md:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700 scrollbar-thin">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
@@ -1114,7 +1113,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     </div>
 
                     {/* Entry type counts */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 mb-3">
+                    <div className="grid grid-cols-2 ml:grid-cols-4 gap-1.5 mb-3">
                       {sorted.map(([cat, count]) => {
                         const info = ENTRY_LABELS[cat] || ENTRY_LABELS.other;
                         return (
@@ -1183,6 +1182,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   </div>
                 </div>
 
+                {/* Destination Presets */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Destination Presets (Quick Map)</label>
+                  <div className="glass-light border border-white/10 rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
+                    <button onClick={() => setSelectedTargets(['reports'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Staff Intel Only</button>
+                    <button onClick={() => setSelectedTargets(['templates'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Templates Only</button>
+                    <button onClick={() => setSelectedTargets(['client-docs'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Compliance Only</button>
+                    <button onClick={() => setSelectedTargets(['reports', 'templates', 'client-docs'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-white/10 text-white hover:bg-white/5 transition-all">Sync Everywhere</button>
+                  </div>
+                </div>
+
                 {/* Decision Row 1: Target Mapping */}
                 <div className="space-y-2">
                   <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
@@ -1198,7 +1208,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                             )
                           }
                         />
-                        {target}
+                        {target === 'reports' ? 'Reports & Staff Intelligence' : target === 'templates' ? 'Templates' : 'Client Documents'}
                       </label>
                     ))}
                   </div>
@@ -1569,44 +1579,89 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       {/* ─── STEP: DONE ───────────────────────────────────────────────────────── */}
       {step === 'done' && (
         <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 rounded-full glass border-2 border-flag-green/40 flex items-center justify-center mb-6 shadow-xl">
-            <svg className="w-10 h-10 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div className="w-24 h-24 rounded-3xl glass border-2 border-flag-green/40 flex items-center justify-center mb-6 shadow-2xl relative">
+             <div className="absolute inset-0 bg-flag-green/10 blur-xl rounded-full" />
+            <svg className="w-12 h-12 text-flag-green relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
-          <div className="text-xl font-black text-white mb-2">Import Complete</div>
-          <div className="text-sm text-hc-muted mb-6">{resultMsg}</div>
-          {zipRunSummary ? (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => setPage(zipRunSummary.nextPage)}
-                className="px-5 py-2.5 rounded-xl btn-gradient text-[11px] font-black uppercase tracking-wide"
+          
+          <h2 className="text-2xl font-black text-white mb-2 tracking-tighter uppercase">Intelligence Mapping Complete</h2>
+          <p className="text-sm text-hc-muted mb-10 max-w-md text-center leading-relaxed font-medium">
+            {resultMsg || 'Data has been successfully routed to your selected operational modules.'}
+          </p>
+
+          <div className="flex flex-col gap-3 w-full max-w-md">
+            <div className="text-[9px] font-bold text-hc-muted uppercase tracking-[0.3em] mb-1 text-center opacity-40">Choose your destination</div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button 
+                onClick={() => setPage('staff-monitoring')}
+                className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 text-hc-teal-light hover:bg-hc-teal/20 transition-all shadow-xl group"
               >
-                Open {zipRunSummary.nextPage}
+                <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Staff Intelligence</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Review Pipeline</div>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-hc-teal/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Activity className="w-4 h-4" />
+                </div>
               </button>
-              {!!zipRunSummary.failed && (
-                <button
-                  onClick={() => {
-                    setZipGuidance((prev) =>
-                      prev.map((r) => ({ ...r, include: zipRunSummary.failedIds.includes(r.id) }))
-                    );
-                    setStep('preview');
-                    setErrorMsg('Retry mode: only previously failed rows are selected.');
-                  }}
-                  className="px-5 py-2.5 rounded-xl border border-flag-amber/40 text-flag-amber text-[11px] font-black uppercase tracking-wide"
-                >
-                  Retry failed only
-                </button>
-              )}
-              <button
-                onClick={() => setStep('preview')}
-                className="px-5 py-2.5 rounded-xl border border-white/10 text-hc-muted text-[11px] font-black uppercase tracking-wide"
+
+              <button 
+                onClick={() => setPage('templates')}
+                className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-hc-purple/10 border border-hc-purple/20 text-hc-purple-light hover:bg-hc-purple/20 transition-all shadow-xl group"
               >
-                Back to mapping
+                 <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Templates Hub</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Generated Docs</div>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-hc-purple/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="w-4 h-4" />
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setPage('briefing')}
+                className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 hover:bg-sky-500/10 transition-all shadow-xl group"
+              >
+                 <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Morning Briefing</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Daily Feed</div>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setStep('choose')}
+                className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-white/5 border border-white/10 text-hc-muted hover:text-white hover:bg-white/10 transition-all shadow-xl group"
+              >
+                 <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Import More</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Stay on Page</div>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Download className="w-4 h-4" />
+                </div>
               </button>
             </div>
-          ) : (
-            <div className="text-[11px] text-hc-teal-light animate-pulse">Redirecting...</div>
+          </div>
+
+          {zipRunSummary && !!zipRunSummary.failed && (
+             <button
+              onClick={() => {
+                setZipGuidance((prev) =>
+                  prev.map((r) => ({ ...r, include: zipRunSummary.failedIds.includes(r.id) }))
+                );
+                setStep('preview');
+                setErrorMsg('Retry mode: only previously failed rows are selected.');
+              }}
+              className="mt-8 px-8 py-3 rounded-xl border border-flag-amber/40 text-flag-amber text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-flag-amber/5 transition-all"
+            >
+              Retry {zipRunSummary.failed} failed files
+            </button>
           )}
         </div>
       )}

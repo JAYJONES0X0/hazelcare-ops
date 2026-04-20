@@ -1,10 +1,14 @@
 import { useState, useMemo } from 'react';
 import {
   loadComplianceAudits, saveComplianceAudits,
+  loadLegalDocument, saveLegalDocument,
   uid, daysUntil, staffStatus,
   HAZELCARE_HOUSES, ROLES, AUDIT_TYPES,
-  type ComplianceAudit,
+  LEGAL_TEMPLATES,
+  type ComplianceAudit, type LegalDocument,
 } from '../lib/compliance-store';
+import { ORG_CONFIG } from '../lib/config';
+import { FileText, Trash2, Edit3, CheckCircle2, ChevronRight, X, Sparkles, Printer } from 'lucide-react';
 import type { StaffMember } from '../lib/types';
 
 // ============================================================
@@ -181,52 +185,173 @@ function DaysChip({ dateStr, warnDays = 30 }: { dateStr: string; warnDays?: numb
 }
 
 // ============================================================
+// LEGAL DOCUMENT DRAWER
+// ============================================================
+function LegalDrawer({ item, onClose, onComplete }: { 
+  item: { id: string; label: string; description: string; templateKey: string }; 
+  onClose: () => void;
+  onComplete: (id: string) => void;
+}) {
+  const [doc, setDoc] = useState<LegalDocument | null>(() => loadLegalDocument(item.id));
+  const [isEditing, setIsEditing] = useState(false);
+
+  const synthesise = () => {
+    const template = LEGAL_TEMPLATES[item.templateKey] || `# ${item.label}\n\nContent pending.`;
+    const content = template
+      .replace(/{{ORG_NAME}}/g, ORG_CONFIG.name)
+      .replace(/{{DATE}}/g, new Date().toLocaleDateString('en-GB'));
+    
+    const newDoc: LegalDocument = {
+      id: item.id,
+      title: item.label,
+      lastUpdated: new Date().toISOString(),
+      content,
+      isDraft: true
+    };
+    setDoc(newDoc);
+    saveLegalDocument(newDoc);
+  };
+
+  const save = () => {
+    if (doc) {
+      saveLegalDocument({ ...doc, lastUpdated: new Date().toISOString(), isDraft: false });
+      setIsEditing(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex justify-end animate-in fade-in duration-300">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-hc-dark border-l border-white/10 shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-500">
+        {/* Header */}
+        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-hc-dark/50 backdrop-blur-xl sticky top-0 z-20">
+          <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+              <FileText className="w-5 h-5 text-hc-purple" />
+              {item.label}
+            </h2>
+            <p className="text-[10px] text-hc-muted font-bold tracking-widest uppercase mt-1">Foundational Intelligence Layer</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors text-hc-muted">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 print:p-0">
+          {!doc ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+              <div className="w-20 h-20 rounded-[2rem] glass border border-hc-purple/20 flex items-center justify-center glow-purple">
+                <Sparkles className="w-10 h-10 text-hc-purple-light" />
+              </div>
+              <div className="max-w-xs">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">No Document Found</h3>
+                <p className="text-xs text-hc-muted leading-relaxed mb-8">{item.description}</p>
+                <button onClick={synthesise} className="btn-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Synthesise from Intelligence
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Toolbar */}
+              <div className="flex gap-2 print:hidden">
+                <button onClick={() => setIsEditing(!isEditing)} className="flex-1 glass-light border border-white/10 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white transition-all flex items-center justify-center gap-2">
+                  {isEditing ? <><CheckCircle2 className="w-4 h-4 text-hc-teal" /> Finished</> : <><Edit3 className="w-4 h-4" /> Edit Intelligence</>}
+                </button>
+                <button onClick={handlePrint} className="glass-light border border-white/10 px-6 rounded-2xl text-hc-muted hover:text-white transition-all">
+                  <Printer className="w-4 h-4" />
+                </button>
+                <button onClick={() => { if(confirm('Delete draft?')) { localStorage.removeItem(`hazelcare-legal-${item.id}`); setDoc(null); } }} className="glass-light border border-white/10 px-6 rounded-2xl text-hc-muted hover:text-flag-red transition-all">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Editor/Viewer */}
+              <div className={`glass-light border border-white/5 rounded-[2.5rem] p-8 min-h-[500px] relative group print:border-none print:bg-white print:text-black print:p-0`}>
+                {isEditing ? (
+                  <textarea 
+                    value={doc.content} 
+                    onChange={e => setDoc({...doc, content: e.target.value})}
+                    onBlur={save}
+                    className="w-full h-[600px] bg-transparent border-none focus:ring-0 text-hc-text font-serif text-lg leading-relaxed resize-none p-0"
+                    placeholder="Enter legal text..."
+                  />
+                ) : (
+                  <div className="prose prose-invert max-w-none prose-h1:text-3xl prose-h1:font-black prose-h1:tracking-tighter prose-h1:text-white prose-h2:text-white prose-p:text-hc-text prose-p:text-lg prose-p:leading-relaxed prose-strong:text-white font-serif">
+                    <pre className="whitespace-pre-wrap font-serif text-lg text-hc-text leading-relaxed">
+                      {doc.content}
+                    </pre>
+                  </div>
+                )}
+                {doc.isDraft && !isEditing && (
+                  <div className="absolute top-6 right-6 pill pill-amber text-[8px] font-black px-3 animate-pulse-soft">DRAFT INTELLIGENCE</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {doc && !isEditing && (
+          <div className="p-6 border-t border-white/5 bg-hc-dark/80 backdrop-blur-xl sticky bottom-0 z-20 print:hidden">
+            <button 
+              onClick={() => { onComplete(item.id); onClose(); }}
+              className="w-full btn-gradient py-5 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+              <CheckCircle2 className="w-5 h-5" />
+              Finalise Document & Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // FOUNDER CHECKLIST MODULE
 // ============================================================
-const FOUNDER_CHECKLIST = [
+interface FounderChecklistItem {
+  id: string;
+  label: string;
+  description: string;
+  templateKey?: string;
+}
+
+const FOUNDER_CHECKLIST: { category: string; items: FounderChecklistItem[] }[] = [
   {
-    category: 'Legal Documents',
+    category: 'Legal Documents (UK)',
     items: [
-      { id: 'tos', label: 'Terms of Service written for actual product' },
-      { id: 'privacy', label: 'Privacy Policy matching real data flows' },
-      { id: 'eula', label: 'EULA if users licence rather than own product' },
-      { id: 'dpa', label: 'Data Processing Agreement before enterprise talks' }
+      { id: 'tos', label: 'Terms of Service', templateKey: 'tos', description: 'Governs the relationship with your customers, liability limitations, and jurisdiction (England & Wales).' },
+      { id: 'privacy', label: 'Privacy Policy', templateKey: 'privacy', description: 'UK GDPR & DPA 2018 compliant transparency regarding data flows, subject rights, and ICO registration.' },
+      { id: 'dpa', label: 'Data Processing Agreement', templateKey: 'dpa', description: 'Mandatory Article 28 contract defining security measures and sub-processor management.' },
+      { id: 'ropa', label: 'Records of Processing', templateKey: 'ropa', description: 'Internal register of what you process and why — a key evidence piece for CQC & ICO audits.' }
     ]
   },
   {
-    category: 'Data Privacy Compliance',
+    category: 'Privacy Compliance',
     items: [
-      { id: 'gdpr', label: 'GDPR compliance (European users)' },
-      { id: 'ccpa', label: 'CCPA compliance (California users)' },
-      { id: 'dpdp', label: 'India DPDP Act (Indian users)' },
-      { id: 'coppa', label: 'COPPA compliance (Under 13s)' }
+      { id: 'ico_reg', label: 'ICO Data Protection Fee Paid', description: 'Confirm your organization is registered with the Information Commissioner\'s Office.' },
+      { id: 'gdpr_train', label: 'Staff Data Privacy Training', description: 'Ensure all staff have completed initial GDPR awareness training.' }
     ]
   },
   {
-    category: 'IP Protection',
+    category: 'IP & Governance',
     items: [
-      { id: 'tm_search', label: 'Trademark search before launch' },
-      { id: 'app_filed', label: 'Application filed same day you go live' },
-      { id: 'ip_assign', label: 'IP assignment signed by every developer/contractor' },
-      { id: 'oss_audit', label: 'Open source licence audit (check GPL/AGPL)' }
+      { id: 'tm_uk', label: 'Trademark Search (UK IPO)', description: 'Conduct search of the UK Intellectual Property Office registers.' },
+      { id: 'ip_assign', label: 'IP Assignment Deeds Signed', description: 'Confirm all intellectual property is owned by the legal entity, not the founders.' }
     ]
   },
   {
-    category: 'Regulatory Compliance',
+    category: 'CQC Alignment',
     items: [
-      { id: 'hipaa', label: 'HIPAA (US Health app requirement)' },
-      { id: 'fca_sec', label: 'FCA, SEC, or equivalent (Finance apps)' },
-      { id: 'child_prot', label: 'Child protection frameworks (Children\'s apps)' },
-      { id: 'market_law', label: 'Consumer protection law (Marketplaces)' }
-    ]
-  },
-  {
-    category: 'App Store Rules',
-    items: [
-      { id: 'apple_nutr', label: 'Apple privacy nutrition labels accurately reflect data' },
-      { id: 'gp_safety', label: 'Google Play data safety section accurately reflects data' },
-      { id: 'iap_pol', label: 'IAP implementation complies with platform policies' },
-      { id: 'priv_url', label: 'Functioning privacy policy URL in both store listings' }
+      { id: 'nom_ind', label: 'Nominated Individual Vetted', description: 'Confirm fit and proper person checks for official regulatory roles.' },
+      { id: 'reg_man_prep', label: 'Registered Manager Prep', description: 'Evidence of fitness and awareness of legal responsibilities.' }
     ]
   }
 ];
@@ -235,8 +360,10 @@ function FounderChecklist() {
   const [checked, setChecked] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('founder_checklist') || '[]'); } catch { return []; }
   });
+  const [activeItem, setActiveItem] = useState<{ id: string; label: string; description: string; templateKey: string } | null>(null);
 
-  const toggle = (id: string) => {
+  const toggle = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const next = checked.includes(id) ? checked.filter(x => x !== id) : [...checked, id];
     setChecked(next);
     localStorage.setItem('founder_checklist', JSON.stringify(next));
@@ -269,7 +396,7 @@ function FounderChecklist() {
           const isComplete = catChecked === cat.items.length;
           
           return (
-            <div key={cat.category} className={`glass-light border rounded-2xl p-5 shadow-xl transition-colors duration-500 card-glow
+            <div key={cat.category} className={`glass-light border rounded-2xl p-5 shadow-xl transition-all duration-500 card-glow
               ${isComplete ? 'border-hc-teal/30 bg-hc-teal/[0.02]' : 'border-white/5'}`}
               style={{ animationDelay: `${i * 50}ms` }}
             >
@@ -278,16 +405,32 @@ function FounderChecklist() {
                 <span className="text-[10px] font-black tabular-nums text-hc-muted">{catChecked} / {cat.items.length}</span>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {cat.items.map(item => {
                   const isChecked = checked.includes(item.id);
+                  const hasDraft = loadLegalDocument(item.id);
+                  const it = item as any;
                   return (
-                    <div key={item.id} onClick={() => toggle(item.id)} className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5">
-                      <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border transition-colors duration-300
+                    <div key={item.id} 
+                      onClick={() => it.templateKey ? setActiveItem(it) : toggle(item.id)} 
+                      className="group flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-all border border-transparent hover:border-white/5 hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      <div onClick={(e) => toggle(item.id, e)} className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border transition-all duration-300
                         ${isChecked ? 'bg-hc-teal border-hc-teal shadow-[0_0_8px_rgba(20,184,166,0.5)]' : 'bg-black/50 border-white/20 group-hover:border-white/40'}`}>
                         {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                       </div>
-                      <span className={`text-[11px] font-bold leading-relaxed transition-colors duration-300 ${isChecked ? 'text-hc-muted line-through' : 'text-white/80'}`}>{item.label}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-[11px] font-bold leading-relaxed transition-colors duration-300 ${isChecked ? 'text-hc-muted line-through' : 'text-white/80'}`}>{item.label}</div>
+                        {hasDraft && !isChecked && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="w-1 h-1 rounded-full bg-hc-purple animate-pulse" />
+                            <span className="text-[7px] font-black text-hc-purple-light uppercase tracking-widest">Intelligence Live</span>
+                          </div>
+                        )}
+                      </div>
+                      {it.templateKey && (
+                        <ChevronRight className="w-3 h-3 text-hc-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
                     </div>
                   );
                 })}
@@ -296,6 +439,7 @@ function FounderChecklist() {
           );
         })}
       </div>
+      {activeItem && <LegalDrawer item={activeItem} onClose={() => setActiveItem(null)} onComplete={(id) => toggle(id)} />}
     </div>
   );
 }

@@ -161,7 +161,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
       if (gaps.length === 0) {
         rewrite = `Great entry! No major gaps detected.\n\nOriginal Text:\n${coachEntry.entry}`;
       } else {
-        rewrite = `[Locally Synthesised Feedback]\n\nBased on Hazel Care Clinical Standards, this entry is missing crucial context. When writing about ${coachEntry.client || 'the client'}, explicitly detail:\n\n` +
+        rewrite = `[Locally Synthesised Feedback]\n\nBased on ${ORG_CONFIG.name} Quality Standards, this entry is missing crucial context. When writing about ${coachEntry.client || 'the individual'}, explicitly detail:\n\n` +
           gaps.map((g, i) => `${i + 1}. ${g}`).join('\n') +
           `\n\nExample Professional Structure:\n"I supported ${coachEntry.client || 'the individual'} with ${coachEntry.category || 'their needs'}. I observed [presentation/mood]. I then took [specific action] to ensure they were comfortable and safe. Changes reported to [role]."\n\nPlease review your notes to meet these core components.`;
       }

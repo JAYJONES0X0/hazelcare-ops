@@ -1,4 +1,4 @@
-import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember } from './types';
+import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember, Shift } from './types';
 
 const STORAGE_KEY = 'hazelcare-ops';
 const WEEK_DATA_KEY = 'hc-week-data-v2';
@@ -12,6 +12,7 @@ function normalizeState(raw: Partial<AppState> | null | undefined): AppState {
     actions: Array.isArray(raw?.actions) ? raw.actions : [],
     incidents: Array.isArray(raw?.incidents) ? raw.incidents : [],
     staff: Array.isArray(raw?.staff) ? raw.staff : [],
+    shifts: Array.isArray(raw?.shifts) ? raw.shifts : [],
   };
 }
 
@@ -235,6 +236,14 @@ export function saveStaff(staff: StaffMember[]) {
   save({ staff });
 }
 
+export function loadShifts(): Shift[] {
+  return load().shifts;
+}
+
+export function saveShifts(shifts: Shift[]) {
+  save({ shifts });
+}
+
 export function clearWeekData() {
   sessionWeekData = null;
   try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
@@ -336,6 +345,7 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
     actions: Array.isArray((data.appState as Partial<AppState>).actions) ? (data.appState as Partial<AppState>).actions as Action[] : [],
     incidents: Array.isArray((data.appState as Partial<AppState>).incidents) ? (data.appState as Partial<AppState>).incidents as Incident[] : [],
     staff: Array.isArray((data.appState as Partial<AppState>).staff) ? (data.appState as Partial<AppState>).staff as AppState['staff'] : [],
+    shifts: Array.isArray((data.appState as Partial<AppState>).shifts) ? (data.appState as Partial<AppState>).shifts as Shift[] : [],
   };
 
   sessionWeekData = null;

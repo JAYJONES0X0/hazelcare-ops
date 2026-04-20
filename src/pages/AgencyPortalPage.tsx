@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ORG_CONFIG } from '../lib/config';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -267,7 +268,7 @@ function ShiftBoard() {
                       <svg className="w-8 h-8 text-flag-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <div className="text-lg font-black text-white uppercase tracking-tight mb-2">Request Sent</div>
-                    <p className="text-sm text-hc-muted font-medium max-w-sm mx-auto mb-6">Hazel Care will check the worker's details and respond within 2 hours.</p>
+                    <p className="text-sm text-hc-muted font-medium max-w-sm mx-auto mb-6">{ORG_CONFIG.name} will check the worker's details and respond within 2 hours.</p>
                     <button onClick={() => { setSubmitted(false); setSelectedShift(null); }} className="text-hc-teal-light text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all underline decoration-hc-teal/30 underline-offset-8 decoration-2">Back to Shifts</button>
                   </div>
                 )}
@@ -463,7 +464,7 @@ function RateCards() {
         </div>
         <p className="text-xs font-medium text-hc-teal-light leading-relaxed relative z-10">
           <span className="font-black uppercase tracking-widest block mb-1">Cost Alert:</span>
-          Hazel Care Ltd agency rates are verified directly with the agency. Current data reflects standard rates. Contact the office for a confirmed quote.
+          {ORG_CONFIG.fullName} agency rates are verified directly with the agency. Current data reflects standard rates. Contact the office for a confirmed quote.
         </p>
       </div>
 

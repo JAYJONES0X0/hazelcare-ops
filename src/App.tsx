@@ -354,11 +354,12 @@ import { ClientDiaryPage } from './pages/ClientDiaryPage';
 import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { SettingsPage } from './pages/SettingsPage';
-import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
-import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
+import { RosterPage } from './pages/RosterPage';
+import type { WeekSummary, Action, Incident, StaffMember, Shift } from './lib/types';
+import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, loadShifts, saveShifts } from './lib/storage';
 
 
-export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings';
+export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'roster' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings';
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
@@ -601,6 +602,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
+  const [shifts, setShifts] = useState<Shift[]>(() => loadShifts());
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
 
   function handleDataParsed(data: WeekSummary) {
@@ -622,6 +624,11 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   function handleUpdateStaff(updated: StaffMember[]) {
     setStaff(updated);
     saveStaff(updated);
+  }
+
+  function handleUpdateShifts(updated: Shift[]) {
+    setShifts(updated);
+    saveShifts(updated);
   }
 
   async function copyStaffLink(toolId: string) {
@@ -665,12 +672,13 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
 
         <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
-          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} /></div>}
+          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
+          {page === 'roster' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RosterPage staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage staff={staff} onUpdate={handleUpdateStaff} /></div>}
