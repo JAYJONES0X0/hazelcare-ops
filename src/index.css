@@ -37,20 +37,20 @@
 }
 
 [data-theme="light"] {
-  /* ── PRO LIGHT ── */
-  --hc-bg: #f1f5f9;
+  /* ── TACTICAL LIGHT (OPERATIONAL GRADE) ── */
+  --hc-bg: #ffffff;
   --hc-navy: #ffffff;
-  --hc-navy-light: #f8fafc;
+  --hc-navy-light: #f1f5f9;
   --hc-dark: #f8fafc;
-  --hc-darker: #f1f5f9;
+  --hc-darker: #ffffff;
   --hc-card: #ffffff;
-  --hc-card-hover: #f1f5f9;
-  --hc-border: #e2e8f0;
-  --hc-border-light: #cbd5e1;
-  --hc-text: #0f172a;
-  --hc-muted: #64748b;
-  --hc-glass-bg: rgba(255, 255, 255, 0.82);
-  --hc-glass-border: rgba(15, 23, 42, 0.08);
+  --hc-card-hover: #f8fafc;
+  --hc-border: #0f172a; /* Sharp contrast borders */
+  --hc-border-light: #334155;
+  --hc-text: #000000;
+  --hc-muted: #475569;
+  --hc-glass-bg: #ffffff; /* Disable transparency in Light Mode for max clarity */
+  --hc-glass-border: #0f172a;
 }
 
 @theme {
