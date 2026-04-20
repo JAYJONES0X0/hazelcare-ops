@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Activity, FileText, RefreshCw, Download } from 'lucide-react';
+import { Activity, FileText, RefreshCw, Download, Calendar } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
@@ -1227,8 +1227,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       Compliance Only
                     </button>
                     <button 
-                      onClick={() => setSelectedTargets(['reports', 'templates', 'client-docs'])} 
-                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 3 ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
+                      onClick={() => setSelectedTargets(['reports', 'templates', 'client-docs', 'roster'])} 
+                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length >= 3 ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
                       Sync Everywhere
                     </button>
                   </div>
@@ -1238,7 +1238,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 <div className="space-y-2">
                   <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Output Targets</label>
                   <div className="glass-light border border-white/10 rounded-xl p-3 flex flex-col gap-2 h-[100px] overflow-y-auto scrollbar-thin">
-                    {(['templates', 'reports', 'client-docs'] as ImportTarget[]).map(target => (
+                    {(['templates', 'reports', 'client-docs', 'roster'] as ImportTarget[]).map(target => (
                       <label key={target} className="flex items-center gap-2 text-sm text-white font-bold uppercase tracking-wide">
                         <input
                           type="checkbox"
@@ -1249,7 +1249,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                             )
                           }
                         />
-                        {target === 'reports' ? 'Reports & Staff Intelligence' : target === 'templates' ? 'Templates' : 'Client Documents'}
+                        {target === 'reports' ? 'Reports & Staff Intelligence' : target === 'templates' ? 'Templates' : target === 'roster' ? 'Live Roster' : 'Client Documents'}
                       </label>
                     ))}
                   </div>
@@ -1672,6 +1672,19 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <RefreshCw className="w-4 h-4" />
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setPage('roster')}
+                className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 text-hc-teal-light hover:bg-hc-teal/20 transition-all shadow-xl group"
+              >
+                 <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Live Roster</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Staff Coverage</div>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-hc-teal/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-4 h-4" />
                 </div>
               </button>
 
