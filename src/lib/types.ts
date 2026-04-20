@@ -93,6 +93,8 @@ export interface Shift {
   staffId?: string;
   house: string;
   date: string; // DD/MM/YYYY
+  startTime?: string; // HH:mm
+  endTime?: string;   // HH:mm
   type: 'day' | 'night' | 'long_day';
   hours: number;
   status: 'open' | 'filled' | 'confirmed';

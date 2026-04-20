@@ -1,4 +1,4 @@
-import type { CareEntry, HouseSummary, WeekSummary } from './types';
+import type { CareEntry, HouseSummary, WeekSummary, Shift } from './types';
 import { uid } from './storage';
 
 // ============================================================
@@ -412,4 +412,92 @@ export function buildWeekSummary(entries: CareEntry[]): WeekSummary {
     totalEntries: entries.length, houses, allFlags, entryTypes,
     clients: [...clientSet], carers: [...carerSet], clientDiary,
   };
+}
+
+/**
+ * Parses a grouped Roster CSV (CarePlanner format)
+ * Carer,Day,Time,Client,Notes
+ */
+export function parseRosterCSV(text: string, fileName: string): Shift[] {
+  const clean = text.replace(/^\uFEFF/, '');
+  const rows = parseCSVRaw(clean);
+  if (rows.length < 2) return [];
+
+  // Extract year from filename (e.g. Carer-roster...20_04_2026...)
+  const yearMatch = fileName.match(/_(\d{4})/);
+  const impliedYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+
+  const shifts: Shift[] = [];
+  let currentCarer = '';
+  let currentDay = '';
+
+  // Skip header
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (row.length < 4) continue;
+    if (row.some(c => c.includes('GRAND TOTAL'))) break;
+
+    const rawCarer = safeCell(row, 0);
+    const rawDay = safeCell(row, 1);
+    const rawTime = safeCell(row, 2);
+    const rawClient = safeCell(row, 3);
+
+    // Grouping logic: Carer and Day columns only filled on the first row of a group
+    if (rawCarer) currentCarer = rawCarer.split(' - ')[0].trim();
+    if (rawDay) currentDay = rawDay.trim();
+
+    if (!rawTime || !rawClient) continue;
+
+    // Skip "Time Off" rows entirely from roster grid
+    if (rawClient.toLowerCase().includes('time off')) continue;
+
+    // Parse date: "Mon 20 Apr" -> "20/04/YYYY"
+    const dateMatch = currentDay.match(/(\d{1,2})\s+([A-Za-z]{3})/);
+    let date = '';
+    if (dateMatch) {
+      const day = dateMatch[1].padStart(2, '0');
+      const monthStr = dateMatch[2].toLowerCase();
+      const monthMap: Record<string, string> = {
+        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+      };
+      const month = monthMap[monthStr] || '01';
+      date = `${day}/${month}/${impliedYear}`;
+    }
+
+    // Parse time/hours: "08:00 - 20:00 (12 hours)"
+    const timesMatch = rawTime.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    let startTime = '';
+    let endTime = '';
+    if (timesMatch) {
+      startTime = timesMatch[1];
+      endTime = timesMatch[2];
+    }
+
+    const hoursMatch = rawTime.match(/\((\d+)\s+hours?(?:\s+and\s+(\d+)\s+min)?\)/);
+    let hours = 0;
+    if (hoursMatch) {
+      hours = parseInt(hoursMatch[1], 10) + (parseInt(hoursMatch[2] || '0', 10) / 60);
+    }
+
+    // Determine shift type based on start time
+    const startHour = startTime ? parseInt(startTime.split(':')[0], 10) : 8;
+    let type: Shift['type'] = 'day';
+    if (hours >= 10) type = 'long_day';
+    if (startHour >= 18 || startHour < 6) type = 'night';
+
+    shifts.push({
+      id: uid(),
+      staffId: currentCarer, // We pass raw name here, router will resolve to real ID
+      house: normalizeHouse(rawClient) || rawClient,
+      date,
+      startTime,
+      endTime,
+      type,
+      hours: Number(hours.toFixed(2)),
+      status: 'confirmed'
+    });
+  }
+
+  return shifts;
 }

@@ -2,7 +2,7 @@ import type { FullClient } from './client-store';
 import { emptyClient, loadClients, resolveClientMatch, saveClient } from './client-store';
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
 import type { TemplateType } from './types';
-import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData } from './storage';
+import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData, loadShifts, saveShifts } from './storage';
 import type { Page } from '../App';
 
 const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
@@ -161,7 +161,39 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       ? 'templates'
       : opts.targets.includes('client-docs')
       ? 'client-docs'
+      : opts.targets.includes('roster')
+      ? 'roster'
       : 'reports';
+
+    if (opts.targets.includes('roster') && envelope.shifts.length > 0) {
+      const existingShifts = loadShifts();
+      const staff = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('hazelcare-staff') || '[]');
+        } catch { return []; }
+      })();
+
+      const resolvedShifts = envelope.shifts.map(s => {
+        const found = staff.find((sm: any) => sm.name.toLowerCase().includes(s.staffId.toLowerCase()) || s.staffId.toLowerCase().includes(sm.name.toLowerCase()));
+        return {
+          ...s,
+          staffId: found ? found.id : s.staffId // fallback to name if not found
+        };
+      });
+
+      // Filter out duplicate shifts (same staff, same date, same type)
+      const merged = [...existingShifts];
+      let added = 0;
+      for (const rs of resolvedShifts) {
+        const isDuplicate = merged.some(es => es.staffId === rs.staffId && es.date === rs.date && es.type === rs.type);
+        if (!isDuplicate) {
+          merged.push(rs);
+          added++;
+        }
+      }
+      saveShifts(merged);
+      messages.push(`Imported ${added} new shifts to the Live Roster.`);
+    }
 
     return { ok: true, page, messages, warnings, requiresManualClientSelection };
   } catch (err) {

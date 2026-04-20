@@ -2,8 +2,8 @@ import type { WeekSummary, CareEntry } from './types';
 import type { ParseResult } from './universal-import';
 import type { SupportPlanData } from './client-store';
 
-export type ImportTarget = 'templates' | 'reports' | 'client-docs';
-export type ImportType = 'diary' | 'admission' | 'support-plan' | 'unknown';
+export type ImportTarget = 'templates' | 'reports' | 'client-docs' | 'roster';
+export type ImportType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
 
 export interface SourceMeta {
   fileName: string;
@@ -28,6 +28,7 @@ export interface NormalizedImportEnvelope {
   weekSummary: WeekSummary | null;
   admission: ParseResult | null;
   supportPlan: SupportPlanData | null;
+  shifts: any[]; // Use any temporarily, will type-check with Shift in parser
   warnings: string[];
   unmappedFields: string[];
   suggestedTargets: ImportTarget[];
@@ -49,6 +50,7 @@ export function emptyEnvelope(fileName: string, rawText: string): NormalizedImpo
     weekSummary: null,
     admission: null,
     supportPlan: null,
+    shifts: [],
     warnings: [],
     unmappedFields: [],
     suggestedTargets: [],

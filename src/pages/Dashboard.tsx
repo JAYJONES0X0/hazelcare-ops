@@ -1,4 +1,5 @@
-import type { WeekSummary, Action, Incident, StaffMember, Shift } from '../lib/types';
+import { useState, useEffect } from 'react';
+import type { WeekSummary, Action, Incident, StaffMember, Shift, CareEntry, HouseSummary } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
 import { useCollapseStore } from '../lib/collapse-store';
@@ -6,20 +7,170 @@ import { staffStatus } from '../lib/compliance-store';
 
 interface Props {
   weekData: WeekSummary | null;
-  setPage: (p: Page) => void;
+  setPage: (p: Page, ctx?: any) => void;
   actions: Action[];
   incidents: Incident[];
   staff: StaffMember[];
   shifts: Shift[];
+  onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
 
-export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts }: Props) {
+function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: WeekSummary | null }) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000); // refresh every min
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!weekData || shifts.length === 0) return null;
+
+  const currentDay = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+  const currentTimeVal = currentHour * 60 + currentMin;
+
+  const houseIds = Object.keys(weekData.houses).sort();
+  
+  return (
+    <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-1 h-5 rounded-full bg-hc-purple" style={{boxShadow:'0 0 12px rgba(168,85,247,0.6)'}} />
+        <h2 className="text-sm font-black text-white tracking-widest uppercase italic">Live Status &middot; On-Shift Now</h2>
+        <span className="text-[10px] font-bold text-hc-purple-light uppercase tracking-widest animate-pulse flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-hc-purple shadow-[0_0_8px_#a855f7]" />
+          Synchronised
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        {houseIds.map(hId => {
+          // Find shifts for this house, today, that overlap with current time
+          const activeShifts = shifts.filter(s => {
+            if (s.house !== hId || s.date !== currentDay || !s.startTime || !s.endTime) return false;
+            const [sh, sm] = s.startTime.split(':').map(Number);
+            const [eh, em] = s.endTime.split(':').map(Number);
+            const sVal = sh * 60 + sm;
+            let eVal = eh * 60 + em;
+            if (eVal < sVal) eVal += 1440; // overnight
+            return currentTimeVal >= sVal && currentTimeVal <= eVal;
+          });
+
+          const hasGap = activeShifts.length === 0;
+          return (
+            <div key={hId} className={`glass-light border rounded-xl p-3.5 transition-all duration-500 overflow-hidden relative group/ls
+              ${hasGap ? 'bg-flag-red/5 border-flag-red/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]' : 'border-white/5 bg-white/[0.01] hover:bg-white/[0.04]'}`}>
+              <div className="flex items-center justify-between mb-2.5 relative z-10">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${hasGap ? 'text-flag-red' : 'text-hc-muted group-hover/ls:text-white'}`}>{hId.split(' ')[0]}</span>
+                {hasGap ? (
+                  <span className="text-[8px] font-black text-flag-red bg-flag-red/10 px-1.5 py-0.5 rounded border border-flag-red/20">GAP DETECTED</span>
+                ) : (
+                  <span className="text-[8px] font-black text-hc-teal-light bg-hc-teal/10 px-1.5 py-0.5 rounded border border-hc-teal/20">{activeShifts.length} WORKING</span>
+                )}
+              </div>
+              
+              <div className="space-y-1.5 relative z-10">
+                {activeShifts.length > 0 ? activeShifts.map(s => (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-hc-teal/20 text-hc-teal flex items-center justify-center text-[7px] font-black border border-hc-teal/30">
+                      {(s.staffId || '?').split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="text-[11px] font-bold text-white/90 truncate">{s.staffId}</div>
+                  </div>
+                )) : (
+                  <div className="text-[10px] font-medium text-hc-muted italic py-1">Monitoring...</div>
+                )}
+              </div>
+
+              {/* Minimal decoration */}
+              <div className={`absolute -bottom-1 -right-1 w-10 h-10 rounded-full blur-[20px] transition-opacity duration-700
+                ${hasGap ? 'bg-flag-red/20 opacity-100' : 'bg-hc-teal/10 opacity-0 group-hover/ls:opacity-100'}`} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSummary; onClose: () => void; onQuickAction: (o: any) => void }) {
+  const flagged = house.entries.filter(e => e.severity === 'red' || e.severity === 'amber');
+  
+  return (
+    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-dark/95 backdrop-blur-3xl border-l border-white/10 z-[60] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-white tracking-tighter">{house.name} Drill-Down</h2>
+            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest opacity-60">Evidence-based operational review</p>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-all hover:rotate-90">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <div className="section-header text-[10px] tracking-[0.3em] opacity-50 mb-4 uppercase">Critical Data Points ({flagged.length})</div>
+          
+          {flagged.length === 0 ? (
+            <div className="text-center py-20 opacity-30">
+              <div className="text-4xl mb-4">✨</div>
+              <div className="text-xs font-black uppercase tracking-widest">No flagged entries for this house</div>
+            </div>
+          ) : (
+            flagged.map((entry: CareEntry, idx: number) => (
+              <div key={entry.id} className="glass-light border border-white/10 rounded-[2rem] p-6 relative overflow-hidden group animate-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
+                <div className={`absolute top-0 left-0 w-1 h-full ${entry.severity === 'red' ? 'bg-flag-red' : 'bg-flag-amber'}`} />
+                
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{entry.date}</span>
+                    <span className="text-white/20">|</span>
+                    <span className="text-[10px] font-bold text-hc-teal uppercase tracking-widest">{entry.carer}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => onQuickAction({ type: 'action', content: entry.entry, house: house.name, client: entry.client })}
+                      className="px-4 py-1.5 bg-hc-teal/10 border border-hc-teal/20 text-hc-teal-light text-[9px] font-black uppercase tracking-wider rounded-lg hover:bg-hc-teal/20 transition-all"
+                    >
+                      🚩 Log Action
+                    </button>
+                    <button 
+                      onClick={() => onQuickAction({ type: 'incident', content: entry.entry, house: house.name, client: entry.client })}
+                      className="px-4 py-1.5 bg-flag-red/10 border border-flag-red/20 text-flag-red text-[9px] font-black uppercase tracking-wider rounded-lg hover:bg-flag-red/20 transition-all"
+                    >
+                      🚨 Log Incident
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[13px] text-hc-text/90 font-mono leading-relaxed italic mb-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                  "{entry.entry}"
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {entry.flags.map(f => (
+                    <span key={f} className="text-[8px] font-black text-white/40 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">{f}</span>
+                  ))}
+                  <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest ml-auto">Client: {entry.client}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts, onQuickAction }: Props) {
+  const [drillHouse, setDrillHouse] = useState<string | null>(null);
   // Hooks must be unconditional — compute safe defaults for the null case
   const houseList = weekData
     ? Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber))
     : [];
   const houseIds = houseList.map(h => h.name);
-  const { isCollapsed: isHouseCollapsed, toggle: toggleHouse, collapseAll: collapseAllHouses, expandAll: expandAllHouses, allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
+  const { isCollapsed: isHouseCollapsed, toggle: _toggleHouse, collapseAll: collapseAllHouses, expandAll: expandAllHouses, allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
   const housesAllCollapsed = allHousesCollapsed(houseIds);
   function toggleAllHouses() {
     if (housesAllCollapsed) expandAllHouses(houseIds);
@@ -74,7 +225,6 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
     );
   }
 
-
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-1000">
       {/* Header */}
@@ -106,12 +256,15 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
               <p className="text-[11px] text-hc-muted leading-relaxed mt-2 max-w-xl">Hazel Care expects all staff to have valid DBS clearance before starting a shift. Non-compliant assignments must be corrected immediately to maintain CQC safety standards.</p>
             </div>
           </div>
-          <button onClick={() => setPage('roster')} className="relative z-10 px-8 py-3 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-red/30 transition-all shadow-xl active:scale-95 group/btn">
+          <button onClick={() => setPage('roster', { staffId: 'compliance-trigger' })} className="relative z-10 px-8 py-3 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-red/30 transition-all shadow-xl active:scale-95 group/btn">
             Fix Gaps Now
             <svg className="w-4 h-4 ml-2 inline-block transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
           </button>
         </div>
       )}
+
+      {/* Live Status Widget */}
+      <LiveStatusWidget shifts={shifts} weekData={weekData} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
@@ -129,9 +282,7 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
               border: `1px solid ${s.border}`,
               boxShadow: `0 4px 24px ${s.bg}, inset 0 1px 0 rgba(255,255,255,0.06)`,
             }}>
-            {/* Top accent line */}
             <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{background: `linear-gradient(90deg, ${s.color}, transparent)`}} />
-            {/* Ambient glow */}
             <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition-opacity duration-500" style={{background: s.color}} />
             <div className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{color:`${s.color}99`}}>{s.label}</div>
             <div className="text-4xl font-black tabular-nums tracking-tighter leading-none mb-2" style={{color: s.color}}>{s.val}</div>
@@ -199,27 +350,16 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
                 key={house.name}
                 className="group/house relative rounded-2xl overflow-hidden transition-all duration-300"
                 style={{
-                  background: hasRed
-                    ? '#1a0d0d'
-                    : hasAmber
-                    ? '#181208'
-                    : '#111827',
+                  background: hasRed ? '#1a0d0d' : hasAmber ? '#181208' : '#111827',
                   border: `1px solid ${hasRed ? 'rgba(239,68,68,0.2)' : hasAmber ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.07)'}`,
-                  boxShadow: hasRed
-                    ? '0 8px 40px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.04)'
-                    : hasAmber
-                    ? '0 8px 40px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.04)'
-                    : '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
+                  boxShadow: hasRed ? '0 8px 40px rgba(239,68,68,0.1), inset 0 1px 0 rgba(255,255,255,0.04)' : (hasAmber ? '0 8px 40px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)'),
                   animationDelay: `${idx * 40}ms`,
                 }}
               >
-                {/* Top accent line */}
                 <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl" style={{background: `linear-gradient(90deg, ${accentColor}70, transparent)`}} />
-
-                {/* Header — always visible, click to collapse */}
                 <div
-                  className="flex items-center justify-between gap-2 px-4 py-3 cursor-pointer"
-                  onClick={() => toggleHouse(house.name)}
+                  className="flex items-center justify-between gap-2 px-4 py-3 cursor-pointer group-hover/house:bg-white/[0.02]"
+                  onClick={() => setDrillHouse(house.name)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-black text-white tracking-tight group-hover/house:text-hc-teal-light transition-colors duration-200">{house.name}</div>
@@ -236,10 +376,8 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
                   </div>
                 </div>
 
-                {/* Collapsable body */}
                 {!collapsed && (
                   <div className="px-4 pb-4">
-                    {/* Mini stats */}
                     <div className="grid grid-cols-2 gap-1 mb-2.5">
                       {[
                         { n: house.handovers.length,    l: 'Handovers', c: '#14b8a6' },
@@ -256,14 +394,11 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
                         </div>
                       ))}
                     </div>
-
-                    {/* Severity bar */}
                     <div className="h-1.5 rounded-full overflow-hidden flex" style={{background:'rgba(255,255,255,0.06)'}}>
                       {redPct > 0 && <div className="h-full transition-all duration-700" style={{width:`${Math.max(redPct,4)}%`,background:'#ef4444',boxShadow:'0 0 6px rgba(239,68,68,0.6)'}} />}
                       {amberPct > 0 && <div className="h-full transition-all duration-700" style={{width:`${Math.max(amberPct,4)}%`,background:'#f59e0b',boxShadow:'0 0 4px rgba(245,158,11,0.5)'}} />}
                       <div className="h-full flex-1" style={{background:'rgba(20,184,166,0.2)'}} />
                     </div>
-
                     {(house.incidents[0] || house.safeguarding[0]) && (
                       <div className="mt-3 pt-3" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                         <p className="text-[10px] text-hc-muted/60 line-clamp-2 leading-relaxed italic">
@@ -291,10 +426,7 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
             { id: 'compliance', label: 'Compliance', desc: 'DBS, training, audits', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
             { id: 'reports', label: 'Reports', desc: 'Advanced analysis', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m0 0a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14' },
           ].map(btn => (
-            <button
-              key={btn.id}
-              onClick={() => setPage(btn.id as Page)}
-              className="group/btn cursor-pointer text-left rounded-2xl p-5 transition-all duration-250 hover:-translate-y-0.5 active:scale-95"
+            <button key={btn.id} onClick={() => setPage(btn.id as Page)} className="group/btn cursor-pointer text-left rounded-2xl p-5 transition-all duration-250 hover:-translate-y-0.5 active:scale-95"
               style={{
                 background: '#111827',
                 backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)',
@@ -318,6 +450,14 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
           ))}
         </div>
       </div>
+
+      {drillHouse && weekData.houses[drillHouse] && (
+        <HouseDetailDrawer 
+          house={weekData.houses[drillHouse]} 
+          onClose={() => setDrillHouse(null)} 
+          onQuickAction={onQuickAction}
+        />
+      )}
     </div>
   );
 }

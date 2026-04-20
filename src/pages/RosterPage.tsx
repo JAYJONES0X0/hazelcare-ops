@@ -6,6 +6,7 @@ interface Props {
   staff: StaffMember[];
   shifts: Shift[];
   onUpdateShifts: (shifts: Shift[]) => void;
+  initialFilterStaffId?: string | null;
 }
 
 const SHIFT_TYPES = [
@@ -14,9 +15,10 @@ const SHIFT_TYPES = [
   { id: 'long_day', label: 'Long Day', time: '07:00–19:00', hours: 12, color: '#f59e0b' },
 ] as const;
 
-export function RosterPage({ staff, shifts, onUpdateShifts }: Props) {
+export function RosterPage({ staff, shifts, onUpdateShifts, initialFilterStaffId }: Props) {
   const [selectedShift, setSelectedShift] = useState<{ house: string; date: string; type: Shift['type'] } | null>(null);
   const [filterHouse, setFilterHouse] = useState('all');
+  const [showOnlyComplianceGaps, setShowOnlyComplianceGaps] = useState(!!initialFilterStaffId);
 
   // Generate next 7 days
   const days = useMemo(() => {
@@ -86,16 +88,27 @@ export function RosterPage({ staff, shifts, onUpdateShifts }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-black/20 p-2 rounded-2xl border border-white/5">
+        <div className="flex flex-wrap items-center gap-4 bg-black/20 p-2 rounded-2xl border border-white/5">
           <select 
             value={filterHouse} 
             onChange={e => setFilterHouse(e.target.value)}
-            className="bg-hc-dark border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[200px]"
+            className="bg-hc-dark border border-white/10 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[160px]"
           >
-            <option value="all">View All Houses</option>
+            <option value="all">All Houses</option>
             {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
           </select>
-          <div className="h-6 w-px bg-white/5 mx-2" />
+
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+            <input 
+              type="checkbox" 
+              checked={showOnlyComplianceGaps} 
+              onChange={e => setShowOnlyComplianceGaps(e.target.checked)}
+              className="accent-flag-red w-4 h-4 cursor-pointer"
+            />
+            <span className="text-[9px] font-black uppercase tracking-widest text-flag-red/80">Compliance Gaps</span>
+          </div>
+
+          <div className="h-6 w-px bg-white/5 mx-1" />
           <div className="flex gap-4 px-4">
              {SHIFT_TYPES.map(t => (
                <div key={t.id} className="flex items-center gap-2">
@@ -136,16 +149,21 @@ export function RosterPage({ staff, shifts, onUpdateShifts }: Props) {
                           const shift = shifts.find(s => s.house === house && s.date === day.full && s.type === type.id);
                           const sMember = staff.find(s => s.id === shift?.staffId);
                           const isSelected = selectedShift?.house === house && selectedShift?.date === day.full && selectedShift?.type === type.id;
+                          
+                          const complianceStatus = sMember ? staffStatus(sMember.dbsExpiry || '', 0) : 'ok';
+                          const isRed = complianceStatus === 'overdue';
+
+                          if (showOnlyComplianceGaps && (!shift || !isRed)) return null;
 
                           return (
                             <div 
                               key={type.id}
                               onClick={() => setSelectedShift({ house, date: day.full, type: type.id })}
                               className={`group/slot relative rounded-xl p-2.5 transition-all duration-500 cursor-pointer border overflow-hidden
-                                ${shift ? 'glass-light border-white/10 hover:border-white/20' : isSelected ? 'bg-hc-teal/20 border-hc-teal shadow-lg' : 'border-dashed border-white/5 hover:border-white/20 hover:bg-white/5'}`}
+                                ${isRed ? 'bg-flag-red/20 border-flag-red animate-pulse' : shift ? 'glass-light border-white/10 hover:border-white/20' : isSelected ? 'bg-hc-teal/20 border-hc-teal shadow-lg' : 'border-dashed border-white/5 hover:border-white/20 hover:bg-white/5'}`}
                             >
                               <div className="flex items-center justify-between relative z-10">
-                                <span className={`text-[8px] font-black uppercase tracking-widest ${shift ? 'text-hc-muted' : isSelected ? 'text-hc-teal-light' : 'text-white/20'}`}>{type.label}</span>
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${isRed ? 'text-flag-red' : shift ? 'text-hc-muted' : isSelected ? 'text-hc-teal-light' : 'text-white/20'}`}>{type.label}</span>
                                 {shift && (
                                   <button onClick={(e) => { e.stopPropagation(); unassignShift(shift.id); }} className="opacity-0 group-hover/slot:opacity-100 transition-opacity">
                                     <svg className="w-3 h-3 text-flag-red hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -156,10 +174,11 @@ export function RosterPage({ staff, shifts, onUpdateShifts }: Props) {
                               <div className="mt-1 relative z-10">
                                 {sMember ? (
                                   <div className="flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded overflow-hidden bg-hc-teal/10 flex items-center justify-center text-[7px] font-black text-hc-teal-light border border-hc-teal/20">
+                                    <div className={`w-5 h-5 rounded overflow-hidden flex items-center justify-center text-[7px] font-black border
+                                      ${isRed ? 'bg-flag-red text-white border-white/40' : 'bg-hc-teal/10 text-hc-teal-light border-hc-teal/20'}`}>
                                       {sMember.name.split(' ').map(n => n[0]).join('')}
                                     </div>
-                                    <div className="truncate text-[11px] font-black text-white group-hover/slot:text-hc-teal-light transition-colors">{sMember.name.split(' ')[1] || sMember.name}</div>
+                                    <div className={`truncate text-[11px] font-black transition-colors ${isRed ? 'text-white' : 'text-white group-hover/slot:text-hc-teal-light'}`}>{sMember.name.split(' ')[1] || sMember.name}</div>
                                   </div>
                                 ) : (
                                   <div className="text-[10px] font-bold text-white/5 uppercase tracking-tighter italic group-hover/slot:text-hc-teal-light/40 transition-colors">{isSelected ? 'Assigning...' : 'Open Slot'}</div>

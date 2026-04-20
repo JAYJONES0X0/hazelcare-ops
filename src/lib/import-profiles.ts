@@ -1,4 +1,4 @@
-import { buildWeekSummary, parseUniversalData } from './universal-parser';
+import { buildWeekSummary, parseUniversalData, parseRosterCSV } from './universal-parser';
 import { parseSupportPlanText, parseUniversalText } from './universal-import';
 import type { NormalizedImportEnvelope, ImportType, ImportTarget } from './import-intelligence';
 import { emptyEnvelope } from './import-intelligence';
@@ -13,6 +13,7 @@ const TARGETS_BY_TYPE: Record<ImportType, ImportTarget[]> = {
   diary: ['reports', 'templates'],
   admission: ['client-docs', 'templates'],
   'support-plan': ['client-docs'],
+  roster: ['roster'],
   unknown: [],
 };
 
@@ -33,6 +34,9 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
 
   if (ext === 'csv' && (lower.includes('diary entry') || lower.includes('incident type') || lower.includes('display from'))) {
     return { id: 'legacy-csv-diary', type: 'diary', confidence: 0.95 };
+  }
+  if (lower.includes('carer,day,time,client') || (ext === 'csv' && lowerName.includes('roster') && lower.includes('carer'))) {
+    return { id: 'care-planner-roster', type: 'roster', confidence: 0.98 };
   }
   if (
     lower.includes('weekly activity plan') ||
@@ -80,6 +84,13 @@ export function buildEnvelopeFromRaw(fileName: string, rawText: string): Normali
     env.diaryEntries = entries;
     env.weekSummary = entries.length > 0 ? buildWeekSummary(entries) : null;
     if (!entries.length) env.warnings.push('No diary entries parsed from this file.');
+    return env;
+  }
+
+  if (profile.type === 'roster') {
+    const shifts = parseRosterCSV(rawText, fileName);
+    env.shifts = shifts;
+    if (!shifts.length) env.warnings.push('No shifts parsed from this roster file.');
     return env;
   }
 

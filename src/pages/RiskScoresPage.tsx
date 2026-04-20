@@ -4,9 +4,10 @@ import { generateRiskProfiles, getRiskStats, type ClientRiskProfile } from '../l
 
 interface Props {
   weekData: WeekSummary | null;
+  onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
 
-export function RiskScoresPage({ weekData }: Props) {
+export function RiskScoresPage({ weekData, onQuickAction }: Props) {
   const [filterLevel, setFilterLevel] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<ClientRiskProfile | null>(null);
@@ -220,12 +221,18 @@ export function RiskScoresPage({ weekData }: Props) {
                 <div className="section-header text-[10px] mb-4 opacity-40 tracking-[0.3em]">RECOMMENDED ACTION</div>
                 <p className="text-hc-text text-sm leading-relaxed italic border-l-2 border-hc-teal pl-6 font-medium">"Review care notes more frequently. Look at any recent changes in environment or routine. Keyworker should check in within the next 24 hours."</p>
               </section>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => onQuickAction({ type: 'action', content: `High Risk Review for ${selectedClient.name}: ${selectedClient.topConcerns.join(', ')}`, house: selectedClient.house, client: selectedClient.name })}
+                  className="px-8 py-3.5 btn-gradient rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all"
+                >
+                  🚀 Log Priority Action
+                </button>
                 <button
                   onClick={() => setSelectedClient(null)}
                   className="px-8 py-3.5 glass-light border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-white hover:border-hc-teal/30 transition-all active:scale-95 shadow-xl"
                 >
-                  Close Terminal
+                  Exit Review
                 </button>
               </div>
             </div>

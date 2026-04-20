@@ -13,6 +13,97 @@ const OUTCOMES_KEY = 'hc-staff-monitoring-outcomes-v1';
 const COACHING_EVENTS_KEY = 'hc-coaching-events-v1';
 const MODULE_HISTORY_KEY = 'hc-module-history-v1';
 const ACTIVE_TRACKING_KEY = 'hc-active-tracking-v1';
+const SEQUENCES_KEY = 'hc-active-sequences-v1';
+
+// ── Outreach Sequences (Escalation Pathways) ──────────────────
+
+export interface SequenceStep {
+  label: string;
+  variant: 'message' | 'email' | 'call';
+  daysOffset: number; // days from enrollment
+}
+
+export interface OutreachSequence {
+  id: string;
+  name: string;
+  steps: SequenceStep[];
+}
+
+export const STANDARD_SEQUENCES: OutreachSequence[] = [
+  {
+    id: 'doc-improvement-72h',
+    name: '72hr Documentation Probation',
+    steps: [
+      { label: 'Initial Coaching (message)', variant: 'message', daysOffset: 0 },
+      { label: 'Formal Support (email)', variant: 'email', daysOffset: 2 },
+      { label: 'Final Review (call)', variant: 'call', daysOffset: 3 },
+    ]
+  },
+  {
+    id: 'wellbeing-check',
+    name: '7-Day Wellbeing Support',
+    steps: [
+      { label: 'Informal Check-in (message)', variant: 'message', daysOffset: 0 },
+      { label: 'Support Review (call)', variant: 'call', daysOffset: 3 },
+      { label: 'Follow-up (message)', variant: 'message', daysOffset: 7 },
+    ]
+  }
+];
+
+export interface ActiveSequence {
+  id: string;
+  carer: string;
+  sequenceId: string;
+  enrolledAt: string; // ISO
+  currentStepIndex: number;
+  status: 'active' | 'completed' | 'terminated';
+  history: { stepIndex: number; completedAt: string; note: string }[];
+}
+
+export function loadActiveSequences(): ActiveSequence[] {
+  try {
+    const raw = localStorage.getItem(SEQUENCES_KEY);
+    return raw ? (JSON.parse(raw) as ActiveSequence[]) : [];
+  } catch { return []; }
+}
+
+export function enrollInSequence(carer: string, sequenceId: string): ActiveSequence {
+  const prev = loadActiveSequences().filter(s => s.carer !== carer);
+  const rec: ActiveSequence = {
+    id: uid(),
+    carer,
+    sequenceId,
+    enrolledAt: new Date().toISOString(),
+    currentStepIndex: 0,
+    status: 'active',
+    history: []
+  };
+  safeset(SEQUENCES_KEY, JSON.stringify([rec, ...prev]));
+  return rec;
+}
+
+export function advanceSequence(sequenceId: string, note: string): void {
+  const all = loadActiveSequences();
+  const found = all.find(s => s.id === sequenceId);
+  if (!found) return;
+
+  const sequence = STANDARD_SEQUENCES.find(s => s.id === found.sequenceId);
+  if (!sequence) return;
+
+  found.history.push({
+    stepIndex: found.currentStepIndex,
+    completedAt: new Date().toISOString(),
+    note
+  });
+
+  if (found.currentStepIndex < sequence.steps.length - 1) {
+    found.currentStepIndex += 1;
+  } else {
+    found.status = 'completed';
+  }
+
+  safeset(SEQUENCES_KEY, JSON.stringify(all));
+}
 
 // ── Coaching Pipeline (Active 24hr Monitoring) ────────────────
 

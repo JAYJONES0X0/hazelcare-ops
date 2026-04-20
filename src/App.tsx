@@ -355,8 +355,9 @@ import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RosterPage } from './pages/RosterPage';
-import type { WeekSummary, Action, Incident, StaffMember, Shift } from './lib/types';
+import type { WeekSummary, Action, Incident, StaffMember, Shift, ActionPriority } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, loadShifts, saveShifts } from './lib/storage';
+import { HAZELCARE_HOUSES, uid } from './lib/compliance-store';
 
 
 export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'roster' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings';
@@ -366,6 +367,7 @@ export default function App() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [staffScopedAuthed, setStaffScopedAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
+  const [pageContext, setPageContext] = useState<any>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const uiScale = 1;
   const [staffMode, setStaffMode] = useState<Page | null>(null);
@@ -545,12 +547,17 @@ export default function App() {
   }
 
   async function handleSignOut() {
-    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+    // In a real app this would call an API, here we just clear state
     setAuthed(false);
     setStaffScopedAuthed(false);
   }
 
-  return <ErrorBoundary><FullApp page={page} setPage={setPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} /></ErrorBoundary>;
+  function handleSetPage(p: Page, ctx?: any) {
+    setPage(p);
+    setPageContext(ctx || null);
+  }
+
+  return <ErrorBoundary><FullApp page={page} setPage={handleSetPage} pageContext={pageContext} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} /></ErrorBoundary>;
 }
 
 function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () => void }) {
@@ -597,13 +604,18 @@ function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () =>
   );
 }
 
-function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut }: { page: Page; setPage: (p: Page) => void; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; theme: 'dark' | 'light'; setTheme: (t: 'dark' | 'light') => void; onSignOut: () => void }) {
+function FullApp({ page, setPage, pageContext, generateStaffLink, theme, setTheme, onSignOut }: { page: Page; setPage: (p: Page, ctx?: any) => void; pageContext: any; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; theme: 'dark' | 'light'; setTheme: (t: 'dark' | 'light') => void; onSignOut: () => void }) {
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
   const [shifts, setShifts] = useState<Shift[]>(() => loadShifts());
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
+  const [quickAction, setQuickAction] = useState<{ type: 'action' | 'incident'; content?: string; house?: string; client?: string } | null>(null);
+
+  function triggerQuickAction(opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) {
+    setQuickAction(opts);
+  }
 
   function handleDataParsed(data: WeekSummary) {
     setWeekData(data);
@@ -672,20 +684,20 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
 
         <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
-          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} /></div>}
+          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} onQuickAction={triggerQuickAction} /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
-          {page === 'roster' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RosterPage staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} /></div>}
+          {page === 'roster' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RosterPage staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} initialFilterStaffId={pageContext?.staffId} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'reports' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ReportsPage weekData={weekData} setPage={setPage} /></div>}
-          {page === 'risk' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RiskScoresPage weekData={weekData} /></div>}
+          {page === 'risk' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RiskScoresPage weekData={weekData} onQuickAction={triggerQuickAction} /></div>}
           {page === 'client-docs' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDocsPage /></div>}
-          {page === 'client-diary' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDiaryPage weekData={weekData} setPage={setPage} /></div>}
+          {page === 'client-diary' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ClientDiaryPage weekData={weekData} setPage={setPage} onQuickAction={triggerQuickAction} /></div>}
           {page === 'agency' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><AgencyPortalPage /></div>}
           {page === 'staff-monitoring' && (
             <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -698,7 +710,118 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
             </div>
           )}
         </div>
+
+        {quickAction && (
+          <QuickActionPortal 
+            opts={quickAction} 
+            onClose={() => setQuickAction(null)} 
+            onSave={(data) => {
+              if (quickAction.type === 'action') {
+                handleUpdateActions([data as Action, ...actions]);
+              } else {
+                handleUpdateIncidents([data as Incident, ...incidents]);
+              }
+              setQuickAction(null);
+            }}
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+function QuickActionPortal({ opts, onClose, onSave }: { opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }; onClose: () => void; onSave: (data: any) => void }) {
+  const [title, setTitle] = useState(opts.type === 'action' ? 'New Action' : 'New Incident');
+  const [desc, setDesc] = useState(opts.content || '');
+  const [house, setHouse] = useState(opts.house || HAZELCARE_HOUSES[0]);
+  const [priority, setPriority] = useState<ActionPriority>('medium');
+  const [severity, setSeverity] = useState<'red' | 'amber'>('amber');
+
+  function handleSave() {
+    if (opts.type === 'action') {
+      onSave({
+        id: uid(),
+        title,
+        description: desc,
+        house,
+        owner: 'Unassigned',
+        priority,
+        status: 'open',
+        createdAt: new Date().toLocaleDateString('en-GB'),
+        dueDate: new Date(Date.now() + 86400000 * 2).toLocaleDateString('en-GB'),
+        tags: []
+      } as Action);
+    } else {
+      onSave({
+        id: uid(),
+        title,
+        house,
+        client: opts.client || 'Unassigned',
+        staff: 'Unassigned',
+        date: new Date().toLocaleDateString('en-GB'),
+        severity,
+        stage: 'logged',
+        description: desc,
+        flags: [],
+        actions: [],
+        createdAt: new Date().toISOString()
+      } as Incident);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+      <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className={`absolute top-0 left-0 w-full h-1 ${opts.type === 'action' ? 'bg-hc-teal' : 'bg-flag-red'}`} />
+        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+          <div>
+            <h3 className="text-2xl font-black text-white tracking-tighter">Escalate to {opts.type === 'action' ? 'Action' : 'Incident'}</h3>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">Convert identified risk into management pipeline</p>
+          </div>
+          <button onClick={onClose} className="text-hc-muted hover:text-white transition-colors">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="p-8 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">Subject / Title</label>
+              <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">Evidence / Description</label>
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-none font-mono text-xs italic opacity-80" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">House</label>
+                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                  {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">{opts.type === 'action' ? 'Priority' : 'Severity'}</label>
+                {opts.type === 'action' ? (
+                  <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                ) : (
+                  <select value={severity} onChange={e => setSeverity(e.target.value as any)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                    <option value="amber">Amber</option>
+                    <option value="red">Red</option>
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+          <button onClick={handleSave} className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all ${opts.type === 'action' ? 'btn-gradient' : 'bg-flag-red text-white'}`}>
+            Log {opts.type === 'action' ? 'Action' : 'Incident'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

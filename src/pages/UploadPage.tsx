@@ -26,7 +26,7 @@ import {
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'unknown';
+type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
 
 interface Props {
@@ -42,6 +42,8 @@ interface PreviewData {
   // diary
   entryCount?: number;
   dateRange?: string;
+  // roster
+  shiftCount?: number;
   houseCount?: number;
   clientCount?: number;
   redFlags?: number;
@@ -260,6 +262,20 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
     base.amberFlags = envelope.weekSummary.allFlags.amber.length;
   }
 
+  if (envelope.shifts && envelope.shifts.length > 0) {
+    base.shiftCount = envelope.shifts.length;
+    // Extract date range from shifts
+    const dates = envelope.shifts.map(s => s.date).filter(Boolean);
+    if (dates.length > 0) {
+      const sorted = dates.sort((a, b) => {
+        const [da, ma, ya] = a.split('/').map(Number);
+        const [db, mb, yb] = b.split('/').map(Number);
+        return new Date(ya, ma - 1, da).getTime() - new Date(yb, mb - 1, db).getTime();
+      });
+      base.dateRange = `${sorted[0]} to ${sorted[sorted.length - 1]}`;
+    }
+  }
+
   if (envelope.admission) {
     base.clientName = envelope.admission.client.name || 'Not detected';
     base.dob = envelope.admission.client.dob || 'Not detected';
@@ -398,6 +414,14 @@ const TYPE_INFO: Record<Exclude<UploadDetectedType, 'unknown'>, { label: string;
     accepts: '.docx,.txt,.pdf',
     help: 'Usually received as .docx from the local authority',
     destination: 'Client Documents',
+  },
+  roster: {
+    label: 'Operational Roster',
+    desc: 'CarePlanner Roster export — populates the Live Roster and triggers compliance monitoring',
+    icon: '📅',
+    accepts: '.csv',
+    help: 'Reports → Carer Roster (Grouped) → CSV',
+    destination: 'Live Roster',
   },
 };
 
@@ -727,7 +751,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       }
     }
 
-    const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : 'upload'));
+    const sawRoster = rows.some(r => r.selectedTarget === 'roster');
+    const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : (sawRoster ? 'roster' : 'upload')));
     setZipRunSummary({
       total: rows.length,
       success,

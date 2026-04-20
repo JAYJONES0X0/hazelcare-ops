@@ -91,6 +91,7 @@ async function parseDiaryPdf(file: File): Promise<PdfDiaryEntry[]> {
 interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
+  onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
 
 function typeColor(type: string) {
@@ -154,7 +155,7 @@ function ClientStats({ entries }: { entries: CareEntry[] }) {
   );
 }
 
-export function ClientDiaryPage({ weekData, setPage }: Props) {
+export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState('');
@@ -517,8 +518,22 @@ export function ClientDiaryPage({ weekData, setPage }: Props) {
                         </div>
                       )}
                     </div>
-                    <div className="w-10 h-10 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted opacity-0 group-hover/entry:opacity-100 group-hover/entry:translate-x-1 transition-all duration-500 shadow-xl">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+
+                    <div className="flex flex-col gap-2 opacity-0 group-hover/entry:opacity-100 transition-all duration-300">
+                      <button 
+                        onClick={() => onQuickAction({ type: 'action', content: entry.entry, client: selectedClient, house: entry.house })}
+                        className="w-10 h-10 rounded-xl glass border border-hc-teal/20 flex items-center justify-center text-hc-teal hover:bg-hc-teal/20 transition-all shadow-lg shadow-hc-teal/10"
+                        title="Convert to Action"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                      </button>
+                      <button 
+                        onClick={() => onQuickAction({ type: 'incident', content: entry.entry, client: selectedClient, house: entry.house })}
+                        className="w-10 h-10 rounded-xl glass border border-flag-red/20 flex items-center justify-center text-flag-red hover:bg-flag-red/20 transition-all shadow-lg shadow-flag-red/10"
+                        title="Log Incident"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                      </button>
                     </div>
                   </div>
                 </div>

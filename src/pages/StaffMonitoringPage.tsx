@@ -23,7 +23,12 @@ import {
   detectGrowthAlerts,
   loadActiveTracking,
   logCoachingAction,
+  loadActiveSequences,
+  enrollInSequence,
+  advanceSequence,
+  STANDARD_SEQUENCES,
   type GrowthAlert,
+  type ActiveSequence,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
 import {
@@ -88,6 +93,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
   const [searchQuery, setSearchQuery] = useState('');
   const [trackingList, setTrackingList] = useState(() => loadActiveTracking());
+  const [activeSequences, setActiveSequences] = useState<ActiveSequence[]>(() => loadActiveSequences());
 
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
@@ -196,11 +202,24 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
       outcomeNotes || channelOutcomeNote,
     );
 
+    // If there is an active sequence, advance it
+    const activeSeq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
+    if (activeSeq) {
+      advanceSequence(activeSeq.id, channelOutcomeNote);
+      setActiveSequences(loadActiveSequences());
+    }
+
     // Route to 24hr active tracking pipeline
     if (coachStaff) {
       logCoachingAction(coachStaff);
       setTrackingList(loadActiveTracking());
     }
+  }
+
+  function handleEnroll(sequenceId: string) {
+    if (!coachStaff) return;
+    enrollInSequence(coachStaff, sequenceId);
+    setActiveSequences(loadActiveSequences());
   }
 
   return (
@@ -358,20 +377,34 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                                 ))}
                               </div>
                             </div>
+                            </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <span style={{ color: scoreHex }} className="text-[10px] font-black">{s.qualityScore}%</span>
                               <div className="w-12 bg-black/40 h-1 rounded-full overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                    </div>
-                  );
-              })}
-            </div>
-          </div>
-        );
+                              {(() => {
+                                const seq = activeSequences.find(seq => seq.carer === s.carer && seq.status === 'active');
+                                if (!seq) return null;
+                                const totalSteps = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId)?.steps.length || 1;
+                                const progress = ((seq.currentStepIndex) / totalSteps) * 100;
+                                 return (
+                                   <div className="mt-1 flex items-center gap-1.5" title="Active Outreach Sequence">
+                                     <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                       <div className="h-full bg-hc-purple animate-shimmer" style={{ width: `${progress}%` }} />
+                                     </div>
+                                     <span className="text-[6px] font-black text-hc-purple-light uppercase">Step {seq.currentStepIndex + 1}</span>
+                                   </div>
+                                 );
+                               })()}
+                             </div>
+                           </div>
+                       </div>
+                   );
+               })}
+             </div>
+           </div>
+         );
 
         return (
         <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-6 md:h-[850px]">
@@ -421,10 +454,58 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                 <div className="flex-1 flex flex-col md:flex-row relative z-10 overflow-hidden bg-black/10">
                    
                    <div className="flex-1 flex flex-col border-r border-white/5 overflow-y-auto scrollbar-thin p-6">
-                      <div className="mb-5">
-                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
-                          <FileText className="w-3 h-3" /> Select Entry to Analyse
+                        <div className="mb-5">
+                          <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                            <Sparkles className="w-3 h-3 text-hc-purple" /> Active Outreach Sequence
+                          </div>
+                          {(() => {
+                            const seq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
+                            if (!seq) {
+                              return (
+                                <div className="glass-light border border-white/5 rounded-xl p-4 bg-black/20">
+                                  <div className="text-[10px] text-hc-muted font-medium mb-3">No active sequence. Enroll staff to begin a tracked escalation pathway.</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {STANDARD_SEQUENCES.map(ss => (
+                                      <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="px-3 py-1.5 rounded-lg bg-hc-purple/10 border border-hc-purple/30 text-hc-purple-light text-[8px] font-black uppercase tracking-widest hover:bg-hc-purple/20 transition-all">
+                                        Enroll: {ss.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            const sequenceData = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId);
+                            // Step logic remains for visual tracking
+                            return (
+                              <div className="glass-light border border-hc-purple/30 rounded-xl p-4 bg-hc-purple/5 shadow-lg shadow-hc-purple/5">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-xs font-black text-white">{sequenceData?.name}</span>
+                                  <span className="text-[8px] font-black text-hc-purple-light bg-hc-purple/10 px-2 py-0.5 rounded-md border border-hc-purple/20">Active Tracking</span>
+                                </div>
+                                <div className="space-y-3">
+                                  {sequenceData?.steps.map((step, idx) => {
+                                    const isDone = idx < seq.currentStepIndex;
+                                    const isCurrent = idx === seq.currentStepIndex;
+                                    return (
+                                      <div key={idx} className={`flex items-center gap-3 ${isDone ? 'opacity-40' : ''}`}>
+                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black border ${isDone ? 'bg-hc-purple text-white' : isCurrent ? 'bg-hc-purple/20 border-hc-purple text-hc-purple-light animate-pulse' : 'bg-white/5 border-white/10 text-hc-muted'}`}>
+                                          {isDone ? '✓' : idx + 1}
+                                        </div>
+                                        <div className={`text-[10px] font-bold ${isCurrent ? 'text-white' : 'text-hc-muted'}`}>{step.label}</div>
+                                        {isCurrent && <span className="ml-auto text-[7px] font-black text-hc-purple-light animate-shimmer uppercase tracking-widest">Awaiting Next Action</span>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
+
+                        <div className="mb-5">
+                          <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                            <FileText className="w-3 h-3" /> Select Entry to Analyse
+                          </div>
                         <div className="space-y-1.5 max-h-[220px] overflow-y-auto scrollbar-thin pr-0.5">
                           {[...(entriesByStaff[coachStaff!] || [])]
                             .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
