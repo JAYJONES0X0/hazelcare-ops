@@ -872,28 +872,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     <div className="p-6 md:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700 scrollbar-thin">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Import Hub</h1>
+        <h1 className="text-xl md:text-2xl font-black text-hc-text mb-1 tracking-tighter text-shimmer">Import Hub</h1>
         <p className="text-hc-muted text-sm font-medium">Upload data from your provider or your local authority. We'll detect the format and route it to the right place.</p>
       </div>
 
       {/* ─── STEP: CHOOSE ─────────────────────────────────────────────────────── */}
       {step === 'choose' && (
         <>
-          {/* What can you import */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-            {(Object.entries(TYPE_INFO) as [Exclude<UploadDetectedType, 'unknown'>, typeof TYPE_INFO['diary']][]).map(([key, info]) => (
-              <div key={key} className="glass-light border border-white/5 rounded-2xl p-6 hover:border-hc-teal/30 transition-all group cursor-default">
-                <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{info.icon}</div>
-                <div className="text-sm font-black text-white mb-1 uppercase tracking-tight">{info.label}</div>
-                <p className="text-[11px] text-hc-muted leading-relaxed mb-3">{info.desc}</p>
-                <div className="text-[9px] font-bold text-hc-teal-light/60 uppercase tracking-wider">{info.help}</div>
-                <div className="mt-3 flex items-center gap-1.5 text-[9px] font-bold text-hc-muted/50 uppercase tracking-wider">
-                  <span>→</span> <span>{info.destination}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Drop zone */}
           <div
             onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) void handleFiles(e.dataTransfer.files); }}
@@ -901,15 +886,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             onDragLeave={() => setDragOver(false)}
             onClick={() => fileRef.current?.click()}
             className={`relative rounded-3xl border-2 border-dashed transition-all duration-500 mb-8 cursor-pointer group overflow-hidden active:scale-[0.99] ${
-              dragOver ? 'border-hc-teal-light bg-hc-teal/10 shadow-2xl' : 'border-white/10 hover:border-hc-teal/40 glass shadow-xl'
+              dragOver ? 'border-hc-teal-light bg-hc-teal/10 shadow-2xl' : 'border-hc-border hover:border-hc-teal/40 glass shadow-xl'
             }`}
           >
             <div className="flex flex-col items-center justify-center py-16 px-8 pointer-events-none">
-              <div className="w-20 h-20 rounded-2xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-hc-teal/40 transition-all shadow-xl">
+              <div className="w-20 h-20 rounded-2xl glass border border-hc-border flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-hc-teal/40 transition-all shadow-xl">
                 <svg className="w-10 h-10 text-hc-teal-light/40 group-hover:text-hc-teal-light transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
               </div>
-              <div className="text-sm font-bold text-white/80 group-hover:text-white mb-2">Drop any file here, or click to browse</div>
-              <div className="text-[11px] text-hc-muted/50">CSV, PDF, DOCX, TXT, or ZIP bundle — we'll auto-detect the format</div>
+              <div className="text-sm font-bold text-hc-text/80 group-hover:text-hc-text mb-2">Drop any file here, or click to browse</div>
+              <div className="text-[11px] text-hc-muted">CSV, PDF, DOCX, TXT, or ZIP bundle — we'll auto-detect the format</div>
             </div>
           </div>
           <input ref={fileRef} type="file" multiple accept=".txt,.vtt,.csv,.tsv,.md,.pdf,.docx,.zip,application/zip" className="hidden"
@@ -917,8 +902,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
           {/* Paste option */}
           <details className="mb-8 group/details" open={showPaste} onToggle={(e) => setShowPaste((e.target as HTMLDetailsElement).open)}>
-            <summary className="text-[11px] font-bold text-hc-muted cursor-pointer hover:text-hc-teal-light select-none list-none flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 w-fit transition-all">
-              <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-open/details:rotate-90 transition-transform">
+            <summary className="text-[11px] font-bold text-hc-muted cursor-pointer hover:text-hc-teal-light select-none list-none flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-hc-card-hover w-fit transition-all">
+              <span className="w-6 h-6 rounded-lg glass border border-hc-border flex items-center justify-center group-open/details:rotate-90 transition-transform">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
               </span>
               Or paste text manually
@@ -928,7 +913,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
                 placeholder="Paste diary export, admission pack text, or support plan here..."
-                className="w-full min-h-[200px] glass border border-white/10 rounded-2xl p-6 text-sm text-white font-mono leading-relaxed resize-y placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/40 scrollbar-thin"
+                className="w-full min-h-[200px] glass border border-hc-border rounded-2xl p-6 text-sm text-hc-text font-mono leading-relaxed resize-y placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/40 scrollbar-thin"
               />
               <div className="flex justify-end mt-4">
                 <button onClick={handlePaste} disabled={!pasteText.trim()}
@@ -938,7 +923,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
             </div>
           </details>
-
         </>
       )}
 
@@ -950,9 +934,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          <div className="text-lg font-bold text-white mb-2">Reading file...</div>
+          <div className="text-lg font-bold text-hc-text mb-2">Reading file...</div>
           {progress > 0 && progress < 100 && (
-            <div className="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden mt-2">
+            <div className="w-48 h-1.5 bg-hc-card/20 rounded-full overflow-hidden mt-2">
               <div className="h-full bg-hc-teal-light rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
           )}
@@ -973,7 +957,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   {detectedInfo.icon}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-white tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
+                  <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase text-shimmer">{detectedInfo.label} Identified</h2>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
                     <p className="text-[10px] font-semibold text-hc-muted uppercase tracking-[0.08em] opacity-90">Profile: {preview.envelope.source.parserProfile} · Confidence {(preview.confidence * 100).toFixed(0)}%</p>
@@ -993,18 +977,18 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <div className="space-y-2 md:col-span-2">
                   <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Intent Preset</label>
-                  <div className="glass-light border border-white/10 rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
-                    <button onClick={() => applyIntentPreset('risk_quality_all_houses')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'risk_quality_all_houses' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Risk & Quality</button>
-                    <button onClick={() => applyIntentPreset('client_docs_plus_risk')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'client_docs_plus_risk' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Client Docs</button>
-                    <button onClick={() => applyIntentPreset('incident_governance_pack')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'incident_governance_pack' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Incident Governance</button>
-                    <button onClick={() => applyIntentPreset('custom')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'custom' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>Custom setup</button>
+                  <div className="glass-light border border-hc-border rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
+                    <button onClick={() => applyIntentPreset('risk_quality_all_houses')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'risk_quality_all_houses' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-hc-border text-hc-muted hover:bg-hc-card-hover'}`}>Risk & Quality</button>
+                    <button onClick={() => applyIntentPreset('client_docs_plus_risk')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'client_docs_plus_risk' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-hc-border text-hc-muted hover:bg-hc-card-hover'}`}>Client Docs</button>
+                    <button onClick={() => applyIntentPreset('incident_governance_pack')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'incident_governance_pack' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-hc-border text-hc-muted hover:bg-hc-card-hover'}`}>Incident Governance</button>
+                    <button onClick={() => applyIntentPreset('custom')} className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border ${intentPreset === 'custom' ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-hc-border text-hc-muted hover:bg-hc-card-hover'}`}>Custom setup</button>
                   </div>
                 </div>
 
                 {/* Destination Presets */}
                 <div className="space-y-2 md:col-span-2">
                   <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Destination Presets (Quick Map)</label>
-                  <div className="glass-light border border-white/10 rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
+                  <div className="glass-light border border-hc-border rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
                     <button 
                       onClick={() => setSelectedTargets(['reports'])} 
                       className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 1 && selectedTargets.includes('reports') ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
@@ -1220,7 +1204,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     <select
                       value={zipBulkClientMode}
                       onChange={(e) => setZipBulkClientMode(e.target.value as ClientMode)}
-                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                      className="bg-hc-card border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text"
                     >
                       <option value="global">Bulk mode: Global</option>
                       <option value="auto">Bulk mode: Auto</option>
@@ -1230,7 +1214,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       value={zipBulkClientId}
                       onChange={(e) => setZipBulkClientId(e.target.value)}
                       disabled={zipBulkClientMode !== 'specific'}
-                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white disabled:opacity-40"
+                      className="bg-hc-card border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text disabled:opacity-40"
                     >
                       <option value="">Bulk client...</option>
                       {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1252,7 +1236,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       value={zipSearch}
                       onChange={(e) => setZipSearch(e.target.value)}
                       placeholder="Search file/client"
-                      className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-hc-muted/60"
+                      className="bg-hc-card border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text placeholder:text-hc-muted/60"
                     />
                   </div>
                   <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -1269,7 +1253,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     ))}
                   </div>
                   <div className="text-xs text-hc-muted/80 mb-3">
-                    Guided recommendation: keep <span className="text-white font-semibold">Global Import</span> for mixed-client ZIP packs, then review each client page after import.
+                    Guided recommendation: keep <span className="text-hc-text font-semibold">Global Import</span> for mixed-client ZIP packs, then review each client page after import.
                   </div>
                   {!!zipReadErrors.length && (
                     <div className="mb-3 border border-flag-amber/30 bg-flag-amber/10 rounded-xl px-3 py-2 text-xs text-flag-amber">
@@ -1288,17 +1272,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                         return true;
                       })
                       .map((row) => (
-                      <div key={row.id} className="border border-white/10 rounded-xl px-3 py-2 bg-hc-dark/30">
+                      <div key={row.id} className="border border-hc-border rounded-xl px-3 py-2 bg-hc-card/30">
                         <div className="flex items-center gap-2 mb-1">
                           <input
                             type="checkbox"
                             checked={row.include}
                             onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, include: e.target.checked } : it))}
                           />
-                          <div className="text-xs text-white font-semibold truncate">{row.fileName}</div>
+                          <div className="text-xs text-hc-text font-semibold truncate">{row.fileName}</div>
                         </div>
                         <div className="text-[11px] text-hc-muted">
-                          Client: <span className="text-white">{row.suggestedClient}</span> · Type: <span className="text-white">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
+                          Client: <span className="text-hc-text">{row.suggestedClient}</span> · Type: <span className="text-hc-text">{row.detectedType}</span> · Confidence {(row.confidence * 100).toFixed(0)}%
                         </div>
                         {row.parseError && (
                           <div className="text-[11px] text-flag-red">Read error: {row.parseError}</div>
@@ -1312,7 +1296,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                           <select
                             value={row.selectedTarget}
                             onChange={(e) => setZipGuidance((prev) => prev.map((it) => it.id === row.id ? { ...it, selectedTarget: e.target.value as ImportTarget | 'skip' } : it))}
-                            className="bg-hc-dark/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white"
+                            className="bg-hc-card border border-hc-border rounded-lg px-2 py-1 text-[11px] text-hc-text"
                           >
                             <option value="skip">Skip</option>
                             <option value="reports">Reports</option>
@@ -1369,19 +1353,19 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {preview.type === 'diary' && (
               <>
-                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                <div className="glass-light border border-hc-border rounded-2xl p-5 shadow-xl">
                   <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Entry Volume</div>
-                  <div className="text-3xl font-black text-white tabular-nums">{preview.entryCount || 0}</div>
+                  <div className="text-3xl font-black text-hc-text tabular-nums">{preview.entryCount || 0}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                <div className="glass-light border border-hc-border rounded-2xl p-5 shadow-xl">
                   <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Timeline</div>
-                  <div className="text-sm font-black text-white uppercase">{preview.dateRange}</div>
+                  <div className="text-sm font-black text-hc-text uppercase">{preview.dateRange}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                <div className="glass-light border border-hc-border rounded-2xl p-5 shadow-xl">
                   <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">Houses Active</div>
                   <div className="text-3xl font-black text-hc-teal-light tabular-nums">{preview.houseCount || 0}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-5 shadow-xl">
+                <div className="glass-light border border-hc-border rounded-2xl p-5 shadow-xl">
                   <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1 opacity-40">High Priority</div>
                   <div className="text-3xl font-black text-flag-red tabular-nums">{preview.redFlags || 0}</div>
                 </div>

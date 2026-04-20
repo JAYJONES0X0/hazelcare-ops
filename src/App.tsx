@@ -369,6 +369,12 @@ export default function App() {
   const [staffScopedAuthed, setStaffScopedAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('hc-theme', theme);
+  }, [theme]);
+
   const uiScale = 1;
   const [staffMode, setStaffMode] = useState<Page | null>(null);
   const [staffLinkActive, setStaffLinkActive] = useState(false);

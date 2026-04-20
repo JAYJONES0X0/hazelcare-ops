@@ -44,10 +44,10 @@ function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: Wee
   return (
     <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-1 h-5 rounded-full bg-hc-purple" style={{boxShadow:'0 0 12px rgba(168,85,247,0.6)'}} />
-        <h2 className="text-sm font-black text-white tracking-widest uppercase italic">Live Status &middot; On-Shift Now</h2>
+        <div className="w-1 h-5 rounded-full bg-hc-purple" style={{boxShadow:'0 0 12px var(--hc-purple)'}} />
+        <h2 className="text-sm font-black text-hc-text tracking-widest uppercase italic">Live Status &middot; On-Shift Now</h2>
         <span className="text-[10px] font-bold text-hc-purple-light uppercase tracking-widest animate-pulse flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-hc-purple shadow-[0_0_8px_#a855f7]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-hc-purple shadow-[0_0_8px_var(--hc-purple)]" />
           Synchronised
         </span>
       </div>
@@ -68,9 +68,9 @@ function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: Wee
           const hasGap = activeShifts.length === 0;
           return (
             <div key={hId} className={`glass-light border rounded-xl p-3.5 transition-all duration-500 overflow-hidden relative group/ls
-              ${hasGap ? 'bg-flag-red/5 border-flag-red/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]' : 'border-white/5 bg-white/[0.01] hover:bg-white/[0.04]'}`}>
+              ${hasGap ? 'bg-flag-red/5 border-flag-red/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]' : 'border-hc-border bg-hc-card/40 hover:bg-hc-card'}`}>
               <div className="flex items-center justify-between mb-2.5 relative z-10">
-                <span className={`text-[10px] font-black uppercase tracking-wider ${hasGap ? 'text-flag-red' : 'text-hc-muted group-hover/ls:text-white'}`}>{hId.split(' ')[0]}</span>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${hasGap ? 'text-flag-red' : 'text-hc-muted group-hover/ls:text-hc-text'}`}>{hId.split(' ')[0]}</span>
                 {hasGap ? (
                   <span className="text-[8px] font-black text-flag-red bg-flag-red/10 px-1.5 py-0.5 rounded border border-flag-red/20">GAP DETECTED</span>
                 ) : (
@@ -84,7 +84,7 @@ function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: Wee
                     <div className="w-5 h-5 rounded bg-hc-teal/20 text-hc-teal flex items-center justify-center text-[7px] font-black border border-hc-teal/30">
                       {(s.staffId || '?').split(' ').map(n => n[0]).join('')}
                     </div>
-                    <div className="text-[11px] font-bold text-white/90 truncate">{s.staffId}</div>
+                    <div className="text-[11px] font-bold text-hc-text/90 truncate">{s.staffId}</div>
                   </div>
                 )) : (
                   <div className="text-[10px] font-medium text-hc-muted italic py-1">Monitoring...</div>
@@ -106,14 +106,14 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
   const flagged = house.entries.filter(e => e.severity === 'red' || e.severity === 'amber');
   
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-dark/95 backdrop-blur-3xl border-l border-white/10 z-[60] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
+    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-dark/95 backdrop-blur-3xl border-l border-hc-border z-[60] shadow-[-20px_0_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tighter">{house.name} Drill-Down</h2>
+            <h2 className="text-2xl font-black text-hc-text tracking-tighter">{house.name} Drill-Down</h2>
             <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest opacity-60">Evidence-based operational review</p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-xl glass border border-white/10 flex items-center justify-center text-hc-muted hover:text-white transition-all hover:rotate-90">
+          <button onClick={onClose} className="w-10 h-10 rounded-xl glass border border-hc-border flex items-center justify-center text-hc-muted hover:text-hc-text transition-all hover:rotate-90">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -128,13 +128,13 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
             </div>
           ) : (
             flagged.map((entry: CareEntry, idx: number) => (
-              <div key={entry.id} className="glass-light border border-white/10 rounded-[2rem] p-6 relative overflow-hidden group animate-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
+              <div key={entry.id} className="glass-light border border-hc-border rounded-[2rem] p-6 relative overflow-hidden group animate-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
                 <div className={`absolute top-0 left-0 w-1 h-full ${entry.severity === 'red' ? 'bg-flag-red' : 'bg-flag-amber'}`} />
                 
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{entry.date}</span>
-                    <span className="text-white/20">|</span>
+                    <span className="text-[10px] font-black text-hc-text uppercase tracking-widest">{entry.date}</span>
+                    <span className="opacity-20 text-hc-text">|</span>
                     <span className="text-[10px] font-bold text-hc-teal uppercase tracking-widest">{entry.carer}</span>
                   </div>
                   <div className="flex gap-2">
@@ -153,13 +153,13 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
                   </div>
                 </div>
 
-                <p className="text-[13px] text-hc-text/90 font-mono leading-relaxed italic mb-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                <p className="text-[13px] text-hc-text/90 font-mono leading-relaxed italic mb-4 bg-hc-card/40 p-4 rounded-xl border border-hc-border">
                   "{entry.entry}"
                 </p>
 
                 <div className="flex flex-wrap gap-1.5">
                   {entry.flags.map(f => (
-                    <span key={f} className="text-[8px] font-black text-white/40 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">{f}</span>
+                    <span key={f} className="text-[8px] font-black text-hc-text/40 uppercase tracking-widest bg-hc-card/20 px-2 py-0.5 rounded border border-hc-border">{f}</span>
                   ))}
                   <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest ml-auto">Client: {entry.client}</span>
                 </div>

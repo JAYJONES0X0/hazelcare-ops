@@ -1,43 +1,85 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  /* ── SHARED ACCENTS ── */
+  --hc-teal: #0d9488;
+  --hc-teal-light: #14b8a6;
+  --hc-teal-glow: #2dd4bf;
+  --hc-blue: #3b82f6;
+  --hc-blue-light: #60a5fa;
+  --hc-purple: #8b5cf6;
+  --hc-purple-light: #a78bfa;
+  --hc-pink: #ec4899;
+  
+  --hc-red: #ef4444;
+  --hc-amber: #f59e0b;
+  --hc-green: #22c55e;
+  
+  --color-flag-red: var(--hc-red);
+  --color-flag-amber: var(--hc-amber);
+  --color-flag-green: var(--hc-green);
+
+  /* ── REFINED DARK (DEFAULT) ── */
+  --hc-bg: #070a11;
+  --hc-navy: #0e1117;
+  --hc-navy-light: #141821;
+  --hc-dark: #0d111b; /* Softened from #080b12 for better depth */
+  --hc-darker: #050810;
+  --hc-card: #0d121c;
+  --hc-card-hover: #121826;
+  --hc-border: #1e293b; /* Increased contrast from #1a2235 */
+  --hc-border-light: #334155;
+  --hc-text: #f8fafc; /* Pure white smoke */
+  --hc-muted: #94a3b8; /* Increased contrast from #64748b */
+  --hc-glass-bg: rgba(13, 17, 23, 0.75);
+  --hc-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  /* ── PRO LIGHT ── */
+  --hc-bg: #f1f5f9;
+  --hc-navy: #ffffff;
+  --hc-navy-light: #f8fafc;
+  --hc-dark: #f8fafc;
+  --hc-darker: #f1f5f9;
+  --hc-card: #ffffff;
+  --hc-card-hover: #f1f5f9;
+  --hc-border: #e2e8f0;
+  --hc-border-light: #cbd5e1;
+  --hc-text: #0f172a;
+  --hc-muted: #64748b;
+  --hc-glass-bg: rgba(255, 255, 255, 0.82);
+  --hc-glass-border: rgba(15, 23, 42, 0.08);
+}
+
 @theme {
-  /* ── HAZELCARE OPS — DARK ONLY ── */
-  --color-hc-navy: #0e1117;
-  --color-hc-navy-light: #141821;
-  --color-hc-teal: #0d9488;
-  --color-hc-teal-light: #14b8a6;
-  --color-hc-teal-glow: #2dd4bf;
-  --color-hc-dark: #080b12;
-  --color-hc-darker: #050810;
-  --color-hc-card: #0d1118;
-  --color-hc-card-hover: #121720;
-  --color-hc-border: #1a2235;
-  --color-hc-border-light: #202c40;
-  --color-hc-text: #e8f0f7;
-  --color-hc-muted: #64748b;
-  --color-flag-red: #ef4444;
-  --color-flag-red-soft: rgba(239, 68, 68, 0.12);
-  --color-flag-amber: #f59e0b;
-  --color-flag-amber-soft: rgba(245, 158, 11, 0.12);
-  --color-flag-green: #22c55e;
-  --color-flag-green-soft: rgba(34, 197, 94, 0.12);
-  --color-hc-blue: #3b82f6;
-  --color-hc-purple: #8b5cf6;
-  --color-hc-pink: #ec4899;
+  --color-hc-navy: var(--hc-navy);
+  --color-hc-navy-light: var(--hc-navy-light);
+  --color-hc-teal: var(--hc-teal);
+  --color-hc-teal-light: var(--hc-teal-light);
+  --color-hc-teal-glow: var(--hc-teal-glow);
+  --color-hc-dark: var(--hc-dark);
+  --color-hc-darker: var(--hc-darker);
+  --color-hc-card: var(--hc-card);
+  --color-hc-card-hover: var(--hc-card-hover);
+  --color-hc-border: var(--hc-border);
+  --color-hc-border-light: var(--hc-border-light);
+  --color-hc-text: var(--hc-text);
+  --color-hc-muted: var(--hc-muted);
 }
 
 * { box-sizing: border-box; }
 
 body {
-  background-color: #070a11;
+  background-color: var(--hc-bg);
   background-image:
     url('/texture.avif'),
-    linear-gradient(160deg, hsl(225 28% 7%), hsl(225 20% 5%));
+    linear-gradient(160deg, var(--hc-bg), var(--hc-darker));
   background-size: cover, 100% 100%;
   background-blend-mode: overlay, normal;
   background-attachment: fixed;
-  color: #e8f0f7;
+  color: var(--hc-text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
   font-size: 13px;
@@ -55,17 +97,17 @@ body {
 /* ─── SCROLL ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 20px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(20,184,166,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(var(--hc-text), 0.07); border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--hc-teal), 0.3); }
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.06) transparent;
+  scrollbar-color: var(--hc-glass-border) transparent;
   overscroll-behavior: contain;
 }
 .scrollbar-thin::-webkit-scrollbar { width: 3px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
-.scrollbar-thin:hover::-webkit-scrollbar-thumb { background: rgba(20,184,166,0.2); }
+.scrollbar-thin:hover::-webkit-scrollbar-thumb { background: var(--hc-teal); opacity: 0.2; }
 .overflow-y-auto { overscroll-behavior: contain; }
 html { scroll-behavior: smooth; }
 
@@ -73,23 +115,24 @@ html { scroll-behavior: smooth; }
 /* Frosted glass — ambient orbs bleed through translucent surfaces */
 
 .glass {
-  background: rgba(17,24,39,0.75);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--hc-glass-bg);
+  border: 1px solid var(--hc-glass-border);
   box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .glass-light {
-  background: rgba(13,17,23,0.65);
-  border: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  background: var(--hc-glass-bg);
+  opacity: 0.9;
+  border: 1px solid var(--hc-glass-border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 .glass-teal {
-  background: linear-gradient(145deg, rgba(13,148,136,0.10), #0f1520);
+  background: linear-gradient(145deg, rgba(13,148,136,0.10), var(--hc-dark));
   border: 1px solid rgba(20,184,166,0.18);
   box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(20,184,166,0.08);
 }

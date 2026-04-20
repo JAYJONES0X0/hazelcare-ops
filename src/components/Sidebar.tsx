@@ -52,11 +52,11 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
 ];
 
 const sidebarBg = {
-  background: '#0d1117',
-  borderRight: '1px solid rgba(255,255,255,0.06)',
+  background: 'var(--hc-navy)',
+  borderRight: '1px solid var(--hc-border)',
 };
 
-export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, incidents, theme, setTheme, onSignOut }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem('hc-custom-logo-v1'));
 
@@ -85,12 +85,12 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
 
   const navItemBase = 'w-full px-2.5 py-2 rounded-lg flex items-center gap-2.5 text-[11px] font-semibold tracking-wide transition-all cursor-pointer';
   const navItemActive = `${navItemBase} sidebar-nav-active`;
-  const navItemInactive = `${navItemBase} text-hc-muted hover:text-white hover:bg-white/[0.04] border border-transparent`;
+  const navItemInactive = `${navItemBase} text-hc-muted hover:text-hc-text hover:bg-hc-card-hover border border-transparent`;
 
   const sidebarContent = (
     <>
       {/* Logo + Brand */}
-      <div className="px-3 pt-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="px-3 pt-4 pb-3" style={{ borderBottom: '1px solid var(--hc-border)' }}>
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <img
@@ -101,7 +101,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
             <div className="absolute inset-0 rounded-lg bg-hc-teal/20 blur-md" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-black tracking-tight text-white truncate">Care Portal</div>
+            <div className="text-[11px] font-black tracking-tight text-hc-text truncate">Care Portal</div>
             <div className="text-[9px] text-hc-muted font-medium truncate">{ORG_CONFIG.fullName}</div>
           </div>
           {/* Live status dot */}
@@ -111,7 +111,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
           {/* Mobile close */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1 rounded-md text-hc-muted hover:text-white transition-colors cursor-pointer"
+            className="lg:hidden p-1 rounded-md text-hc-muted hover:text-hc-text transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -125,7 +125,7 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
         {navSections.map((section, si) => (
           <div key={si}>
             {si > 0 && (
-              <div className="my-1.5 mx-2.5" style={{ height: '1px', background: 'rgba(255,255,255,0.04)' }} />
+              <div className="my-1.5 mx-2.5" style={{ height: '1px', background: 'var(--hc-border)' }} />
             )}
             <div className="space-y-px">
               {section.items.map(item => (
@@ -148,17 +148,17 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
       </nav>
 
       {/* Stats panel */}
-      <div className="px-2.5 pb-2 hidden lg:block" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="px-2.5 pb-2 hidden lg:block" style={{ borderTop: '1px solid var(--hc-border)' }}>
         {weekData ? (
           <div className="mt-2 rounded-xl p-3"
             style={{
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.05)',
+              background: 'var(--hc-card)',
+              border: '1px solid var(--hc-border)',
             }}>
             <div className="text-[9px] font-black tracking-[0.15em] text-hc-teal uppercase mb-2">This Week</div>
             <div className="grid grid-cols-3 gap-1 text-center mb-2">
               <div>
-                <div className="text-lg font-black tabular-nums text-white leading-none">{weekData.totalEntries}</div>
+                <div className="text-lg font-black tabular-nums text-hc-text leading-none">{weekData.totalEntries}</div>
                 <div className="text-[9px] text-hc-muted font-semibold uppercase tracking-wide mt-0.5">Notes</div>
               </div>
               <div>
@@ -170,8 +170,8 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
                 <div className="text-[9px] text-hc-muted font-semibold uppercase tracking-wide mt-0.5">Alerts</div>
               </div>
             </div>
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-hc-muted/40 pt-2"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-hc-muted pt-2 opacity-50"
+              style={{ borderTop: '1px solid var(--hc-border)' }}>
               <span>{Object.keys(weekData.houses).length} Houses</span>
               <span>{weekData.clients.length} Clients</span>
             </div>
@@ -182,15 +182,15 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
       </div>
 
       {/* Bottom bar — settings + signout */}
-      <div className="px-2.5 pb-3 hidden lg:block space-y-1.5" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '8px' }}>
+      <div className="px-2.5 pb-3 hidden lg:block space-y-1.5" style={{ borderTop: '1px solid var(--hc-border)', paddingTop: '8px' }}>
         <div className="flex gap-1.5">
           <button
             type="button"
             onClick={() => handleNav('settings' as Page)}
             className="flex-1 flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all cursor-pointer group"
             style={{
-              background: page === 'settings' ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.025)',
-              border: page === 'settings' ? '1px solid rgba(20,184,166,0.25)' : '1px solid rgba(255,255,255,0.05)',
+              background: page === 'settings' ? 'rgba(20,184,166,0.08)' : 'var(--hc-card)',
+              border: page === 'settings' ? '1px solid rgba(20,184,166,0.25)' : '1px solid var(--hc-border)',
             }}
           >
             <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-white shrink-0"
@@ -203,14 +203,34 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
                 } catch { return ORG_CONFIG.shortName; }
               })()}
             </div>
-            <span className="text-[11px] font-semibold text-hc-muted group-hover:text-white transition-colors truncate">Settings</span>
+            <span className="text-[11px] font-semibold text-hc-muted group-hover:text-hc-text transition-colors truncate">Settings</span>
           </button>
+          
+          {/* Theme Toggle */}
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all group shrink-0"
+            style={{ background: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}
+          >
+            {theme === 'dark' ? (
+              <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-teal-light transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-purple transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={onSignOut}
             title="Sign out"
             className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all group shrink-0"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ background: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}
           >
             <svg className="w-3.5 h-3.5 text-hc-muted/50 group-hover:text-flag-red transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -222,12 +242,12 @@ export function Sidebar({ page, setPage, weekData, actions, incidents, onSignOut
         <div className="flex gap-1.5">
           <a href={`https://www.${ORG_CONFIG.domain}`} target="_blank" rel="noopener noreferrer"
             className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
+            style={{ background: 'var(--hc-card-hover)', border: '1px solid var(--hc-border)' }}>
             {ORG_CONFIG.name}
           </a>
           <a href="https://www.care-planner.co.uk" target="_blank" rel="noopener noreferrer"
             className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
-            style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
+            style={{ background: 'var(--hc-card-hover)', border: '1px solid var(--hc-border)' }}>
             CarePlanner
           </a>
         </div>
