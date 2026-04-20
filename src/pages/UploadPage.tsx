@@ -1211,10 +1211,26 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 <div className="space-y-2 md:col-span-2">
                   <label className="section-header text-[10px] opacity-90 uppercase tracking-[0.08em] ml-1">Destination Presets (Quick Map)</label>
                   <div className="glass-light border border-white/10 rounded-xl p-2 grid grid-cols-1 md:grid-cols-4 gap-1">
-                    <button onClick={() => setSelectedTargets(['reports'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Staff Intel Only</button>
-                    <button onClick={() => setSelectedTargets(['templates'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Templates Only</button>
-                    <button onClick={() => setSelectedTargets(['client-docs'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-hc-teal/10 text-hc-teal-light hover:bg-hc-teal/10 transition-all">Compliance Only</button>
-                    <button onClick={() => setSelectedTargets(['reports', 'templates', 'client-docs'])} className="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border border-white/10 text-white hover:bg-white/5 transition-all">Sync Everywhere</button>
+                    <button 
+                      onClick={() => setSelectedTargets(['reports'])} 
+                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 1 && selectedTargets.includes('reports') ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
+                      Staff Intel Only
+                    </button>
+                    <button 
+                      onClick={() => setSelectedTargets(['templates'])} 
+                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 1 && selectedTargets.includes('templates') ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
+                      Templates Only
+                    </button>
+                    <button 
+                      onClick={() => setSelectedTargets(['client-docs'])} 
+                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 1 && selectedTargets.includes('client-docs') ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
+                      Compliance Only
+                    </button>
+                    <button 
+                      onClick={() => setSelectedTargets(['reports', 'templates', 'client-docs'])} 
+                      className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide border transition-all ${selectedTargets.length === 3 ? 'border-hc-teal/50 text-hc-teal-light bg-hc-teal/10' : 'border-white/5 text-hc-muted hover:bg-white/5'}`}>
+                      Sync Everywhere
+                    </button>
                   </div>
                 </div>
 
