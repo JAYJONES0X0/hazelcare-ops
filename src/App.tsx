@@ -354,20 +354,20 @@ import { ClientDiaryPage } from './pages/ClientDiaryPage';
 import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { RosterPage } from './pages/RosterPage';
+import { AdminPage } from './pages/AdminPage';
 import type { WeekSummary, Action, Incident, StaffMember, Shift, ActionPriority } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, loadShifts, saveShifts } from './lib/storage';
+import { loadClients, type FullClient } from './lib/client-store';
 import { HAZELCARE_HOUSES, uid } from './lib/compliance-store';
 
 
-export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'roster' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings';
+export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [staffScopedAuthed, setStaffScopedAuthed] = useState(false);
   const [page, setPage] = useState<Page>('briefing');
-  const [pageContext, setPageContext] = useState<any>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const uiScale = 1;
   const [staffMode, setStaffMode] = useState<Page | null>(null);
@@ -552,12 +552,11 @@ export default function App() {
     setStaffScopedAuthed(false);
   }
 
-  function handleSetPage(p: Page, ctx?: any) {
+  function handleSetPage(p: Page) {
     setPage(p);
-    setPageContext(ctx || null);
   }
 
-  return <ErrorBoundary><FullApp page={page} setPage={handleSetPage} pageContext={pageContext} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} /></ErrorBoundary>;
+  return <ErrorBoundary><FullApp page={page} setPage={handleSetPage} generateStaffLink={generateStaffLink} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} /></ErrorBoundary>;
 }
 
 function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () => void }) {
@@ -604,12 +603,13 @@ function StaffStandaloneView({ page, onSignOut }: { page: Page; onSignOut: () =>
   );
 }
 
-function FullApp({ page, setPage, pageContext, generateStaffLink, theme, setTheme, onSignOut }: { page: Page; setPage: (p: Page, ctx?: any) => void; pageContext: any; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; theme: 'dark' | 'light'; setTheme: (t: 'dark' | 'light') => void; onSignOut: () => void }) {
+function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut }: { page: Page; setPage: (p: Page, ctx?: any) => void; generateStaffLink: (id: string) => Promise<{ link: string; code: string }>; theme: 'dark' | 'light'; setTheme: (t: 'dark' | 'light') => void; onSignOut: () => void }) {
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
   const [shifts, setShifts] = useState<Shift[]>(() => loadShifts());
+  const [clients] = useState<FullClient[]>(() => loadClients());
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
   const [quickAction, setQuickAction] = useState<{ type: 'action' | 'incident'; content?: string; house?: string; client?: string } | null>(null);
 
@@ -684,13 +684,12 @@ function FullApp({ page, setPage, pageContext, generateStaffLink, theme, setThem
 
         <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
-          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} onQuickAction={triggerQuickAction} /></div>}
+          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} onQuickAction={triggerQuickAction} /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
-          {page === 'roster' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><RosterPage staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} initialFilterStaffId={pageContext?.staffId} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage staff={staff} onUpdate={handleUpdateStaff} /></div>}
@@ -707,6 +706,11 @@ function FullApp({ page, setPage, pageContext, generateStaffLink, theme, setThem
           {page === 'settings' && (
             <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
               <SettingsPage onSignOut={onSignOut} />
+            </div>
+          )}
+          {page === 'admin' && (
+            <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <AdminPage weekData={weekData} clients={clients} />
             </div>
           )}
         </div>

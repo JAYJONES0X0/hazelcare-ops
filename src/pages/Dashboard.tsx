@@ -12,8 +12,17 @@ interface Props {
   incidents: Incident[];
   staff: StaffMember[];
   shifts: Shift[];
+  onUpdateShifts: (shifts: Shift[]) => void;
   onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
+
+const SHIFT_TYPES = [
+  { id: 'day', label: 'Day', time: '07:00–15:00', hours: 8, color: '#14b8a6' },
+  { id: 'night', label: 'Night', time: '23:00–07:00', hours: 8, color: '#6366f1' },
+  { id: 'long_day', label: 'Long Day', time: '07:00–19:00', hours: 12, color: '#f59e0b' },
+] as const;
+
+function uid() { return Math.random().toString(36).substring(2, 9); }
 
 function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: WeekSummary | null }) {
   const [now, setNow] = useState(new Date());
@@ -163,7 +172,149 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
   );
 }
 
-export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts, onQuickAction }: Props) {
+function CoverageGrid({ staff, shifts, onUpdateShifts }: { staff: StaffMember[]; shifts: Shift[]; onUpdateShifts: (s: Shift[]) => void }) {
+  const [selectedShift, setSelectedShift] = useState<{ house: string; date: string; type: Shift['type'] } | null>(null);
+  const houseIds = Array.from(new Set(shifts.map(s => s.house))).sort();
+  if (houseIds.length === 0) return null;
+
+  const days: { full: string; short: string }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    days.push({
+      full: d.toLocaleDateString('en-GB'),
+      short: d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }),
+    });
+  }
+
+  function assignStaff(staffId: string) {
+    if (!selectedShift) return;
+    const existingShift = shifts.find(s => s.house === selectedShift.house && s.date === selectedShift.date && s.type === selectedShift.type);
+    const sMember = staff.find(s => s.id === staffId);
+    if (!sMember) return;
+    if (staffStatus(sMember.dbsExpiry || '', 0) === 'overdue') {
+      alert(`COMPLIANCE BLOCK: ${sMember.name} has expired DBS.`);
+      return;
+    }
+    const newShift: Shift = {
+      id: existingShift?.id || uid(),
+      staffId,
+      house: selectedShift.house,
+      date: selectedShift.date,
+      type: selectedShift.type,
+      hours: SHIFT_TYPES.find(t => t.id === selectedShift.type)?.hours || 8,
+      status: 'confirmed',
+    };
+    onUpdateShifts(existingShift ? shifts.map(s => s.id === existingShift.id ? newShift : s) : [...shifts, newShift]);
+    setSelectedShift(null);
+  }
+
+  return (
+    <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-5 rounded-full bg-hc-teal" style={{boxShadow:'0 0 12px rgba(20,184,166,0.6)'}} />
+          <h2 className="text-sm font-black text-white tracking-widest uppercase italic">Operational Coverage &middot; 7-Day Matrix</h2>
+        </div>
+        <div className="flex gap-4">
+           {SHIFT_TYPES.map(t => (
+             <div key={t.id} className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.color, boxShadow: `0 0 8px ${t.color}` }} />
+               <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{t.label}</span>
+             </div>
+           ))}
+        </div>
+      </div>
+
+      <div className="glass-light border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-black/30 border-b border-white/10">
+                <th className="p-4 text-left text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] w-[150px] sticky left-0 bg-hc-dark/95 z-20">Unit</th>
+                {days.map(day => (
+                  <th key={day.full} className="p-4 text-center border-l border-white/5 text-[9px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+                    {day.short}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {houseIds.map((house, hIdx) => (
+                <tr key={house} className={`border-b border-white/5 ${hIdx % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
+                  <td className="p-4 sticky left-0 bg-hc-dark/95 z-10 border-r border-white/10 text-[11px] font-black text-white uppercase truncate">{house.split(' ')[0]}</td>
+                  {days.map(day => (
+                    <td key={day.full} className="p-1.5 border-l border-white/5 min-w-[120px]">
+                      <div className="flex flex-col gap-1">
+                        {SHIFT_TYPES.map(type => {
+                          const shift = shifts.find(s => s.house === house && s.date === day.full && s.type === type.id);
+                          const sMember = staff.find(s => s.id === shift?.staffId);
+                          const isRed = sMember && staffStatus(sMember.dbsExpiry || '', 0) === 'overdue';
+                          
+                          return (
+                            <div key={type.id} onClick={() => setSelectedShift({ house, date: day.full, type: type.id })}
+                              className={`group/slot relative rounded-lg p-1.5 border cursor-pointer transition-all
+                                ${isRed ? 'bg-flag-red/20 border-flag-red animate-pulse' : shift ? 'glass-light border-white/5 hover:border-white/20' : 'border-dashed border-white/5 opacity-30 hover:opacity-100 hover:bg-white/5'}`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[7px] font-black uppercase tracking-tighter opacity-50">{type.label[0]}</span>
+                                {shift && (
+                                  <button onClick={(e) => { e.stopPropagation(); onUpdateShifts(shifts.filter(sx => sx.id !== shift.id)); }} className="opacity-0 group-hover/slot:opacity-100 text-flag-red">
+                                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
+                                )}
+                              </div>
+                              <div className="mt-0.5 text-[9px] font-bold text-white truncate">
+                                {sMember ? sMember.name.split(' ')[1] || sMember.name : <span className="opacity-30 italic">Open</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedShift && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedShift(null)}>
+          <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-white/5 flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-black text-white tracking-tighter">Assign Shift</h3>
+                <div className="text-[10px] font-bold text-hc-muted uppercase mt-1 tracking-widest">{selectedShift.house} &middot; {selectedShift.date}</div>
+              </div>
+              <button onClick={() => setSelectedShift(null)} className="text-hc-muted hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 max-h-[50vh] overflow-y-auto scrollbar-thin grid grid-cols-1 md:grid-cols-2 gap-2">
+              {staff.sort((a,b) => a.name.localeCompare(b.name)).map(sMember => {
+                const isBlocked = staffStatus(sMember.dbsExpiry || '', 0) === 'overdue';
+                return (
+                  <button key={sMember.id} disabled={isBlocked || sMember.status !== 'active'} onClick={() => assignStaff(sMember.id)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl border transition-all text-left group ${isBlocked ? 'opacity-30 cursor-not-allowed grayscale' : 'glass-light border-white/5 hover:border-hc-teal/40 hover:bg-hc-teal/[0.02]'}`}>
+                    <div className="w-8 h-8 rounded-lg bg-hc-teal/20 text-hc-teal-light flex items-center justify-center text-[10px] font-black">{sMember.name.split(' ').map(n=>n[0]).join('')}</div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black text-white truncate">{sMember.name}</div>
+                      <div className={`text-[7px] font-black uppercase tracking-widest ${isBlocked ? 'text-flag-red' : 'text-flag-green/70'}`}>{isBlocked ? 'DBS Expired' : 'Compliant'}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts, onUpdateShifts, onQuickAction }: Props) {
   const [drillHouse, setDrillHouse] = useState<string | null>(null);
   // Hooks must be unconditional — compute safe defaults for the null case
   const houseList = weekData
@@ -256,7 +407,7 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
               <p className="text-[11px] text-hc-muted leading-relaxed mt-2 max-w-xl">Hazel Care expects all staff to have valid DBS clearance before starting a shift. Non-compliant assignments must be corrected immediately to maintain CQC safety standards.</p>
             </div>
           </div>
-          <button onClick={() => setPage('roster', { staffId: 'compliance-trigger' })} className="relative z-10 px-8 py-3 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-red/30 transition-all shadow-xl active:scale-95 group/btn">
+          <button onClick={() => setPage('dashboard')} className="relative z-10 px-8 py-3 bg-flag-red/20 border border-flag-red/40 text-flag-red text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-red/30 transition-all shadow-xl active:scale-95 group/btn">
             Fix Gaps Now
             <svg className="w-4 h-4 ml-2 inline-block transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
           </button>
@@ -265,6 +416,9 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
 
       {/* Live Status Widget */}
       <LiveStatusWidget shifts={shifts} weekData={weekData} />
+
+      {/* 7-Day Operational Grid */}
+      <CoverageGrid staff={staff} shifts={shifts} onUpdateShifts={onUpdateShifts} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">

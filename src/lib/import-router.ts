@@ -162,7 +162,7 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       : opts.targets.includes('client-docs')
       ? 'client-docs'
       : opts.targets.includes('roster')
-      ? 'roster'
+      ? 'dashboard'
       : 'reports';
 
     if (opts.targets.includes('roster') && envelope.shifts.length > 0) {

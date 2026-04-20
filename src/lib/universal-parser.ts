@@ -50,13 +50,16 @@ const HOUSE_MAP: Record<string, string> = {
   'hazelcare': '',          // org-level umbrella — not a house
   'supported living pc': '', // same
   'medical': 'Medical',
+  'time off': 'SKIP',      // explicitly marker to ignore
+  'unassigned': 'UNASSIGNED',
+  'sickness': 'SKIP',
 };
 
-function normalizeHouse(raw: string): string {
+export function normalizeHouse(raw: string): string {
   if (!raw) return '';
   const lower = raw.toLowerCase().trim();
   for (const [key, value] of Object.entries(HOUSE_MAP)) {
-    if (lower.includes(key)) return value; // empty string = org-level, not a real house
+    if (lower.includes(key)) return value;
   }
   return raw.trim();
 }
@@ -82,14 +85,10 @@ function categorizeEntry(type: string, text: string): Category {
   const x = text.toLowerCase();
   // ── CarePlanner exact type names ──────────────────────────────────────
   if (t.includes('handover')) return 'handover';
-  if (t.includes('task note') || t.includes('daily 1:1') || t.includes('1to1') || t.includes('daily support') || t.includes('1:1')) return 'daily_support';
+  if (t.includes('task note') || t.includes('daily 1:1') || t.includes('1to1') || t.includes('daily support') || t.includes('1:1') || t.includes('personal care')) return 'daily_support';
   if (t.includes('accident') || t.includes('incident') || t.includes('abc')) return 'incident';
   if (t.includes('safeguard')) return 'safeguarding';
-  if (
-    t.includes('medication audit') || t.includes('medication collected') ||
-    t.includes('medication ordered') || t.includes('medication returned') ||
-    t.includes('medication review') || t.startsWith('medication')
-  ) return 'medication';
+  if (t.includes('medication')) return 'medication';
   if (t === 'gp appointment' || t.includes('gp appoint') || t.includes('hospital') || t.includes('health appointment')) return 'other';
   if (
     t.includes('care review') || t.includes('quality performance') ||

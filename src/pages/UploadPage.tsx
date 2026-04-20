@@ -1,28 +1,17 @@
 import { useState, useRef } from 'react';
-import { Activity, FileText, RefreshCw, Download, Calendar } from 'lucide-react';
+import { Activity, FileText, RefreshCw, Download } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
-import { loadClients, clearClientData, clearStaffNotes, purgeSystemData } from '../lib/client-store';
-import { clearWeekData, clearActions, clearIncidents, loadWeekData, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot, mergeWeekSummaries, uid } from '../lib/storage';
+import { loadClients } from '../lib/client-store';
+import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
 import { TEMPLATES } from '../lib/types';
 import type { WeekSummary, TemplateType } from '../lib/types';
-import type { FullClient } from '../lib/client-store';
 import type { Page } from '../App';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
 import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
-import type { MonitoringFilters } from '../lib/staff-monitoring';
-import {
-  downloadText,
-  careEntriesToEvidenceCsv,
-  buildCoordinatorReadme,
-  buildCoordinatorEvidenceHtml,
-  buildCoordinatorPackMeta,
-  buildSnapshotForPack,
-  filterEntriesForCoordinatorPack,
-} from '../lib/coordinator-export-pack';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -56,6 +45,7 @@ interface PreviewData {
   supportNeeds?: number;
   warnings?: string[];
   unmappedFields?: string[];
+  rawItems?: any[]; // To power the Verification Grid
 }
 
 interface ZipGuidanceRow {
@@ -288,6 +278,13 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
     base.clientName = base.clientName || envelope.clientCandidates[0]?.name || 'Not detected from text';
   }
 
+  // Populate rawItems for Verification Grid
+  if (envelope.diaryEntries && envelope.diaryEntries.length > 0) {
+    base.rawItems = envelope.diaryEntries;
+  } else if (envelope.shifts && envelope.shifts.length > 0) {
+    base.rawItems = envelope.shifts;
+  }
+
   return base;
 }
 
@@ -425,208 +422,103 @@ const TYPE_INFO: Record<Exclude<UploadDetectedType, 'unknown'>, { label: string;
   },
 };
 
-function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
-  const houseKeys = Object.keys(weekData.houses).sort();
-  const [house, setHouse] = useState<string>('all');
-  const [dateFrom, setDateFrom] = useState(weekData.dateFrom || '');
-  const [dateTo, setDateTo] = useState(weekData.dateTo || '');
-  const [typeFilter, setTypeFilter] = useState('');
+function VerificationGrid({ items, type, onUpdate }: { items: any[], type: UploadDetectedType, onUpdate: (items: any[]) => void }) {
+  if (!items || items.length === 0) return null;
 
-  function runCoordinatorPack() {
-    const filters: MonitoringFilters = {
-      house: house as MonitoringFilters['house'],
-      dateFrom: dateFrom.trim() || undefined,
-      dateTo: dateTo.trim() || undefined,
-    };
-    const snapshot = buildSnapshotForPack(weekData, filters);
-    const entries = filterEntriesForCoordinatorPack(weekData, filters, typeFilter);
-    const meta = buildCoordinatorPackMeta(snapshot, 'upload-hub', {
-      typeFilter: typeFilter.trim() || undefined,
-      entryCount: entries.length,
-    });
-    const day = new Date().toISOString().slice(0, 10);
-    downloadText(`hazelcare-coordinator-evidence-${day}.csv`, careEntriesToEvidenceCsv(entries), 'text/csv;charset=utf-8');
-    downloadText(`hazelcare-coordinator-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
-    downloadText(`hazelcare-coordinator-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta), 'text/html;charset=utf-8');
-  }
+  const handleChange = (index: number, field: string, value: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [field]: value };
+    onUpdate(next);
+  };
 
   return (
-    <div className="glass border border-hc-teal/30 rounded-[2rem] p-6 mb-8 shadow-xl">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Coordinator evidence pack</h2>
-          <p className="text-[11px] text-hc-muted mt-1 max-w-xl leading-relaxed">
-            Evidence-grade CSV (full text + ids), readme with next-export hints from your current registry, and printable HTML — same shape as Staff Intelligence exports. Filter by house, dates, and optional diary type substring (e.g. <span className="text-hc-teal-light">1:1</span>,{' '}
-            <span className="text-hc-teal-light">handover</span>).
-          </p>
+    <div className="glass-light border border-white/5 rounded-2xl overflow-hidden mb-6 flex flex-col max-h-[500px]">
+      <div className="bg-hc-dark/60 border-b border-white/5 px-4 py-2 flex items-center justify-between">
+        <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em] flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-hc-teal" />
+          Editable Verification Grid — {items.length} items
         </div>
-        <button
-          type="button"
-          onClick={runCoordinatorPack}
-          className="shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide"
-        >
-          Download all 3 files
-        </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
-          House
-          <select
-            value={house}
-            onChange={(e) => setHouse(e.target.value)}
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white bg-transparent"
-          >
-            <option value="all">All houses</option>
-            {houseKeys.map((h) => (
-              <option key={h} value={h}>
-                {weekData.houses[h]?.name || h}
-              </option>
+      <div className="overflow-auto scrollbar-thin">
+        <table className="w-full text-left border-collapse min-w-[800px]">
+          <thead className="sticky top-0 bg-hc-dark z-20">
+            <tr className="border-b border-white/5">
+              {type === 'roster' ? (
+                <>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">Staff</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">House</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">Time</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">Hours</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider w-[15%]">Date/Time</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider w-[15%]">Person</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider w-[15%]">House</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider w-[15%]">Category</th>
+                  <th className="px-4 py-2 text-[9px] font-bold text-hc-muted uppercase tracking-wider">Summary</th>
+                </>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {items.map((item, idx) => (
+              <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                {type === 'roster' ? (
+                  <>
+                    <td className="px-4 py-1.5">
+                      <input 
+                        value={item.staffId || ''} 
+                        onChange={e => handleChange(idx, 'staffId', e.target.value)}
+                        className="bg-transparent text-xs text-white w-full focus:outline-none focus:text-hc-teal-light"
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input 
+                        value={item.house || ''} 
+                        onChange={e => handleChange(idx, 'house', e.target.value)}
+                        className="bg-transparent text-xs text-white w-full focus:outline-none focus:text-hc-teal-light"
+                      />
+                    </td>
+                    <td className="px-4 py-1.5 text-xs text-hc-muted">{item.date}</td>
+                    <td className="px-4 py-1.5 text-xs text-hc-muted">{item.startTime} - {item.endTime}</td>
+                    <td className="px-4 py-1.5 text-xs text-hc-muted tabular-nums">{item.hours}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-1.5 text-xs text-hc-muted whitespace-nowrap">{item.date} {item.time}</td>
+                    <td className="px-4 py-1.5">
+                      <input 
+                        value={item.client || ''} 
+                        onChange={e => handleChange(idx, 'client', e.target.value)}
+                        className="bg-transparent text-xs text-white w-full focus:outline-none focus:text-hc-teal-light"
+                      />
+                    </td>
+                    <td className="px-4 py-1.5">
+                      <input 
+                        value={item.house || ''} 
+                        onChange={e => handleChange(idx, 'house', e.target.value)}
+                        className="bg-transparent text-xs text-white w-full focus:outline-none focus:text-hc-teal-light"
+                      />
+                    </td>
+                    <td className="px-4 py-1.5 text-xs text-hc-muted uppercase tracking-tight">{item.category || item.type}</td>
+                    <td className="px-4 py-1.5">
+                      <div className="text-[11px] text-white line-clamp-1 opacity-80 hover:opacity-100 transition-opacity cursor-default" title={item.entry}>
+                        {item.entry}
+                      </div>
+                    </td>
+                  </>
+                )}
+              </tr>
             ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
-          Date from
-          <input
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            placeholder="DD/MM/YYYY"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
-          Date to
-          <input
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            placeholder="DD/MM/YYYY"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
-          Type contains (optional)
-          <input
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            placeholder="e.g. 1:1, handover"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
-          />
-        </label>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: {
-  weekData: WeekSummary | null;
-  clients: FullClient[];
-  onClearEverything: () => void;
-  onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
-}) {
-  const restoreRef = useRef<HTMLInputElement>(null);
-  const actions = loadActions();
-  const incidents = loadIncidents();
-  const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
-
-  function handleExportBackup() {
-    const snapshot = exportOpsSnapshot();
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hazelcare-ops-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function handleRestoreBackup(file: File) {
-    try {
-      const text = await file.text();
-      const parsed = JSON.parse(text);
-      const result = importOpsSnapshot(parsed);
-      if (!result.ok) {
-        alert(`Restore failed: ${result.error}`);
-        return;
-      }
-      alert('Backup restored successfully. Reloading...');
-      window.location.reload();
-    } catch {
-      alert('Restore failed: Invalid backup file.');
-    }
-  }
-
-  const datasets = [
-    { key: 'diary', label: 'Diary & Briefing', present: !!weekData, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'Local registry empty' },
-    { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
-    { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
-    { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },
-    { key: 'notes', label: 'Staff Notes', present: notes.length > 0, desc: notes.length > 0 ? `${notes.length} saved notes` : 'Local registry empty' },
-  ];
-  if (!datasets[0].present) datasets[0].desc = 'Session empty — re-upload diary export';
-
-  return (
-    <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden mt-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-xl font-black text-white tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
-          <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Manage local care datasets and privacy</p>
-        </div>
-        {datasets.some(d => d.present) && (
-          <button onClick={() => { if (confirm('Delete ALL data from this device?')) onClearEverything(); }}
-            className="text-[9px] font-black text-flag-red hover:text-white uppercase tracking-[0.2em] px-4 py-2 glass-light border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
-            Purge All Data
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        {datasets.map(d => (
-          <div key={d.key} className={`glass-light border border-white/5 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all ${!d.present && 'opacity-40'}`}>
-            <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${d.present ? 'bg-flag-green glow-green' : 'bg-white/5'}`} />
-              <div>
-                <div className="text-xs font-black text-white uppercase tracking-tight">{d.label}</div>
-                <div className="text-[10px] text-hc-muted">{d.desc}</div>
-              </div>
-            </div>
-            {d.present && (
-              <button onClick={() => { if (confirm(`Clear ${d.label}?`)) onClearType(d.key as any); }} 
-                className="text-[9px] font-black text-hc-muted hover:text-flag-red uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Clear</button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-3">
-        <button
-          onClick={handleExportBackup}
-          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
-        >
-          Export Persistent Backup
-        </button>
-        <button
-          onClick={() => restoreRef.current?.click()}
-          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-white/10 text-hc-muted hover:text-white rounded-xl transition-all hover:bg-white/5"
-        >
-          Restore Backup
-        </button>
-        <input
-          ref={restoreRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleRestoreBackup(file);
-            e.currentTarget.value = '';
-          }}
-        />
-      </div>
-      <div className="mt-3 text-[10px] text-hc-muted leading-relaxed">
-        Backups include people, actions, incidents, and saved notes. Diary/briefing data is session-only to avoid browser storage failures, so re-upload the source export when needed.
-      </div>
-    </div>
-  );
-}
 
 export function UploadPage({ onDataParsed, setPage }: Props) {
   const [step, setStep] = useState<Step>('choose');
@@ -657,8 +549,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [sourceBasket, setSourceBasket] = useState<SourceBasketItem[]>([]);
   const [intentPreset, setIntentPreset] = useState<IntentPreset>('custom');
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const weekData = loadWeekData();
   const clients = loadClients();
 
   const selectedZipCount = zipGuidance.filter((r) => r.include).length;
@@ -752,7 +642,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     }
 
     const sawRoster = rows.some(r => r.selectedTarget === 'roster');
-    const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : (sawRoster ? 'roster' : 'upload')));
+    const nextPage: Page = sawClientDocs ? 'client-docs' : (sawTemplates ? 'templates' : (sawReports ? 'reports' : (sawRoster ? 'dashboard' : 'upload')));
     setZipRunSummary({
       total: rows.length,
       success,
@@ -774,21 +664,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     setStep('done');
   }
 
-  const handleClearEverything = () => {
-    purgeSystemData();
-    window.location.reload();
-  };
-
-  const handleClearType = (type: any) => {
-    if (type === 'diary') clearWeekData();
-    else if (type === 'clients') clearClientData();
-    else if (type === 'actions') clearActions();
-    else if (type === 'incidents') clearIncidents();
-    else if (type === 'notes') clearStaffNotes();
-    window.location.reload();
-  };
-
-  // ─── Handle file drop or select ──────────────────────────────────────────────
   const handleFile = async (file: File) => {
     setStep('extracting');
     setProgress(0);
@@ -914,6 +789,14 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       setPendingConfirmDestination(destination);
       setPendingConfirmBypassGaps(true);
       return;
+    }
+
+    if (preview.rawItems) {
+      if (preview.type === 'roster') {
+        preview.envelope.shifts = preview.rawItems;
+      } else {
+        preview.envelope.diaryEntries = preview.rawItems;
+      }
     }
 
     const result = routeImport(preview.envelope, {
@@ -1056,12 +939,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             </div>
           </details>
 
-          {weekData && (
-            <CoordinatorExportCard
-              key={`${weekData.totalEntries}-${weekData.dateFrom}-${weekData.dateTo}-${Object.keys(weekData.houses).sort().join(',')}`}
-              weekData={weekData}
-            />
-          )}
         </>
       )}
 
@@ -1104,97 +981,14 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 </div>
               </div>
 
-              {/* Entry type breakdown — the key missing piece */}
-              {preview.envelope.diaryEntries && preview.envelope.diaryEntries.length > 0 && (() => {
-                const entries = preview.envelope.diaryEntries!;
-                // Count by category
-                const catMap: Record<string, number> = {};
-                const houseSet = new Set<string>();
-                const clientSet = new Set<string>();
-                entries.forEach(e => {
-                  const cat = (e.category || 'other') as string;
-                  catMap[cat] = (catMap[cat] || 0) + 1;
-                  if (e.house && e.house !== 'Unassigned') houseSet.add(e.house);
-                  if (e.client && e.client.trim()) clientSet.add(e.client.trim());
-                });
-                const ENTRY_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-                  handover:     { label: 'Handover', icon: '🔄', color: 'text-hc-teal-light' },
-                  daily_support:{ label: 'Task Note / 1:1', icon: '✅', color: 'text-sky-400' },
-                  medication:   { label: 'Medication', icon: '💊', color: 'text-cyan-400' },
-                  safeguarding: { label: 'Safeguarding', icon: '🛡️', color: 'text-flag-red' },
-                  incident:     { label: 'Incident', icon: '🚨', color: 'text-flag-red' },
-                  finance:      { label: 'Finance / Mileage', icon: '💷', color: 'text-flag-green' },
-                  staff:        { label: 'Staff Note', icon: '👤', color: 'text-hc-purple-light' },
-                  other:        { label: 'Other', icon: '📋', color: 'text-hc-muted' },
-                };
-                const sorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-                const redCount = entries.filter(e => e.severity === 'red').length;
-                const amberCount = entries.filter(e => e.severity === 'amber').length;
-                return (
-                  <div className="mb-5 glass-light border border-hc-teal/15 rounded-xl p-4">
-                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                      Parsed Content — {entries.length.toLocaleString()} entries detected
-                    </div>
-
-                    {/* Entry type counts */}
-                    <div className="grid grid-cols-2 ml:grid-cols-4 gap-1.5 mb-3">
-                      {sorted.map(([cat, count]) => {
-                        const info = ENTRY_LABELS[cat] || ENTRY_LABELS.other;
-                        return (
-                          <div key={cat} className="bg-black/30 border border-white/5 rounded-lg px-2.5 py-1.5 flex items-center gap-2 hover:border-white/10 transition-colors">
-                            <span className="text-sm shrink-0">{info.icon}</span>
-                            <div className="min-w-0 flex-1 flex justify-between items-center gap-1">
-                              <div className="text-[9px] font-bold text-hc-muted uppercase tracking-wide truncate">{info.label}</div>
-                              <div className={`text-xs font-black tabular-nums ${info.color}`}>{count}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Flags row */}
-                    {(redCount > 0 || amberCount > 0) && (
-                      <div className="flex gap-2 mb-3">
-                        {redCount > 0 && (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-flag-red/10 border border-flag-red/20">
-                            <span className="w-1 h-1 rounded-full bg-flag-red animate-pulse" />
-                            <span className="text-[9px] font-black text-flag-red uppercase tracking-wide">{redCount} Red Flag{redCount !== 1 ? 's' : ''}</span>
-                          </div>
-                        )}
-                        {amberCount > 0 && (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-flag-amber/10 border border-flag-amber/20">
-                            <span className="w-1 h-1 rounded-full bg-flag-amber" />
-                            <span className="text-[9px] font-black text-flag-amber uppercase tracking-wide">{amberCount} Amber Flag{amberCount !== 1 ? 's' : ''}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Houses + clients detected */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.15em] mb-1.5">Houses Detected ({houseSet.size})</div>
-                        <div className="flex flex-wrap gap-1">
-                          {[...houseSet].slice(0, 10).map(h => (
-                            <span key={h} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/70">{h}</span>
-                          ))}
-                          {houseSet.size > 10 && <span className="text-[9px] text-hc-muted">+{houseSet.size - 10} more</span>}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.15em] mb-1.5">Clients Detected ({clientSet.size})</div>
-                        <div className="flex flex-wrap gap-1">
-                          {[...clientSet].slice(0, 8).map(c => (
-                            <span key={c} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-hc-teal/10 border border-hc-teal/15 text-hc-teal-light">{c}</span>
-                          ))}
-                          {clientSet.size > 8 && <span className="text-[9px] text-hc-muted">+{clientSet.size - 8} more</span>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* ─── VERIFICATION GRID ─────────────────────────────────────────── */}
+              {preview.rawItems && (
+                <VerificationGrid 
+                  items={preview.rawItems} 
+                  type={preview.type} 
+                  onUpdate={(next) => setPreview({ ...preview, rawItems: next })}
+                />
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <div className="space-y-2 md:col-span-2">
@@ -1676,15 +1470,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </button>
 
               <button 
-                onClick={() => setPage('roster')}
+                onClick={() => setPage('dashboard')}
                 className="flex items-center justify-between gap-3 px-6 py-5 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 text-hc-teal-light hover:bg-hc-teal/20 transition-all shadow-xl group"
               >
                  <div className="text-left">
-                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Live Roster</div>
-                  <div className="text-[9px] font-bold opacity-60 uppercase">Staff Coverage</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Return to Dashboard</div>
+                  <div className="text-[9px] font-bold opacity-60 uppercase">Operational Overview</div>
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-hc-teal/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Calendar className="w-4 h-4" />
+                  <Activity className="w-4 h-4" />
                 </div>
               </button>
 
@@ -1815,8 +1609,6 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         </div>
       )}
 
-      {/* ─── DATA MANAGEMENT ─────────────────────────────────────────────────── */}
-      {step === 'choose' && <DataManagerProp weekData={weekData} clients={clients} onClearEverything={handleClearEverything} onClearType={handleClearType} />}
 
       {/* Footer */}
       <div className="mt-auto pt-16 pb-6 flex justify-center">
