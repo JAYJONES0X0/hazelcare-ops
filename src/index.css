@@ -111,6 +111,41 @@ body {
 .overflow-y-auto { overscroll-behavior: contain; }
 html { scroll-behavior: smooth; }
 
+/* ─── LIGHT MODE: slate-* overrides for industrial pages ────── */
+/* Industrial pages use hardcoded slate-* Tailwind colors.       */
+/* These overrides make them respond to [data-theme="light"].    */
+[data-theme="light"] .bg-slate-950 { background-color: #f8fafc !important; }
+[data-theme="light"] .bg-slate-900\/\d+,
+[data-theme="light"] .bg-slate-900\/10,
+[data-theme="light"] .bg-slate-900\/20,
+[data-theme="light"] .bg-slate-900\/30,
+[data-theme="light"] .bg-slate-900\/40,
+[data-theme="light"] .bg-slate-900\/50 { background-color: rgba(241,245,249,0.8) !important; }
+[data-theme="light"] .bg-slate-900 { background-color: #f1f5f9 !important; }
+[data-theme="light"] .bg-slate-950\/\d+,
+[data-theme="light"] .bg-slate-950\/20,
+[data-theme="light"] .bg-slate-950\/40 { background-color: rgba(248,250,252,0.9) !important; }
+[data-theme="light"] .border-slate-800 { border-color: #cbd5e1 !important; }
+[data-theme="light"] .border-slate-700 { border-color: #94a3b8 !important; }
+[data-theme="light"] .text-slate-400 { color: #475569 !important; }
+[data-theme="light"] .text-slate-500 { color: #334155 !important; }
+[data-theme="light"] .text-slate-600 { color: #1e293b !important; }
+[data-theme="light"] .text-white { color: #0f172a !important; }
+[data-theme="light"] .text-slate-100 { color: #0f172a !important; }
+[data-theme="light"] .text-slate-200 { color: #1e293b !important; }
+[data-theme="light"] .text-slate-300 { color: #334155 !important; }
+[data-theme="light"] .divide-slate-800 > * + * { border-color: #e2e8f0 !important; }
+[data-theme="light"] .hover\:bg-slate-800\/30:hover { background-color: rgba(226,232,240,0.5) !important; }
+[data-theme="light"] .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
+[data-theme="light"] .hover\:bg-slate-900\/60:hover { background-color: rgba(241,245,249,0.9) !important; }
+[data-theme="light"] .bg-slate-800 { background-color: #e2e8f0 !important; }
+[data-theme="light"] .bg-red-950 { background-color: #fee2e2 !important; }
+[data-theme="light"] .bg-amber-950 { background-color: #fef3c7 !important; }
+[data-theme="light"] .bg-blue-950 { background-color: #dbeafe !important; }
+[data-theme="light"] .border-red-900 { border-color: #fca5a5 !important; }
+[data-theme="light"] .border-amber-900 { border-color: #fcd34d !important; }
+[data-theme="light"] .border-blue-900 { border-color: #93c5fd !important; }
+
 /* ─── SURFACE SYSTEM ────────────────────────────────────────── */
 /* Frosted glass — ambient orbs bleed through translucent surfaces */
 

@@ -464,11 +464,6 @@ export default function App() {
     };
   }, [staffLinkActive, staffToolId, staffToken, staffLinkId]);
 
-  useEffect(() => {
-    // Dark-only: always remove light class
-    document.documentElement.classList.remove('theme-light');
-    localStorage.setItem('hc-theme', 'dark');
-  }, []);
 
   useEffect(() => {
     const safe = [0.85, 0.9, 1, 1.1].includes(uiScale) ? uiScale : 1;
