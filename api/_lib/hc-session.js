@@ -5,7 +5,7 @@ export const HC_SESSION_COOKIE = 'hc_session';
 export function mintHcSession(secret, ttlHours = 12) {
   if (!secret) throw new Error('Session secret required');
   const exp = Date.now() + ttlHours * 3600 * 1000;
-  const payload = Buffer.from(JSON.stringify({ v: 1, exp })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ v: 2, exp })).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   return { value: `${payload}.${sig}`, maxAgeSec: ttlHours * 3600 };
 }
@@ -26,7 +26,7 @@ export function verifyHcSession(raw, secret) {
   if (!safeEq(expected, s)) return false;
   try {
     const payload = JSON.parse(Buffer.from(p, 'base64url').toString('utf8'));
-    return payload.v === 1 && typeof payload.exp === 'number' && Date.now() <= payload.exp;
+    return payload.v === 2 && typeof payload.exp === 'number' && Date.now() <= payload.exp;
   } catch {
     return false;
   }

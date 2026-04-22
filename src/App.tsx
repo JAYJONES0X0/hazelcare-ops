@@ -554,9 +554,16 @@ export default function App() {
   }
 
   async function handleSignOut() {
-    // In a real app this would call an API, here we just clear state
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+      await fetch('/api/staff/staff-sac-status', { method: 'DELETE', credentials: 'include' });
+    } catch {
+      /* ignore network errors during logout */
+    }
     setAuthed(false);
     setStaffScopedAuthed(false);
+    // Hard refresh to clear all sensitive React state
+    window.location.reload();
   }
 
   function handleSetPage(p: Page) {
