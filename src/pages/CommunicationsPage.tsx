@@ -174,7 +174,7 @@ export function CommunicationsPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-950 font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-950 font-sans">
       {/* Header telemetry */}
       <div className="px-8 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/40 backdrop-blur-md">
         <div>

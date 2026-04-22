@@ -46,7 +46,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="h-screen flex flex-col bg-slate-950 text-slate-200 font-mono overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-200 font-mono">
       {/* Tactical Header */}
       <div className="flex-none p-4 lg:p-6 border-b border-slate-800 bg-slate-900/50">
         <div className="flex items-center justify-between">

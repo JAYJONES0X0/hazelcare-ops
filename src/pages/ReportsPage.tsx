@@ -32,7 +32,7 @@ export function ReportsPage({ weekData, setPage }: Props) {
   const active = REPORT_TYPES.find(r => r.id === selectedReport);
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 animate-in fade-in duration-700">
+    <div className="min-h-screen flex flex-col bg-slate-950 animate-in fade-in duration-700">
       
       {/* ── LEDGER HEADER ── */}
       <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
