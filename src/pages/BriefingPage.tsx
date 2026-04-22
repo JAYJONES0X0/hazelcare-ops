@@ -11,7 +11,7 @@ interface Props {
   setPage: (p: Page) => void;
 }
 
-export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
+export function BriefingPage({ weekData, actions, setPage }: Props) {
   const allEntries = useMemo(() => weekData ? Object.values(weekData.houses).flatMap(h => h.entries) : [], [weekData]);
   const trends = useMemo(() => detectTrends(allEntries), [allEntries]);
 
@@ -32,8 +32,6 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
 
   const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
   const {
-    isCollapsed: isSectionCollapsed,
-    toggle: toggleSection,
     collapseAll: collapseAllSections,
     expandAll: expandAllSections,
     allCollapsed: allSectionsCollapsed,
@@ -42,333 +40,156 @@ export function BriefingPage({ weekData, actions, incidents, setPage }: Props) {
 
   if (!weekData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-8 animate-in fade-in duration-700">
-        <div className="text-[10px] font-black tracking-[0.25em] text-hc-teal uppercase mb-3">Morning Briefing</div>
-        <h2 className="text-2xl font-black text-white mb-3 tracking-tighter">No data loaded</h2>
-        <p className="text-hc-muted text-sm mb-6 text-center max-w-sm">Sync this week's care records to generate your daily briefing.</p>
-        <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl">Sync Records</button>
+      <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 animate-in fade-in duration-700">
+        <div className="text-[11px] font-black tracking-[0.3em] text-hc-teal-light uppercase mb-6 border-b border-hc-teal/30 pb-2">INTELLIGENCE OFFLINE</div>
+        <div className="w-16 h-px bg-slate-800 mb-8" />
+        <h2 className="text-2xl font-black text-white mb-4 tracking-tighter uppercase">No Live Telemetry</h2>
+        <p className="text-slate-400 text-[11px] font-bold mb-10 text-center max-w-xs uppercase tracking-widest leading-relaxed">
+          Sync regional operational data to generate service briefing.
+        </p>
+        <button onClick={() => setPage('upload')} className="px-10 py-3 border border-hc-teal/40 bg-hc-teal/5 text-hc-teal-light hover:bg-hc-teal/10 text-[10px] font-black uppercase tracking-[0.25em] transition-all">
+          Initialize Sync
+        </button>
       </div>
     );
   }
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const shift = hour < 14 ? 'Day Shift' : hour < 22 ? 'Late Shift' : 'Night Shift';
-  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  const redFlags = weekData.allFlags?.red ?? [];
-  const amberFlags = weekData.allFlags?.amber ?? [];
-  const houseList = Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber));
-
-  const overdueActions = actions.filter(a => a.status !== 'completed' && a.priority === 'critical');
-  const openActions = actions.filter(a => a.status === 'open' || a.status === 'in_progress');
-  const activeIncidents = incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved');
-
-  const totalEntries = Math.max(1, weekData.totalEntries);
-  const redPct = (redFlags.length / totalEntries) * 100;
-  const amberPct = (amberFlags.length / totalEntries) * 100;
-  const severityScore = Math.max(0, Math.round(100 - (redPct * 0.65) - (amberPct * 0.2) - (overdueActions.length * 4)));
-  const isBreach = redPct >= 80;
-  const scoreColor = severityScore >= 80 ? '#22c55e' : severityScore >= 50 ? '#f59e0b' : '#ef4444';
-  const scoreLabel = severityScore >= 80 ? 'STABLE' : severityScore >= 50 ? 'CAUTION' : 'CRITICAL';
-
-  const RING = 88; // px
+  const { isCollapsed: isSectionCollapsed, toggle: toggleSection } = useCollapseStore('briefing-sections');
 
   return (
-    <div className="p-4 lg:p-6 xl:px-12 2xl:px-20 w-full animate-in fade-in duration-700">
-
-      {/* ── Header ── */}
-      <div className="rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-        style={{
-          background: '#111827',
-          border: `1px solid ${scoreColor}30`,
-          boxShadow: `0 4px 24px ${scoreColor}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
-        }}>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">{dateStr}</span>
-            <span className="pill pill-teal text-[10px] uppercase tracking-wider font-black">{shift} Update</span>
-          </div>
-          <h1 className="text-xl font-black text-white tracking-tighter leading-tight mb-2">{greeting}, Service Team</h1>
-          <p className="text-hc-muted text-xs leading-relaxed">
-            <span className="text-white font-bold">{houseList.length} houses</span> · <span className="text-white font-bold">{weekData.totalEntries.toLocaleString()}</span> care entries this week · Service status{' '}
-            <span className="font-black" style={{color: scoreColor}}>{scoreLabel}</span>
-          </p>
-
-          {/* Stat pills */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {[
-              { n: redFlags.length, label: 'Red Flags', color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)' },
-              { n: amberFlags.length, label: 'Amber Flags', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.25)' },
-              { n: openActions.length, label: 'Tasks', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.2)' },
-              { n: activeIncidents.length, label: 'Incidents', color: '#c084fc', bg: 'rgba(192,132,252,0.1)', border: 'rgba(192,132,252,0.2)' },
-            ].map(s => (
-              <div key={s.label} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg cursor-default"
-                style={{background: s.bg, border: `1px solid ${s.border}`}}>
-                <span className="text-sm font-black tabular-nums" style={{color: s.color}}>{s.n}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{color: `${s.color}99`}}>{s.label}</span>
-              </div>
-            ))}
+    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 animate-in fade-in duration-700">
+      
+      {/* ── SITREP HEADER ── */}
+      <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Operational Briefing</h1>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-hc-teal-light tracking-[0.2em] uppercase">Intelligence SITREP</span>
+            <div className="h-3 w-px bg-slate-800" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{weekData.dateFrom} — {weekData.dateTo}</span>
           </div>
         </div>
-
-        {/* Ring gauge + collapse all */}
-        <div className="shrink-0 flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all self-end"
-            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
-          >
-            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            {allCollapsed ? 'Expand' : 'Collapse'}
+        <div className="flex items-center gap-4">
+          <button onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)} className="px-5 py-2.5 border border-slate-800 bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+            {allCollapsed ? 'EXPAND_ALL_STATIONS' : 'COLLAPSE_ALL_STATIONS'}
           </button>
-          <div className="flex flex-col items-center gap-1">
-          <div className="relative" style={{width: RING, height: RING}}>
-            <svg width={RING} height={RING} viewBox="0 0 36 36" className="-rotate-90 block">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-              <circle cx="18" cy="18" r="15.9" fill="none"
-                stroke={scoreColor}
-                strokeWidth="3"
-                strokeDasharray={`${isBreach ? 100 : severityScore} 100`}
-                strokeLinecap="round"
-                style={{transition:'stroke-dasharray 1.5s ease-out', filter:`drop-shadow(0 0 6px ${scoreColor}80)`}}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-black tabular-nums leading-none" style={{color: scoreColor}}>{severityScore}</span>
-              <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{color: `${scoreColor}80`}}>{scoreLabel}</span>
-            </div>
-          </div>
-          <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40">Service Health</span>
-          </div>
         </div>
       </div>
 
-      {/* Entry type composition strip */}
-      {weekData.entryTypes && Object.keys(weekData.entryTypes).length > 0 && (() => {
-        const ICONS: Record<string, string> = {
-          'Handover note generated via Mobile App': '🔄',
-          'Handover': '🔄',
-          'Task note generated via Mobile App': '✅',
-          'Senior support worker role': '👤',
-          'Medication collected': '💊',
-          'Medication ordered': '💊',
-          'Medication audit': '💊',
-          'Expenses/Mileage': '💷',
-          'Safeguarding': '🛡️',
-        };
-        const sorted = Object.entries(weekData.entryTypes)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 8);
-        return (
-          <div className="flex items-center gap-2 flex-wrap mb-4 px-1">
-            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] shrink-0">Dataset:</span>
-            {sorted.map(([type, count]) => (
-              <span key={type} className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-md bg-white/5 border border-white/8 text-white/60">
-                {ICONS[type] || '📋'} {count}× {type.replace(' generated via Mobile App', '').replace('note', '').trim()}
-              </span>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* ── Two column body ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
-
-        {/* LEFT — interventions + clients */}
-        <div className="space-y-4">
-
-          {/* Priority Interventions */}
-          {(redFlags.length > 0 || overdueActions.length > 0) && (
-            <div className="rounded-2xl overflow-hidden"
-              style={{background:'#111827',border:'1px solid rgba(239,68,68,0.2)',boxShadow:'0 4px 20px rgba(239,68,68,0.05)'}}>
-              <button type="button" onClick={() => toggleSection('interventions')} className="w-full flex items-center justify-between px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('interventions') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 rounded-full bg-flag-red animate-pulse" style={{boxShadow:'0 0 8px rgba(239,68,68,0.6)'}} />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Priority Interventions</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="pill pill-red text-[10px] font-black">{redFlags.length + overdueActions.length} urgent</span>
-                  <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('interventions') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-              </button>
-              {!isSectionCollapsed('interventions') && <div className="divide-y divide-white/[0.04]">
-                {redFlags.slice(0, 8).map((flag, i) => (
-                    <div key={`rf${i}`} className="px-4 py-3 flex items-start gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group"
-                    onClick={() => setPage('reports')}>
-                    <div className="w-1.5 h-1.5 rounded-full bg-flag-red mt-1.5 shrink-0 animate-pulse" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[11px] font-black text-white uppercase tracking-wide">{flag.house}</span>
-                        {flag.client && <span className="text-[10px] text-hc-teal-light font-semibold">{flag.client}</span>}
-                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wide"
-                          style={{
-                            background: flag.category === 'safeguarding' ? 'rgba(239,68,68,0.15)' : flag.category === 'incident' ? 'rgba(239,68,68,0.12)' : flag.category === 'medication' ? 'rgba(6,182,212,0.1)' : 'rgba(255,255,255,0.05)',
-                            color: flag.category === 'safeguarding' || flag.category === 'incident' ? '#f87171' : flag.category === 'medication' ? '#67e8f9' : '#94a3b8',
-                            borderColor: flag.category === 'safeguarding' || flag.category === 'incident' ? 'rgba(239,68,68,0.25)' : flag.category === 'medication' ? 'rgba(6,182,212,0.2)' : 'rgba(255,255,255,0.08)',
-                          }}>
-                          {flag.category === 'safeguarding' ? '🛡️ Safeguarding' : flag.category === 'incident' ? '🚨 Incident' : flag.category === 'medication' ? '💊 Medication' : flag.category === 'handover' ? '🔄 Handover' : flag.type || '📋 Entry'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-hc-muted leading-relaxed line-clamp-2">"{flag.entry.slice(0, 120)}"</p>
-                      <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        {flag.flags.map((f, fi) => (
-                          <span key={fi} className="text-[9px] font-black text-flag-red uppercase tracking-wide px-1.5 py-0.5 rounded"
-                            style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.2)'}}>{f}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <svg className="w-3.5 h-3.5 text-hc-muted/30 group-hover:text-flag-red shrink-0 mt-1 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+      <div className="flex-1 overflow-y-auto p-8 bg-slate-950/20 scrollbar-thin">
+        <div className="max-w-6xl mx-auto space-y-8">
+          
+          {/* ── STATIONS ── */}
+          
+          {/* Interventions Station */}
+          <Section id="interventions" title="Intervention Backlog" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={actions.filter(a => a.status !== 'completed').length}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {actions.filter(a => a.status !== 'completed').slice(0, 6).map(a => (
+                <div key={a.id} className="border border-slate-800 bg-slate-900/40 p-4 transition-all hover:bg-slate-900/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-[8px] font-black px-2 py-0.5 uppercase tracking-widest ${a.priority === 'critical' || a.priority === 'high' ? 'bg-red-950 text-red-500 border border-red-900' : 'bg-blue-950 text-blue-500 border border-blue-900'}`}>{a.priority}</span>
+                    <span className="text-[9px] font-bold text-slate-600 tabular-nums">{a.dueDate}</span>
                   </div>
-                ))}
-                {redFlags.length > 8 && (
-                  <button onClick={() => setPage('reports')} className="w-full py-2.5 text-[10px] font-black text-flag-red/60 hover:text-flag-red uppercase tracking-widest transition-colors">
-                    + {redFlags.length - 8} more red flag entries →
-                  </button>
-                )}
-              </div>}
-            </div>
-          )}
-
-          {/* Client Focus */}
-          {priorityClients.length > 0 && (
-            <div className="rounded-2xl overflow-hidden"
-              style={{background:'#111827',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <button type="button" onClick={() => toggleSection('clients')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('clients') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 rounded-full bg-hc-teal" style={{boxShadow:'0 0 8px rgba(20,184,166,0.5)'}} />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Client Support Focus</span>
-                  <span className="text-[10px] text-hc-muted opacity-50">{priorityClients.length}</span>
+                  <div className="text-xs font-bold text-white mb-2 uppercase line-clamp-1">{a.title}</div>
+                  <div className="text-[10px] font-medium text-slate-400 line-clamp-2 leading-relaxed uppercase">TARGET: {a.owner}</div>
                 </div>
-                <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('clients') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              {!isSectionCollapsed('clients') && <div className="divide-y divide-white/[0.04]">
-                {priorityClients.map((c) => (
-                  <div key={c.name} className="px-4 py-2.5 flex items-center gap-3 hover:bg-white/[0.02] cursor-pointer transition-colors"
-                    onClick={() => setPage('client-diary')}>
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-hc-teal-light"
-                      style={{background:'rgba(20,184,166,0.1)',border:'1px solid rgba(20,184,166,0.2)'}}>
-                      {c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-white truncate">{c.name}</div>
-                      <div className="text-[10px] text-hc-muted opacity-60 truncate">{c.house}</div>
-                    </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      {c.red > 0 && <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-flag-red" style={{background:'rgba(239,68,68,0.12)'}}>{c.red}R</span>}
-                      {c.amber > 0 && <span className="text-[10px] font-black px-1.5 py-0.5 rounded text-flag-amber" style={{background:'rgba(245,158,11,0.12)'}}>{c.amber}A</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>}
+              ))}
             </div>
-          )}
+          </Section>
 
-          {/* Trends */}
-          {trends.length > 0 && (
-            <div className="rounded-2xl overflow-hidden"
-              style={{background:'#111827',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <button type="button" onClick={() => toggleSection('trends')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('trends') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-4 rounded-full bg-hc-purple" />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">Care Patterns</span>
-                  <span className="text-[10px] text-hc-muted opacity-50">{trends.length}</span>
+          {/* Client Matrix */}
+          <Section id="clients" title="Client Stability Matrix" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
+            <div className="overflow-hidden border border-slate-800 bg-slate-900/20">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-900/50 border-b border-slate-800 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                    <th className="px-6 py-3">IDENTIFIER</th>
+                    <th className="px-6 py-3">STATION</th>
+                    <th className="px-6 py-3 text-center">ALERTS</th>
+                    <th className="px-6 py-3">LATEST_TELEMETRY</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {priorityClients.map(c => (
+                    <tr key={c.name} className="hover:bg-white/[0.02] transition-colors border-b border-slate-800/40 last:border-0 text-[11px]">
+                      <td className="px-6 py-4 font-black text-white uppercase tracking-tight">{c.name}</td>
+                      <td className="px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[9px]">{c.house}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center gap-2 tabular-nums">
+                          {c.red > 0 && <span className="bg-red-950 text-red-500 px-2 py-0.5 text-[10px] font-black border border-red-900">{c.red}</span>}
+                          {c.amber > 0 && <span className="bg-amber-950 text-amber-500 px-2 py-0.5 text-[10px] font-black border border-amber-900">{c.amber}</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 italic max-w-xs truncate leading-relaxed text-[10px]">"{c.latest}"</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+
+          {/* Regional Trends */}
+          <Section id="trends" title="Operational Trends" collapsed={isSectionCollapsed('trends')} onToggle={() => toggleSection('trends')} count={trends.length}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {trends.map(t => (
+                <div key={t.id} className="border border-slate-800 bg-slate-900/40 p-5 flex items-start gap-5">
+                  <div className={`shrink-0 w-12 h-12 border border-slate-800 bg-slate-950 flex items-center justify-center text-xl`}>
+                    {t.severity === 'critical' ? '⚠️' : '📈'}
+                  </div>
+                  <div>
+                    <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${t.severity === 'critical' ? 'text-red-500' : 'text-hc-teal-light'}`}>{t.title}</div>
+                    <p className="text-[11px] font-medium text-slate-400 leading-relaxed uppercase">{t.detail}</p>
+                  </div>
                 </div>
-                <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('trends') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              {!isSectionCollapsed('trends') && <div className="divide-y divide-white/[0.04]">
-                {trends.slice(0,5).map(trend => (
-                  <div key={trend.id} className="px-4 py-2.5 flex items-start gap-3">
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${trend.severity === 'critical' ? 'bg-flag-red' : trend.severity === 'warning' ? 'bg-flag-amber' : 'bg-hc-blue'}`} />
-                    <div>
-                      <div className="text-xs font-bold text-white">{trend.title}
-                        {trend.metric && <span className="ml-2 text-[10px] font-black text-hc-muted opacity-60">{trend.metric}</span>}
-                      </div>
-                      <p className="text-[11px] text-hc-muted leading-relaxed opacity-70 mt-0.5">{trend.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>}
+              ))}
             </div>
-          )}
-        </div>
+          </Section>
 
-        {/* RIGHT — house grid + quick stats */}
-        <div className="space-y-4">
+          {/* Station Matrix */}
+          <Section id="houses" title="Station Performance Index" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.values(weekData.houses).map(h => (
+                <div key={h.name} className="border border-slate-800 bg-slate-900/30 p-5 flex flex-col">
+                  <div className="text-sm font-black text-white uppercase tracking-tight mb-4 border-b border-slate-800 pb-3">{h.name}</div>
+                  <div className="space-y-3 mt-auto">
+                    <Metric label="CAPTURED" val={h.entries.length} />
+                    <Metric label="CRITICAL" val={h.flags.red} red />
+                    <Metric label="MONITOR" val={h.flags.amber} amber />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
 
-          {/* House grid */}
-          <div className="rounded-2xl overflow-hidden"
-            style={{background:'#111827',border:'1px solid rgba(255,255,255,0.07)'}}>
-            <button type="button" onClick={() => toggleSection('houses')} className="w-full flex items-center justify-between gap-2 px-4 py-3 cursor-pointer" style={{borderBottom: isSectionCollapsed('houses') ? 'none' : '1px solid rgba(255,255,255,0.05)'}}>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-4 rounded-full bg-hc-blue" style={{boxShadow:'0 0 8px rgba(59,130,246,0.5)'}} />
-                <span className="text-xs font-black text-white uppercase tracking-widest">House Overview</span>
-                <span className="text-[10px] text-hc-muted opacity-50">{houseList.length}</span>
-              </div>
-              <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: isSectionCollapsed('houses') ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            {!isSectionCollapsed('houses') && <div className="p-3 grid grid-cols-2 gap-2">
-              {houseList.map(house => {
-                const hasRed = house.flags.red > 0;
-                const hasAmber = !hasRed && house.flags.amber > 0;
-                const statusColor = hasRed ? '#f87171' : hasAmber ? '#fbbf24' : '#22c55e';
-                return (
-                  <button key={house.name} onClick={() => setPage('reports')}
-                    className="text-left rounded-xl p-2.5 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-                    style={{
-                      background: hasRed ? 'rgba(239,68,68,0.06)' : hasAmber ? 'rgba(245,158,11,0.05)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${hasRed ? 'rgba(239,68,68,0.25)' : hasAmber ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.07)'}`,
-                    }}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: statusColor}} />
-                      <span className="text-[11px] font-bold text-white truncate">{house.name.replace(' House','')}</span>
-                    </div>
-                    <div className="text-[10px] text-hc-muted opacity-50">{house.entries.length} entries</div>
-                    {(house.flags.red > 0 || house.flags.amber > 0) && (
-                      <div className="flex gap-1 mt-1.5">
-                        {house.flags.red > 0 && <span className="text-[9px] font-black text-flag-red">{house.flags.red}R</span>}
-                        {house.flags.amber > 0 && <span className="text-[9px] font-black text-flag-amber">{house.flags.amber}A</span>}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>}
-          </div>
-
-          {/* Quick stats */}
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setPage('actions')} className="rounded-xl p-3 text-left transition-all hover:-translate-y-0.5 cursor-pointer"
-              style={{background:'rgba(96,165,250,0.08)',border:'1px solid rgba(96,165,250,0.2)'}}>
-              <div className="text-xl font-black text-hc-blue tabular-nums">{openActions.length}</div>
-              <div className="text-[10px] font-bold text-hc-muted/60 uppercase tracking-wider mt-0.5">Open Tasks</div>
-            </button>
-            <button onClick={() => setPage('incidents')} className="rounded-xl p-3 text-left transition-all hover:-translate-y-0.5 cursor-pointer"
-              style={{background:'rgba(192,132,252,0.08)',border:'1px solid rgba(192,132,252,0.2)'}}>
-              <div className="text-xl font-black text-hc-purple tabular-nums">{activeIncidents.length}</div>
-              <div className="text-[10px] font-bold text-hc-muted/60 uppercase tracking-wider mt-0.5">Incidents</div>
-            </button>
-          </div>
-
-          {/* Quick nav */}
-          <div className="flex flex-col gap-1.5">
-            {[
-              { id: 'dashboard', label: 'Service Hub', primary: true },
-              { id: 'staff-monitoring', label: 'Staff Intelligence', primary: false },
-              { id: 'notes', label: 'Note Assistant', primary: false },
-              { id: 'client-docs', label: 'People & Plans', primary: false },
-            ].map(nav => (
-              <button key={nav.id} onClick={() => setPage(nav.id as Page)}
-                className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 ${nav.primary ? 'btn-gradient text-white' : 'text-hc-muted hover:text-white'}`}
-                style={!nav.primary ? {background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)'} : {}}>
-                {nav.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Section({ title, count, children, collapsed, onToggle }: { id: string; title: string, count?: number; children: React.ReactNode; collapsed: boolean; onToggle: () => void }) {
+  return (
+    <div className="border border-slate-800 bg-slate-900/10">
+      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-800/30 transition-all border-b border-slate-800/60">
+        <div className="flex items-center gap-4">
+          <div className="w-1.5 h-4 bg-hc-teal" />
+          <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] font-mono">{title}</h2>
+        </div>
+        <div className="flex items-center gap-6">
+          {count != null && <span className="text-[10px] font-mono text-slate-600 bg-slate-950 px-2 py-0.5 border border-slate-800">{String(count).padStart(3, '0')}</span>}
+          <svg className={`w-3.5 h-3.5 text-slate-600 transition-transform ${collapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+        </div>
+      </button>
+      {!collapsed && <div className="p-6 bg-slate-950/40 animate-in fade-in slide-in-from-top-1 duration-300">{children}</div>}
+    </div>
+  );
+}
+
+function Metric({ label, val, red, amber }: { label: string; val: number; red?: boolean; amber?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+      <span className={`text-[10px] font-black tabular-nums ${red ? 'text-red-500' : amber ? 'text-amber-500' : 'text-slate-400'}`}>{val}</span>
     </div>
   );
 }

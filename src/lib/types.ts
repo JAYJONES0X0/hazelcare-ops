@@ -130,6 +130,28 @@ export interface WeekSummary {
 }
 
 // ============================================================
+// COMMUNICATIONS & INTERCEPTS
+// ============================================================
+export type InterceptVector = 'message' | 'alert' | 'leave' | 'gap';
+
+export interface InterceptedIntel {
+  id: string;
+  type: InterceptVector;
+  timestamp: string;
+  sender: string; // or subject
+  phone?: string;
+  content: string;
+  category: string;
+  draft: string;
+  meta?: {
+    client?: string;
+    dateRange?: string;
+    uncompletedTask?: string;
+    priority?: 'critical' | 'high' | 'medium' | 'low';
+  };
+}
+
+// ============================================================
 // TEMPLATES
 // ============================================================
 export type TemplateType =
@@ -165,28 +187,28 @@ export interface Template {
 }
 
 export const TEMPLATES: Template[] = [
-  { id: 'quality_meeting',        name: 'Quality & Performance Meeting', icon: '📋', desc: 'Friday weekly ops review',           color: '#0f766e' },
-  { id: 'daily_quality',          name: 'Daily Quality Meeting',         icon: '📊', desc: 'Morning ops briefing',               color: '#1e40af' },
-  { id: 'incident_report',        name: 'Incident Report',               icon: '🚨', desc: 'Individual incident documentation',  color: '#dc2626' },
-  { id: 'handover',               name: 'Shift Handover',                icon: '🔄', desc: 'Night/day shift handover',           color: '#d97706' },
-  { id: 'supervision',            name: 'Supervision Record',            icon: '👤', desc: 'Staff 1:1 supervision notes',        color: '#7c3aed' },
-  { id: 'safeguarding',           name: 'Safeguarding Report',           icon: '🛡️', desc: 'Safeguarding concern documentation', color: '#be185d' },
-  { id: 'medication_audit',       name: 'Medication Audit',              icon: '💊', desc: 'Medication review & audit',          color: '#0891b2' },
-  { id: 'finance',                name: 'Finance Meeting',               icon: '💷', desc: 'Budget & finance review',            color: '#059669' },
-  { id: 'care_review',            name: 'Care Review',                   icon: '📝', desc: 'Client care plan review',            color: '#0369a1' },
-  { id: 'complaint_concern',      name: 'Complaint & Concern',           icon: '⚠️', desc: 'Complaints & concerns log',          color: '#b45309' },
-  { id: 'cqc_report',             name: 'CQC Report',                    icon: '🏛️', desc: 'CQC regulatory documentation',       color: '#1d4ed8' },
-  { id: 'house_meeting',          name: 'House Meeting',                 icon: '🏠', desc: 'House-level team meeting',           color: '#0f766e' },
-  { id: 'family_feedback',        name: 'Family Feedback',               icon: '💬', desc: 'Client & family feedback record',    color: '#7c3aed' },
-  { id: 'gp_appointment',         name: 'GP Appointment',                icon: '🩺', desc: 'GP visit & outcome record',          color: '#0891b2' },
-  { id: 'medication_review',      name: 'Medication Review',             icon: '🔬', desc: 'Clinical medication review',         color: '#0369a1' },
-  { id: 'medication_transaction', name: 'Medication Transaction',        icon: '📦', desc: 'Collected / ordered / returned',     color: '#0891b2' },
-  { id: 'finance_audit',          name: 'Finance Audit',                 icon: '🧾', desc: 'Finance audit & transactions',       color: '#059669' },
-  { id: 'repairs_maintenance',    name: 'Repairs & Maintenance',         icon: '🔧', desc: 'Property repairs log',               color: '#78350f' },
-  { id: 'weekly_quality_report',  name: 'Weekly Quality Report',         icon: '📈', desc: 'Regional quality summary',           color: '#1e40af' },
-  { id: 'performance_improvement',name: 'Performance Improvement Plan',  icon: '📌', desc: 'Staff PIP documentation',            color: '#b45309' },
-  { id: 'probation_review',       name: 'Probation Review',              icon: '✅', desc: 'First 3-month staff review',         color: '#059669' },
-  { id: 'exit_interview',         name: 'Exit Interview',                icon: '🚪', desc: 'Leaver exit interview record',       color: '#64748b' },
+  { id: 'quality_meeting',        name: 'OPERATIONAL QUALITY SITREP', icon: '📋', desc: 'Friday weekly ops review',           color: '#0f766e' },
+  { id: 'daily_quality',          name: 'MORNING VECTOR BRIEFING',     icon: '📊', desc: 'Morning ops briefing',               color: '#1e40af' },
+  { id: 'incident_report',        name: 'INCIDENT LOG & ANALYSIS',     icon: '🚨', desc: 'Individual incident documentation',  color: '#dc2626' },
+  { id: 'handover',               name: 'UNIT ROTATION HANDOVER',      icon: '🔄', desc: 'Night/day shift handover',           color: '#d97706' },
+  { id: 'supervision',            name: 'PERSONNEL READINESS AUDIT',   icon: '👤', desc: 'Staff 1:1 supervision notes',        color: '#7c3aed' },
+  { id: 'safeguarding',           name: 'TRUST & SAFETY INTERCEPT',    icon: '🛡️', desc: 'Safeguarding concern documentation', color: '#be185d' },
+  { id: 'medication_audit',       name: 'PHARMACOLOGICAL AUDIT',       icon: '💊', desc: 'Medication review & audit',          color: '#0891b2' },
+  { id: 'finance',                name: 'FISCAL OPERATIONS REVIEW',    icon: '💷', desc: 'Budget & finance review',            color: '#059669' },
+  { id: 'care_review',            name: 'CLIENT STABILITY REVIEW',     icon: '📝', desc: 'Client care plan review',            color: '#0369a1' },
+  { id: 'complaint_concern',      name: 'FEEDBACK & RECTIFICATION',    icon: '⚠️', desc: 'Complaints & concerns log',          color: '#b45309' },
+  { id: 'cqc_report',             name: 'STATUTORY COMPLIANCE',        icon: '🏛️', desc: 'CQC regulatory documentation',       color: '#1d4ed8' },
+  { id: 'house_meeting',          name: 'UNIT TEAM BRIEFING',          icon: '🏠', desc: 'House-level team meeting',           color: '#0f766e' },
+  { id: 'family_feedback',        name: 'FAMILY FEEDBACK MATRIX',      icon: '💬', desc: 'Client & family feedback record',    color: '#7c3aed' },
+  { id: 'gp_appointment',         name: 'MEDICAL TELEMETRY',           icon: '🩺', desc: 'GP visit & outcome record',          color: '#0891b2' },
+  { id: 'medication_review',      name: 'CLINICAL PHARMA REVIEW',      icon: '🔬', desc: 'Clinical medication review',         color: '#0369a1' },
+  { id: 'medication_transaction', name: 'PHARMA SUPPLY LOG',          icon: '📦', desc: 'Collected / ordered / returned',     color: '#0891b2' },
+  { id: 'finance_audit',          name: 'FISCAL TELEMETRY',            icon: '🧾', desc: 'Finance audit & transactions',       color: '#059669' },
+  { id: 'repairs_maintenance',    name: 'FACILITIES INTEGRITY',        icon: '🔧', desc: 'Property repairs log',               color: '#78350f' },
+  { id: 'weekly_quality_report',  name: 'REGIONAL PERFORMANCE SITREP', icon: '📈', desc: 'Regional quality summary',           color: '#1e40af' },
+  { id: 'performance_improvement',name: 'PERFORMANCE RECTIFICATION',   icon: '📌', desc: 'Staff PIP documentation',            color: '#b45309' },
+  { id: 'probation_review',       name: 'ENTRY-LEVEL EVALUATION',      icon: '✅', desc: 'First 3-month staff review',         color: '#059669' },
+  { id: 'exit_interview',         name: 'DE-BOARDING INTERVIEW',       icon: '🚪', desc: 'Leaver exit interview record',       color: '#64748b' },
 ];
 
 // ============================================================

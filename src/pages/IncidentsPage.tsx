@@ -7,12 +7,12 @@ interface Props {
   onUpdate: (incidents: Incident[]) => void;
 }
 
-const STAGES: { id: IncidentStage; label: string; color: string; icon: string }[] = [
-  { id: 'logged', label: 'Logged', color: '#3b82f6', icon: '📝' },
-  { id: 'investigating', label: 'Investigating', color: '#f59e0b', icon: '🔍' },
-  { id: 'resolved', label: 'Resolved', color: '#22c55e', icon: '✅' },
-  { id: 'reported', label: 'Reported', color: '#8b5cf6', icon: '📤' },
-  { id: 'closed', label: 'Closed', color: '#64748b', icon: '🔒' },
+const STAGES: { id: IncidentStage; label: string; color: string }[] = [
+  { id: 'logged', label: 'LOGGED_INBOUND', color: '#3b82f6' },
+  { id: 'investigating', label: 'INVESTIGATION_ACTIVE', color: '#f59e0b' },
+  { id: 'resolved', label: 'RESOLVED_INTERNAL', color: '#22c55e' },
+  { id: 'reported', label: 'STATUTORY_EXTERNAL', color: '#8b5cf6' },
+  { id: 'closed', label: 'STATION_CLOSED', color: '#64748b' },
 ];
 
 export function IncidentsPage({ incidents, onUpdate }: Props) {
@@ -35,9 +35,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
     setLastTransition(null);
   }
 
-  const { isCollapsed: isStageCollapsed, toggle: toggleStage, collapseAll: collapseAllStages, expandAll: expandAllStages, allCollapsed: allStagesCollapsed } = useCollapseStore('incidents-stages');
-  const stageIds = STAGES.map(s => s.id);
-  const allCollapsed = allStagesCollapsed(stageIds);
+  const { isCollapsed: isStageCollapsed, toggle: toggleStage } = useCollapseStore('incidents-stages');
 
   const byStage = STAGES.map(stage => ({
     ...stage,
@@ -48,155 +46,155 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="p-6 lg:p-8 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Incident Pipeline</h1>
-          <div className="flex items-center gap-3">
-            <span className="pill pill-red text-xs uppercase tracking-[0.08em] font-bold shadow-lg animate-pulse-soft">
-              {totalActive} Active Incidents
-            </span>
-            <span className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
-              {totalRed} Critical Red Alerts
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => allCollapsed ? expandAllStages(stageIds) : collapseAllStages(stageIds)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
-            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
-          >
-            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            {allCollapsed ? 'Expand all' : 'Collapse all'}
-          </button>
-          {lastTransition && (
-            <button
-              onClick={undoLastTransition}
-              className="px-4 py-2 text-xs font-black uppercase tracking-[0.08em] glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl hover:bg-hc-teal/10 transition-all"
-            >
-              Undo Last Stage Change
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Pipeline progress visualization */}
-      <div className="grid grid-cols-5 gap-4 mb-10 glass border border-white/5 p-4 rounded-2xl shadow-2xl">
-        {STAGES.map(stage => {
-          const count = incidents.filter(i => i.stage === stage.id).length;
-          return (
-            <div key={stage.id} className="relative group cursor-default">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-xs font-black uppercase tracking-[0.08em] transition-colors group-hover:text-white" style={{ color: stage.color }}>{stage.label}</span>
-                <span className="text-[10px] font-bold text-white/40 group-hover:text-white transition-colors">{count}</span>
+    <div className="h-screen flex flex-col bg-slate-950 text-slate-200 font-mono overflow-hidden">
+      {/* Tactical Header */}
+      <div className="flex-none p-4 lg:p-6 border-b border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-2 h-6 bg-blue-600" />
+              <h1 className="text-xl font-black tracking-tighter uppercase text-slate-100">Stability Vector Hub</h1>
+            </div>
+            <div className="flex items-center gap-4 text-[10px] font-bold">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500">STATION_STATUS:</span>
+                <span className="text-blue-400">OPERATIONAL // ENFORCED</span>
               </div>
-              <div className="h-2 rounded-full bg-hc-dark/60 overflow-hidden shadow-inner border border-white/5">
-                <div className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(255,255,255,0.1)]" 
-                  style={{ background: `linear-gradient(90deg, ${stage.color}88, ${stage.color})`, width: count > 0 ? '100%' : '0%', opacity: count > 0 ? 1 : 0.1 }} />
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500">VECTOR_LOAD:</span>
+                <span className={totalActive > 0 ? "text-orange-500" : "text-green-500"}>{totalActive} ACTIVE</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500">CRITICAL_FAULTS:</span>
+                <span className={totalRed > 0 ? "text-red-500 animate-pulse" : "text-slate-600"}>{totalRed} INTERCEPTS</span>
               </div>
             </div>
-          );
-        })}
+          </div>
+          <div className="flex items-center gap-3">
+            {lastTransition && (
+              <button
+                onClick={undoLastTransition}
+                className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors"
+              >
+                Undo Last Transition
+              </button>
+            )}
+            <div className="px-3 py-1.5 bg-slate-900 border border-slate-800 text-[10px] font-black uppercase text-slate-500">
+              SYS_REF: NC-STB-001
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Kanban-style columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 min-h-[600px]">
-        {byStage.map((stage, sIdx) => (
-          <div key={stage.id} className="flex flex-col gap-2 animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${sIdx * 100}ms` }}>
-            <button
-              type="button"
+      {/* Main Kanban Workspace */}
+      <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-4 gap-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        {byStage.map((stage) => (
+          <div 
+            key={stage.id} 
+            className={`flex-none w-80 flex flex-col border border-slate-800 bg-slate-900/30
+              ${isStageCollapsed(stage.id) ? 'w-12 overflow-hidden' : ''} transition-all duration-300`}
+          >
+            {/* Column Header */}
+            <div 
               onClick={() => toggleStage(stage.id)}
-              className="flex items-center justify-between px-3 py-2 glass border-l-2 border-white/5 rounded-xl bg-white/[0.02] cursor-pointer transition-all hover:bg-white/[0.04]"
-              style={{ borderLeftColor: stage.color }}
+              className="flex-none p-3 flex items-center justify-between cursor-pointer border-b border-slate-800 hover:bg-slate-900/50 transition-colors"
+              style={{ borderTop: `2px solid ${stage.color}` }}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{stage.icon}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{stage.label}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-1.5 h-1.5 shrink-0`} style={{ backgroundColor: stage.color }} />
+                {!isStageCollapsed(stage.id) && (
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate text-slate-400">
+                    {stage.label}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="pill pill-teal text-[9px] px-1.5 py-0 shadow-sm">{stage.items.length}</span>
-                <svg className="w-3 h-3 text-hc-muted/40 transition-transform duration-200" style={{transform: isStageCollapsed(stage.id) ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                <span className="text-[10px] font-black text-slate-600">{stage.items.length}</span>
               </div>
-            </button>
+            </div>
 
-            {!isStageCollapsed(stage.id) && <div className="flex-1 space-y-3 bg-black/10 rounded-2xl p-2 border border-white/5 overflow-y-auto max-h-[70vh] scrollbar-thin shadow-inner group/stage">
-              {stage.items.map(incident => (
-                <div
-                  key={incident.id}
-                  className={`glass-light border transition-all duration-500 rounded-2xl p-5 card-glow interactive-row group/card active:scale-95 animate-in slide-in-from-bottom-4
-                    ${incident.severity === 'red' ? 'border-flag-red/30 glow-red shadow-flag-red/5 bg-flag-red/[0.02]' : 'border-flag-amber/20 bg-flag-amber/[0.01]'}`}
-                >
-                  <div className="flex items-start justify-between gap-4 mb-3 relative z-10">
-                    <span className="text-[13px] font-black text-white leading-tight group-hover/card:text-hc-teal-light transition-colors tracking-tight uppercase">{incident.title}</span>
-                    {incident.severity === 'red' ? (
-                      <div className="w-2.5 h-2.5 rounded-full bg-flag-red shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse shrink-0 mt-1" />
-                    ) : (
-                      <div className="w-2.5 h-2.5 rounded-full bg-flag-amber shadow-[0_0_10px_rgba(245,158,11,0.8)] shrink-0 mt-1" />
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 mb-3 px-1">
-                    <span className="text-[9px] font-black text-hc-teal-light/80 uppercase tracking-widest">{incident.house}</span>
-                    {incident.client && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-white/10" />
-                        <span className="text-[10px] font-bold text-hc-muted uppercase tracking-tighter opacity-60">{incident.client}</span>
-                      </>
-                    )}
-                  </div>
-
-                  <p className="text-[11px] text-hc-text/80 leading-relaxed line-clamp-3 mb-4 font-medium opacity-80 group-hover/card:opacity-100 transition-opacity italic px-1">"{incident.description}"</p>
-
-                  {/* Actions */}
-                  {incident.actions.length > 0 && (
-                    <div className="space-y-2 mb-5 bg-black/30 p-3 rounded-xl border border-white/5 shadow-inner">
-                      <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1.5 opacity-40">Actions Taken</div>
-                      {incident.actions.slice(0, 3).map((a, i) => (
-                        <div key={i} className="flex items-center gap-2.5 text-[9px] font-black text-hc-teal-light/70 uppercase tracking-widest group-hover/card:text-hc-teal-light transition-colors">
-                          <svg className="w-3 h-3 text-hc-teal-light/40 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                          {a}
+            {/* Column Body */}
+            {!isStageCollapsed(stage.id) && (
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-none">
+                {stage.items.map(incident => (
+                  <div
+                    key={incident.id}
+                    className={`p-4 border bg-slate-900 shadow-xl relative overflow-hidden group
+                      ${incident.severity === 'red' ? 'border-red-900/50 hover:border-red-800' : 'border-slate-800 hover:border-slate-700'}`}
+                  >
+                    {/* Severity Indicator */}
+                    <div className={`absolute top-0 right-0 w-12 h-1 ${incident.severity === 'red' ? 'bg-red-600 animate-pulse' : 'bg-orange-600'}`} />
+                    
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="text-[11px] font-black text-slate-100 uppercase tracking-tighter leading-tight mb-1">
+                          {incident.title}
                         </div>
-                      ))}
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                          <span>{incident.house}</span>
+                          {incident.client && (
+                            <>
+                              <span className="text-slate-700">//</span>
+                              <span>{incident.client}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
 
-                  <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                    <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40 tabular-nums">{incident.date}</span>
-                    {incident.stage !== 'closed' && (
-                      <button
-                        onClick={() => advanceStage(incident)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[8px] font-black text-hc-teal-light uppercase tracking-widest border border-hc-teal/30 hover:bg-hc-teal/10 transition-all"
-                      >
-                        Advance
-                        <svg className="w-3.5 h-3.5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                      </button>
+                    <div className="text-[10px] text-slate-400 leading-relaxed mb-4 border-l border-slate-800 pl-3 py-1">
+                      {incident.description}
+                    </div>
+
+                    {/* Actions Feed */}
+                    {incident.actions.length > 0 && (
+                      <div className="bg-black/40 border border-slate-800/50 p-2 mb-4 space-y-1">
+                        <div className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">Response_Log</div>
+                        {incident.actions.slice(0, 3).map((a, i) => (
+                          <div key={i} className="text-[9px] text-slate-500 leading-tight flex items-start gap-2">
+                            <span className="text-blue-500/50 shrink-0">▸</span>
+                            <span>{a.toUpperCase()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{incident.date}</span>
+                      {incident.stage !== 'closed' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); advanceStage(incident); }}
+                          className="px-3 py-1.5 text-[9px] font-black uppercase bg-slate-800 border border-slate-700 hover:bg-blue-900 hover:border-blue-700 text-slate-400 hover:text-white transition-all"
+                        >
+                          Advance_Vector ▸
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Tags */}
+                    {incident.flags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {incident.flags.map((f, i) => (
+                          <span key={i} className="text-[8px] font-black px-1.5 py-0.5 border border-slate-800 bg-slate-950 text-slate-500 uppercase">
+                            {f}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
+                ))}
 
-                  {/* Flags */}
-                  {incident.flags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {incident.flags.map((f, i) => (
-                        <span key={i} className={`pill text-[8px] font-black uppercase tracking-widest py-0.5 px-2 shadow-sm
-                          ${incident.severity === 'red' ? 'pill-red' : 'pill-amber'}`}>{f}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {stage.items.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 opacity-20 grayscale group-hover/stage:opacity-40 group-hover/stage:grayscale-0 transition-all duration-700">
-                  <div className="text-3xl mb-3 animate-float">🛡️</div>
-                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">No Incidents</div>
-                </div>
-              )}
-            </div>}
+                {stage.items.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 opacity-20 border border-dashed border-slate-800 m-2">
+                    <span className="text-xs font-black uppercase text-slate-600 tracking-[0.2em]">Zero_Vectors</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 }
+

@@ -345,6 +345,7 @@ import { IncidentsPage } from './pages/IncidentsPage';
 import { StaffPage } from './pages/StaffPage';
 import { StaffNotePage } from './pages/StaffNotePage';
 import { HandoverPage } from './pages/HandoverPage';
+import { CommunicationsPage } from './pages/CommunicationsPage';
 import { BriefingPage } from './pages/BriefingPage';
 import { CompliancePage } from './pages/CompliancePage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -361,7 +362,7 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { HAZELCARE_HOUSES, uid } from './lib/compliance-store';
 
 
-export type Page = 'briefing' | 'dashboard' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
@@ -691,6 +692,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
         <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} incidents={incidents} setPage={setPage} /></div>}
           {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} onQuickAction={triggerQuickAction} /></div>}
+          {page === 'communications' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CommunicationsPage /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}
           {page === 'actions' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ActionsPage actions={actions} onUpdate={handleUpdateActions} /></div>}

@@ -283,11 +283,20 @@ async function handleSession(req, res) {
 
   if (req.method === 'DELETE') {
     const secure = secureCookieSuffix();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.setHeader('Set-Cookie', `${HC_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
     return res.json({ ok: true });
   }
 
   const cookies = parseCookies(req);
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Vary', 'Origin, Cookie');
+
   return res.json({
     authed: verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET),
     staffScoped: verifyAnyStaffSacCookie(cookies[STAFF_SAC_COOKIE], STAFF_LINK_SECRET),

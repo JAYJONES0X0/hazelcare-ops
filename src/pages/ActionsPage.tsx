@@ -81,165 +81,178 @@ export function ActionsPage({ actions, onUpdate }: Props) {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6">
+    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 animate-in fade-in duration-700">
+      
+      {/* ── COMMAND HEADER ── */}
+      <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Action Tracker</h1>
-          <div className="flex items-center gap-2">
-            <span className="pill pill-teal text-xs uppercase tracking-[0.08em] font-bold">Action Tracker</span>
-            <span className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-2">
-              Track tasks and accountability
-            </span>
+          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">COMMAND VECTORS</h1>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-hc-teal-light tracking-[0.2em] uppercase">ACCORDANCE & OBJECTIVE TRACKING</span>
+            <div className="h-3 w-px bg-slate-800" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{actions.length} ACTIVE VECTORS</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        
+        <div className="flex items-center gap-3">
           <button
-            type="button"
             onClick={toggleAll}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all"
-            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'#64748b'}}
+            className="flex items-center gap-2 px-4 py-2.5 border border-slate-800 bg-slate-900/50 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
           >
-            <svg className="w-3 h-3 transition-transform duration-200" style={{transform: allCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            {allCollapsed ? 'Expand all' : 'Collapse all'}
+            <svg className={`w-3 h-3 transition-transform ${allCollapsed ? '-rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            {allCollapsed ? 'EXPAND ALL' : 'COLLAPSE ALL'}
           </button>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className={`flex items-center gap-2 px-6 py-3 btn-gradient rounded-xl shadow-lg transition-all ${showAdd ? 'opacity-50 grayscale' : 'hover:scale-105'}`}
+            className={`flex items-center gap-2 px-6 py-2.5 border transition-all ${showAdd ? 'bg-slate-800 border-slate-700 opacity-50' : 'bg-hc-teal/10 border-hc-teal/40 text-hc-teal-light hover:bg-hc-teal/20 shadow-[0_0_15px_rgba(20,184,166,0.1)]'}`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            <span className="text-sm font-bold uppercase tracking-wider">New Action</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">NEW COMMAND VECTOR</span>
           </button>
         </div>
       </div>
 
-      {/* Add form */}
+      {/* ── VECTOR DEPLOYMENT MATRIX (ADD FORM) ── */}
       {showAdd && (
-        <div className="glass border border-hc-teal/30 rounded-2xl p-6 mb-8 glow-teal animate-in slide-in-from-top-4 duration-500 shadow-2xl">
-          <h3 className="section-header mb-4 text-hc-teal-light">Create New Action</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="md:col-span-2 lg:col-span-2">
-              <label className="section-header text-xs mb-1.5 ml-1 block">Objective Title</label>
-              <input value={newAction.title} onChange={e => setNewAction({ ...newAction, title: e.target.value })} placeholder="What needs to be done?" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+        <div className="shrink-0 border-b border-slate-800 bg-slate-900/10 p-8 animate-in slide-in-from-top-4 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="md:col-span-2">
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">VECTOR OBJECTIVE</label>
+              <input value={newAction.title} onChange={e => setNewAction({ ...newAction, title: e.target.value })} placeholder="SPECIFY OBJECTIVE..." className="w-full bg-slate-900 border border-slate-800 px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 font-medium" />
             </div>
             <div>
-              <label className="section-header text-xs mb-1.5 ml-1 block">Location / House</label>
-              <input value={newAction.house} onChange={e => setNewAction({ ...newAction, house: e.target.value })} placeholder="House name" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">OPERATIONAL UNIT (HOUSE)</label>
+              <input value={newAction.house} onChange={e => setNewAction({ ...newAction, house: e.target.value })} placeholder="UNIT NAME..." className="w-full bg-slate-900 border border-slate-800 px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 font-medium" />
             </div>
             <div>
-              <label className="section-header text-xs mb-1.5 ml-1 block">Assigned Owner</label>
-              <input value={newAction.owner} onChange={e => setNewAction({ ...newAction, owner: e.target.value })} placeholder="Carer or Manager" className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-hc-muted/40 focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">ASSIGNED COMMAND</label>
+              <input value={newAction.owner} onChange={e => setNewAction({ ...newAction, owner: e.target.value })} placeholder="PERSONNEL..." className="w-full bg-slate-900 border border-slate-800 px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 font-medium" />
             </div>
             <div>
-              <label className="section-header text-xs mb-1.5 ml-1 block">Priority Level</label>
-              <select value={newAction.priority} onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
-                <option value="critical">Critical (Immediate)</option>
-                <option value="high">High (Today)</option>
-                <option value="medium">Medium (Routine)</option>
-                <option value="low">Low (Backlog)</option>
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">PRIORITY VECTOR</label>
+              <select value={newAction.priority} onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })} className="w-full bg-slate-900 border border-slate-800 px-4 py-3 text-[11px] font-black text-white focus:outline-none focus:border-hc-teal/50 appearance-none uppercase tracking-widest">
+                <option value="critical">CRITICAL (IMMEDIATE)</option>
+                <option value="high">HIGH (TODAY)</option>
+                <option value="medium">MEDIUM (ROUTINE)</option>
+                <option value="low">LOW (BACKLOG)</option>
               </select>
             </div>
             <div>
-              <label className="section-header text-xs mb-1.5 ml-1 block">Deadline</label>
-              <input type="date" value={newAction.dueDate} onChange={e => setNewAction({ ...newAction, dueDate: e.target.value })} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">TARGET DEADLINE</label>
+              <input type="date" value={newAction.dueDate} onChange={e => setNewAction({ ...newAction, dueDate: e.target.value })} className="w-full bg-slate-900 border border-slate-800 px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 font-medium invert hue-rotate-180" />
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <button onClick={() => setShowAdd(false)} className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-hc-muted hover:text-white transition-colors">Cancel</button>
-            <button onClick={addAction} className="px-8 py-2.5 btn-gradient rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg">Save Action</button>
+          <div className="flex justify-end gap-4">
+            <button onClick={() => setShowAdd(false)} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-colors">ABORT</button>
+            <button onClick={addAction} className="px-10 py-3 bg-hc-teal/10 border border-hc-teal/40 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.25em] hover:bg-hc-teal/20 transition-all">DEPLOY VECTOR</button>
           </div>
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-black/20 backdrop-blur-md rounded-2xl p-1.5 border border-white/5 shadow-xl w-fit">
+      {/* ── VECTOR FILTER STRIP ── */}
+      <div className="shrink-0 bg-slate-950 border-b border-slate-800 px-8 py-3 flex items-center gap-3">
         {(['all', 'open', 'in_progress', 'blocked', 'completed'] as FilterStatus[]).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 ease-out active:scale-95 ${
+            className={`px-5 py-1.5 border transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-3 ${
               filter === f 
-                ? 'bg-hc-teal/20 text-hc-teal-light shadow-lg border border-hc-teal/30 scale-105 z-10' 
-                : 'text-hc-muted hover:text-white hover:bg-white/5'
+                ? 'bg-slate-800 border-slate-700 text-white' 
+                : 'bg-transparent border-transparent text-slate-500 hover:text-slate-300'
             }`}
           >
-            {f === 'all' ? 'Entire Feed' : STATUS_CONFIG[f].label}
-            <span className={`ml-3 px-2 py-0.5 rounded-lg tabular-nums ${filter === f ? 'bg-hc-teal/30' : 'bg-white/5 opacity-40'}`}>{counts[f]}</span>
+            {f === 'all' ? 'ENTIRE FEED' : (STATUS_CONFIG[f]?.label || f).toUpperCase()}
+            <span className={`tabular-nums opacity-60 ${filter === f ? 'text-hc-teal-light' : 'text-slate-600'}`}>{counts[f]}</span>
           </button>
         ))}
       </div>
 
-      {/* Actions list */}
-      <div className="space-y-3">
+      {/* ── COMMAND QUEUE ── */}
+      <div className="flex-1 overflow-y-auto p-8 space-y-2 scrollbar-thin bg-slate-950/20">
         {sorted.map((action, idx) => {
-          const sc = STATUS_CONFIG[action.status];
-          const pc = PRIORITY_CONFIG[action.priority];
+          const sc = STATUS_CONFIG[action.status] || { label: action.status, color: '#94a3b8' };
+          const pc = PRIORITY_CONFIG[action.priority] || { label: action.priority, color: '#94a3b8' };
           const isCritical = action.priority === 'critical' && action.status !== 'completed';
           const collapsed = isActionCollapsed(action.id);
 
           return (
-            <div key={action.id} className={`glass-light border transition-all duration-300 rounded-2xl overflow-hidden card-glow group animate-in slide-in-from-left-4
-              ${action.status === 'completed' ? 'opacity-50 grayscale-[0.3] hover:opacity-80' : ''}
-              ${isCritical ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : 'border-white/5 hover:border-hc-teal/20'}`}
-              style={{ animationDelay: `${idx * 50}ms` }}>
-              {/* Always-visible header row */}
-              <div className="flex items-center gap-4 px-5 py-3.5">
-                {/* Status toggle */}
+            <div key={action.id} className={`border transition-all duration-300 group animate-in slide-in-from-left-4
+              ${action.status === 'completed' ? 'opacity-40 grayscale hover:opacity-70' : ''}
+              ${isCritical ? 'border-red-900 bg-red-950/10' : 'border-slate-800 bg-slate-900/30 hover:border-slate-700'}`}
+              style={{ animationDelay: `${idx * 40}ms` }}>
+              
+              {/* VECTOR ROW */}
+              <div className="flex items-center gap-6 px-6 py-4">
+                {/* STATUS INDICATOR */}
                 <button
                   onClick={(e) => { e.stopPropagation(); cycleStatus(action); }}
-                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-110 active:scale-90
-                    ${action.status === 'completed' ? 'bg-flag-green border-flag-green' : 'border-white/10 hover:border-hc-teal-light bg-black/20'}`}
-                  style={action.status !== 'completed' ? { borderColor: sc.color + '44' } : {}}
+                  className={`w-5 h-5 flex items-center justify-center shrink-0 border-2 transition-all hover:scale-110 active:scale-95
+                    ${action.status === 'completed' ? 'bg-green-600 border-green-600' : 'border-slate-700 hover:border-hc-teal-light bg-slate-900'}`}
                 >
                   {action.status === 'completed' ? (
                     <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   ) : action.status === 'in_progress' ? (
-                    <div className="w-1.5 h-1.5 rounded-full bg-flag-amber animate-pulse" />
+                    <div className="w-1.5 h-1.5 bg-amber-500 animate-pulse" />
                   ) : null}
                 </button>
 
-                {/* Title + priority — click to expand/collapse */}
-                <button type="button" onClick={() => toggleAction(action.id)} className="flex-1 min-w-0 text-left flex items-center gap-3 cursor-pointer">
-                  <span className={`text-sm font-black tracking-tight transition-colors duration-200
-                    ${action.status === 'completed' ? 'text-hc-muted line-through opacity-60' : 'text-white group-hover:text-hc-teal-light'}`}>
+                {/* OBJECTIVE TITLE */}
+                <button type="button" onClick={() => toggleAction(action.id)} className="flex-1 min-w-0 text-left flex items-center gap-4 cursor-pointer">
+                  <span className={`text-sm font-black tracking-tight uppercase transition-colors
+                    ${action.status === 'completed' ? 'text-slate-500 line-through' : 'text-white group-hover:text-hc-teal-light'}`}>
                     {action.title}
                   </span>
-                  <span className={`pill text-[9px] font-black uppercase tracking-widest shrink-0
-                    ${action.priority === 'critical' ? 'pill-red animate-pulse-soft' : action.priority === 'high' ? 'pill-amber' : action.priority === 'medium' ? 'pill-blue' : 'pill-teal'}`}>
+                  <div className="h-px flex-1 bg-slate-800/50" />
+                  <span className={`text-[9px] font-black px-2 py-0.5 border uppercase tracking-widest shrink-0
+                    ${action.priority === 'critical' ? 'bg-red-950 border-red-500/40 text-red-400' : action.priority === 'high' ? 'bg-amber-950 border-amber-500/40 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
                     {pc.label}
                   </span>
                 </button>
 
-                {/* Right: status pill + chevron */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`pill text-[10px] font-black uppercase tracking-widest px-3 py-1
-                    ${action.status === 'completed' ? 'pill-green opacity-60' : action.status === 'in_progress' ? 'pill-amber' : action.status === 'blocked' ? 'pill-red' : 'pill-blue'}`}>
-                    {sc.label}
-                  </span>
-                  <button type="button" onClick={() => toggleAction(action.id)} className="w-6 h-6 flex items-center justify-center rounded-lg cursor-pointer transition-colors hover:bg-white/5">
-                    <svg className="w-3.5 h-3.5 text-hc-muted/40 transition-transform duration-200" style={{transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                {/* TELEMETRY */}
+                <div className="flex items-center gap-6 shrink-0">
+                   <div className="hidden md:flex flex-col items-end">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">ASSIGNED COMMAND</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{action.owner}</span>
+                   </div>
+                   <div className="hidden md:flex flex-col items-end">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">OPERATIONAL UNIT</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{action.house}</span>
+                   </div>
+                   <div className="w-24">
+                    <span className={`text-[10px] font-black uppercase tracking-widest block text-center border-l border-slate-800`}>
+                      {sc.label}
+                    </span>
+                   </div>
+                   <button type="button" onClick={() => toggleAction(action.id)} className="p-1 text-slate-600 hover:text-white transition-colors">
+                    <svg className={`w-4 h-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                   </button>
                 </div>
               </div>
 
-              {/* Collapsable detail */}
+              {/* VECTOR DETAIL EXPANSION */}
               {!collapsed && (
-                <div className="px-5 pb-4 pt-0" style={{borderTop:'1px solid rgba(255,255,255,0.04)'}}>
-                  <div className="flex items-center gap-5 text-[10px] font-bold uppercase tracking-[0.12em] text-hc-muted/60 mt-3">
-                    <span>{action.house}</span>
-                    <span className="opacity-30">·</span>
-                    <span>{action.owner}</span>
-                    {action.dueDate && (
-                      <>
-                        <span className="opacity-30">·</span>
-                        <span className={isCritical ? 'text-flag-red font-black' : ''}>Due: {action.dueDate}</span>
-                      </>
-                    )}
-                    <span className="ml-auto opacity-30 font-mono">#{action.id.slice(0, 4)}</span>
+                <div className="px-12 pb-6 pt-2 border-t border-slate-800/50 bg-slate-900/10">
+                  <div className="grid grid-cols-3 gap-8">
+                    <div>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">IDENTIFIER</span>
+                      <span className="font-mono text-[10px] text-slate-400">VECTOR_{action.id.toUpperCase().slice(0, 8)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">ESTABLISHED</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{action.createdAt}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">TARGET</span>
+                      <span className={`text-[10px] font-black uppercase ${isCritical ? 'text-red-500' : 'text-slate-400'}`}>
+                        {action.dueDate || 'UNDEFINED'}
+                      </span>
+                    </div>
                   </div>
                   {action.tags.length > 0 && (
-                    <div className="flex gap-2 mt-2.5">
+                    <div className="flex gap-2 mt-6">
                       {action.tags.map(tag => (
-                        <span key={tag} className="text-[9px] font-black px-2.5 py-1 rounded-lg bg-black/40 text-hc-muted/60 border border-white/5 uppercase tracking-widest">{tag}</span>
+                        <span key={tag} className="text-[9px] font-black px-3 py-1 bg-slate-800 text-slate-400 uppercase tracking-widest">{tag}</span>
                       ))}
                     </div>
                   )}
@@ -250,10 +263,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         })}
 
         {sorted.length === 0 && (
-          <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
-            <div className="text-5xl mb-6 opacity-20">🎯</div>
-            <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">All Done</div>
-            <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">No active objectives matching these parameters</div>
+          <div className="h-full flex flex-col items-center justify-center opacity-30 grayscale border border-dashed border-slate-800 py-32">
+            <div className="text-5xl mb-6">🎯</div>
+            <div className="text-xl font-black text-white mb-2 uppercase tracking-tight">QUEUES NOMINAL</div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-[0.3em]">No active vectors matching parameters</div>
           </div>
         )}
       </div>

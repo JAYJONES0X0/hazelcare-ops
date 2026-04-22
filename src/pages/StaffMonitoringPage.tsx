@@ -1,5 +1,5 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
-import { Activity, RefreshCw, MessageSquare, History, FileText, CheckCircle, Sparkles, Download, Lightbulb, Zap, Search, X } from 'lucide-react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { Activity, RefreshCw, History, FileText, CheckCircle, Sparkles, Download, Lightbulb, Zap, Search, X, ChevronRight, ShieldAlert } from 'lucide-react';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
@@ -62,6 +62,7 @@ function entryTypeLabel(category?: string, rawType?: string): { label: string; i
 
 export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<Props, 'onDataParsed'> & { onDataParsed?: (data: WeekSummary) => void }) {
   const def = useMemo(() => defaultMondayWindow(), []);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const [house, setHouse] = useState<string>('all');
   const [dateFrom] = useState(def.dateFrom);
@@ -89,13 +90,18 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
   const exportHints = useMemo(() => buildExportRecommendations(snapshot), [snapshot]);
 
-  const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
+  const selectedEsc = useMemo(() => {
+    if (coachStaff) {
+      return snapshot.escalations.find(e => e.carer === coachStaff) || null;
+    }
+    return snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
+  }, [snapshot.escalations, selectedEscId, coachStaff]);
 
   useEffect(() => {
-    if (snapshot.escalations.length && !selectedEscId) {
+    if (snapshot.escalations.length && !selectedEscId && !coachStaff) {
       setSelectedEscId(snapshot.escalations[0].id);
     }
-  }, [snapshot.escalations, selectedEscId]);
+  }, [snapshot.escalations, selectedEscId, coachStaff]);
 
   const script = useMemo(() => {
     if (!selectedEsc) return null;
@@ -216,10 +222,10 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const needsReview = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore < 65);
   const goodStanding = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore >= 65);
   
-  const selectedStaff = snapshot.staff.find(s => s.carer === coachStaff);
+  const selectedStaffData = snapshot.staff.find(s => s.carer === coachStaff);
 
   const renderStaffQueue = (list: typeof searchedStaff, title: string, colorClass: string, borderClass: string, emptyMsg: string) => (
-    <div className="mb-6">
+    <div className="mb-6 last:mb-0">
       <div className={`text-[10px] font-black uppercase tracking-widest mb-3 pl-2 flex items-center gap-2 ${colorClass}`}>
         <div className={`w-1.5 h-1.5 rounded-full ${colorClass.replace('text-', 'bg-').split(' ')[0]}`} />
         {title} — {list.length}
@@ -239,129 +245,148 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
             const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count).slice(0, 3);
             
             return (
-              <div key={s.carer} onClick={() => setCoachStaff(s.carer)}
-                className={`cursor-pointer rounded-xl border transition-all duration-300 overflow-hidden px-4 py-3 group ${isExpanded ? borderClass + ' bg-black/40 shadow-lg' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06]'}`}>
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <div className="flex items-center gap-3 w-full">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? borderClass.replace('border-','bg-').replace('/30','') + ' text-black' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
-                        {s.carer.charAt(0)}
+              <div key={s.carer} onClick={() => {
+                setCoachStaff(s.carer);
+                const esc = snapshot.escalations.find(e => e.carer === s.carer);
+                if (esc) setSelectedEscId(esc.id);
+                
+                // AUTO-DIAGNOSTIC INJECTION: Find lowest score entry and auto-select
+                const carerEntries = entriesByStaff[s.carer] || [];
+                if (carerEntries.length > 0) {
+                  const lowest = [...carerEntries].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)[0];
+                  setCoachEntry(lowest);
+                  setCoachRewrite('');
+                }
+
+                // Scroll detail into view on mobile
+                if (window.innerWidth < 1280) {
+                  detailRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+                className={`cursor-pointer rounded-xl border transition-all duration-300 overflow-hidden px-4 py-3 group flex items-center justify-between ${isExpanded ? borderClass + ' bg-black/40 shadow-lg ring-1 ring-hc-teal/20' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06]'}`}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? borderClass.replace('border-','bg-').replace('/30','') + ' text-black' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
+                      {s.carer.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-black tracking-tight mb-1 truncate text-white/90">{s.carer}</div>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {typeEntries.map(([label, { count, icon, colorClass }]) => (
+                          <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1.5 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
+                            {icon} {count}
+                          </span>
+                        ))}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-black tracking-tight mb-1 truncate">{s.carer}</div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {typeEntries.map(([label, { count, icon, colorClass }]) => (
-                            <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
-                              {icon} {count}× {label}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span style={{ color: scoreHex }} className="text-[10px] font-black">{s.qualityScore}%</span>
-                        <div className="w-12 bg-black/40 h-1 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
-                        </div>
-                        {(() => {
-                          const seq = activeSequences.find(seq => seq.carer === s.carer && seq.status === 'active');
-                          if (!seq) return null;
-                          const totalSteps = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId)?.steps.length || 1;
-                          const progress = ((seq.currentStepIndex) / totalSteps) * 100;
-                           return (
-                             <div className="mt-1 flex items-center gap-1.5" title="Active Outreach Sequence">
-                               <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                                 <div className="h-full bg-hc-purple animate-shimmer" style={{ width: `${progress}%` }} />
-                               </div>
-                               <span className="text-[6px] font-black text-hc-purple-light uppercase">Step {seq.currentStepIndex + 1}</span>
-                             </div>
-                           );
-                         })()}
-                       </div>
-                     </div>
-                 </div>
-             );
-         })}
-       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-end gap-1 shrink-0 ml-4">
+                    <div className="flex items-center gap-2">
+                       <span style={{ color: scoreHex }} className="text-[10px] font-black">{s.qualityScore}%</span>
+                       <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-zinc-600'}`} />
+                    </div>
+                    <div className="w-12 bg-black/40 h-1 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
+                    </div>
+                    {(() => {
+                      const seq = activeSequences.find(seq => seq.carer === s.carer && seq.status === 'active');
+                      if (!seq) return null;
+                      const totalSteps = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId)?.steps.length || 1;
+                      const progress = ((seq.currentStepIndex) / totalSteps) * 100;
+                       return (
+                         <div className="mt-1 flex items-center gap-1.5" title="Active Outreach Sequence">
+                           <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                             <div className="h-full bg-hc-purple animate-shimmer" style={{ width: `${progress}%` }} />
+                           </div>
+                         </div>
+                       );
+                     })()}
+                  </div>
+              </div>
+            );
+        })}
       </div>
-    );
+    </div>
+  );
 
   if (!weekData) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-hc-navy flex flex-col items-center justify-center p-8">
-        <Activity className="w-12 h-12 text-hc-muted opacity-20 mb-6" />
-        <h2 className="text-xl font-black text-hc-text uppercase tracking-widest mb-2">Personnel Intel Readiness</h2>
-        <p className="text-hc-muted text-xs uppercase tracking-wider mb-8">Injest daily CSV feed to activate diagnostic command.</p>
-        <button onClick={() => setPage('upload')} className="btn-gradient px-8 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl">Begin Field Injest</button>
+      <div className="min-h-[calc(100vh-4rem)] bg-hc-navy flex flex-col items-center justify-center p-8">
+        <Activity className="w-16 h-16 text-hc-muted opacity-20 mb-8" />
+        <h2 className="text-2xl font-black text-hc-text uppercase tracking-[0.4em] mb-3 text-center">Personnel Intel Offline</h2>
+        <p className="text-hc-muted text-xs uppercase tracking-[0.2em] mb-10 text-center max-w-md leading-relaxed opacity-60">Injest high-integrity field data to activate diagnostic command and stability pipelines.</p>
+        <button onClick={() => setPage('upload')} className="bg-hc-teal text-black px-10 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all">Start Injection Matrix</button>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-hc-navy flex flex-col overflow-hidden">
-      <div className="p-6 lg:px-10 xl:px-12 flex-1 overflow-y-auto scrollbar-thin">
+    <div className="min-h-[calc(100vh-4rem)] bg-hc-navy flex flex-col">
+      <div className="max-w-[1920px] mx-auto w-full p-6 lg:p-10 flex flex-col overflow-visible">
+        
         {/* SITREP HEADER */}
-        <div className="mb-10 flex items-center justify-between shrink-0 border-b border-hc-border pb-6">
+        <div className="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-hc-border pb-8">
           <div>
-            <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Personnel Readiness Command</h2>
-            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest opacity-70 mt-1">Real-time gap detection & stability tracking</p>
+            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Personnel Readiness Command</h2>
+            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-[0.4em] opacity-70 mt-1">Operational Oversight & Stability Tracking Matrix</p>
           </div>
-          <div className="flex items-center gap-3">
-             <div className="bg-hc-card border border-hc-border px-5 py-2.5 rounded-lg flex items-center gap-6 shadow-sm">
+          <div className="flex flex-wrap items-center gap-4">
+             <div className="bg-hc-card border border-hc-border px-6 py-3 rounded-xl flex items-center gap-8 shadow-inner shrink-0">
                 <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-0.5">Force Status</span>
-                  <span className="text-[10px] font-black text-hc-teal-light uppercase">READY</span>
+                  <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-1">Status</span>
+                  <span className="text-xs font-black text-hc-teal-light uppercase tracking-widest">ACTIVE</span>
                 </div>
-                <div className="w-px h-6 bg-hc-border" />
-                <div className="flex flex-col items-center">
-                   <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-0.5">Active Gaps</span>
-                   <span className="text-[10px] font-black text-flag-amber uppercase">{needsReview.length} UNIT</span>
+                <div className="w-px h-8 bg-hc-border" />
+                <div className="flex flex-col items-center text-center items-center">
+                   <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-1">Gaps_Found</span>
+                   <span className="text-xs font-black text-flag-amber uppercase tracking-widest">{needsReview.length} UNITS</span>
                 </div>
              </div>
-             <button onClick={() => { onRecompute(); setPage('templates'); }} className="group/btn relative px-7 py-3 rounded-xl bg-hc-purple/10 border border-hc-purple/30 text-[10px] font-black uppercase tracking-[.2em] text-hc-purple-light hover:text-white hover:bg-hc-purple/20 flex items-center gap-3 transition-all">
-               <Sparkles className="w-5 h-5 group-hover/btn:animate-pulse" /> SYNTHESISE FROM INTELLIGENCE
+             <button onClick={() => { onRecompute(); setPage('templates'); }} className="group/btn relative px-8 py-3.5 rounded-xl bg-hc-purple/10 border border-hc-purple/30 text-[10px] font-black uppercase tracking-[.3em] text-hc-purple-light hover:text-white hover:bg-hc-purple/20 flex items-center gap-3 transition-all">
+               <Sparkles className="w-5 h-5" /> SYNT_INTELLIGENCE
              </button>
-             <button onClick={() => setPage('upload')} className="btn-gradient px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl">Sync Daily CSV</button>
+             <button onClick={() => setPage('upload')} className="bg-white/5 border border-white/10 px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-hc-text hover:bg-white/10 transition-all">Sync Feed</button>
           </div>
         </div>
 
         {hourlyDue && !hourlyDismissed && (
-          <div className="mb-8 p-6 rounded-[2rem] bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-between shadow-[0_0_50px_rgba(245,158,11,0.1)] animate-in slide-in-from-top-4 duration-1000 relative overflow-hidden group shrink-0">
-            <div className="absolute inset-0 bg-hc-dark/40 backdrop-blur-2xl -z-10" />
-            <div className="flex items-center gap-6 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-flag-amber/20 flex items-center justify-center text-2xl border border-flag-amber/40 animate-pulse">⚠️</div>
+          <div className="mb-10 p-8 rounded-3xl bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-between shadow-2xl relative overflow-hidden group shrink-0">
+            <div className="absolute inset-0 bg-hc-dark/60 backdrop-blur-3xl -z-10" />
+            <div className="flex items-center gap-8 relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-flag-amber/20 flex items-center justify-center text-3xl border border-flag-amber/40 shadow-inner">⚠️</div>
               <div>
-                <h3 className="text-lg font-black text-white tracking-tight uppercase">Operational Sync Required</h3>
-                <p className="text-[10px] text-flag-amber/80 font-bold uppercase tracking-widest mt-1">Personnel intel is over 60 minutes old. Field readiness data may be stale.</p>
+                <h3 className="text-xl font-black text-white tracking-tight uppercase">Operational Sync Required</h3>
+                <p className="text-[10px] text-flag-amber/80 font-bold uppercase tracking-[.3em] mt-2 leading-relaxed max-w-xl">Personnel intel is over 60 minutes old. Field readiness data may be stale and require structural re-validation.</p>
               </div>
             </div>
-            <div className="flex gap-4 relative z-10">
-              <button onClick={() => setHourlyDismissed(true)} className="px-6 py-3 border border-hc-border text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text rounded-xl transition-all">Dismiss</button>
-              <button onClick={() => { touchHourlyCheck(); setPage('upload'); }} className="px-8 py-3 bg-flag-amber/20 border border-flag-amber/40 text-flag-amber text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-flag-amber/30 transition-all shadow-xl active:scale-95">Injest Now</button>
+            <div className="flex gap-4 relative z-10 shrink-0">
+              <button onClick={() => setHourlyDismissed(true)} className="px-6 py-3 border border-hc-border text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text rounded-xl transition-all">Dismiss</button>
+              <button onClick={() => { touchHourlyCheck(); setPage('upload'); }} className="px-10 py-3 bg-flag-amber text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-amber-400 transition-all shadow-2xl active:scale-95">Injest Data</button>
             </div>
           </div>
         )}
 
         {growthAlerts.length > 0 && (
-          <div className="mb-10 p-8 rounded-[2.5rem] bg-hc-teal/5 border border-hc-teal/20 shadow-[0_0_60px_rgba(20,184,166,0.1)] animate-in slide-in-from-bottom-6 duration-1000 overflow-hidden relative group shrink-0">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-hc-teal/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="flex items-center justify-between mb-8 relative z-10">
-               <div className="flex items-center gap-4">
-                  <Sparkles className="w-6 h-6 text-hc-teal animate-pulse" />
-                  <h2 className="text-xl font-black text-white tracking-tighter uppercase tabular-nums">High-Performance Vector Indicators</h2>
+          <div className="mb-12 p-10 rounded-[3rem] bg-hc-teal/5 border border-hc-teal/20 shadow-2xl overflow-hidden relative group shrink-0">
+            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.1),transparent_70%)]" />
+            <div className="flex items-center justify-between mb-10 relative z-10">
+               <div className="flex items-center gap-5">
+                  <Sparkles className="w-8 h-8 text-hc-teal" />
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase tabular-nums">Performance Vector Indicators</h2>
                </div>
-               <button onClick={() => setGrowthAlerts([])} className="text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-white transition-colors">Clear Signals</button>
+               <button onClick={() => setGrowthAlerts([])} className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-white transition-colors border-b border-dashed border-hc-muted hover:border-white">Clear Matrix Signals</button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
               {growthAlerts.map((a) => (
-                <div key={`${a.carer}-${a.module}`} className="bg-hc-card/40 border border-hc-border p-5 rounded-2xl flex flex-col gap-4 group/alert hover:border-hc-teal/40 transition-all">
+                <div key={`${a.carer}-${a.module}`} className="bg-hc-card/60 backdrop-blur-xl border border-hc-border p-6 rounded-2xl flex flex-col gap-5 group/alert hover:border-hc-teal/50 transition-all">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-[11px] font-black text-hc-text uppercase tracking-widest mb-1 truncate">{a.carer}</div>
-                      <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest leading-relaxed">
-                         <span className="text-hc-teal">{a.module}</span> improved {a.previousScore}% → <span className="text-white">{a.currentScore}%</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-black text-hc-text uppercase tracking-widest mb-1.5 truncate">{a.carer}</div>
+                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest leading-relaxed">
+                         <span className="text-hc-teal">{a.module}</span> improved {a.previousScore}% → <span className="text-white font-black">{a.currentScore}%</span>
                       </div>
                     </div>
-                    <div className="px-2 py-1 bg-hc-teal/10 border border-hc-teal/30 rounded text-[8px] font-black text-hc-teal tabular-nums">+{a.delta} PTS</div>
+                    <div className="px-3 py-1.5 bg-hc-teal/10 border border-hc-teal/30 rounded-lg text-[10px] font-black text-hc-teal tabular-nums shadow-inner">+{a.delta} PTS</div>
                   </div>
                   <button
                     onClick={() => {
@@ -369,10 +394,10 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                        setCopiedGrowthAlert(`${a.carer}-${a.module}`);
                        setTimeout(() => setCopiedGrowthAlert(null), 2500);
                     }}
-                    className="w-full py-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider border border-hc-border text-hc-muted hover:border-hc-teal hover:text-hc-teal transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-hc-border text-hc-muted hover:bg-hc-teal hover:text-black hover:border-hc-teal transition-all flex items-center justify-center gap-2 group-hover/alert:border-hc-teal/30 shadow-lg"
                   >
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? <CheckCircle className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? 'LOGGED' : 'Copy Reinforcement'}
+                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? <CheckCircle className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4 opacity-0 group-hover/alert:opacity-100 transition-opacity" />}
+                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? 'REINFORCEMENT LOGGED' : 'Copy Reinforcement'}
                   </button>
                 </div>
               ))}
@@ -380,66 +405,82 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[340px,1fr] gap-6 h-[calc(100vh-14rem)] min-h-0">
+        <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-10 items-start">
           
           {/* MASTER PANE: Staff Queue */}
-          <div className="bg-hc-card border border-hc-border rounded-xl shadow-xl flex flex-col overflow-hidden min-h-0">
-            <div className="p-4 border-b border-hc-border bg-hc-card-hover/40 flex flex-col gap-3 shrink-0">
-               <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+          <div className="bg-hc-card border border-hc-border rounded-2xl shadow-2xl flex flex-col overflow-hidden sticky top-24">
+            <div className="p-6 border-b border-hc-border bg-hc-card-hover/20 flex flex-col gap-4 shrink-0">
+               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
                  {snapshot.houses.length > 0 ? [{ name: 'ALL', avgQuality: 100 }, ...snapshot.houses].map((h) => (
                    <button key={h.name} onClick={() => setHouse(h.name)} 
-                     className={`px-3 py-1.5 rounded-md text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${house === h.name ? 'bg-hc-teal/10 text-hc-teal-light border-hc-teal/30' : 'text-hc-muted hover:text-hc-text border-transparent hover:bg-hc-card'}`}>
+                     className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${house === h.name ? 'bg-hc-teal text-black border-hc-teal' : 'text-hc-muted hover:text-white border-white/5 bg-white/5 hover:bg-white/10'}`}>
                      {h.name === 'all' ? 'NETWORK' : h.name}
                    </button>
                  )) : <div className="px-3 py-1 text-[9px] text-hc-muted">No units</div>}
                </div>
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-hc-muted absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="text" placeholder="QUERY READINESS..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
-                  className="w-full bg-hc-navy/40 border border-hc-border text-hc-text text-[10px] font-mono font-bold rounded-lg pl-9 pr-3 py-2.5 outline-none focus:border-hc-teal transition-colors" />
+              <div className="relative group">
+                <Search className="w-4 h-4 text-hc-muted absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-hc-teal transition-colors" />
+                <input type="text" placeholder="QUERY READINESS COMMAND..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
+                  className="w-full bg-hc-navy/60 border-2 border-white/5 text-hc-text text-sm font-mono font-bold rounded-xl pl-11 pr-4 py-3.5 outline-none focus:border-hc-teal transition-all shadow-inner placeholder:text-zinc-700" />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-2">
-               {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-flag-amber', 'border-flag-amber/30', '0 units.')}
-               {renderStaffQueue(activeMonitored, 'ACTIVE TRACKING', 'text-hc-teal', 'border-hc-teal/30', '0 units.')}
+            <div className="max-h-[70vh] overflow-y-auto scrollbar-thin p-5 space-y-2 bg-hc-navy/10">
+               {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-flag-amber', 'border-flag-amber/40', '0 units.')}
+               {renderStaffQueue(activeMonitored, 'ACTIVE TRACKING', 'text-hc-teal', 'border-hc-teal/40', '0 units.')}
                {renderStaffQueue(goodStanding, 'OPTIMAL STANDING', 'text-hc-muted', 'border-hc-border', '0 units.')}
             </div>
           </div>
 
           {/* DETAIL PANE: Command Intelligence */}
-          <div className="flex flex-col min-h-0">
-            {selectedStaff ? (
-              <div className="bg-hc-card border border-hc-border rounded-xl flex flex-col relative overflow-hidden h-full shadow-2xl">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-hc-teal to-hc-purple" />
+          <div ref={detailRef} className="flex flex-col gap-10">
+            {coachStaff && selectedStaffData ? (
+              <div className="bg-hc-card border border-hc-border rounded-3xl flex flex-col relative overflow-hidden shadow-2xl min-h-[800px]">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />
                 
-                <div className="px-6 py-5 border-b border-hc-border flex items-center justify-between bg-hc-card-hover/20 shrink-0">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-hc-teal/20 text-hc-teal border border-hc-teal/30 flex items-center justify-center text-lg font-black">{coachStaff!.charAt(0)}</div>
+                {/* Detail Header */}
+                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-hover/20 shrink-0">
+                  <div className="flex items-center gap-6">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/5 ${selectedStaffData.qualityScore < 65 ? 'bg-flag-amber/20 text-flag-amber' : 'bg-hc-teal/20 text-hc-teal'}`}>
+                      {coachStaff.charAt(0)}
+                    </div>
                     <div>
-                      <div className="text-sm font-black text-hc-text leading-none tracking-tight uppercase tabular-nums">{coachStaff}</div>
-                      <div className="text-[9px] text-hc-teal-light uppercase tracking-[0.2em] font-bold mt-1">Operational Readiness Command</div>
+                      <div className="text-2xl font-black text-white tracking-tighter uppercase tabular-nums">{coachStaff}</div>
+                      <div className="flex items-center gap-4 mt-2">
+                         <div className="text-[10px] text-hc-teal-light uppercase font-black tracking-[0.3em]">Operational Readiness Diagnostic</div>
+                         <div className="w-1.5 h-1.5 rounded-full bg-hc-border" />
+                         <div className="text-[10px] text-hc-muted uppercase font-black tracking-[0.3em]">{selectedStaffData.house || 'Unassigned Unit'}</div>
+                      </div>
                     </div>
                   </div>
-                  <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-8 h-8 rounded border border-hc-border flex items-center justify-center text-hc-muted hover:text-hc-text transition-colors"><X className="w-4 h-4" /></button>
+                  <div className="flex items-center gap-3">
+                     <div className="px-6 py-3 rounded-2xl bg-black/40 border border-hc-border flex flex-col items-center">
+                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-40 mb-1">Impact_Score</span>
+                        <span className={`text-xl font-black tabular-nums ${selectedStaffData.qualityScore < 65 ? 'text-flag-amber' : 'text-hc-teal'}`}>{selectedStaffData.qualityScore}%</span>
+                     </div>
+                     <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-12 h-12 rounded-2xl border border-hc-border flex items-center justify-center text-hc-muted hover:bg-flag-red/10 hover:text-flag-red hover:border-flag-red/30 transition-all shadow-xl backdrop-blur-xl group"><X className="w-5 h-5 group-hover:scale-110 transition-transform" /></button>
+                  </div>
                 </div>
                 
-                <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-hc-navy/20">
+                <div className="flex-1 flex flex-col md:flex-row min-h-0">
                    
-                   <div className="flex-1 flex flex-col border-r border-hc-border overflow-y-auto scrollbar-thin p-6">
-                        <div className="mb-8 shrink-0">
-                          <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                             <Zap className="w-3.5 h-3.5" /> Stability Pipeline
+                   {/* Left: Pipeline & Ledger */}
+                   <div className="flex-1 flex flex-col border-r border-hc-border p-8 bg-hc-navy/5">
+                        {/* Sequence Tracker */}
+                        <div className="mb-12 shrink-0">
+                          <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                             <div className="w-6 h-px bg-hc-border" />
+                             Stability Pipeline
                           </div>
                           {(() => {
                             const seq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
                             if (!seq) {
                               return (
-                                <div className="border border-hc-border rounded-lg p-5 bg-hc-card-hover/10">
-                                  <div className="text-[10px] text-hc-muted font-bold mb-4 uppercase opacity-60">No active tracking sequence detected.</div>
-                                  <div className="flex flex-wrap gap-2">
+                                <div className="border-2 border-dashed border-hc-border rounded-2xl p-8 bg-hc-card-hover/5 flex flex-col items-center text-center">
+                                  <div className="text-[10px] text-hc-muted font-bold mb-6 uppercase tracking-widest opacity-40">No active tracking sequence detected for this personnel unit.</div>
+                                  <div className="flex flex-wrap justify-center gap-3">
                                     {STANDARD_SEQUENCES.map(ss => (
-                                      <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="px-4 py-2 rounded-lg bg-hc-purple/10 border border-hc-purple/30 text-hc-purple-light text-[9px] font-black uppercase tracking-widest hover:bg-hc-purple/20 transition-all">
+                                      <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="px-6 py-3 rounded-xl bg-hc-purple/10 border border-hc-purple/30 text-hc-purple-light text-[10px] font-black uppercase tracking-[0.2em] hover:bg-hc-purple hover:text-white transition-all shadow-lg active:scale-95">
                                         ENROLL: {ss.name}
                                       </button>
                                     ))}
@@ -449,22 +490,23 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                             }
                             const sequenceData = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId);
                             return (
-                              <div className="border border-hc-purple/30 rounded-lg p-5 bg-hc-purple/5">
-                                <div className="flex items-center justify-between mb-5">
-                                  <span className="text-[10px] font-black text-hc-text uppercase tracking-wider">{sequenceData?.name}</span>
-                                  <span className="text-[8px] font-black text-hc-purple-light bg-hc-purple/10 px-2 py-1 rounded border border-hc-purple/20">OPERATIONAL TRACKING</span>
+                              <div className="border-2 border-hc-purple/20 rounded-2xl p-8 bg-hc-purple/[0.03] shadow-inner">
+                                <div className="flex items-center justify-between mb-8">
+                                  <span className="text-xs font-black text-hc-text uppercase tracking-widest">{sequenceData?.name}</span>
+                                  <div className="flex items-center gap-2 px-3 py-1 bg-hc-purple/10 rounded-full border border-hc-purple/20">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-hc-purple animate-pulse" />
+                                    <span className="text-[8px] font-black text-hc-purple-light uppercase tracking-widest">ACTIVE_ENGAGEMENT</span>
+                                  </div>
                                 </div>
-                                <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                   {sequenceData?.steps.map((step, idx) => {
                                     const isDone = idx < seq.currentStepIndex;
                                     const isCurrent = idx === seq.currentStepIndex;
                                     return (
-                                      <div key={idx} className={`flex items-center gap-4 ${isDone ? 'opacity-40' : ''}`}>
-                                        <div className={`w-6 h-6 rounded border flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-hc-purple text-white border-hc-purple shadow-[0_0_10px_rgba(139,92,246,0.2)]' : isCurrent ? 'bg-hc-purple/20 border-hc-purple text-hc-purple-light' : 'bg-hc-card border-hc-border text-hc-muted'}`}>
-                                          {isDone ? '✓' : idx + 1}
-                                        </div>
-                                        <div className={`text-[11px] font-black uppercase tracking-wide ${isCurrent ? 'text-hc-text' : 'text-hc-muted'}`}>{step.label}</div>
-                                        {isCurrent && <span className="ml-auto text-[8px] font-mono font-black text-hc-purple-light animate-pulse uppercase tracking-[0.2em]">ACTIVE SLOT</span>}
+                                      <div key={idx} className={`relative p-4 rounded-xl border-2 transition-all ${isDone ? 'bg-hc-purple/5 border-hc-purple/20 opacity-40' : isCurrent ? 'bg-hc-purple/10 border-hc-purple shadow-xl' : 'bg-black/20 border-white/5 opacity-30'}`}>
+                                        <div className={`text-[10px] font-black mb-2 ${isCurrent ? 'text-hc-purple-light' : 'text-hc-muted'}`}>STEP_0{idx + 1}</div>
+                                        <div className={`text-[11px] font-black uppercase tracking-tight ${isCurrent ? 'text-white' : 'text-hc-muted'}`}>{step.label}</div>
+                                        {isCurrent && <div className="mt-3 h-1 bg-hc-purple/20 rounded-full overflow-hidden"><div className="h-full bg-hc-purple animate-shimmer" style={{ width: '60%' }} /></div>}
                                       </div>
                                     );
                                   })}
@@ -474,100 +516,135 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                           })()}
                         </div>
 
+                        {/* Diagnostic Ledger */}
                         <div className="flex-1 flex flex-col min-h-0">
-                          <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                             <FileText className="w-3.5 h-3.5" /> Diagnostic Ledger
+                          <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                             <div className="w-6 h-px bg-hc-border" />
+                             Diagnostic Ledger
                           </div>
-                          <div className="space-y-1.5 overflow-y-auto scrollbar-thin pr-2 flex-1">
+                          <div className="grid grid-cols-1 gap-2 overflow-y-visible">
                             {[...(entriesByStaff[coachStaff!] || [])]
                               .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
-                              .slice(0, 20)
+                              .slice(0, 25)
                               .map((e, i) => {
-                                const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
+                                const { icon, colorClass } = entryTypeLabel(e.category, e.type);
                                 const score = scoreEntry(e).total;
                                 const isSelected = coachEntry?.id === e.id;
                                 return (
                                   <div key={i}
                                     onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                                    className={`cursor-pointer rounded-lg px-4 py-3 flex items-center gap-4 transition-all border ${isSelected ? 'bg-hc-teal/10 border-hc-teal/50 shadow-sm' : 'bg-hc-card-hover/20 border-hc-border hover:bg-hc-card-hover/40'}`}
+                                    className={`cursor-pointer rounded-xl px-5 py-4 flex items-center gap-6 transition-all border-2 ${isSelected ? 'bg-hc-teal/10 border-hc-teal/40 shadow-2xl ring-2 ring-hc-teal/10' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10 shadow-lg'}`}
                                   >
-                                    <span className={`shrink-0 text-[8px] font-black px-2 py-1 rounded border uppercase tracking-[0.2em] whitespace-nowrap ${colorClass.replace(/text-[\w-]+ |bg-[\w-]+\/\d+ |border-[\w-]+\/\d+/g, '').trim() + ' border-current opacity-70'}`}>{icon} {label}</span>
+                                    <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-xl border-2 ${colorClass.split(' ')[2]} ${colorClass.split(' ')[1]} ${colorClass.split(' ')[0]}`}>{icon}</div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="text-[10px] font-black text-hc-text/90 truncate uppercase tabular-nums tracking-tight">{e.client || 'SYSTEM'} &middot; {e.date}</div>
-                                      <div className="text-[9px] text-hc-muted truncate opacity-70 font-medium font-mono">{(e.entry || '').slice(0, 90)}…</div>
+                                      <div className="flex items-center gap-3 mb-1.5">
+                                         <span className="text-xs font-black text-white/90 uppercase tracking-tight tabular-nums">{e.client || 'SYSTEM'}</span>
+                                         <span className="text-[9px] font-black text-hc-muted uppercase opacity-50 tabular-nums">{e.date}</span>
+                                      </div>
+                                      <div className="text-[10px] text-hc-muted truncate opacity-80 font-mono font-medium leading-relaxed italic">"{(e.entry || '').slice(0, 110)}…"</div>
                                     </div>
-                                    <span className="shrink-0 text-[10px] font-black tabular-nums border border-hc-border px-2 py-1 rounded bg-hc-navy/40" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
+                                    <div className="flex flex-col items-center shrink-0 ml-4">
+                                       <span className="text-xs font-black tabular-nums mb-1" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
+                                       <div className="w-10 h-1 bg-black/40 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full" style={{ width: score + '%', backgroundColor: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }} />
+                                       </div>
+                                    </div>
                                   </div>
                                 );
                               })
                             }
                             {!(entriesByStaff[coachStaff!]?.length) && (
-                              <div className="text-center py-16 text-[10px] text-hc-muted opacity-40 uppercase font-black tracking-[0.3em]">No Readiness Data Available</div>
+                              <div className="text-center py-24 border-2 border-dashed border-hc-border rounded-2xl bg-white/[0.01]">
+                                 <Activity className="w-12 h-12 text-hc-muted mx-auto mb-6 opacity-20" />
+                                 <div className="text-[10px] text-hc-muted opacity-40 uppercase font-black tracking-[0.5em]">No Structural Telemetry Available</div>
+                              </div>
                             )}
                           </div>
                         </div>
                    </div>
 
-                   <div className="w-full md:w-[400px] bg-hc-card-hover/10 border-l border-hc-border p-6 flex flex-col overflow-y-auto scrollbar-thin">
+                   {/* Right Side: Command Synthesis */}
+                   <div className="w-full md:w-[480px] bg-hc-card-hover/10 border-l border-hc-border p-8 flex flex-col bg-black/20">
                       {coachEntry ? (
-                        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                          <div className="bg-flag-amber/5 border border-flag-amber/20 rounded-xl p-5 mb-6 shadow-Inner">
-                             <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.3em] mb-4 flex items-center gap-2"><Zap className="w-4 h-4" /> Integrity Signals</div>
-                             <div className="space-y-3">
-                                {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,4).map((gap, i) => (
-                                  <div key={i} className="text-[11px] font-bold text-white/70 leading-relaxed pl-3 border-l grid border-flag-amber/30">{gap}</div>
+                        <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-10 duration-500">
+                          {/* Integrity Scanner */}
+                          <div className="bg-hc-navy/40 border-2 border-flag-amber/20 rounded-2xl p-6 mb-8 shadow-2xl relative overflow-hidden">
+                             <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldAlert className="w-12 h-12 text-flag-amber" /></div>
+                             <div className="text-[11px] font-black text-flag-amber uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                                <Zap className="w-5 h-5 fill-flag-amber" /> Integrity Signals
+                             </div>
+                             <div className="space-y-4">
+                                {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,6).map((gap, i) => (
+                                  <div key={i} className="flex gap-4">
+                                     <div className="w-1 h-auto bg-flag-amber/30 rounded-full" />
+                                     <div className="text-[11px] font-bold text-white/80 leading-relaxed uppercase tracking-wide">{gap}</div>
+                                  </div>
                                 ))}
+                                {scoreEntry(coachEntry).modules.flatMap(m => m.missing).length === 0 && (
+                                   <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest flex items-center gap-2">
+                                      <CheckCircle className="w-4 h-4" /> Entry Meets Global Indicators
+                                   </div>
+                                )}
                              </div>
                           </div>
                           
-                          <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-4 mb-6 rounded-xl btn-gradient text-[11px] font-black uppercase tracking-[0.3em] shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                            {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Synthesise Readiness Script
+                          <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-5 mb-8 rounded-2xl bg-hc-teal text-black text-[12px] font-black uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 hover:bg-teal-400 active:scale-95 transition-all group">
+                            {coachLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:scale-125 transition-transform" />} 
+                            SYNTHESISE_OUTREACH
                           </button>
 
                           {coachRewrite && (
-                            <div className="flex flex-col animate-in slide-in-from-bottom-2 duration-300">
-                              <div className="flex gap-2 mb-4">
-                                 <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="flex-1 bg-hc-navy/60 border border-hc-border rounded-lg px-4 py-3 text-[10px] text-white font-black tracking-widest uppercase outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner">
-                                    <option value="message">Direct Message (Tactical)</option>
-                                    <option value="email">Email Draft (Strategic)</option>
-                                    <option value="coaching">Manager Briefing Script</option>
-                                    <option value="urgent">Urgent Command Script</option>
-                                    <option value="support-first">Wellness Focus Script</option>
+                            <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-700">
+                              <div className="flex flex-col gap-2 mb-6">
+                                 <label className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.3em] mb-1 ml-1">Engagement_Vector</label>
+                                 <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="w-full bg-hc-navy border-2 border-white/5 rounded-xl px-5 py-4 text-xs text-white font-black tracking-widest uppercase outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner hover:bg-white/5">
+                                    <option value="message">Direct Outreach (Tactical)</option>
+                                    <option value="email">Strategic Email (Gold Standard)</option>
+                                    <option value="coaching">Personnel Coaching Script</option>
+                                    <option value="urgent">Urgent Operational Notice</option>
+                                    <option value="support-first">Wellbeing Readiness Check</option>
                                   </select>
                               </div>
-                              <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} className="w-full bg-hc-navy/40 border border-hc-border rounded-xl p-5 text-[11px] font-mono text-hc-text/90 outline-none scrollbar-thin mb-5 min-h-[180px] leading-relaxed shadow-inner font-medium italic" />
+
+                              <div className="relative flex-1 mb-8 group">
+                                <div className="absolute top-4 right-4 z-10"><FileText className="w-5 h-5 text-hc-teal opacity-20 group-hover:opacity-100 transition-opacity" /></div>
+                                <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} className="w-full h-full bg-hc-navy/40 border-2 border-white/5 rounded-2xl p-6 text-[12px] font-mono text-hc-text/90 outline-none scrollbar-thin leading-relaxed shadow-Inner font-medium italic border-hc-teal/10" />
+                              </div>
                               
-                              <div className="space-y-3 mb-6">
-                                <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Personnel engagement notes..." className="w-full bg-hc-navy/60 border border-hc-border rounded-xl p-4 text-[11px] text-hc-text h-24 outline-none shadow-inner focus:border-hc-teal transition-all" />
-                                <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-hc-navy/60 border border-hc-border rounded-xl px-4 py-3 text-[10px] font-black text-hc-text uppercase tracking-widest outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner">
-                                  <option value="reached">Resolved via Message</option><option value="callback">Follow-up Queued</option><option value="resolved">Stability Validated</option>
-                                </select>
+                              <div className="space-y-4 mb-8 shrink-0">
+                                <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Personnel engagement telemetry/notes..." className="w-full bg-hc-navy border-2 border-white/5 rounded-xl p-5 text-[11px] text-hc-text h-28 outline-none shadow-inner focus:border-hc-teal transition-all placeholder:text-zinc-700" />
+                                <div className="flex flex-col gap-2">
+                                  <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] mb-1 ml-1">Pipeline_Outcome</label>
+                                  <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-hc-navy border-2 border-white/5 rounded-xl px-5 py-4 text-[10px] font-black text-hc-text uppercase tracking-widest outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner">
+                                    <option value="reached">Resolved via Outreach</option><option value="callback">Follow-up Sequence Queued</option><option value="resolved">Clinical Stability Validated</option>
+                                  </select>
+                                </div>
                               </div>
 
-                              <button onClick={copyCoachingMessage} className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl ${coachCopied ? 'bg-flag-green text-white' : 'bg-hc-purple text-white hover:bg-hc-purple-light'}`}>
-                                {coachCopied ? <CheckCircle className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
-                                {coachCopied ? 'LOGGED TO PIPELINE' : 'DISPATCH COMMAND VECTOR'}
+                              <button onClick={copyCoachingMessage} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all font-black text-sm uppercase tracking-[0.3em] shadow-2xl active:scale-95 ${coachCopied ? 'bg-flag-green text-white ring-4 ring-flag-green/20' : 'bg-hc-purple text-white hover:bg-hc-purple-light shadow-[0_0_40px_rgba(139,92,246,0.3)]'}`}>
+                                {coachCopied ? <CheckCircle className="w-6 h-6 animate-pulse" /> : <Zap className="w-6 h-6 fill-current" />}
+                                {coachCopied ? 'STABILITY_LOGGED' : 'INITIATE_DISPATCH'}
                               </button>
                             </div>
                           )}
                         </div>
                       ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-center px-10">
-                           <div className="w-16 h-16 rounded-full bg-hc-card border border-hc-border flex items-center justify-center mb-6"><Search className="w-8 h-8 text-hc-muted" /></div>
-                           <h3 className="text-xs font-black uppercase tracking-widest mb-3">Diagnostic Ready</h3>
-                           <p className="text-[10px] leading-relaxed font-bold uppercase tracking-widest">Select a signal from the ledger to initiate structural synthesis.</p>
+                        <div className="flex-1 flex flex-col items-center justify-center opacity-20 text-center px-12">
+                           <div className="w-24 h-24 rounded-3xl bg-hc-card border-2 border-hc-border flex items-center justify-center mb-10 shadow-2xl"><Search className="w-12 h-12 text-hc-muted" /></div>
+                           <h3 className="text-sm font-black uppercase tracking-[0.6em] mb-6">Diagnostic_Pending</h3>
+                           <p className="text-[11px] leading-loose font-bold uppercase tracking-[0.4em] max-w-[280px]">Select an operational signal from the ledger to activate structural synthesis.</p>
                         </div>
                       )}
                    </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-hc-card border border-hc-border rounded-xl flex flex-col items-center justify-center h-full opacity-60 p-16 text-center shadow-inner">
-                <div className="w-20 h-20 rounded-2xl bg-hc-navy flex items-center justify-center mb-8 border border-hc-border shadow-xl">
-                  <Activity className="w-10 h-10 text-hc-muted opacity-40" />
+              <div className="bg-hc-card border-2 border-dashed border-hc-border rounded-3xl flex flex-col items-center justify-center min-h-[700px] opacity-40 p-20 text-center shadow-inner group">
+                <div className="w-24 h-24 rounded-3xl bg-hc-navy flex items-center justify-center mb-10 border-2 border-hc-border shadow-2xl group-hover:scale-110 transition-transform">
+                  <Activity className="w-12 h-12 text-hc-muted animate-pulse" />
                 </div>
-                <div className="text-sm font-black text-hc-text uppercase tracking-[0.3em] mb-4">Command Intelligence Pending</div>
-                <p className="text-[10px] text-hc-muted leading-relaxed max-w-[300px] font-bold uppercase tracking-widest">Choose an operational asset from the Readiness Queue to initiate structural diagnostic analysis.</p>
+                <div className="text-lg font-black text-hc-text uppercase tracking-[0.6em] mb-6">Command Pipeline Stalled</div>
+                <p className="text-[11px] text-hc-muted leading-loose max-w-[400px] font-bold uppercase tracking-[0.4em] mx-auto">Choose an operational asset from the Readiness Queue to initiate structural diagnostic analysis and activate the stability vector.</p>
               </div>
             )}
           </div>
@@ -575,16 +652,16 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
         {/* GUIDANCE HUB */}
         {exportHints.length > 0 && (
-          <div className="mt-8 bg-hc-card border border-hc-border rounded-xl overflow-hidden shadow-2xl bg-hc-card-hover/20 shrink-0">
-             <div className="px-6 py-4 flex items-center gap-3 border-b border-hc-border">
-                <Lightbulb className="w-4 h-4 text-hc-teal" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-text">Strategic Efficiency Indicators</span>
+          <div className="mt-16 bg-hc-card border border-hc-border rounded-2xl overflow-hidden shadow-2xl bg-hc-card-hover/10">
+             <div className="px-8 py-5 flex items-center gap-4 border-b border-hc-border bg-black/20">
+                <Lightbulb className="w-5 h-5 text-hc-teal" />
+                <span className="text-[11px] font-black uppercase tracking-[0.4em] text-hc-text">Strategic Training Indicators</span>
              </div>
-             <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                 {exportHints.map((hint, i) => (
-                  <div key={i} className="flex flex-col gap-2">
-                    <div className="text-[9px] font-black text-hc-teal-light uppercase tracking-widest">{hint.label}</div>
-                    <div className="text-[10px] text-hc-muted font-bold leading-relaxed">{hint.detail}</div>
+                  <div key={i} className="flex flex-col gap-3 group">
+                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.3em] group-hover:text-white transition-colors">{hint.label}</div>
+                    <div className="text-[11px] text-hc-muted font-bold leading-relaxed">{hint.detail}</div>
                   </div>
                 ))}
              </div>
@@ -592,30 +669,33 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
         )}
 
         {/* HISTORICAL LEDGER */}
-        <div className="mt-8 bg-hc-card border border-hc-border rounded-xl overflow-hidden shadow-2xl shrink-0">
-           <div className="px-6 py-4 bg-hc-card-hover/40 border-b border-hc-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                 <History className="w-4 h-4 text-hc-muted" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-text">Historical Readiness Ledger</span>
+        <div className="mt-16 bg-hc-card border border-hc-border rounded-2xl overflow-hidden shadow-2xl bg-hc-card-hover/5">
+           <div className="px-8 py-6 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-black/30">
+              <div className="flex items-center gap-4">
+                 <History className="w-5 h-5 text-hc-muted" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.4em] text-hc-text">Historical Readiness Ledger</span>
               </div>
-              <button onClick={exportMonitoringPack} className="flex items-center gap-2 px-6 py-2 rounded-lg bg-hc-navy border border-hc-border text-hc-text text-[9px] font-black uppercase tracking-widest hover:bg-hc-card-hover transition-all"><Download className="w-4 h-4" /> Export Evidence Pack</button>
+              <button onClick={exportMonitoringPack} className="flex items-center gap-3 px-8 py-3 rounded-xl bg-hc-navy border border-white/5 text-hc-text text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 hover:border-hc-teal/40 transition-all shadow-xl group"><Download className="w-4 h-4 group-hover:scale-110" /> Export Evidence Pack</button>
            </div>
-           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto scrollbar-thin">
+           <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {loadCallOutcomes().map((o) => (
-                <div key={o.id} className="p-4 rounded-lg bg-hc-navy/40 border border-hc-border flex flex-col gap-3 group/trail">
+                <div key={o.id} className="p-5 rounded-2xl bg-hc-navy/40 border border-hc-border flex flex-col gap-4 group/trail hover:bg-hc-navy/60 transition-all shadow-lg hover:shadow-hc-purple/5">
                   <div className="flex justify-between items-center">
-                    <span className="font-black text-[10px] text-hc-text uppercase tracking-tight">{o.carer}</span>
-                    <span className="text-hc-muted text-[8px] font-mono font-bold uppercase">{new Date(o.at).toLocaleDateString('en-GB')}</span>
+                    <span className="font-black text-[12px] text-white tracking-tight uppercase tabular-nums">{o.carer}</span>
+                    <span className="text-hc-muted text-[9px] font-mono font-black uppercase opacity-60">{new Date(o.at).toLocaleDateString('en-GB')}</span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="px-1.5 py-0.5 rounded bg-hc-purple/10 text-hc-purple-light border border-hc-purple/30 text-[7px] font-black uppercase tracking-widest mt-0.5">{o.outcome}</span>
-                    <div className="text-[10px] text-hc-muted leading-relaxed italic border-l border-hc-border pl-3 font-medium">"{o.notes}"</div>
+                  <div className="flex items-start gap-4">
+                    <span className="px-2 py-1 rounded-lg bg-hc-purple/10 text-hc-purple-light border border-hc-purple/30 text-[8px] font-black uppercase tracking-widest mt-0.5 shadow-inner">{o.outcome}</span>
+                    <div className="text-[11px] text-hc-muted leading-relaxed italic border-l-2 border-hc-border pl-4 font-medium opacity-80 truncate" title={o.notes}>"{o.notes}"</div>
                   </div>
                 </div>
               ))}
-              {loadCallOutcomes().length === 0 && <div className="text-[10px] font-black text-hc-muted opacity-40 col-span-full text-center py-12 uppercase tracking-[0.2em]">No Readiness Actions Logged</div>}
+              {loadCallOutcomes().length === 0 && <div className="text-[10px] font-black text-hc-muted opacity-40 col-span-full text-center py-20 uppercase tracking-[0.5em]">No Readiness Performance History</div>}
            </div>
         </div>
+
+        {/* Footer padding */}
+        <div className="h-20" />
       </div>
     </div>
   );
