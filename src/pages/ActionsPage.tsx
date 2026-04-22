@@ -92,7 +92,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
       {/* ── COMMAND HEADER ── */}
       <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Force Protection</h1>
+          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Command Vectors</h1>
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-black text-hc-teal-light tracking-[0.2em] uppercase">Action Tracker</span>
             <div className="h-3 w-px bg-slate-800" />
