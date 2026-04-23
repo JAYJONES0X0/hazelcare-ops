@@ -3,7 +3,7 @@ import type { Page } from '../App';
 import type { Action, WeekSummary } from '../lib/types';
 
 import { ORG_CONFIG } from '../lib/config';
-import { LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield, Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck, Database, Settings2 } from 'lucide-react';
+import { LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield, Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck, Database, Settings2, Sparkles } from 'lucide-react';
 
 
 interface Props {
@@ -38,6 +38,7 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
   {
     items: [
       { id: 'notes' as Page, label: 'Note Intelligence', icon: <FileText size={18} /> },
+      { id: 'note-workspace' as Page, label: 'Note Workspace', icon: <Sparkles size={18} /> },
     ],
   },
   {

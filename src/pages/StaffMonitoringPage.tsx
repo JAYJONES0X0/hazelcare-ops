@@ -125,8 +125,6 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [dateTo] = useState(def.dateTo);
   const [selectedEscId, setSelectedEscId] = useState<string | null>(null);
   const [callVariant, setCallVariant] = useState<CallPrepVariant>('message');
-  const [outcomeNotes] = useState('');
-  const [outcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
 
   const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
 
@@ -221,7 +219,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
     ].join('\n');
     void navigator.clipboard.writeText(msg);
     setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2500);
-    saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, outcomeType, outcomeNotes || 'Messaged via Chat. Pending review.');
+    saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, 'reached', 'Messaged via Chat. Pending review.');
   }
 
   return (
@@ -249,7 +247,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
             Force Protection
             <span className="pill pill-teal text-[10px] font-black tracking-[0.2em] px-4 py-1">Operational Engine</span>
           </h1>
-          <p className="text-hc-muted text-sm font-bold mt-3 max-w-2xl opacity-80 leading-relaxed uppercase tracking-wider">
+          <p className="text-hc-text text-sm font-bold mt-3 max-w-2xl leading-relaxed uppercase tracking-wider">
             Clinical analysis of diary exports. Scored to protect {ORG_CONFIG.name} registration.
           </p>
         </div>
@@ -260,7 +258,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
             {importLoading ? 'Analysing…' : 'Sync daily CSV'}
           </button>
           <button type="button" onClick={() => { onRecompute(); setPage('templates'); }}
-            className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">
+            className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-90 transition-all">
             Templates
           </button>
         </div>
@@ -280,7 +278,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
           return (
             <button key={h} onClick={() => setHouse(h === 'NETWORK' ? 'all' : h)}
               className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300
-                ${isActive ? 'hc-clay-inset text-hc-teal' : 'text-hc-muted hover:text-hc-text'}`}>
+                ${isActive ? 'hc-clay-inset text-hc-teal' : 'text-hc-text hover:brightness-75'}`}>
               {h.toUpperCase()}
             </button>
           );
@@ -293,11 +291,11 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
           { label: 'Intelligence Window', value: snapshot.windowLabel, color: 'text-hc-teal', icon: <Activity className="w-4 h-4" /> },
           { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-hc-text', icon: <FileText className="w-4 h-4" /> },
           { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-hc-text', icon: <RefreshCw className="w-4 h-4" /> },
-          { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted', icon: <History className="w-4 h-4" /> },
+          { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-text', icon: <History className="w-4 h-4" /> },
         ].map(({ label, value, color, icon }) => (
           <div key={label} className="hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]">
             <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{icon}</div>
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3 opacity-60">{label}</div>
+            <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] mb-3 opacity-60">{label}</div>
             <div className={`text-xl font-black ${color} truncate tracking-tighter tabular-nums`}>{value}</div>
           </div>
         ))}
@@ -305,7 +303,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
 
       {/* Search Bar */}
       <div className="mb-12 relative group">
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 text-hc-muted group-focus-within:text-hc-teal transition-colors">
+        <div className="absolute left-8 top-1/2 -translate-y-1/2 text-hc-text group-focus-within:text-hc-teal transition-colors">
           <Search className="w-5 h-5" />
         </div>
         <input 
@@ -322,8 +320,8 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
             {/* Critical Review Section */}
             <section className="space-y-6">
               <div className="flex items-center gap-3 px-4">
-                <div className="w-2 h-2 rounded-full bg-flag-amber shadow-[0_0_10px_#d9974e]" />
-                <h2 className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Critical Review — {snapshot.escalations.length}</h2>
+                <div className="w-2.5 h-2.5 rounded-full bg-flag-amber shadow-[0_0_10px_#d9974e]" />
+                <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">Critical Review — {snapshot.escalations.length}</h2>
               </div>
               <div className="space-y-3">
                 {snapshot.staff.map((s) => {
@@ -335,12 +333,12 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                     <div key={s.carer} className="hc-clay-raised overflow-hidden">
                       <div className="p-6 flex items-center justify-between cursor-pointer group" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
                         <div className="flex items-center gap-8 min-w-0">
-                           <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-muted text-sm">{s.carer.charAt(0)}</div>
+                           <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-text text-sm shadow-inner uppercase">{s.carer.charAt(0)}</div>
                            <div>
                               <div className="text-base font-black text-hc-text tracking-tighter uppercase leading-none mb-2 group-hover:text-hc-teal transition-colors">{s.carer}</div>
-                              <div className="flex items-center gap-4 text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">
+                              <div className="flex items-center gap-4 text-[9px] font-black text-hc-text uppercase tracking-widest opacity-80">
                                  <span>Injest Vector</span>
-                                 <span>{s.entryCount}U</span>
+                                 <span className="font-mono">{s.entryCount}U</span>
                               </div>
                            </div>
                         </div>
@@ -348,11 +346,11 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                         <div className="flex items-center gap-10">
                            <div className="flex flex-col items-end gap-1">
                               <span className={`text-sm font-black tabular-nums tracking-tighter ${scoreColor}`}>{s.qualityScore}%</span>
-                              <div className={`h-1 w-16 rounded-full bg-hc-muted/10 overflow-hidden`}>
+                              <div className={`h-1.5 w-20 rounded-full bg-black/5 overflow-hidden`}>
                                  <div className={`h-full ${scoreColor.replace('text-', 'bg-')}`} style={{width: `${s.qualityScore}%`}} />
                               </div>
                            </div>
-                           <ChevronRight className={`w-5 h-5 text-hc-muted transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                           <ChevronRight className={`w-5 h-5 text-hc-text transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                         </div>
                       </div>
 
@@ -362,10 +360,10 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                               {s.moduleBreakdown.map((m) => (
                                 <div key={m.name} className="hc-clay-inset p-5">
                                   <div className="flex items-center justify-between mb-3">
-                                    <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{m.name}</span>
-                                    <span className={`text-[10px] font-black tabular-nums ${m.score >= 70 ? 'text-flag-green' : m.score >= 45 ? 'text-flag-amber' : 'text-flag-red'}`}>{m.score}%</span>
+                                    <span className="text-[9px] font-black text-hc-text uppercase tracking-widest opacity-70">{m.name}</span>
+                                    <span className={`text-[11px] font-black tabular-nums ${m.score >= 70 ? 'text-flag-green' : m.score >= 45 ? 'text-flag-amber' : 'text-flag-red'}`}>{m.score}%</span>
                                   </div>
-                                  <div className="h-1 rounded-full bg-hc-muted/5 overflow-hidden">
+                                  <div className="h-1 rounded-full bg-black/5 overflow-hidden">
                                     <div className={`h-full ${m.score >= 70 ? 'bg-flag-green' : m.score >= 45 ? 'bg-flag-amber' : 'bg-flag-red'}`} style={{width: `${m.score}%`}} />
                                   </div>
                                 </div>
@@ -393,16 +391,16 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                     <div className="w-14 h-14 rounded-2xl bg-hc-bg hc-clay-inset flex items-center justify-center text-xl font-black text-hc-teal shadow-xl">{coachStaff.charAt(0)}</div>
                     <div>
                       <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase leading-none mb-1.5">{coachStaff}</h2>
-                      <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Contextual Studio</p>
+                      <p className="text-[10px] font-black text-hc-text uppercase tracking-[0.2em] opacity-60">Contextual Studio</p>
                     </div>
                   </div>
-                  <button onClick={() => setCoachStaff(null)} className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-text transition-all active:scale-90">✕</button>
+                  <button onClick={() => setCoachStaff(null)} className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-text hover:bg-black/5 transition-all active:scale-90">✕</button>
                 </div>
 
                 <div className="space-y-10">
                   <section>
-                    <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-5 block opacity-60">1. Vector Target Selection</label>
-                    <select className="w-full hc-clay-inset px-5 py-4 text-xs font-black uppercase tracking-widest text-hc-text outline-none mb-4"
+                    <label className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] mb-5 block opacity-60 uppercase">1. Vector Target Selection</label>
+                    <select className="w-full hc-clay-inset px-5 py-4 text-xs font-black uppercase tracking-widest text-hc-text outline-none mb-4 shadow-inner"
                       onChange={(e) => { const entry = entriesByStaff[coachStaff]?.find(x => x.entry === e.target.value); if (entry) { setCoachEntry(entry); setCoachRewrite(''); } }} value={coachEntry?.entry || ''}>
                       <option value="">-- CHOOSE DIAGNOSTIC NODE --</option>
                       {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 10).map((e, i) => (
@@ -413,10 +411,10 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
 
                   {coachEntry && (
                     <section className="space-y-8 animate-in fade-in duration-500">
-                      <div className="hc-clay-inset p-6 bg-flag-amber/[0.03]">
+                      <div className="hc-clay-inset p-6 bg-flag-amber/[0.05] border border-flag-amber/10">
                          <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.2em] mb-3">Diagnostic Gaps</div>
                          <div className="space-y-2">
-                           {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,2).map((gap, i) => <div key={i} className="text-[11px] font-bold text-hc-text opacity-70 leading-relaxed">• {gap}</div>)}
+                           {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,2).map((gap, i) => <div key={i} className="text-[11px] font-black text-hc-text opacity-80 leading-relaxed uppercase">• {gap}</div>)}
                          </div>
                       </div>
 
@@ -424,7 +422,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                         <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.2em] mb-5 block">Transformation Output</div>
                         <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} 
                           placeholder={coachLoading ? "Clinical Brain is processing..." : "Initialize Gold Standard pipeline."}
-                          className="w-full bg-transparent text-[13px] leading-relaxed text-hc-text font-medium italic min-h-[160px] resize-none outline-none mb-6 scrollbar-thin" />
+                          className="w-full bg-transparent text-[13px] leading-relaxed text-hc-text font-black italic min-h-[160px] resize-none outline-none mb-6 scrollbar-thin uppercase" />
                         
                         <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-4 rounded-2xl btn-tactical text-[11px] font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-4 transition-all">
                           {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -433,7 +431,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                       </div>
 
                       <div className="space-y-4">
-                        <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="w-full hc-clay-inset px-5 py-4 text-[10px] font-black uppercase text-hc-text">
+                        <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="w-full hc-clay-inset px-5 py-4 text-[11px] font-black uppercase text-hc-text shadow-inner">
                            <option value="message">WhatsApp / Intercept</option>
                            <option value="coaching">Supportive Call Script</option>
                         </select>
@@ -447,40 +445,40 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                 </div>
               </div>
             ) : (
-              <div className="hc-clay-raised p-16 flex flex-col items-center justify-center h-full opacity-30 text-center sticky top-10">
-                <MessageSquare className="w-16 h-16 text-hc-muted mb-8" strokeWidth={1} />
+              <div className="hc-clay-raised p-16 flex flex-col items-center justify-center h-full opacity-40 text-center sticky top-10 bg-hc-bg/30">
+                <MessageSquare className="w-16 h-16 text-hc-text mb-8" strokeWidth={2.5} />
                 <div className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em] mb-4">Command Awaiting Input</div>
-                <p className="text-[11px] text-hc-muted font-bold uppercase tracking-widest leading-loose">Select personnel record from the matrix to initialize coaching studio.</p>
+                <p className="text-[11px] text-hc-text font-black uppercase tracking-widest leading-loose">Select personnel record from the matrix to initialize coaching studio.</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      <div className="mt-16 hc-clay-raised overflow-hidden mb-20">
-        <div className="px-8 py-6 bg-black/5 border-b border-hc-muted/10 flex items-center justify-between">
+      <div className="mt-16 hc-clay-raised overflow-hidden mb-20 border border-hc-muted/5 shadow-2xl">
+        <div className="px-8 py-6 bg-black/[0.03] border-b border-hc-muted/10 flex items-center justify-between">
            <div className="flex items-center gap-4">
-            <History className="w-5 h-5 text-hc-muted" />
+            <History className="w-5 h-5 text-hc-text" />
             <span className="text-[11px] font-black tracking-[0.3em] text-hc-text uppercase">Diagnostic Follow-up Trail</span>
           </div>
-          <button onClick={exportMonitoringPack} className="flex items-center gap-3 px-8 py-3 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-teal-light hover:text-hc-text transition-all shadow-xl active:scale-95">
+          <button onClick={exportMonitoringPack} className="flex items-center gap-3 px-8 py-3 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:bg-black/5 transition-all shadow-xl active:scale-95">
              <Download className="w-4 h-4" /> Evidence pack
           </button>
         </div>
         <div className="px-8 py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[500px] overflow-y-auto scrollbar-thin">
           {loadCallOutcomes().map((o) => (
-            <div key={o.id} className="p-6 rounded-2xl hc-clay-inset flex flex-col gap-4 group hover:bg-black/[0.02] transition-all">
+            <div key={o.id} className="p-6 rounded-2xl hc-clay-inset flex flex-col gap-4 group hover:bg-black/[0.02] transition-all shadow-inner">
               <div className="flex justify-between items-center">
                 <span className="font-black text-sm text-hc-text uppercase tracking-tighter">{o.carer}</span>
-                <span className="text-hc-muted text-[10px] font-black tabular-nums opacity-40">{new Date(o.at).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour: '2-digit', minute:'2-digit'})}</span>
+                <span className="text-hc-text text-[10px] font-black tabular-nums opacity-50">{new Date(o.at).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour: '2-digit', minute:'2-digit'})}</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="pill !bg-hc-bg text-hc-teal border border-hc-teal/20 text-[9px]">{o.outcome}</span>
-                <div className="text-[11px] text-hc-muted font-bold truncate italic opacity-80 flex-1">"{o.notes}"</div>
+                <span className="pill !bg-hc-bg text-hc-teal border border-hc-teal/30 text-[9px] shadow-sm">{o.outcome}</span>
+                <div className="text-[11px] text-hc-text font-black truncate italic opacity-80 flex-1 uppercase">"{o.notes}"</div>
               </div>
             </div>
           ))}
-          {loadCallOutcomes().length === 0 && <div className="text-[11px] font-black text-hc-muted opacity-40 col-span-full text-center py-20 uppercase tracking-[0.4em]">No clinical evidence logged.</div>}
+          {loadCallOutcomes().length === 0 && <div className="text-[11px] font-black text-hc-text opacity-40 col-span-full text-center py-20 uppercase tracking-[0.4em]">No clinical evidence logged.</div>}
         </div>
       </div>
     </div>

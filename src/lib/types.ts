@@ -86,6 +86,10 @@ export interface StaffMember {
   sicknessThisMonth: number;
   latenessThisMonth: number;
   status: 'active' | 'sickness' | 'leave' | 'suspended';
+  complianceStatus?: 'compliant' | 'pending' | 'missing';
+  dbsChecked?: boolean;
+  trainingCompletion?: number;
+  lastSupervision?: string;
 }
 
 export interface Shift {

@@ -393,13 +393,14 @@ async function handleEnhanceNote(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { text, noteType, clientName } = req.body || {};
+  const { text, noteType, clientName, referenceTemplate } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
   const userPrompt = [
     noteType ? `Note type: ${noteType}` : '',
     clientName ? `Client/subject: ${clientName}` : '',
+    referenceTemplate ? `\nREFERENCE STYLE / TEMPLATE (Use this as your standard for quality and structure):\n${referenceTemplate}\n` : '',
     '',
     'Convert this to a professional care note:',
     '',

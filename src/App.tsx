@@ -355,6 +355,7 @@ import { ClientDocsPage } from './pages/ClientDocsPage';
 import { ClientDiaryPage } from './pages/ClientDiaryPage';
 import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
+import { NoteWorkspace } from './pages/NoteWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import type { WeekSummary, Action, Incident, StaffMember, ActionPriority } from './lib/types';
@@ -363,7 +364,7 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { HAZELCARE_HOUSES, uid } from './lib/compliance-store';
 
 
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
@@ -699,6 +700,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
           {page === 'incidents' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><IncidentsPage incidents={incidents} onUpdate={handleUpdateIncidents} /></div>}
           {page === 'staff' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffPage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'notes' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><StaffNotePage /></div>}
+          {page === 'note-workspace' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><NoteWorkspace /></div>}
           {page === 'handover' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><HandoverPage weekData={weekData} /></div>}
           {page === 'compliance' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CompliancePage staff={staff} onUpdate={handleUpdateStaff} /></div>}
           {page === 'reports' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><ReportsPage weekData={weekData} setPage={setPage} /></div>}
