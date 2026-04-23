@@ -58,10 +58,11 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
   const openActions = actions.filter(a => a.status !== 'completed');
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 animate-in fade-in duration-700">
+    <div className="min-h-screen flex flex-col bg-transparent animate-in fade-in duration-700 font-mono">
 
       {/* ── SITREP HEADER ── */}
-      <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
+      <div className="shrink-0 border-b border-hc-border bg-hc-navy/40 px-8 py-6 flex items-center justify-between gap-8 backdrop-blur-xl">
+
         <div>
           <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Operational Briefing</h1>
           <div className="flex items-center gap-3">
@@ -72,28 +73,31 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
         </div>
         <button
           onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
-          className="px-5 py-2.5 border border-slate-800 bg-slate-950 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+          className="px-5 py-2.5 border border-hc-border bg-hc-card text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text hover:bg-hc-card-hover transition-all"
         >
           {allCollapsed ? 'EXPAND_ALL' : 'COLLAPSE_ALL'}
         </button>
+
       </div>
 
-      <div className="flex-1 p-8 bg-slate-950/20">
+      <div className="flex-1 p-8 bg-transparent">
         <div className="max-w-6xl mx-auto space-y-8">
+
 
           {/* Interventions */}
           <Section id="interventions" title="Intervention Backlog" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={openActions.length}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {openActions.slice(0, 6).map(a => (
-                <button key={a.id} onClick={() => setPage('actions')} className="border border-slate-800 bg-slate-900/40 p-4 text-left transition-all hover:bg-slate-900/60 hover:border-slate-700">
+                <button key={a.id} onClick={() => setPage('actions')} className="border border-hc-border bg-hc-card p-4 text-left transition-all hover:bg-hc-card-hover group">
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[8px] font-black px-2 py-0.5 uppercase tracking-widest ${a.priority === 'critical' || a.priority === 'high' ? 'bg-red-950 text-red-500 border border-red-900' : 'bg-blue-950 text-blue-500 border border-blue-900'}`}>{a.priority}</span>
-                    <span className="text-[9px] font-bold text-slate-600 tabular-nums">{a.dueDate}</span>
+                    <span className={`text-[8px] font-black px-2 py-0.5 uppercase tracking-widest ${a.priority === 'critical' || a.priority === 'high' ? 'bg-red-950/40 text-red-500 border border-red-900/60' : 'bg-blue-950/40 text-blue-500 border border-blue-900/60'}`}>{a.priority}</span>
+                    <span className="text-[9px] font-bold text-hc-muted tabular-nums">{a.dueDate}</span>
                   </div>
-                  <div className="text-xs font-bold text-white mb-2 uppercase line-clamp-1">{a.title}</div>
-                  <div className="text-[10px] font-medium text-slate-400 line-clamp-2 leading-relaxed uppercase">TARGET: {a.owner}</div>
+                  <div className="text-xs font-bold text-hc-text mb-2 uppercase line-clamp-1">{a.title}</div>
+                  <div className="text-[10px] font-medium text-hc-muted line-clamp-2 leading-relaxed uppercase">TARGET: {a.owner}</div>
                 </button>
               ))}
+
             </div>
             {openActions.length > 6 && (
               <button onClick={() => setPage('actions')} className="mt-3 text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:underline">
@@ -104,32 +108,32 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
 
           {/* Client Matrix */}
           <Section id="clients" title="Client Stability Matrix" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
-            <div className="overflow-hidden border border-slate-800 bg-slate-900/20">
+            <div className="overflow-hidden border border-hc-border bg-hc-card/40">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900/50 border-b border-slate-800 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                  <tr className="bg-hc-navy/40 border-b border-hc-border text-[9px] font-black text-hc-muted uppercase tracking-widest">
                     <th className="px-6 py-3">IDENTIFIER</th>
                     <th className="px-6 py-3">STATION</th>
                     <th className="px-6 py-3 text-center">ALERTS</th>
                     <th className="px-6 py-3">LATEST_TELEMETRY</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-hc-border">
                   {priorityClients.map(c => (
                     <tr
                       key={c.name}
                       onClick={() => setPage('client-diary')}
-                      className="hover:bg-white/[0.04] cursor-pointer transition-colors border-b border-slate-800/40 last:border-0 text-[11px]"
+                      className="hover:bg-white/[0.04] cursor-pointer transition-colors border-b border-hc-border/40 last:border-0 text-[11px]"
                     >
-                      <td className="px-6 py-4 font-black text-white uppercase tracking-tight">{c.name}</td>
-                      <td className="px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[9px]">{c.house}</td>
+                      <td className="px-6 py-4 font-black text-hc-text uppercase tracking-tight">{c.name}</td>
+                      <td className="px-6 py-4 font-bold text-hc-muted uppercase tracking-widest text-[9px]">{c.house}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2 tabular-nums">
-                          {c.red > 0 && <span className="bg-red-950 text-red-500 px-2 py-0.5 text-[10px] font-black border border-red-900">{c.red}</span>}
-                          {c.amber > 0 && <span className="bg-amber-950 text-amber-500 px-2 py-0.5 text-[10px] font-black border border-amber-900">{c.amber}</span>}
+                          {c.red > 0 && <span className="bg-red-950/40 text-red-500 px-2 py-0.5 text-[10px] font-black border border-red-900/60 transition-all">{c.red}</span>}
+                          {c.amber > 0 && <span className="bg-amber-950/40 text-amber-500 px-2 py-0.5 text-[10px] font-black border border-amber-900/60 transition-all">{c.amber}</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-500 italic max-w-xs truncate leading-relaxed text-[10px]">"{c.latest}"</td>
+                      <td className="px-6 py-4 text-hc-muted italic max-w-xs truncate leading-relaxed text-[10px]">"{c.latest}"</td>
                     </tr>
                   ))}
                 </tbody>
@@ -137,22 +141,24 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
             </div>
           </Section>
 
+
           {/* Trends */}
           <Section id="trends" title="Operational Trends" collapsed={isSectionCollapsed('trends')} onToggle={() => toggleSection('trends')} count={trends.length}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trends.map(t => (
-                <div key={t.id} className="border border-slate-800 bg-slate-900/40 p-5 flex items-start gap-5">
-                  <div className="shrink-0 w-12 h-12 border border-slate-800 bg-slate-950 flex items-center justify-center text-xl">
+                <div key={t.id} className="border border-hc-border bg-hc-card p-5 flex items-start gap-5">
+                  <div className="shrink-0 w-12 h-12 border border-hc-border bg-hc-navy/40 flex items-center justify-center text-xl">
                     {t.severity === 'critical' ? '⚠️' : '📈'}
                   </div>
                   <div>
                     <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${t.severity === 'critical' ? 'text-red-500' : 'text-hc-teal-light'}`}>{t.title}</div>
-                    <p className="text-[11px] font-medium text-slate-400 leading-relaxed uppercase">{t.detail}</p>
+                    <p className="text-[11px] font-medium text-hc-muted leading-relaxed uppercase">{t.detail}</p>
                   </div>
                 </div>
               ))}
             </div>
           </Section>
+
 
           {/* Station Matrix */}
           <Section id="houses" title="Station Performance Index" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>

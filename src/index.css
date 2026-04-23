@@ -47,19 +47,16 @@ body::before {
 
 [data-theme="light"] {
   /* ── TACTICAL LIGHT (OPERATIONAL GRADE) ── */
-  --hc-bg: #ffffff;
-  --hc-navy: #ffffff;
-  --hc-navy-light: #f1f5f9;
-  --hc-dark: #f8fafc;
-  --hc-darker: #ffffff;
-  --hc-card: #ffffff;
-  --hc-card-hover: #f8fafc;
-  --hc-border: #0f172a; /* Sharp contrast borders */
-  --hc-border-light: #334155;
-  --hc-text: #000000;
-  --hc-muted: #475569;
-  --hc-glass-bg: #ffffff; /* Disable transparency in Light Mode for max clarity */
-  --hc-glass-border: #0f172a;
+  --hc-bg: #f8fafc;
+  --hc-navy: rgba(241, 245, 249, 0.9);
+  --hc-card: rgba(255, 255, 255, 0.5);
+  --hc-card-hover: rgba(255, 255, 255, 0.7);
+  --hc-border: rgba(15, 23, 42, 0.1); 
+  --hc-border-light: rgba(15, 23, 42, 0.15);
+  --hc-text: #080c14;
+  --hc-muted: #64748b;
+  --hc-glass-bg: rgba(255, 255, 255, 0.6);
+  --hc-glass-border: rgba(15, 23, 42, 0.08);
 }
 
 @theme {
