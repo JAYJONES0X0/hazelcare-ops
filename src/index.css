@@ -23,15 +23,17 @@
   /* ── REFINED DARK (DEFAULT) ── */
   --hc-bg: #050505;
   --hc-navy: rgba(10, 10, 10, 0.85);
-  --hc-card: rgba(20, 15, 15, 0.6); /* Deep wine-tinted translucent base */
-  --hc-card-hover: rgba(30, 15, 15, 0.8);
-  --hc-border: rgba(255, 255, 255, 0.08); /* Silver-glass edge */
-  --hc-border-light: rgba(255, 255, 255, 0.15);
+  --hc-card: rgba(13, 17, 23, 0.8);
+  --hc-card-solid: #0d1117; /* Solid ArbiFlow Slab Core */
+  --hc-card-hover: rgba(255, 255, 255, 0.05);
+  --hc-border: rgba(255, 255, 255, 0.12); /* Silver-glass edge */
+  --hc-border-light: rgba(255, 255, 255, 0.2);
   --hc-text: #e2e8f0; 
-  --hc-muted: #64748b;
-  --hc-glass-bg: rgba(0, 0, 0, 0.4);
-  --hc-glass-border: rgba(255, 255, 255, 0.12);
+  --hc-muted: #94a3b8;
+  --hc-glass-bg: rgba(0, 0, 0, 0.6);
+  --hc-glass-border: rgba(255, 255, 255, 0.15);
 }
+
 
 /* ── ArbiFlow Noise Substrate ── */
 body::before {
@@ -52,18 +54,18 @@ body::before {
   /* ── TACTICAL LIGHT (OPERATIONAL GRADE) ── */
   --hc-bg: #f8fafc;
   --hc-navy: rgba(226, 232, 240, 0.7);
-  --hc-card: rgba(255, 255, 255, 0.65); /* More opaque for contrast */
+  --hc-card: rgba(255, 255, 255, 0.65);
+  --hc-card-solid: #ffffff; /* Solid for overlays */
   --hc-card-hover: rgba(255, 255, 255, 0.85);
-  --hc-border: rgba(15, 23, 42, 0.22); /* Darker borders for light mode */
-
+  --hc-border: rgba(15, 23, 42, 0.22);
   --hc-border-light: rgba(15, 23, 42, 0.28);
-  --hc-text: #020617; /* High contrast black */
-  --hc-muted: #1e293b; /* Darker slate for readability */
-
+  --hc-text: #020617;
+  --hc-muted: #1e293b;
 
   --hc-glass-bg: rgba(255, 255, 255, 0.6);
   --hc-glass-border: rgba(15, 23, 42, 0.1);
 }
+
 
 
 @theme {
@@ -75,7 +77,9 @@ body::before {
   --color-hc-dark: var(--hc-dark);
   --color-hc-darker: var(--hc-darker);
   --color-hc-card: var(--hc-card);
+  --color-hc-card-solid: var(--hc-card-solid);
   --color-hc-card-hover: var(--hc-card-hover);
+
   --hc-glass-bg: rgba(0, 0, 0, 0.3);
   --hc-glass-border: rgba(255, 255, 255, 0.1);
 
@@ -378,15 +382,18 @@ html { scroll-behavior: smooth; }
   background-color: var(--hc-card);
 }
 
-[data-theme="light"] .bg-hc-card, [data-theme="light"] [class*="bg-hc-card"] {
-  backdrop-filter: blur(32px) saturate(140%);
-  -webkit-backdrop-filter: blur(32px) saturate(140%);
-  box-shadow: 
-    0 15px 35px -8px rgba(0,0,0,0.08),
-    inset 0 0 0 1px rgba(15, 23, 42, 0.05);
-  border: 1.5px solid rgba(15, 23, 42, 0.18) !important;
-  background-color: var(--hc-card);
+.bg-hc-card-solid {
+  background-color: var(--hc-card-solid) !important;
+  border: 1.5px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8);
 }
+
+[data-theme="light"] .bg-hc-card-solid {
+  background-color: var(--hc-card-solid) !important;
+  border: 1.5px solid rgba(0,0,0,0.1) !important;
+  box-shadow: 0 15px 40px -10px rgba(0,0,0,0.15);
+}
+
 
 
 

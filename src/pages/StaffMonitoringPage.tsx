@@ -445,11 +445,13 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           <div ref={detailRef} className="flex-1 flex flex-col gap-10 relative z-20 min-w-0">
 
             {coachStaff && selectedStaffData ? (
-              <div className="bg-hc-card border border-hc-border rounded-3xl flex flex-col relative overflow-hidden shadow-2xl min-h-[800px]">
+              <div className="bg-hc-card-solid border border-hc-border rounded-3xl flex flex-col relative overflow-hidden shadow-2xl min-h-[800px] z-50">
+
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />
                 
-                {/* Detail Header */}
-                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-hover/40 sticky top-0 z-10 backdrop-blur-3xl shrink-0">
+                {/* Detail Header — HARDENED SOLID BASE */}
+                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-solid sticky top-0 z-20 backdrop-blur-none shrink-0">
+
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/5 ${selectedStaffData.qualityScore < 65 ? 'bg-flag-amber/20 text-flag-amber' : 'bg-hc-teal/20 text-hc-teal'}`}>
                       {coachStaff.charAt(0)}
@@ -476,7 +478,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                 <div className="flex-1 flex flex-col md:flex-row min-h-0">
                    
                    {/* Left: Pipeline & Ledger */}
-                   <div className="flex-1 flex flex-col border-r border-hc-border p-8 bg-hc-navy/5">
+                   <div className="flex-1 flex flex-col border-r border-hc-border p-8 bg-hc-card-solid/50">
+
                         {/* Sequence Tracker */}
                         <div className="mb-12 shrink-0">
                           <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
@@ -575,11 +578,13 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                    </div>
 
                    {/* Right Side: Command Synthesis */}
-                   <div className="w-full md:w-[480px] bg-hc-card-hover/10 border-l border-hc-border p-8 flex flex-col bg-black/20">
+                    <div className="w-full md:w-[480px] bg-hc-card-solid border-l border-hc-border p-8 flex flex-col">
+
                       {coachEntry ? (
                         <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-10 duration-500">
                           {/* Integrity Scanner */}
-                          <div className="bg-hc-navy/40 border-2 border-flag-amber/20 rounded-2xl p-6 mb-8 shadow-2xl relative overflow-hidden">
+                          <div className="bg-hc-navy border-2 border-flag-amber/20 rounded-2xl p-6 mb-8 shadow-2xl relative overflow-hidden">
+
                              <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldAlert className="w-12 h-12 text-flag-amber" /></div>
                              <div className="text-[11px] font-black text-flag-amber uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
                                 <Zap className="w-5 h-5 fill-flag-amber" /> Integrity Signals
