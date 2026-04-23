@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, emptyCarePlan, LEVEL_OF_NEED_LABELS } from '../lib/client-store';
 import { buildCarePlanHtml } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
@@ -9,6 +8,7 @@ import { parseUniversalText } from '../lib/universal-import';
 import { Sparkles, ChevronRight, Download } from 'lucide-react';
 import type { FullClient, CarePlanDomain } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
+import { extractFileText } from '../lib/universal-extractor';
 
 interface Props {
   clientId: string;
@@ -38,8 +38,6 @@ const DOMAIN_ICONS: Record<string, string> = {
   'Rest & Sleep Patterns': '😴',
   'Cultural, Spiritual & Personal Beliefs': '🕊️',
 };
-
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 function Field({ label, value, onChange, area = false, rows = 3, placeholder = '' }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -301,19 +299,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
     setImporting(true);
     setImportStatus('Reading dataset...');
     try {
-      let rawText = '';
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'pdf') {
-        const ab = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: ab }).promise;
-        for (let i = 1; i <= pdf.numPages; i += 1) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          rawText += (content.items as any[]).map((it) => it?.str || '').join(' ') + '\n';
-        }
-      } else {
-        rawText = await file.text();
-      }
+      const rawText = await extractFileText(file);
       const parsed = parseUniversalText(rawText);
       const next: FullClient = {
         ...client,

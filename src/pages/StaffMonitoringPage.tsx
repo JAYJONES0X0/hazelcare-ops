@@ -37,6 +37,8 @@ interface Props {
   staff: StaffMember[];
 }
 
+import { extractFileText } from '../lib/universal-extractor';
+
 export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
 
@@ -49,32 +51,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
     setImportError('');
     setImportLoading(true);
     try {
-      let text = '';
-      const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      if (ext === 'pdf') {
-        const pdfjsLib = await import('pdfjs-dist') as any;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-        const buf = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const tc = await page.getTextContent();
-          const items = tc.items as any[];
-          const rowMap = new Map<number, { x: number; str: string }[]>();
-          for (const it of items) {
-            if (!it.str?.trim()) continue;
-            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4;
-            if (!rowMap.has(y)) rowMap.set(y, []);
-            rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
-          }
-          const sortedRows = [...rowMap.entries()]
-            .sort((a, b) => b[0] - a[0])
-            .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
-          text += sortedRows.join('\n') + '\n';
-        }
-      } else {
-        text = await file.text();
-      }
+      const text = await extractFileText(file);
       if (!text.trim()) { setImportError('File appears empty.'); return; }
 
       const envelope = buildEnvelopeFromRaw(file.name, text);

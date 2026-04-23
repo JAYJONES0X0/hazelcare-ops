@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react';
-import { Activity, X, Check, AlertTriangle } from 'lucide-react';
-import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
+import { Activity, Check, AlertTriangle, Upload, FileText, Calendar, Trash2 } from 'lucide-react';
 import JSZip from 'jszip';
 import { loadClients } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
@@ -11,8 +9,7 @@ import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intel
 import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import { extractFileText } from '../lib/universal-extractor';
 
 type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
@@ -67,45 +64,12 @@ interface SourceBasketItem {
   confidence: number;
 }
 
-
-// ─── Extraction Helpers ────────────────────────────────────────────────────────
-async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    if (onProgress) onProgress(Math.round((i / pdf.numPages) * 100));
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    let lastY: number | null = null;
-    let pageText = '';
-    for (const item of content.items as any[]) {
-      if (!item.str) continue;
-      const y = item.transform ? item.transform[5] : null;
-      if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) pageText += '\n';
-      else if (pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) pageText += ' ';
-      pageText += item.str;
-      lastY = y;
-    }
-    fullText += pageText + '\n';
-  }
-  return fullText;
-}
-
-async function extractDocxText(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const result = await mammoth.extractRawText({ arrayBuffer });
-  return result.value;
-}
-
 function inferClientFromFileName(fileName: string): string {
   const base = fileName.split('/').pop() || fileName;
   const cleaned = base.replace(/\.[^.]+$/, '');
   const match = cleaned.match(/\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b/);
   return match ? match[1] : 'Unclear';
 }
-
-
 
 function findClientIdByNameHint(nameHint: string): string | null {
   const hint = (nameHint || '').trim().toLowerCase();
@@ -134,7 +98,7 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
       if (ext === 'pdf' || ext === 'docx') {
         const blob = await entry.async('blob');
         const nestedFile = new File([blob], displayName);
-        text = ext === 'pdf' ? await extractPdfText(nestedFile) : await extractDocxText(nestedFile);
+        text = await extractFileText(nestedFile);
       } else {
         text = await entry.async('text');
       }
@@ -194,7 +158,6 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
   return base;
 }
 
-
 function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImportEnvelope {
   const merged = emptyEnvelope('Batch', envelopes.map(e => e.source.fileName).join(', '));
   envelopes.forEach(e => {
@@ -208,7 +171,6 @@ function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImport
   return merged;
 }
 
-// ─── Verification Grid ────────────────────────────────────────────────────────
 function VerificationGrid({ items, type, onUpdate }: { items: any[], type: UploadDetectedType, onUpdate: (items: any[]) => void }) {
   if (!items?.length) return null;
   const handleChange = (i: number, f: string, v: string) => {
@@ -217,26 +179,26 @@ function VerificationGrid({ items, type, onUpdate }: { items: any[], type: Uploa
     onUpdate(n);
   };
   return (
-    <div className="bg-hc-card border border-hc-border rounded-lg overflow-hidden mb-6 flex flex-col max-h-[400px]">
-      <div className="p-3 border-b border-hc-border text-[9px] font-black uppercase tracking-widest text-hc-teal">Editable Field Audit ({items.length} units)</div>
+    <div className="hc-clay-raised rounded-[2rem] overflow-hidden mb-6 flex flex-col max-h-[400px]">
+      <div className="p-5 border-b border-hc-muted/10 text-[10px] font-black uppercase tracking-widest text-hc-teal bg-black/[0.02]">Forensic Injest Audit ({items.length} Units)</div>
       <div className="overflow-auto scrollbar-thin">
         <table className="w-full text-left border-collapse min-w-[600px]">
-          <thead className="sticky top-0 bg-hc-navy z-20">
-            <tr className="border-b border-hc-border">
+          <thead className="sticky top-0 bg-hc-bone z-20 shadow-sm">
+            <tr className="border-b border-hc-muted/10">
               {type === 'roster' ? (
-                ['Personnel', 'Asset', 'Temporal', 'Duration'].map(h => <th key={h} className="px-4 py-2 text-[8px] font-black uppercase text-hc-muted">{h}</th>)
+                ['Personnel', 'Asset', 'Temporal', 'Duration'].map(h => <th key={h} className="px-6 py-4 text-[9px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               ) : (
-                ['Temporal', 'Subject', 'Asset', 'Diagnostic'].map(h => <th key={h} className="px-4 py-2 text-[8px] font-black uppercase text-hc-muted">{h}</th>)
+                ['Temporal', 'Subject', 'Asset', 'Diagnostic'].map(h => <th key={h} className="px-6 py-4 text-[9px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-hc-border">
+          <tbody className="divide-y divide-hc-muted/5 bg-hc-bg/30">
             {items.map((it, idx) => (
-              <tr key={idx} className="hover:bg-hc-card-hover transition-colors">
-                <td className="px-4 py-1.5 text-[10px] text-hc-text tabular-nums">{it.date} {it.time || ''}</td>
-                <td className="px-4 py-1.5"><input value={it.client || it.staffId || ''} onChange={e => handleChange(idx, it.client ? 'client' : 'staffId', e.target.value)} className="bg-transparent text-[10px] text-hc-text w-full focus:outline-none focus:text-hc-teal" /></td>
-                <td className="px-4 py-1.5"><input value={it.house || ''} onChange={e => handleChange(idx, 'house', e.target.value)} className="bg-transparent text-[10px] text-hc-text w-full focus:outline-none focus:text-hc-teal" /></td>
-                <td className="px-4 py-1.5 text-[10px] text-hc-muted truncate max-w-[200px]">{it.entry || it.hours || ''}</td>
+              <tr key={idx} className="hover:bg-black/[0.02] transition-colors">
+                <td className="px-6 py-3 text-[11px] text-hc-text font-black tabular-nums tracking-tighter">{it.date} {it.time || ''}</td>
+                <td className="px-6 py-3"><input value={it.client || it.staffId || ''} onChange={e => handleChange(idx, it.client ? 'client' : 'staffId', e.target.value)} className="bg-transparent text-[11px] font-black text-hc-text w-full focus:outline-none focus:text-hc-teal uppercase tracking-tighter" /></td>
+                <td className="px-6 py-3"><input value={it.house || ''} onChange={e => handleChange(idx, 'house', e.target.value)} className="bg-transparent text-[11px] font-black text-hc-text w-full focus:outline-none focus:text-hc-teal uppercase tracking-tighter" /></td>
+                <td className="px-6 py-3 text-[11px] text-hc-muted font-black truncate max-w-[300px] uppercase opacity-60 italic">{it.entry || it.hours || ''}</td>
               </tr>
             ))}
           </tbody>
@@ -246,7 +208,6 @@ function VerificationGrid({ items, type, onUpdate }: { items: any[], type: Uploa
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export function UploadPage({ onDataParsed, setPage }: Props) {
   const [step, setStep] = useState<Step>('choose');
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -272,8 +233,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     for (const file of Array.from(files)) {
       try {
         let text = ''; const ext = file.name.split('.').pop()?.toLowerCase();
-        if (ext === 'pdf') text = await extractPdfText(file, setProgress);
-        else if (ext === 'docx') text = await extractDocxText(file);
+        if (ext === 'pdf' || ext === 'docx') text = await extractFileText(file, setProgress);
         else if (ext === 'zip') {
           const zip = await extractZipGuidance(file, setProgress);
           setZipGuidance(zip.rows);
@@ -331,41 +291,50 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-transparent overflow-hidden flex flex-col font-mono">
-
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-8">
+    <div className="h-[calc(100vh-4rem)] bg-hc-bone overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-12">
         {/* Header */}
-        <div className="mb-10 pb-6 border-b border-hc-border flex items-center justify-between">
+        <div className="mb-12 pb-10 border-b border-hc-muted/10 flex items-center justify-between">
           <div>
-            <div className="text-[10px] font-black tracking-[0.3em] text-hc-teal uppercase mb-1">Operational Intake Hub</div>
-            <h1 className="text-xl font-black text-hc-text tracking-[.2em] uppercase leading-none">Field Injest Matrix</h1>
+            <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Field Injest Matrix</h1>
+            <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">High-Density Operational Intake Protocol</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setPage('dashboard')} className="bg-hc-card border border-hc-border px-4 py-2 text-[9px] font-black uppercase text-hc-text hover:bg-hc-card-hover rounded">Command Center</button>
-            <button onClick={reset} className="bg-hc-card border border-hc-border px-4 py-2 text-[9px] font-black uppercase text-hc-muted hover:text-hc-text rounded">Clear Feed</button>
+          <div className="flex gap-4">
+            <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Command Center</button>
+            <button onClick={reset} className="px-8 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">Purge Buffer</button>
           </div>
         </div>
 
         {step === 'choose' && (
-          <div className="flex flex-col lg:flex-row gap-6 animate-in slide-in-from-bottom-4 duration-500">
-            <label className="flex-[3] group relative flex flex-col items-center justify-center border-2 border-dashed border-hc-border bg-hc-card p-20 rounded-xl cursor-pointer hover:border-hc-teal transition-all">
+          <div className="flex flex-col lg:flex-row gap-10 animate-in slide-in-from-bottom-4 duration-700">
+            <label className="flex-[3] group relative flex flex-col items-center justify-center border-4 border-dashed border-hc-muted/10 bg-black/[0.01] p-24 rounded-[3rem] cursor-pointer hover:border-hc-teal transition-all duration-700">
               <input type="file" ref={fileRef} multiple className="hidden" onChange={e => e.target.files && handleFiles(e.target.files)} />
-              <Activity className="w-12 h-12 text-hc-teal opacity-40 mb-6 group-hover:scale-110 transition-transform" />
+              <div className="w-24 h-24 rounded-[2rem] hc-clay-raised flex items-center justify-center mb-10 group-hover:scale-110 transition-transform duration-700 border border-hc-muted/5 shadow-2xl">
+                 <Upload className="w-10 h-10 text-hc-teal" />
+              </div>
               <div className="text-center">
-                <div className="text-[12px] font-black text-hc-text uppercase tracking-widest mb-2">Injest Log Feed</div>
-                <p className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Drop ZIP pack, PDF Reports, or Roster Intelligence</p>
-                <div className="mt-8 px-10 py-3 bg-hc-text text-hc-navy text-[10px] font-black uppercase tracking-widest">Initiate Load Sequence</div>
+                <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialize Intake Stream</div>
+                <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 leading-loose">Drop Clinical ZIP Packs, PDF Quality Audits,<br />or Roster Intelligence Vectors</p>
               </div>
             </label>
-            <div className="flex-1 bg-hc-card border border-hc-border rounded-xl p-6 flex flex-col">
-              <div className="text-[10px] font-black uppercase tracking-widest text-hc-muted mb-6">Injest Buffer [{sourceBasket.length}]</div>
-              <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin">
+            <div className="flex-1 hc-clay-raised rounded-[3rem] p-10 flex flex-col shadow-2xl border border-hc-muted/5 bg-black/[0.01]">
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted mb-10 flex items-center gap-3">
+                 <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+                 Injest Buffer [{sourceBasket.length}]
+              </div>
+              <div className="flex-1 space-y-4 overflow-y-auto scrollbar-thin pr-2">
                 {sourceBasket.map(i => (
-                  <div key={i.id} className="p-3 bg-hc-navy/40 border border-hc-border rounded flex items-center justify-between group">
-                    <span className="text-[10px] text-hc-text truncate uppercase font-black">{i.fileName}</span>
-                    <button onClick={() => setSourceBasket(b => b.filter(x => x.id !== i.id))} className="text-flag-red p-1"><X className="w-3.5 h-3.5" /></button>
+                  <div key={i.id} className="p-5 hc-clay-inset rounded-2xl flex items-center justify-between group animate-in slide-in-from-right-4">
+                    <span className="text-[11px] text-hc-text truncate uppercase font-black tracking-tighter">{i.fileName}</span>
+                    <button onClick={() => setSourceBasket(b => b.filter(x => x.id !== i.id))} className="text-hc-muted hover:text-flag-red p-1 transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 ))}
+                {sourceBasket.length === 0 && (
+                   <div className="h-full flex flex-col items-center justify-center opacity-20 py-20 grayscale">
+                      <Activity className="w-10 h-10 mb-4" />
+                      <div className="text-[10px] font-black uppercase tracking-widest">Buffer Empty</div>
+                   </div>
+                )}
               </div>
             </div>
           </div>
@@ -373,95 +342,106 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
         {step === 'extracting' && (
           <div className="flex-1 flex flex-col items-center justify-center py-40">
-            <div className="w-full max-w-sm mb-4 bg-hc-card border border-hc-border h-4 rounded-full overflow-hidden">
-              <div className="bg-hc-teal h-full transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="w-full max-w-sm mb-8 hc-clay-inset h-5 rounded-full overflow-hidden p-1 shadow-inner">
+              <div className="bg-hc-teal h-full rounded-full transition-all duration-300 shadow-[0_0_15px_#14b8a6]" style={{ width: `${progress}%` }} />
             </div>
-            <div className="text-[10px] font-black text-hc-teal uppercase tracking-widest animate-pulse">Extracting Intelligence: {progress}%</div>
+            <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.4em] animate-pulse">Decoding Intelligence: {progress}%</div>
           </div>
         )}
 
         {step === 'preview' && preview && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-10 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
-                { l: 'Entry Volume', v: preview.entryCount || preview.shiftCount || 0 },
-                { l: 'Timeline', v: preview.dateRange },
-                { l: 'Assets Active', v: preview.houseCount || 0 },
-                { l: 'Critical Hits', v: preview.redFlags || 0, c: 'text-flag-red' },
+                { l: 'Clinical Vectors', v: preview.entryCount || preview.shiftCount || 0, i: <FileText className="w-4 h-4" /> },
+                { l: 'Temporal Scope', v: preview.dateRange, i: <Calendar className="w-4 h-4" /> },
+                { l: 'Entities Active', v: preview.houseCount || 0, i: <Activity className="w-4 h-4" /> },
+                { l: 'Threat Indicators', v: preview.redFlags || 0, c: 'text-flag-red', i: <AlertTriangle className="w-4 h-4" /> },
               ].map(s => (
-                <div key={s.l} className="bg-hc-card border border-hc-border p-5 rounded-lg">
-                  <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">{s.l}</div>
-                  <div className={`text-2xl font-black tabular-nums ${s.c || 'text-hc-text'}`}>{s.v}</div>
+                <div key={s.l} className="hc-clay-raised p-8 rounded-[2rem] relative overflow-hidden group/stat border border-hc-muted/5 transition-all hover:translate-y-[-2px]">
+                  <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{s.i}</div>
+                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-4 opacity-60">{s.l}</div>
+                  <div className={`text-2xl font-black tabular-nums tracking-tighter ${s.c || 'text-hc-text'}`}>{s.v}</div>
                 </div>
               ))}
             </div>
 
             <VerificationGrid items={preview.rawItems || []} type={preview.type} onUpdate={items => setPreview({ ...preview, rawItems: items })} />
 
-            <div className="bg-hc-card border border-hc-border p-8 rounded-lg">
-              <div className="text-[10px] font-black text-hc-text uppercase tracking-widest mb-6">Intelligence Routing Options</div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-                <div className="space-y-4">
-                  <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Output Targets</label>
-                  <div className="grid grid-cols-2 gap-3">
+            <div className="hc-clay-raised p-12 rounded-[3rem] border border-hc-muted/5 bg-black/[0.01] shadow-2xl">
+              <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
+                 <div className="w-2 h-2 rounded-full bg-hc-teal shadow-[0_0_10px_#14b8a6]" />
+                 Operational Routing Configuration
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                <div className="space-y-6">
+                  <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Dispatch Targets</label>
+                  <div className="grid grid-cols-2 gap-4">
                     {['reports', 'templates', 'client-docs', 'roster'].map(t => (
-                      <label key={t} className="flex items-center gap-3 p-3 bg-hc-navy/40 border border-hc-border rounded cursor-pointer hover:bg-hc-card-hover">
-                        <input type="checkbox" checked={selectedTargets.includes(t as ImportTarget)} onChange={() => setSelectedTargets(p => p.includes(t as ImportTarget) ? p.filter(x => x !== t) : [...p, t as ImportTarget])} />
-                        <span className="text-[10px] font-black uppercase text-hc-text">{t}</span>
+                      <label key={t} className={`flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all border
+                        ${selectedTargets.includes(t as ImportTarget) ? 'hc-clay-inset bg-hc-bg/50 border-hc-teal/30' : 'hc-clay-raised border-hc-muted/5 hover:border-hc-muted/20'}`}>
+                        <input type="checkbox" className="hidden" checked={selectedTargets.includes(t as ImportTarget)} onChange={() => setSelectedTargets(p => p.includes(t as ImportTarget) ? p.filter(x => x !== t) : [...p, t as ImportTarget])} />
+                        <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all ${selectedTargets.includes(t as ImportTarget) ? 'bg-hc-teal border-hc-teal' : 'border-hc-muted/20'}`}>
+                          {selectedTargets.includes(t as ImportTarget) && <Check className="w-3 h-3 text-hc-bg" strokeWidth={4} />}
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-hc-text tracking-widest">{t.replace('-', ' ')}</span>
                       </label>
                     ))}
                   </div>
                 </div>
-                <div className="space-y-4">
-                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Asset Resolution</label>
-                   <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full bg-hc-navy border border-hc-border p-3 rounded text-[10px] font-black uppercase text-hc-text tracking-widest">
+                <div className="space-y-6">
+                   <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Entity Resolution Strategy</label>
+                   <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
                      <option value="global">Injest to Global Ledger</option>
-                     <option value="auto">Auto-Synthesise Profiles</option>
-                     <option value="specific">Target Specific Entity</option>
+                     <option value="auto">Auto-Synthesise Intelligence</option>
+                     <option value="specific">Target Specific Entity Matrix</option>
                    </select>
                    {clientMode === 'specific' && (
-                     <select value={selectedClientId || ''} onChange={e => setSelectedClientId(e.target.value)} className="w-full bg-hc-navy border border-hc-border p-3 rounded text-[10px] font-black uppercase text-hc-text tracking-widest">
-                        <option value="">Select Asset...</option>
+                     <select value={selectedClientId || ''} onChange={e => setSelectedClientId(e.target.value)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner animate-in slide-in-from-top-2">
+                        <option value="">Select Personnel Record...</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                      </select>
                    )}
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <button onClick={() => handleConfirm()} className="flex-1 bg-hc-teal text-hc-navy py-4 rounded text-[11px] font-black uppercase tracking-[0.2em] hover:bg-teal-400 transition-all">Confirm Injest Mapping</button>
-                <button onClick={reset} className="px-10 bg-hc-card border border-hc-border text-hc-muted py-4 rounded text-[11px] font-black uppercase tracking-widest hover:text-hc-text">Discard</button>
+              <div className="flex gap-6 pt-10 border-t border-hc-muted/10">
+                <button onClick={() => handleConfirm()} className="flex-1 py-5 rounded-[1.5rem] btn-tactical text-hc-bg text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">Execute Intake Mapping</button>
+                <button onClick={reset} className="px-12 hc-clay-raised border border-hc-muted/5 text-hc-muted py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:text-hc-text active:scale-95 transition-all shadow-xl">Discard Cycle</button>
               </div>
             </div>
           </div>
         )}
 
         {step === 'done' && (
-          <div className="flex-1 flex flex-col items-center justify-center py-20 animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 rounded bg-flag-green/10 border border-flag-green flex items-center justify-center mb-10"><Check className="w-10 h-10 text-flag-green" /></div>
-            <h2 className="text-xl font-black text-hc-text tracking-[0.2em] uppercase mb-4">Injest Complete</h2>
-            <p className="text-[10px] text-hc-muted text-center max-w-sm mb-12 uppercase leading-relaxed tracking-widest">{resultMsg}</p>
-            <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
-              <button onClick={() => setPage('dashboard')} className="p-4 bg-hc-card border border-hc-border rounded text-[9px] font-black uppercase tracking-widest text-hc-text hover:bg-hc-card-hover transition-all">Return to Command</button>
-              <button onClick={reset} className="p-4 bg-hc-teal text-hc-navy rounded text-[9px] font-black uppercase tracking-widest transition-all">Next Segment</button>
+          <div className="flex-1 flex flex-col items-center justify-center py-24 animate-in zoom-in-95 duration-700">
+            <div className="w-28 h-24 rounded-[2.5rem] bg-flag-green/10 border-2 border-flag-green/30 flex items-center justify-center mb-12 shadow-2xl shadow-flag-green/10">
+               <Check className="w-12 h-12 text-flag-green" strokeWidth={3} />
+            </div>
+            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-4">Stream Injest Successful</h2>
+            <p className="text-[11px] text-hc-muted text-center max-w-sm mb-16 uppercase leading-relaxed tracking-[0.2em] font-black opacity-60 italic">"{resultMsg}"</p>
+            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+              <button onClick={() => setPage('dashboard')} className="py-5 hc-clay-raised rounded-2xl text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all shadow-xl">Command Center</button>
+              <button onClick={reset} className="py-5 btn-tactical text-hc-bg rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl">Next Segment</button>
             </div>
           </div>
         )}
 
         {step === 'error' && (
-          <div className="flex-1 flex flex-col items-center justify-center py-20">
-            <AlertTriangle className="w-12 h-12 text-flag-red mb-6" />
-            <h2 className="text-lg font-black text-flag-red uppercase tracking-widest mb-4">Injest Fault Detected</h2>
-            <p className="text-[10px] text-hc-muted text-center max-w-md mb-10 font-mono italic">"{errorMsg}"</p>
-            <button onClick={reset} className="px-10 py-3 bg-hc-card border border-hc-border text-hc-text text-[10px] font-black uppercase tracking-widest rounded">Retest System</button>
+          <div className="flex-1 flex flex-col items-center justify-center py-24">
+            <AlertTriangle className="w-16 h-16 text-flag-red mb-8 animate-pulse" />
+            <h2 className="text-2xl font-black text-flag-red uppercase tracking-tighter mb-4">Injest Fault Protocol</h2>
+            <p className="text-[11px] text-hc-muted text-center max-w-md mb-12 font-mono italic opacity-60">"{errorMsg}"</p>
+            <button onClick={reset} className="px-12 py-4 hc-clay-raised border border-hc-muted/10 text-hc-text text-[10px] font-black uppercase tracking-widest rounded-2xl hover:brightness-95 transition-all shadow-xl">Reset Intake Module</button>
           </div>
         )}
       </div>
 
-      <div className="mt-auto p-6 flex justify-center border-t border-hc-border bg-hc-card/30">
-        <div className="flex items-center gap-2 text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40">
-           <div className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-           Local Intelligence Only // Zero Latency Encrypted Environment
+      <div className="mt-auto p-8 flex justify-center border-t border-hc-muted/10 bg-black/[0.02]">
+        <div className="flex items-center gap-3 text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] opacity-40">
+           <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+           Field Extraction Intelligence // End-to-End Encryption Vector
         </div>
       </div>
     </div>

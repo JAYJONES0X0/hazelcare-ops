@@ -4,6 +4,8 @@ import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import type { CareEntry } from '../lib/types';
 
+import { extractFileText } from '../lib/universal-extractor';
+
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
   const [entries, setEntries] = useState<CareEntry[]>([]);
@@ -20,22 +22,7 @@ export function NoteWorkspace() {
   const handleImportFile = useCallback(async (file: File) => {
     setImportLoading(true);
     try {
-      let text = '';
-      const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      if (ext === 'pdf') {
-        const pdfjsLib = await import('pdfjs-dist') as any;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-        const buf = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const tc = await page.getTextContent();
-          text += tc.items.map((it: any) => it.str).join(' ') + '\n';
-        }
-      } else {
-        text = await file.text();
-      }
-      
+      const text = await extractFileText(file);
       const envelope = buildEnvelopeFromRaw(file.name, text);
       if (envelope.diaryEntries) {
         setEntries(envelope.diaryEntries);
