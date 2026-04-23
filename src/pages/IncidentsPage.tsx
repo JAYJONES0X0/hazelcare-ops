@@ -46,14 +46,17 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
   const totalRed = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-200 font-mono">
+    <div className="min-h-screen flex flex-col bg-transparent text-hc-text font-mono">
+
       {/* Tactical Header */}
-      <div className="flex-none p-4 lg:p-6 border-b border-slate-800 bg-slate-900/50">
+      <div className="flex-none p-4 lg:p-6 border-b border-hc-border bg-hc-navy/40 backdrop-blur-xl">
+
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-2 h-6 bg-blue-600" />
-              <h1 className="text-xl font-black tracking-tighter uppercase text-slate-100">Stability Vector Hub</h1>
+              <div className="w-1 h-6 bg-hc-teal" />
+              <h1 className="text-xl font-black tracking-tighter uppercase text-hc-text">Stability Vector Hub</h1>
+
             </div>
             <div className="flex items-center gap-4 text-[10px] font-bold">
               <div className="flex items-center gap-2">
@@ -88,30 +91,31 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
       {/* Main Kanban Workspace */}
       <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-4 gap-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-        {byStage.map((stage) => (
           <div 
             key={stage.id} 
-            className={`flex-none w-80 flex flex-col border border-slate-800 bg-slate-900/30
+            className={`flex-none w-80 flex flex-col border border-hc-border bg-hc-card
               ${isStageCollapsed(stage.id) ? 'w-12 overflow-hidden' : ''} transition-all duration-300`}
           >
+
             {/* Column Header */}
             <div 
               onClick={() => toggleStage(stage.id)}
-              className="flex-none p-3 flex items-center justify-between cursor-pointer border-b border-slate-800 hover:bg-slate-900/50 transition-colors"
+              className="flex-none p-3 flex items-center justify-between cursor-pointer border-b border-hc-border hover:bg-hc-card-hover transition-colors"
               style={{ borderTop: `2px solid ${stage.color}` }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-1.5 h-1.5 shrink-0`} style={{ backgroundColor: stage.color }} />
                 {!isStageCollapsed(stage.id) && (
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate text-slate-400">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate text-hc-muted">
                     {stage.label}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-600">{stage.items.length}</span>
+                <span className="text-[10px] font-black text-hc-muted opacity-50">{stage.items.length}</span>
               </div>
             </div>
+
 
             {/* Column Body */}
             {!isStageCollapsed(stage.id) && (
@@ -119,22 +123,23 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                 {stage.items.map(incident => (
                   <div
                     key={incident.id}
-                    className={`p-4 border bg-slate-900 shadow-xl relative overflow-hidden group
-                      ${incident.severity === 'red' ? 'border-red-900/50 hover:border-red-800' : 'border-slate-800 hover:border-slate-700'}`}
+                    className={`p-4 border bg-hc-card shadow-xl relative overflow-hidden group
+                      ${incident.severity === 'red' ? 'border-red-900/50 hover:border-red-800' : 'border-hc-border hover:border-hc-border-light'}`}
                   >
+
                     {/* Severity Indicator */}
                     <div className={`absolute top-0 right-0 w-12 h-1 ${incident.severity === 'red' ? 'bg-red-600 animate-pulse' : 'bg-orange-600'}`} />
                     
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <div className="text-[11px] font-black text-slate-100 uppercase tracking-tighter leading-tight mb-1">
+                        <div className="text-[11px] font-black text-hc-text uppercase tracking-tighter leading-tight mb-1">
                           {incident.title}
                         </div>
-                        <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-hc-muted uppercase tracking-widest">
                           <span>{incident.house}</span>
                           {incident.client && (
                             <>
-                              <span className="text-slate-700">//</span>
+                              <span className="text-hc-border">//</span>
                               <span>{incident.client}</span>
                             </>
                           )}
@@ -142,16 +147,16 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 leading-relaxed mb-4 border-l border-slate-800 pl-3 py-1">
+                    <div className="text-[10px] text-hc-muted leading-relaxed mb-4 border-l border-hc-border pl-3 py-1">
                       {incident.description}
                     </div>
 
                     {/* Actions Feed */}
                     {incident.actions.length > 0 && (
-                      <div className="bg-black/40 border border-slate-800/50 p-2 mb-4 space-y-1">
-                        <div className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">Response_Log</div>
+                      <div className="bg-black/40 border border-hc-border p-2 mb-4 space-y-1">
+                        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Response_Log</div>
                         {incident.actions.slice(0, 3).map((a, i) => (
-                          <div key={i} className="text-[9px] text-slate-500 leading-tight flex items-start gap-2">
+                          <div key={i} className="text-[9px] text-hc-muted leading-tight flex items-start gap-2">
                             <span className="text-blue-500/50 shrink-0">▸</span>
                             <span>{a.toUpperCase()}</span>
                           </div>
