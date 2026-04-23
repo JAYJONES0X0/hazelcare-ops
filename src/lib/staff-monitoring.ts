@@ -28,6 +28,8 @@ export interface StaffScorecard {
   handoverScore: number | null;     // avg score for handover entries only
   dailySupportScore: number | null; // avg score for 1:1 entries only
   entryScores: { id: string; score: number; category: string }[]; // per-entry scores
+  categoryBreakdown: { category: string; count: number }[];       // entry counts by category
+  scoreableCount: number;                                          // entries that were actually scored
   // Repeat coaching targets
   isRepeatTarget: boolean;
   repeatGaps: string[];
@@ -198,29 +200,37 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     repeatByCarerMap.get(rt.carer)!.push(`${rt.gap} (flagged ${rt.count}× this week)`);
   }
 
+  // Categories that should NOT be quality-scored (admin/finance entries, not care notes)
+  const NON_SCOREABLE = new Set(['finance', 'staff']);
+
   const staff: StaffScorecard[] = [];
   for (const [carer, list] of byCarer) {
     const entryCount = list.length;
-    const totalChars = list.reduce((s, e) => s + (e.entry?.length || 0), 0);
-    const avgEntryChars = entryCount ? totalChars / entryCount : 0;
-    const shortEntryCount = list.filter((e) => (e.entry?.length || 0) < SHORT_LEN).length;
-    const shortEntryRatio = entryCount ? shortEntryCount / entryCount : 0;
+
+    // Only score care entries — exclude finance, staff-admin
+    const scoreableList = list.filter((e) => !NON_SCOREABLE.has(e.category || ''));
+
+    const totalChars = scoreableList.reduce((s, e) => s + (e.entry?.length || 0), 0);
+    const avgEntryChars = scoreableList.length ? totalChars / scoreableList.length : 0;
+    const shortEntryCount = scoreableList.filter((e) => (e.entry?.length || 0) < SHORT_LEN).length;
+    const shortEntryRatio = scoreableList.length ? shortEntryCount / scoreableList.length : 0;
     const redCount = list.filter((e) => e.severity === 'red').length;
     const amberCount = list.filter((e) => e.severity === 'amber').length;
     const houses = new Set(list.map((e) => e.house).filter(Boolean));
     const house = houses.size <= 1 ? [...houses][0] || '—' : 'multiple';
 
-    // ── Rubric-based scoring ───────────────────────────────────
+    // ── Rubric-based scoring (scoreable entries only) ───────────
     const entryScores = list.map((e) => ({
       id: e.id,
-      score: scoreEntry(e).total,
+      score: NON_SCOREABLE.has(e.category || '') ? -1 : scoreEntry(e).total,
       category: e.category || 'other',
     }));
-    const avgRubricScore = entryCount ? Math.round(entryScores.reduce((s, e) => s + e.score, 0) / entryCount) : 0;
+    const scoredEntries = entryScores.filter((e) => e.score >= 0);
+    const avgRubricScore = scoredEntries.length ? Math.round(scoredEntries.reduce((s, e) => s + e.score, 0) / scoredEntries.length) : 0;
 
     // Per-category sub-scores
-    const handoverEntries = list.filter((e) => e.category === 'handover');
-    const dailyEntries = list.filter((e) => e.category === 'daily_support');
+    const handoverEntries = scoreableList.filter((e) => e.category === 'handover');
+    const dailyEntries = scoreableList.filter((e) => e.category === 'daily_support');
     const handoverScore = handoverEntries.length
       ? Math.round(handoverEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / handoverEntries.length)
       : null;
@@ -228,9 +238,9 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       ? Math.round(dailyEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / dailyEntries.length)
       : null;
 
-    // Module breakdown — average across all entries' modules by name
+    // Module breakdown — average across scoreable entries only
     const moduleMap = new Map<string, { total: number; count: number; missing: string[] }>();
-    for (const e of list) {
+    for (const e of scoreableList) {
       const result = scoreEntry(e);
       for (const m of result.modules) {
         if (!moduleMap.has(m.name)) moduleMap.set(m.name, { total: 0, count: 0, missing: [] });
@@ -248,7 +258,17 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       missing: v.missing.slice(0, 3),
     }));
 
-    const topGaps = getTopGaps(list);
+    const topGaps = getTopGaps(scoreableList);
+
+    // Category breakdown — counts per category across ALL entries (including admin)
+    const catCount = new Map<string, number>();
+    for (const e of list) {
+      const cat = e.category || 'other';
+      catCount.set(cat, (catCount.get(cat) || 0) + 1);
+    }
+    const categoryBreakdown = [...catCount.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, count]) => ({ category, count }));
 
     // Blend rubric score with legacy length signals for tier calculation
     const blendedScore = Math.round(avgRubricScore * 0.7 + (100 - shortEntryRatio * 100) * 0.3);
@@ -296,6 +316,8 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       handoverScore,
       dailySupportScore,
       entryScores,
+      categoryBreakdown,
+      scoreableCount: scoreableList.length,
       isRepeatTarget: (repeatByCarerMap.get(carer)?.length ?? 0) > 0,
       repeatGaps: repeatByCarerMap.get(carer) ?? [],
     });

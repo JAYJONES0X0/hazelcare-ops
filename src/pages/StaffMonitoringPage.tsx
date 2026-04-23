@@ -316,9 +316,21 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                            <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-text text-sm shadow-inner uppercase">{s.carer.charAt(0)}</div>
                            <div>
                               <div className="text-base font-black text-hc-text tracking-tighter uppercase leading-none mb-2 group-hover:text-hc-teal transition-colors">{s.carer}</div>
-                              <div className="flex items-center gap-4 text-[9px] font-black text-hc-text uppercase tracking-widest opacity-80">
-                                 <span>Injest Vector</span>
-                                 <span className="font-mono">{s.entryCount}U</span>
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                {s.categoryBreakdown.map(({ category, count }) => {
+                                  const isAdmin = category === 'finance' || category === 'staff';
+                                  return (
+                                    <span key={category} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest
+                                      ${isAdmin ? 'bg-hc-muted/10 text-hc-muted line-through opacity-50' : 'bg-hc-teal/10 text-hc-teal'}`}>
+                                      {count}× {category.replace('_', ' ')}
+                                    </span>
+                                  );
+                                })}
+                                {s.scoreableCount < s.entryCount && (
+                                  <span className="text-[9px] font-black text-hc-muted opacity-40 uppercase tracking-widest">
+                                    ({s.scoreableCount} scored)
+                                  </span>
+                                )}
                               </div>
                            </div>
                         </div>
