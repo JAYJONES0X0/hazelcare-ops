@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Page } from '../App';
 import type { Action, Incident, WeekSummary } from '../lib/types';
-import { ORG_CONFIG } from '../lib/client-store';
+import { ORG_CONFIG } from '../lib/config';
 import { LogOut, Sun, Moon, Info } from 'lucide-react';
 
 interface Props {

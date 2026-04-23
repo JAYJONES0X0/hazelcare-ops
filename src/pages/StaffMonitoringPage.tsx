@@ -268,7 +268,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? borderClass.replace('border-','bg-').replace('/30','') + ' text-black' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
                       {s.carer.charAt(0)}
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 px-4">
                       <div className="text-sm font-black tracking-tight mb-1 truncate text-white/90">{s.carer}</div>
                       <div className="flex items-center gap-1 flex-wrap">
                         {typeEntries.map(([label, { count, icon, colorClass }]) => (
@@ -278,16 +278,23 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                         ))}
                       </div>
                     </div>
+                    {/* Operational Space (Center) */}
+                    <div className="hidden lg:flex flex-col items-center justify-center border-l border-white/5 px-6 shrink-0 opacity-40">
+                       <span className="text-[7px] font-black uppercase text-hc-muted tracking-widest mb-1">Injest Vector</span>
+                       <span className="text-[10px] font-black text-hc-text tabular-nums">{staffEntries.length}U</span>
+                    </div>
                   </div>
+
                   
-                  <div className="flex flex-col items-end gap-1 shrink-0 ml-4">
-                    <div className="flex items-center gap-2">
-                       <span style={{ color: scoreHex }} className="text-[10px] font-black">{s.qualityScore}%</span>
-                       <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-zinc-600'}`} />
+                  <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4 group-hover:translate-x-1 transition-transform">
+                    <div className="flex items-center gap-3">
+                       <span style={{ color: scoreHex }} className="text-xs font-black tabular-nums">{s.qualityScore}%</span>
+                       <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-hc-muted group-hover:text-white'}`} />
                     </div>
-                    <div className="w-12 bg-black/40 h-1 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
+                    <div className="w-16 bg-black/40 h-1 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
                     </div>
+
                     {(() => {
                       const seq = activeSequences.find(seq => seq.carer === s.carer && seq.status === 'active');
                       if (!seq) return null;
@@ -322,9 +329,9 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-transparent flex flex-col">
+    <div className="min-h-screen bg-transparent flex flex-col items-center">
+      <div className="w-full max-w-7xl p-6 lg:p-10 flex flex-col">
 
-      <div className="max-w-[1920px] mx-auto w-full p-6 lg:p-10 flex flex-col overflow-visible">
         
         {/* SITREP HEADER */}
         <div className="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-hc-border pb-8">
@@ -410,7 +417,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
         <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-10 items-start">
           
           {/* MASTER PANE: Staff Queue */}
-          <div className="bg-hc-card border border-hc-border rounded-2xl shadow-2xl flex flex-col overflow-hidden sticky top-24">
+          <div className="bg-hc-card/95 backdrop-blur-3xl border border-hc-border rounded-2xl shadow-2xl flex flex-col overflow-hidden xl:sticky xl:top-6 z-10 h-fit max-h-[calc(100vh-100px)]">
             <div className="p-6 border-b border-hc-border bg-hc-card-hover/20 flex flex-col gap-4 shrink-0">
                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
                  {snapshot.houses.length > 0 ? [{ name: 'ALL', avgQuality: 100 }, ...snapshot.houses].map((h) => (
@@ -427,7 +434,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
               </div>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto scrollbar-thin p-5 space-y-2 bg-hc-navy/10">
+            <div className="max-h-[80vh] overflow-y-auto scrollbar-thin p-5 space-y-2 bg-hc-navy/10 flex-1">
                {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-flag-amber', 'border-flag-amber/40', '0 units.')}
                {renderStaffQueue(activeMonitored, 'ACTIVE TRACKING', 'text-hc-teal', 'border-hc-teal/40', '0 units.')}
                {renderStaffQueue(goodStanding, 'OPTIMAL STANDING', 'text-hc-muted', 'border-hc-border', '0 units.')}
@@ -441,7 +448,7 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />
                 
                 {/* Detail Header */}
-                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-hover/20 shrink-0">
+                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-hover/40 sticky top-0 z-10 backdrop-blur-3xl shrink-0">
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/5 ${selectedStaffData.qualityScore < 65 ? 'bg-flag-amber/20 text-flag-amber' : 'bg-hc-teal/20 text-hc-teal'}`}>
                       {coachStaff.charAt(0)}
@@ -456,13 +463,14 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                     <div className="px-6 py-3 rounded-2xl bg-black/40 border border-hc-border flex flex-col items-center">
+                     <div className="px-6 py-3 rounded-2xl bg-black/60 border border-hc-border flex flex-col items-center shadow-2xl">
                         <span className="text-[8px] font-black text-hc-muted uppercase opacity-40 mb-1">Impact_Score</span>
                         <span className={`text-xl font-black tabular-nums ${selectedStaffData.qualityScore < 65 ? 'text-flag-amber' : 'text-hc-teal'}`}>{selectedStaffData.qualityScore}%</span>
                      </div>
-                     <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-12 h-12 rounded-2xl border border-hc-border flex items-center justify-center text-hc-muted hover:bg-flag-red/10 hover:text-flag-red hover:border-flag-red/30 transition-all shadow-xl backdrop-blur-xl group"><X className="w-5 h-5 group-hover:scale-110 transition-transform" /></button>
+                     <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-12 h-12 rounded-2xl border border-hc-border bg-black/20 flex items-center justify-center text-hc-muted hover:bg-flag-red/20 hover:text-flag-red hover:border-flag-red/30 transition-all shadow-xl backdrop-blur-xl group"><X className="w-5 h-5 group-hover:scale-110 transition-transform" /></button>
                   </div>
                 </div>
+
                 
                 <div className="flex-1 flex flex-col md:flex-row min-h-0">
                    
