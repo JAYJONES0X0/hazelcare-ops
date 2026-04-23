@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   MessageSquare, Clipboard, Search, Terminal, Zap, Trash2, CheckCircle, 
   Clock, Phone, AlertCircle, Calendar, XCircle, ShieldAlert,
@@ -8,11 +8,22 @@ import type { InterceptedIntel, InterceptVector } from '../lib/types';
 
 export function CommunicationsPage() {
   const [rawText, setRawText] = useState('');
-  const [intel, setIntel] = useState<InterceptedIntel[]>([]);
+  const [intel, setIntel] = useState<InterceptedIntel[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('hc-intercept-cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<InterceptVector | 'all'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+
+  // SESSION PERSISTENCE ANCHOR
+  useEffect(() => {
+    sessionStorage.setItem('hc-intercept-cache', JSON.stringify(intel));
+  }, [intel]);
+
 
   const stats = useMemo(() => {
     return {

@@ -442,7 +442,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           </div>
 
           {/* DETAIL PANE: Command Intelligence */}
-          <div ref={detailRef} className="flex flex-col gap-10">
+          <div ref={detailRef} className="flex-1 flex flex-col gap-10 relative z-20 min-w-0">
+
             {coachStaff && selectedStaffData ? (
               <div className="bg-hc-card border border-hc-border rounded-3xl flex flex-col relative overflow-hidden shadow-2xl min-h-[800px]">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />

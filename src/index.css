@@ -52,12 +52,13 @@ body::before {
   /* ── TACTICAL LIGHT (OPERATIONAL GRADE) ── */
   --hc-bg: #f8fafc;
   --hc-navy: rgba(226, 232, 240, 0.7);
-  --hc-card: rgba(255, 255, 255, 0.45);
-  --hc-card-hover: rgba(255, 255, 255, 0.7);
-  --hc-border: rgba(15, 23, 42, 0.12); 
-  --hc-border-light: rgba(15, 23, 42, 0.18);
+  --hc-card: rgba(255, 255, 255, 0.65); /* More opaque for contrast */
+  --hc-card-hover: rgba(255, 255, 255, 0.85);
+  --hc-border: rgba(15, 23, 42, 0.22); /* Darker borders for light mode */
+  --hc-border-light: rgba(15, 23, 42, 0.28);
   --hc-text: #020617; /* Near black for readability */
   --hc-muted: #334155; /* Higher contrast muted text */
+
   --hc-glass-bg: rgba(255, 255, 255, 0.6);
   --hc-glass-border: rgba(15, 23, 42, 0.1);
 }
