@@ -55,6 +55,9 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
       if (!text.trim()) { setImportError('File appears empty.'); return; }
 
       const envelope = buildEnvelopeFromRaw(file.name, text);
+      if (envelope.weekSummary && envelope.weekSummary.totalEntries >= 10_000) {
+        setImportError('Large export: showing most recent 10,000 entries. Use house filters to focus the analysis.');
+      }
       if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
         if (weekData) {
           const merged: WeekSummary = JSON.parse(JSON.stringify(weekData));

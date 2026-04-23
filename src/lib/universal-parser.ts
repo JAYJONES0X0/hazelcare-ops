@@ -297,17 +297,24 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
   return entries;
 }
 
+// Cap per-file parse to prevent browser freeze on huge CarePlanner exports
+const MAX_PARSE_ENTRIES = 10_000;
+
+function capEntries(entries: CareEntry[]): CareEntry[] {
+  return entries.length > MAX_PARSE_ENTRIES ? entries.slice(entries.length - MAX_PARSE_ENTRIES) : entries;
+}
+
 export function parseUniversalData(rawText: string): CareEntry[] {
   const trimmed = rawText.trim();
   // CSV path (comma-separated with recognisable headers)
   if (trimmed.startsWith('\uFEFF') || looksLikeCSV(trimmed)) {
     const result = parseUniversalCSV(trimmed);
-    if (result.length > 0) return result;
+    if (result.length > 0) return capEntries(result);
   }
   // TSV path — PDF extractor produces tab-separated rows preserving table layout
   if (looksLikeTSV(trimmed)) {
     const result = parseUniversalCSV(trimmed, parseTSVRaw(trimmed));
-    if (result.length > 0) return result;
+    if (result.length > 0) return capEntries(result);
   }
 
   const entries: CareEntry[] = [];

@@ -9,6 +9,7 @@ import { extractFileText } from '../lib/universal-extractor';
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
   const [entries, setEntries] = useState<CareEntry[]>([]);
+  const [importInfo, setImportInfo] = useState<string>('');
   
   const [targetClient, setTargetClient] = useState('Max Nicholson');
   const [dateFrom, setDateFrom] = useState('2026-03-09');
@@ -21,17 +22,25 @@ export function NoteWorkspace() {
 
   const handleImportFile = useCallback(async (file: File) => {
     setImportLoading(true);
+    setImportInfo('');
     try {
       const text = await extractFileText(file);
       const envelope = buildEnvelopeFromRaw(file.name, text);
-      if (envelope.diaryEntries) {
-        setEntries(envelope.diaryEntries);
+      let loaded: CareEntry[] = [];
+      if (envelope.diaryEntries?.length) {
+        loaded = envelope.diaryEntries;
       } else if (envelope.weekSummary) {
-        const flat = flattenWeekEntries(envelope.weekSummary);
-        setEntries(flat);
+        loaded = flattenWeekEntries(envelope.weekSummary);
+      }
+      setEntries(loaded);
+      if (loaded.length === 10_000) {
+        setImportInfo('Large file detected — showing most recent 10,000 entries. Apply client + date filters to find your records.');
+      } else {
+        setImportInfo(`${loaded.length} entries loaded from ${file.name}`);
       }
     } catch (e) {
       console.error(e);
+      setImportInfo('Failed to parse file. Check console for details.');
     } finally {
       setImportLoading(false);
     }
@@ -115,6 +124,13 @@ export function NoteWorkspace() {
            </button>
         </div>
       </div>
+
+      {importInfo && (
+        <div className={`mb-8 px-8 py-4 rounded-2xl hc-clay-inset text-xs font-black uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 ${importInfo.includes('Large') ? 'text-flag-amber' : 'text-hc-teal'}`}>
+          <div className={`w-2 h-2 rounded-full ${importInfo.includes('Large') ? 'bg-flag-amber animate-pulse' : 'bg-hc-teal'}`} />
+          {importInfo}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
         

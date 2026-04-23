@@ -4,6 +4,7 @@
 @theme {
   /* ── HAZEL CARE TACTICAL PROTOCOL — ORGANIC SUBSTRATE ── */
   --color-hc-bg: #f3efe0;          /* Warm Bone foundation */
+  --color-hc-bone: #f3efe0;        /* Alias — same substrate */
   --color-hc-text: #0d2d2d;        /* Nocturnal Pine (The new black) */
   --color-hc-muted: #8a8b82;       /* Olive Anchor (The new grey) */
   --color-hc-teal: #1c4e4e;        /* Deep Matte Pine Primary */
@@ -12,7 +13,7 @@
   --color-hc-lavender: #ada2d4;    /* Chalky Lavender (Intelligence) */
   --color-hc-clay-dark: #d1c9b8;   /* Sandy Shadow vector */
   --color-hc-clay-light: #ffffff;  /* Bone Highlight */
-  
+
   --color-flag-red: #d94e4e;       /* Milled Red */
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
@@ -98,6 +99,8 @@ body {
   box-shadow: 2px 2px 5px #d1c9b8, -2px -2px 5px #ffffff;
 }
 .pill-active { color: #1c4e4e; border: 1px solid rgba(28, 78, 78, 0.2); }
+.pill-teal   { color: #1c4e4e; background: rgba(28, 78, 78, 0.08); border: 1px solid rgba(28, 78, 78, 0.2); }
+.pill-blue   { color: #4c7c7c; background: rgba(76, 124, 124, 0.08); border: 1px solid rgba(76, 124, 124, 0.2); }
 
 /* ─── UI CLEANUP ─────────────────────────────────────────────── */
 [class*="text-[8px]"],
