@@ -673,11 +673,12 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
         setPage={setPage}
         weekData={weekData}
         actions={actions}
-        incidents={incidents}
         theme={theme}
         setTheme={setTheme}
         onSignOut={onSignOut}
       />
+
+
       <main className="flex-1 overflow-y-auto lg:h-full bg-hc-bg relative scrollbar-thin">
 
         {/* Staff share buttons on Staff Tools pages */}

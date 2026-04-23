@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import type { Page } from '../App';
 import type { Action, Incident, WeekSummary } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
-import { LogOut, Sun, Moon, Info, Settings, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield, Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck, UserCog, Database, Settings2 } from 'lucide-react';
+import { LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield, Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck, Database, Settings2 } from 'lucide-react';
+
 
 interface Props {
   page: Page;
@@ -48,7 +49,8 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
   },
 ];
 
-export function Sidebar({ page, setPage, weekData, actions, incidents, theme, setTheme, onSignOut }: Props) {
+export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onSignOut }: Props) {
+
   const openActionsCount = actions.filter(a => a.status !== 'completed').length;
 
   return (
