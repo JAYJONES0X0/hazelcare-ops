@@ -91,11 +91,13 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
       {/* Main Kanban Workspace */}
       <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-4 gap-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        {byStage.map((stage) => (
           <div 
             key={stage.id} 
             className={`flex-none w-80 flex flex-col border border-hc-border bg-hc-card
               ${isStageCollapsed(stage.id) ? 'w-12 overflow-hidden' : ''} transition-all duration-300`}
           >
+
 
             {/* Column Header */}
             <div 

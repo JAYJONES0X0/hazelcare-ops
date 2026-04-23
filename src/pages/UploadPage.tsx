@@ -331,7 +331,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-hc-navy overflow-hidden flex flex-col font-mono">
+    <div className="h-[calc(100vh-4rem)] bg-transparent overflow-hidden flex flex-col font-mono">
+
       <div className="flex-1 overflow-y-auto scrollbar-thin p-8">
         {/* Header */}
         <div className="mb-10 pb-6 border-b border-hc-border flex items-center justify-between">
