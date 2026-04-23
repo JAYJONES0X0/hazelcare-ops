@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
@@ -15,13 +14,10 @@ import { buildCallPrepScript, type CallPrepVariant } from '../lib/call-prep';
 import {
   saveMonitoringRun,
   saveCallOutcome,
-  lastHourlyCheckAt,
-  touchHourlyCheck,
   loadCallOutcomes,
   recordCoachingEvents,
   recordModuleScores,
   detectGrowthAlerts,
-  type GrowthAlert,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
 import {
@@ -32,8 +28,7 @@ import {
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { buildExportRecommendations } from '../lib/export-recommendations';
-import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, Search } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Search } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -130,18 +125,10 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [dateTo] = useState(def.dateTo);
   const [selectedEscId, setSelectedEscId] = useState<string | null>(null);
   const [callVariant, setCallVariant] = useState<CallPrepVariant>('message');
-  const [outcomeNotes, setOutcomeNotes] = useState('');
-  const [outcomeType, setOutcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
-  const [hourlyDismissed, setHourlyDismissed] = useState(false);
-  const [hourlyTick, setHourlyTick] = useState(0);
+  const [outcomeNotes] = useState('');
+  const [outcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
 
   const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
-  const { isCollapsed: isPanelCollapsed, toggle: togglePanel, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
-  const PANEL_IDS = ['filters', 'export-hints', 'houses', 'staff', 'escalations', 'coaching', 'outcomes'];
-  const allPanelsClosed = allPanelsCollapsed(PANEL_IDS);
-
-  const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
-  const [copiedGrowthAlert, setCopiedGrowthAlert] = useState<string | null>(null);
 
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
   const [coachEntry, setCoachEntry] = useState<CareEntry | null>(null);
@@ -151,7 +138,6 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
 
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
-  const exportHints = useMemo(() => buildExportRecommendations(snapshot), [snapshot]);
 
   const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
 
@@ -167,16 +153,9 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
     return buildCallPrepScript(selectedEsc, hl, callVariant);
   }, [selectedEsc, house, callVariant]);
 
-  const hourlyDue = useMemo(() => {
-    void hourlyTick;
-    const last = lastHourlyCheckAt();
-    return !last || (Date.now() - last > 3600000);
-  }, [hourlyTick]);
-
   const onRecompute = useCallback(() => {
     saveMonitoringRun(`${snapshot.windowLabel} · ${snapshot.dataFreshness.entryCount} entries`, snapshot.escalations.length);
-    const alerts = detectGrowthAlerts(snapshot.staff);
-    if (alerts.length > 0) setGrowthAlerts(alerts);
+    detectGrowthAlerts(snapshot.staff);
     recordCoachingEvents(snapshot.staff.map((s) => ({ carer: s.carer, topGaps: s.topGaps })));
     recordModuleScores(snapshot.staff.map((s) => ({ carer: s.carer, qualityScore: s.qualityScore, moduleBreakdown: s.moduleBreakdown })));
 
@@ -348,7 +327,6 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
               </div>
               <div className="space-y-3">
                 {snapshot.staff.map((s) => {
-                  const isCritical = s.qualityScore < 60;
                   const scoreColor = s.qualityScore >= 70 ? 'text-flag-green' : s.qualityScore >= 45 ? 'text-flag-amber' : 'text-flag-red';
                   const esc = snapshot.escalations.find(e => e.carer === s.carer);
                   const isExpanded = selectedStaffCard === s.carer;
