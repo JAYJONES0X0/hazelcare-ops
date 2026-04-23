@@ -55,9 +55,11 @@ body::before {
   --hc-card: rgba(255, 255, 255, 0.65); /* More opaque for contrast */
   --hc-card-hover: rgba(255, 255, 255, 0.85);
   --hc-border: rgba(15, 23, 42, 0.22); /* Darker borders for light mode */
+
   --hc-border-light: rgba(15, 23, 42, 0.28);
-  --hc-text: #020617; /* Near black for readability */
-  --hc-muted: #334155; /* Higher contrast muted text */
+  --hc-text: #020617; /* High contrast black */
+  --hc-muted: #1e293b; /* Darker slate for readability */
+
 
   --hc-glass-bg: rgba(255, 255, 255, 0.6);
   --hc-glass-border: rgba(15, 23, 42, 0.1);
@@ -364,15 +366,28 @@ html { scroll-behavior: smooth; }
     inset 0 0 30px rgba(239,68,68,0.03);
 }
 
-/* Global Card Translucency */
+/* Global Card Translucency — Upgrade to Heavy Physical Slab */
 .bg-hc-card, [class*="bg-hc-card"] {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   box-shadow: 
-    0 10px 40px -10px rgba(0,0,0,0.5),
+    0 20px 50px -12px rgba(0,0,0,0.7),
+    inset 0 0 0 1px rgba(255,255,255,0.08), /* Inner Ring/Thickness */
     inset 0 0 20px rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.12) !important; /* Reinforced Frame */
+  background-color: var(--hc-card);
 }
+
+[data-theme="light"] .bg-hc-card, [data-theme="light"] [class*="bg-hc-card"] {
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  box-shadow: 
+    0 15px 35px -8px rgba(0,0,0,0.08),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+  border: 1.5px solid rgba(15, 23, 42, 0.18) !important;
+  background-color: var(--hc-card);
+}
+
 
 
 

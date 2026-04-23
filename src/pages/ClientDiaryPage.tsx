@@ -402,7 +402,8 @@ export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
             </div>
             <p className="text-white font-black tracking-[0.3em] uppercase text-xs opacity-40">Select a house to view notes</p>
             <div className="h-px w-12 bg-white/10 my-4" />
-            <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[0.4em] opacity-30">{allClients.length} people found</p>
+            <p className="text-[10px] text-hc-text font-black uppercase tracking-[0.4em] opacity-90">{allClients.length} people found</p>
+
           </div>
         ) : (
           <div className="p-4 md:p-6 lg:p-8 max-w-[1200px] mx-auto animate-in slide-in-from-bottom-4 duration-700">

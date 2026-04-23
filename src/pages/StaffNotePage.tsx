@@ -795,11 +795,12 @@ export function StaffNotePage() {
                 ) : generatedNote ? (
                   <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap animate-in fade-in duration-1000 italic opacity-90 group-hover/preview:opacity-100 transition-opacity">"{generatedNote}"</pre>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center opacity-30 group cursor-default">
+                  <div className="flex flex-col items-center justify-center py-20 text-center group cursor-default">
                     <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700">
                       <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed">Your note preview will appear here...</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed text-hc-text opacity-90">Your note preview will appear here...</div>
+
                   </div>
                 )}
                 {enhanceError && <div className="pill pill-red text-[9px] font-black px-4 py-2 mt-6 shadow-lg animate-in shake duration-500 uppercase tracking-widest">{enhanceError}</div>}
