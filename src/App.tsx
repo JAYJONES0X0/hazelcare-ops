@@ -618,7 +618,6 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
-  const [shifts, setShifts] = useState<Shift[]>(() => loadShifts());
   const [clients] = useState<FullClient[]>(() => loadClients());
   const [showShareModal, setShowShareModal] = useState<string | null>(null);
   const [quickAction, setQuickAction] = useState<{ type: 'action' | 'incident'; content?: string; house?: string; client?: string } | null>(null);
