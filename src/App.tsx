@@ -357,8 +357,8 @@ import { AgencyPortalPage } from './pages/AgencyPortalPage';
 import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
-import type { WeekSummary, Action, Incident, StaffMember, Shift, ActionPriority } from './lib/types';
-import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, loadShifts, saveShifts } from './lib/storage';
+import type { WeekSummary, Action, Incident, StaffMember, ActionPriority } from './lib/types';
+import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, saveShifts } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
 import { HAZELCARE_HOUSES, uid } from './lib/compliance-store';
 
@@ -648,7 +648,6 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
   }
 
   function handleUpdateShifts(updated: Shift[]) {
-    setShifts(updated);
     saveShifts(updated);
   }
 
