@@ -2,7 +2,6 @@ import { Activity, ChevronRight, Shield, Printer } from 'lucide-react';
 import type { WeekSummary, Action, Incident, StaffMember, Shift } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
-import { useCollapseStore } from '../lib/collapse-store';
 
 interface Props {
   weekData: WeekSummary | null;
