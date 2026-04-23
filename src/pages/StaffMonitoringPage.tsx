@@ -1,5 +1,5 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Activity, RefreshCw, History, FileText, CheckCircle, Sparkles, Download, Lightbulb, Zap, Search, X, ChevronRight, ShieldAlert, Shield } from 'lucide-react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useCollapseStore } from '../lib/collapse-store';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
@@ -21,14 +21,7 @@ import {
   recordCoachingEvents,
   recordModuleScores,
   detectGrowthAlerts,
-  loadActiveTracking,
-  logCoachingAction,
-  loadActiveSequences,
-  enrollInSequence,
-  advanceSequence,
-  STANDARD_SEQUENCES,
   type GrowthAlert,
-  type ActiveSequence,
 } from '../lib/staff-monitoring-store';
 import { mergeMonitoringIntoTemplateContext, type MonitoringTemplateContext } from '../lib/staff-monitoring-template-context';
 import {
@@ -38,31 +31,99 @@ import {
   buildCoordinatorEvidenceHtml,
   buildCoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
+import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { buildExportRecommendations } from '../lib/export-recommendations';
+import { Sparkles, Download, RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, CheckCircle, Lightbulb, Search } from 'lucide-react';
 
 interface Props {
-  staff: StaffMember[];
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
   onDataParsed: (data: WeekSummary) => void;
+  staff: StaffMember[];
 }
 
-function entryTypeLabel(category?: string, rawType?: string): { label: string; icon: string } {
-  const cat = (category || '').toLowerCase();
-  const t = (rawType || '').toLowerCase();
-  if (cat === 'handover' || t.includes('handover')) return { label: 'Handover', icon: '🔄' };
-  if (cat === 'daily_support' || t.includes('task note') || t.includes('daily 1:1') || t.includes('1:1')) return { label: 'Task Note', icon: '✅' };
-  if (cat === 'medication' || t.includes('medication')) return { label: 'Medication', icon: '💊' };
-  if (cat === 'safeguarding' || t.includes('safeguard')) return { label: 'Safeguarding', icon: '🛡️' };
-  if (cat === 'incident' || t.includes('incident') || t.includes('abc')) return { label: 'Incident', icon: '🚨' };
-  if (cat === 'finance' || t.includes('expense') || t.includes('mileage')) return { label: 'Finance', icon: '💷' };
-  if (cat === 'staff' || t.includes('senior support') || t.includes('supervision')) return { label: 'Staff Note', icon: '👤' };
-  return { label: 'Entry', icon: '📋' };
-}
-
-export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<Props, 'onDataParsed'> & { onDataParsed?: (data: WeekSummary) => void }) {
+export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
-  const detailRef = useRef<HTMLDivElement>(null);
+
+  // ── Inline import ─────────────────────────────────────────────────
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importDragging, setImportDragging] = useState(false);
+
+  const handleImportFile = useCallback(async (file: File) => {
+    setImportError('');
+    setImportLoading(true);
+    try {
+      let text = '';
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (ext === 'pdf') {
+        const pdfjsLib = await import('pdfjs-dist') as any;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const tc = await page.getTextContent();
+          const items = tc.items as any[];
+          const rowMap = new Map<number, { x: number; str: string }[]>();
+          for (const it of items) {
+            if (!it.str?.trim()) continue;
+            const y = Math.round((it.transform?.[5] ?? 0) / 4) * 4;
+            if (!rowMap.has(y)) rowMap.set(y, []);
+            rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
+          }
+          const sortedRows = [...rowMap.entries()]
+            .sort((a, b) => b[0] - a[0])
+            .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
+          text += sortedRows.join('\n') + '\n';
+        }
+      } else {
+        text = await file.text();
+      }
+      if (!text.trim()) { setImportError('File appears empty.'); return; }
+
+      const envelope = buildEnvelopeFromRaw(file.name, text);
+      if (envelope.weekSummary && envelope.weekSummary.totalEntries > 0) {
+        if (weekData) {
+          const merged: WeekSummary = JSON.parse(JSON.stringify(weekData));
+          let newAdded = 0;
+          const getHash = (e: CareEntry) => `${e.date}-${e.carer}-${e.client}-${(e.entry || '').slice(0, 40)}`;
+          const existingHashes = new Set(flattenWeekEntries(weekData).map(getHash));
+
+          Object.entries(envelope.weekSummary.houses).forEach(([houseName, houseData]) => {
+            if (!merged.houses[houseName]) {
+              merged.houses[houseName] = houseData;
+              newAdded += houseData.entries.length;
+            } else {
+              houseData.entries.forEach(e => {
+                if (!existingHashes.has(getHash(e))) {
+                  merged.houses[houseName].entries.push(e);
+                  newAdded++;
+                }
+              });
+            }
+          });
+
+          if (newAdded > 0) {
+            merged.totalEntries = flattenWeekEntries(merged).length;
+            onDataParsed(merged);
+            setImportError(`Merged ${newAdded} new entries.`);
+          } else {
+            setImportError('No new unique entries found.');
+          }
+        } else {
+          onDataParsed(envelope.weekSummary);
+          setImportError('');
+        }
+      } else {
+        setImportError(`Parsed 0 entries.`);
+      }
+    } catch (e) {
+      setImportError(`Error: ${e instanceof Error ? e.message : 'Unknown'}`);
+    } finally {
+      setImportLoading(false);
+    }
+  }, [onDataParsed, weekData]);
 
   const [house, setHouse] = useState<string>('all');
   const [dateFrom] = useState(def.dateFrom);
@@ -72,6 +133,12 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const [outcomeNotes, setOutcomeNotes] = useState('');
   const [outcomeType, setOutcomeType] = useState<'reached' | 'voicemail' | 'refused' | 'callback' | 'resolved'>('reached');
   const [hourlyDismissed, setHourlyDismissed] = useState(false);
+  const [hourlyTick, setHourlyTick] = useState(0);
+
+  const [selectedStaffCard, setSelectedStaffCard] = useState<string | null>(null);
+  const { isCollapsed: isPanelCollapsed, toggle: togglePanel, allCollapsed: allPanelsCollapsed } = useCollapseStore('staff-monitoring-panels');
+  const PANEL_IDS = ['filters', 'export-hints', 'houses', 'staff', 'escalations', 'coaching', 'outcomes'];
+  const allPanelsClosed = allPanelsCollapsed(PANEL_IDS);
 
   const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
   const [copiedGrowthAlert, setCopiedGrowthAlert] = useState<string | null>(null);
@@ -82,26 +149,17 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [trackingList, setTrackingList] = useState(() => loadActiveTracking());
-  const [activeSequences, setActiveSequences] = useState<ActiveSequence[]>(() => loadActiveSequences());
-
   const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
   const exportHints = useMemo(() => buildExportRecommendations(snapshot), [snapshot]);
 
-  const selectedEsc = useMemo(() => {
-    if (coachStaff) {
-      return snapshot.escalations.find(e => e.carer === coachStaff) || null;
-    }
-    return snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
-  }, [snapshot.escalations, selectedEscId, coachStaff]);
+  const selectedEsc = snapshot.escalations.find((e) => e.id === selectedEscId) || snapshot.escalations[0] || null;
 
   useEffect(() => {
-    if (snapshot.escalations.length && !selectedEscId && !coachStaff) {
+    if (snapshot.escalations.length && !selectedEscId) {
       setSelectedEscId(snapshot.escalations[0].id);
     }
-  }, [snapshot.escalations, selectedEscId, coachStaff]);
+  }, [snapshot.escalations, selectedEscId]);
 
   const script = useMemo(() => {
     if (!selectedEsc) return null;
@@ -110,9 +168,10 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   }, [selectedEsc, house, callVariant]);
 
   const hourlyDue = useMemo(() => {
+    void hourlyTick;
     const last = lastHourlyCheckAt();
     return !last || (Date.now() - last > 3600000);
-  }, []);
+  }, [hourlyTick]);
 
   const onRecompute = useCallback(() => {
     saveMonitoringRun(`${snapshot.windowLabel} · ${snapshot.dataFreshness.entryCount} entries`, snapshot.escalations.length);
@@ -153,577 +212,298 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
     if (!coachEntry) return;
     setCoachRewrite(''); setCoachLoading(true);
     try {
-      const rubrics = scoreEntry(coachEntry);
-      const gaps = rubrics.modules.flatMap(m => m.missing);
-      const isHouseNote = coachEntry.client?.toLowerCase().includes('unassigned') || coachEntry.category === 'staff' || coachEntry.category === 'handover';
-      
-      let rewrite = '';
-      if (gaps.length === 0) {
-        rewrite = `Great entry! No major gaps detected.\n\nOriginal Text:\n${coachEntry.entry}`;
-      } else {
-        const example = isHouseNote 
-          ? `Example Professional Structure:\n"Staff completed full property checks of the communal areas. All residents observed and welfare checks completed. No safeguarding concerns identified during this period."`
-          : `Example Professional Structure:\n"I supported ${coachEntry.client || 'the individual'} with ${coachEntry.category || 'their needs'}. I observed [presentation/mood]. I then took [specific action] to ensure they were comfortable and safe. Changes reported to [role]."`;
-
-        rewrite = `[Locally Synthesised Feedback]\n\nBased on ${ORG_CONFIG.name} Quality Standards, this entry is missing crucial context. When writing about ${coachEntry.client || 'the individual'}, explicitly detail:\n\n` +
-          gaps.map((g, i) => `${i + 1}. ${g}`).join('\n') +
-          `\n\n${example}\n\nPlease review your notes to meet these core components.`;
+      const res = await fetch('/api/staff/enhance-note', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: coachEntry.entry, noteType: coachEntry.category || '1:1 Support', clientName: coachEntry.client || '' }),
+      });
+      if (!res.ok || !res.body) throw new Error('Failed');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+        setCoachRewrite(text);
       }
-      
-      await new Promise(r => setTimeout(r, 600));
-      setCoachRewrite(rewrite);
-    } catch { setCoachRewrite('Error generating rewrite locally.'); }
+    } catch { setCoachRewrite('Error generating rewrite.'); }
     finally { setCoachLoading(false); }
   }
 
   function copyCoachingMessage() {
     if (!coachEntry || !coachRewrite.trim()) return;
-
-    const dispatchContent = script ? script.lines.join('\n') : coachRewrite.trim();
-
-    const channelOutcomeNote =
-      callVariant === 'email' ? 'Formal email drafted and copied. Awaiting confirmation of send.' :
-      callVariant === 'message' ? 'Direct message copied. Staff in 24hr monitoring queue.' :
-      callVariant === 'urgent' ? 'Urgent call script copied. Manager notified to call immediately.' :
-      callVariant === 'support-first' ? 'Support-first call script copied. Wellbeing check initiated.' :
-      'Manager coaching call script copied. Pending delivery.';
-
-    void navigator.clipboard.writeText(dispatchContent);
-    setCoachCopied(true);
-    setTimeout(() => setCoachCopied(false), 2500);
-
-    saveCallOutcome(
-      selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house },
-      outcomeType,
-      outcomeNotes || channelOutcomeNote,
-    );
-
-    const activeSeq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
-    if (activeSeq) {
-      advanceSequence(activeSeq.id, channelOutcomeNote);
-      setActiveSequences(loadActiveSequences());
-    }
-
-    if (coachStaff) {
-      logCoachingAction(coachStaff);
-      setTrackingList(loadActiveTracking());
-    }
-  }
-
-  function handleEnroll(sequenceId: string) {
-    if (!coachStaff) return;
-    enrollInSequence(coachStaff, sequenceId);
-    setActiveSequences(loadActiveSequences());
-  }
-
-  const searchedStaff = snapshot.staff.filter(s => s.carer.toLowerCase().includes(searchQuery.toLowerCase()));
-  const trackingNames = new Set(trackingList.map(t => t.carer));
-  const needsReview = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore < 65);
-  const goodStanding = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore >= 65);
-  
-  const selectedStaffData = snapshot.staff.find(s => s.carer === coachStaff);
-
-  const renderStaffQueue = (list: typeof searchedStaff, title: string, colorClass: string, borderClass: string, emptyMsg: string) => (
-    <div className="mb-6 last:mb-0">
-      <div className={`text-[10px] font-black uppercase tracking-widest mb-3 pl-2 flex items-center gap-2 ${colorClass}`}>
-        <div className={`w-1.5 h-1.5 rounded-full ${colorClass.replace('text-', 'bg-').split(' ')[0]}`} />
-        {title} — {list.length}
-      </div>
-      <div className="space-y-2">
-        {list.length === 0 && <div className="px-4 py-3 text-[10px] text-zinc-500 font-medium italic">{emptyMsg}</div>}
-        {list.map(s => {
-            const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
-            const isExpanded = coachStaff === s.carer;
-            const staffEntries = entriesByStaff[s.carer] || [];
-            const typeCounts: Record<string, { count: number; icon: string }> = {};
-            staffEntries.forEach(e => {
-              const { label, icon } = entryTypeLabel(e.category, e.type);
-              if (!typeCounts[label]) typeCounts[label] = { count: 0, icon };
-              typeCounts[label].count++;
-            });
-            const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count).slice(0, 3);
-            
-            return (
-              <div key={s.carer} onClick={() => {
-                setCoachStaff(s.carer);
-                const esc = snapshot.escalations.find(e => e.carer === s.carer);
-                if (esc) setSelectedEscId(esc.id);
-                
-                // AUTO-DIAGNOSTIC INJECTION: Find lowest score entry and auto-select
-                const carerEntries = entriesByStaff[s.carer] || [];
-                if (carerEntries.length > 0) {
-                  const lowest = [...carerEntries].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)[0];
-                  setCoachEntry(lowest);
-                  setCoachRewrite('');
-                }
-
-                // Scroll detail into view on mobile
-                if (window.innerWidth < 1280) {
-                  detailRef.current?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-                className={`cursor-pointer rounded-xl border transition-all duration-300 overflow-hidden px-4 py-3 group flex items-center justify-between ${isExpanded ? borderClass + ' bg-black/40 shadow-lg ring-1 ring-hc-teal/20' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06]'}`}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0 transition-colors ${isExpanded ? borderClass.replace('border-','bg-').replace('/30','') + ' text-black' : 'bg-black/50 text-hc-muted group-hover:text-white'}`}>
-                      {s.carer.charAt(0)}
-                    </div>
-                    <div className="min-w-0 flex-1 px-4">
-                      <div className="text-sm font-black tracking-tight mb-1 truncate text-white/90">{s.carer}</div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {typeEntries.map(([label, { count, icon }]) => (
-                          <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1.5 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap text-hc-muted bg-white/5 border-hc-border/20`}>
-                            {icon} {count}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Operational Space (Center) */}
-                    <div className="hidden lg:flex flex-col items-center justify-center border-l border-white/5 px-6 shrink-0 opacity-40">
-                       <span className="text-[7px] font-black uppercase text-hc-muted tracking-widest mb-1">Injest Vector</span>
-                       <span className="text-[10px] font-black text-hc-text tabular-nums">{staffEntries.length}U</span>
-                    </div>
-                  </div>
-
-                  
-                  <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4 group-hover:translate-x-1 transition-transform">
-                    <div className="flex items-center gap-3">
-                       <span style={{ color: scoreHex }} className="text-xs font-black tabular-nums">{s.qualityScore}%</span>
-                       <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-hc-muted group-hover:text-white'}`} />
-                    </div>
-                    <div className="w-16 bg-black/40 h-1 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: s.qualityScore + '%', backgroundColor: scoreHex }} />
-                    </div>
-
-                    {(() => {
-                      const seq = activeSequences.find(seq => seq.carer === s.carer && seq.status === 'active');
-                      if (!seq) return null;
-                      const totalSteps = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId)?.steps.length || 1;
-                      const progress = ((seq.currentStepIndex) / totalSteps) * 100;
-                       return (
-                         <div className="mt-1 flex items-center gap-1.5" title="Active Outreach Sequence">
-                           <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                             <div className="h-full bg-hc-purple animate-shimmer" style={{ width: `${progress}%` }} />
-                           </div>
-                         </div>
-                       );
-                     })()}
-                  </div>
-              </div>
-            );
-        })}
-      </div>
-    </div>
-  );
-
-  if (!weekData) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] bg-transparent flex flex-col items-center justify-center p-8">
-
-        <Activity className="w-16 h-16 text-hc-muted opacity-20 mb-8" />
-        <h2 className="text-2xl font-black text-hc-text uppercase tracking-[0.4em] mb-3 text-center">Personnel Intel Offline</h2>
-        <p className="text-hc-muted text-xs uppercase tracking-[0.2em] mb-10 text-center max-w-md leading-relaxed opacity-60">Injest high-integrity field data to activate diagnostic command and stability pipelines.</p>
-        <button onClick={() => setPage('upload')} className="bg-hc-teal text-black px-10 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all">Start Injection Matrix</button>
-      </div>
-    );
+    const staffName = coachStaff || 'Team Member';
+    const msg = [
+      `Subject: Documentation Feedback - Standards of Care`, ``, `Hi ${staffName},`, ``,
+      `I've been reviewing your recent care entries. You're doing the work — I'd just like the notes to reflect that more fully. Moving forward, please:`, ``,
+      `• Write in first person ("I supported...")`, `• Show your decision-making`, `• Document presentation changes`, ``,
+      `Example based on your entry for ${coachEntry.client || 'the client'}:`, ``, `YOUR ENTRY:`, coachEntry.entry, ``,
+      `GOLD STANDARD:`, coachRewrite.trim(), ``, `Please adopt this style going forward.`, ``, `Regards,`, `Management Team`,
+    ].join('\n');
+    void navigator.clipboard.writeText(msg);
+    setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2500);
+    saveCallOutcome(selectedEsc || { id: '', carer: coachStaff || 'Unknown', tier: 1, reasons: [], topGaps: [], summary: '', suggestedTool: 'notes', qualityScore: 0, entryCount: 1, shortEntryRatio: 1, avgEntryChars: 10, house: house }, outcomeType, outcomeNotes || 'Messaged via Chat. Pending review.');
   }
 
   return (
-    <div className="min-h-screen flex flex-col p-8 bg-hc-bg">
-      <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-10">
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-10 border-b border-hc-border">
-          <div>
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-12 h-12 rounded-2xl hc-clay-raised flex items-center justify-center">
-                 <Shield size={24} className="text-hc-teal" />
-              </div>
-              <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase">Force Protection</h1>
-            </div>
-            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.4em] ml-16">Operational Readiness & Personnel Governance</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Live Telemetry Slab */}
-            <div className="hc-clay-raised px-8 py-4 flex items-center gap-8">
-                <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Status</span>
-                  <span className="text-xs font-black text-hc-teal uppercase tracking-widest flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-hc-green animate-pulse" /> LIVE
-                  </span>
-                </div>
-                <div className="w-px h-8 bg-hc-clay-dark opacity-30" />
-                <div className="flex flex-col items-center">
-                   <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Gap_Load</span>
-                   <span className="text-xs font-black text-hc-amber uppercase tracking-widest">{needsReview.length} UNITS</span>
-                </div>
-            </div>
-
-            <button onClick={onRecompute} className="btn-clay btn-clay-teal h-[64px] px-8">
-              <RefreshCw size={14} className="animate-spin-slow" /> Sync Intel
-            </button>
-            <button onClick={exportMonitoringPack} className="btn-clay h-[64px] px-8">
-              <Download size={14} /> Export Pack
-            </button>
+    <div className="p-6 lg:p-10 w-full max-w-[2560px] mx-auto animate-in fade-in duration-500"
+      onDragOver={e => { e.preventDefault(); setImportDragging(true); }}
+      onDragLeave={() => setImportDragging(false)}
+      onDrop={e => { e.preventDefault(); setImportDragging(false); const f = e.dataTransfer.files[0]; if (f) void handleImportFile(f); }}
+    >
+      {/* Drag overlay */}
+      {importDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none" style={{background:'rgba(10,12,18,0.95)',backdropFilter:'blur(12px)'}}>
+          <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 glass border-2 border-hc-teal/40 shadow-2xl">
+            <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
+            <div className="text-hc-text font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
           </div>
         </div>
+      )}
+      <input type="file" accept=".csv,.txt,.tsv" className="hidden" id="daily-sync-input"
+        onChange={e => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); }} />
 
-        {hourlyDue && !hourlyDismissed && (
-          <div className="hc-clay-raised p-8 flex items-center justify-between relative overflow-hidden bg-white/50">
-             <div className="flex items-center gap-8 relative z-10">
-              <div className="w-16 h-16 rounded-2xl hc-clay-inset flex items-center justify-center text-3xl">⚠️</div>
-              <div>
-                <h3 className="text-xl font-black text-hc-text tracking-tight uppercase">Operational Sync Required</h3>
-                <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[.3em] mt-2 leading-relaxed max-w-xl">Personnel intel is over 60 minutes old. Field readiness data may be stale and require structural re-validation.</p>
+      {/* ── Page header ── */}
+      <div className="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-hc-muted/10 pb-10">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase flex items-center gap-4">
+            Force Protection
+            <span className="pill pill-teal text-[10px] font-black tracking-[0.2em] px-4 py-1">Operational Engine</span>
+          </h1>
+          <p className="text-hc-muted text-sm font-bold mt-3 max-w-2xl opacity-80 leading-relaxed uppercase tracking-wider">
+            Clinical analysis of diary exports. Scored to protect {ORG_CONFIG.name} registration.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
+            className="flex items-center gap-3 px-8 py-3.5 rounded-2xl btn-tactical text-[11px] font-black cursor-pointer shadow-2xl hover:scale-105 active:scale-95 transition-all">
+            <RefreshCw className={`w-4 h-4 ${importLoading ? 'animate-spin' : ''}`} />
+            {importLoading ? 'Analysing…' : 'Sync daily CSV'}
+          </button>
+          <button type="button" onClick={() => { onRecompute(); setPage('templates'); }}
+            className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">
+            Templates
+          </button>
+        </div>
+      </div>
+
+      {importError && (
+        <div className={`mb-10 px-8 py-5 rounded-[2rem] hc-clay-inset text-xs font-black uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 ${importError.includes('Merged') ? 'text-flag-green' : 'text-flag-red'}`}>
+          <div className={`w-2.5 h-2.5 rounded-full ${importError.includes('Merged') ? 'bg-flag-green animate-pulse' : 'bg-flag-red'}`} />
+          {importError}
+        </div>
+      )}
+
+      {/* ── House Tabs ── */}
+      <div className="flex flex-wrap gap-2 mb-10 overflow-x-auto scrollbar-none py-2 px-1">
+        {['NETWORK', ...Object.keys(weekData?.houses || {})].map((h) => {
+          const isActive = h === 'NETWORK' ? house === 'all' : house === h;
+          return (
+            <button key={h} onClick={() => setHouse(h === 'NETWORK' ? 'all' : h)}
+              className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300
+                ${isActive ? 'hc-clay-inset text-hc-teal' : 'text-hc-muted hover:text-hc-text'}`}>
+              {h.toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Header strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12">
+        {[
+          { label: 'Intelligence Window', value: snapshot.windowLabel, color: 'text-hc-teal', icon: <Activity className="w-4 h-4" /> },
+          { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), color: 'text-hc-text', icon: <FileText className="w-4 h-4" /> },
+          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-hc-text', icon: <RefreshCw className="w-4 h-4" /> },
+          { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-muted', icon: <History className="w-4 h-4" /> },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} className="hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]">
+            <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{icon}</div>
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3 opacity-60">{label}</div>
+            <div className={`text-xl font-black ${color} truncate tracking-tighter tabular-nums`}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-12 relative group">
+        <div className="absolute left-8 top-1/2 -translate-y-1/2 text-hc-muted group-focus-within:text-hc-teal transition-colors">
+          <Search className="w-5 h-5" />
+        </div>
+        <input 
+          placeholder="QUERY READINESS COMMAND..." 
+          className="w-full h-[70px] hc-clay-inset pl-20 pr-10 text-sm font-black uppercase tracking-[0.3em] text-hc-text focus:outline-none transition-all" 
+        />
+      </div>
+
+      {/* ── HIGH DENSITY COMMAND CENTER LAYOUT ── */}
+      {weekData && (
+        <div className="flex flex-col xl:flex-row gap-10">
+          <div className="flex-1 flex flex-col gap-10">
+            
+            {/* Critical Review Section */}
+            <section className="space-y-6">
+              <div className="flex items-center gap-3 px-4">
+                <div className="w-2 h-2 rounded-full bg-flag-amber shadow-[0_0_10px_#d9974e]" />
+                <h2 className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Critical Review — {snapshot.escalations.length}</h2>
               </div>
-            </div>
-            <div className="flex gap-4 relative z-10 shrink-0">
-              <button onClick={() => setHourlyDismissed(true)} className="btn-clay text-hc-muted">Dismiss</button>
-              <button onClick={() => { touchHourlyCheck(); setPage('upload'); }} className="btn-clay btn-clay-teal !rounded-2xl">Injest Data Feed</button>
-            </div>
-          </div>
-        )}
-
-
-        {growthAlerts.length > 0 && (
-          <div className="hc-clay-raised p-10 flex flex-col gap-8 bg-hc-teal/5">
-            <div className="flex items-center justify-between relative z-10">
-               <div className="flex items-center gap-5">
-                  <Sparkles className="w-8 h-8 text-hc-teal" />
-                  <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Performance Vector Indicators</h2>
-               </div>
-               <button onClick={() => setGrowthAlerts([])} className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal transition-colors border-b border-dashed border-hc-muted hover:border-hc-teal">Clear Matrix Signals</button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 relative z-10">
-              {growthAlerts.map((a) => (
-                <div key={`${a.carer}-${a.module}`} className="hc-clay-raised p-6 flex flex-col gap-6 hover:translate-y-[-4px] transition-all group/alert">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-black text-hc-text uppercase tracking-widest mb-2 truncate">{a.carer}</div>
-                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.25em] leading-relaxed">
-                         <span className="text-hc-teal font-black">{a.module}</span> improved <br />
-                         <span className="text-hc-text opacity-40">{a.previousScore}%</span> → <span className="text-hc-teal font-black">{a.currentScore}%</span>
-                      </div>
-                    </div>
-                    <div className="hc-clay-inset px-3 py-2 text-[10px] font-black text-hc-teal tabular-nums">+{a.delta}</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                       void navigator.clipboard.writeText(a.message);
-                       setCopiedGrowthAlert(`${a.carer}-${a.module}`);
-                       setTimeout(() => setCopiedGrowthAlert(null), 2500);
-                    }}
-                    className="btn-clay w-full h-[40px] text-[9px]"
-                  >
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? <CheckCircle className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? 'LOGGED' : 'REINFORCE'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-
-        <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-10 items-start">
-          
-          {/* MASTER PANE: Staff Queue */}
-          <div className="hc-clay-raised flex flex-col overflow-hidden xl:sticky xl:top-6 z-10 h-fit max-h-[calc(100vh-100px)]">
-            <div className="p-6 border-b border-hc-border bg-hc-clay/50 flex flex-col gap-4 shrink-0">
-               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
-                 {snapshot.houses.length > 0 ? [{ name: 'NETWORK', avgQuality: 100 }, ...snapshot.houses].map((h) => (
-                   <button key={h.name} onClick={() => setHouse(h.name.toLowerCase())} 
-                     className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap btn-clay ${house === h.name.toLowerCase() ? 'btn-clay-teal' : 'text-hc-muted hover:text-hc-text'}`}>
-                     {h.name}
-                   </button>
-                 )) : <div className="px-3 py-1 text-[9px] text-hc-muted">No units</div>}
-               </div>
-              <div className="relative group">
-                <Search className="w-4 h-4 text-hc-muted absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-hc-teal transition-colors" />
-                <input type="text" placeholder="QUERY READINESS COMMAND..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
-                  className="w-full hc-clay-inset text-hc-text text-sm font-mono font-bold pl-11 pr-4 py-4 outline-none focus:ring-2 focus:ring-hc-teal/20 transition-all placeholder:text-hc-muted/40" />
-              </div>
-            </div>
-
-
-            <div className="max-h-[80vh] overflow-y-auto scrollbar-thin p-5 space-y-4 bg-hc-clay/20 flex-1">
-               {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-hc-amber', 'hc-clay-raised', '0 units.')}
-               {renderStaffQueue(goodStanding, 'OPTIMAL STANDING', 'text-hc-muted', 'border-hc-border', '0 units.')}
-            </div>
-          </div>
-
-          {/* DETAIL PANE: Command Intelligence */}
-          <div ref={detailRef} className="flex-1 flex flex-col gap-10 relative z-20 min-w-0">
-
-            {coachStaff && selectedStaffData ? (
-              <div className="bg-hc-card-solid border border-hc-border rounded-3xl flex flex-col relative overflow-hidden shadow-2xl min-h-[800px] z-50">
-
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />
-                
-                {/* Detail Header — HARDENED CLAY CORE */}
-                <div className="px-10 py-10 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-8 bg-hc-card-solid sticky top-0 z-20 shrink-0">
-
-
-                  <div className="flex items-center gap-6">
-                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/5 ${selectedStaffData.qualityScore < 65 ? 'bg-flag-amber/20 text-flag-amber' : 'bg-hc-teal/20 text-hc-teal'}`}>
-                      {coachStaff.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-2xl font-black text-white tracking-tighter uppercase tabular-nums">{coachStaff}</div>
-                      <div className="flex items-center gap-4 mt-2">
-                         <div className="text-[10px] text-hc-teal-light uppercase font-black tracking-[0.3em]">Operational Readiness Diagnostic</div>
-                         <div className="w-1.5 h-1.5 rounded-full bg-hc-border" />
-                         <div className="text-[10px] text-hc-muted uppercase font-black tracking-[0.3em]">{selectedStaffData.house || 'Unassigned Unit'}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                     <div className="px-6 py-3 rounded-2xl bg-black/60 border border-hc-border flex flex-col items-center shadow-2xl">
-                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-40 mb-1">Impact_Score</span>
-                        <span className={`text-xl font-black tabular-nums ${selectedStaffData.qualityScore < 65 ? 'text-flag-amber' : 'text-hc-teal'}`}>{selectedStaffData.qualityScore}%</span>
-                     </div>
-                     <button onClick={() => { setCoachStaff(null); setCoachEntry(null); setCoachRewrite(''); }} className="w-12 h-12 rounded-2xl border border-hc-border bg-black/20 flex items-center justify-center text-hc-muted hover:bg-flag-red/20 hover:text-flag-red hover:border-flag-red/30 transition-all shadow-xl backdrop-blur-xl group"><X className="w-5 h-5 group-hover:scale-110 transition-transform" /></button>
-                  </div>
-                </div>
-
-                
-                <div className="flex-1 flex flex-col md:flex-row min-h-0">
-                   
-                   {/* Left: Pipeline & Ledger */}
-                   <div className="flex-1 flex flex-col border-r border-hc-border p-8 bg-hc-card-solid/50">
-
-                        {/* Sequence Tracker */}
-                        <div className="mb-12 shrink-0">
-                          <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                              <div className="w-8 h-px bg-hc-clay-dark" />
-                              Stability Pipeline
+              <div className="space-y-3">
+                {snapshot.staff.map((s) => {
+                  const isCritical = s.qualityScore < 60;
+                  const scoreColor = s.qualityScore >= 70 ? 'text-flag-green' : s.qualityScore >= 45 ? 'text-flag-amber' : 'text-flag-red';
+                  const esc = snapshot.escalations.find(e => e.carer === s.carer);
+                  const isExpanded = selectedStaffCard === s.carer;
+                  
+                  return (
+                    <div key={s.carer} className="hc-clay-raised overflow-hidden">
+                      <div className="p-6 flex items-center justify-between cursor-pointer group" onClick={() => setSelectedStaffCard(isExpanded ? null : s.carer)}>
+                        <div className="flex items-center gap-8 min-w-0">
+                           <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-muted text-sm">{s.carer.charAt(0)}</div>
+                           <div>
+                              <div className="text-base font-black text-hc-text tracking-tighter uppercase leading-none mb-2 group-hover:text-hc-teal transition-colors">{s.carer}</div>
+                              <div className="flex items-center gap-4 text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">
+                                 <span>Injest Vector</span>
+                                 <span>{s.entryCount}U</span>
+                              </div>
                            </div>
-                           {(() => {
-                             const seq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
-                             if (!seq) {
-                               return (
-                                 <div className="hc-clay-inset p-8 flex flex-col items-center text-center">
-                                   <div className="text-[10px] text-hc-muted font-bold mb-6 uppercase tracking-widest opacity-60">No active tracking sequence detected for this personnel unit.</div>
-                                   <div className="flex flex-wrap justify-center gap-4">
-                                     {STANDARD_SEQUENCES.map(ss => (
-                                       <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="btn-clay text-[10px]">
-                                         ENROLL: {ss.name}
-                                       </button>
-                                     ))}
-                                   </div>
-                                 </div>
-                               );
-                             }
-                             const sequenceData = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId);
-                             return (
-                               <div className="hc-clay-inset p-8">
-                                 <div className="flex items-center justify-between mb-8">
-                                   <span className="text-xs font-black text-hc-text uppercase tracking-widest">{sequenceData?.name}</span>
-                                   <div className="flex items-center gap-2 px-3 py-1 bg-hc-purple/10 rounded-full border border-hc-purple/20">
-                                     <div className="w-1.5 h-1.5 rounded-full bg-hc-purple animate-pulse" />
-                                     <span className="text-[8px] font-black text-hc-purple uppercase tracking-widest">ACTIVE_ENGAGEMENT</span>
-                                   </div>
-                                 </div>
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                   {sequenceData?.steps.map((step, idx) => {
-                                     const isDone = idx < seq.currentStepIndex;
-                                     const isCurrent = idx === seq.currentStepIndex;
-                                     return (
-                                       <div key={idx} className={`relative p-5 rounded-[var(--hc-radius)] transition-all ${isDone ? 'hc-clay-inset opacity-40' : isCurrent ? 'hc-clay-raised bg-hc-clay-light' : 'hc-clay-inset opacity-20'}`}>
-                                         <div className={`text-[10px] font-black mb-2 ${isCurrent ? 'text-hc-teal' : 'text-hc-muted'}`}>STEP_0{idx + 1}</div>
-                                         <div className={`text-[11px] font-black uppercase tracking-tight ${isCurrent ? 'text-hc-text' : 'text-hc-muted'}`}>{step.label}</div>
-                                          {isCurrent && <div className="mt-4 h-1 bg-hc-clay-dark rounded-full overflow-hidden"><div className="h-full bg-hc-teal animate-shimmer" style={{ width: '60%' }} /></div>}
-                                       </div>
-                                     );
-                                   })}
-                                 </div>
-                               </div>
-                             );
-                           })()}
                         </div>
-
-                         {/* Diagnostic Ledger */}
-                        <div className="flex-1 flex flex-col min-h-0">
-                          <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                              <div className="w-8 h-px bg-hc-clay-dark" />
-                              Diagnostic Ledger
-                          </div>
-                          <div className="grid grid-cols-1 gap-4 overflow-y-visible">
-                            {[...(entriesByStaff[coachStaff!] || [])]
-                              .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
-                              .slice(0, 25)
-                              .map((e, i) => {
-                                const { icon } = entryTypeLabel(e.category, e.type);
-                                const score = scoreEntry(e).total;
-                                const isSelected = coachEntry?.id === e.id;
-                                return (
-                                  <div key={i}
-                                    onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                                    className={`cursor-pointer px-6 py-5 flex items-center gap-8 transition-all ${isSelected ? 'hc-clay-raised scale-[1.02] bg-hc-clay-light border-hc-teal/30' : 'hc-clay-raised hover:bg-hc-clay-light shadow-sm'}`}
-                                  >
-                                    <div className={`shrink-0 w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-xl`}>{icon}</div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-3 mb-2">
-                                         <span className="text-xs font-black text-hc-text uppercase tracking-widest tabular-nums">{e.client || 'SYSTEM'}</span>
-                                         <span className="text-[9px] font-black text-hc-muted uppercase tabular-nums">/ {e.date}</span>
-                                      </div>
-                                      <div className="text-[10px] text-hc-muted truncate font-medium leading-relaxed italic">"{(e.entry || '').slice(0, 110)}…"</div>
-                                    </div>
-                                    <div className="flex flex-col items-center shrink-0 ml-4">
-                                       <span className="text-[10px] font-black tabular-nums mb-1" style={{ color: score >= 70 ? 'var(--hc-green)' : score >= 45 ? 'var(--hc-amber)' : 'var(--hc-red)' }}>{score}%</span>
-                                       <div className="w-12 h-1 hc-clay-inset overflow-hidden !rounded-none">
-                                          <div className="h-full" style={{ width: score + '%', backgroundColor: score >= 70 ? 'var(--hc-green)' : score >= 45 ? 'var(--hc-amber)' : 'var(--hc-red)' }} />
-                                       </div>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            }
-                            {!(entriesByStaff[coachStaff!]?.length) && (
-                              <div className="hc-clay-inset py-24 text-center">
-                                 <Activity className="w-12 h-12 text-hc-muted mx-auto mb-6 opacity-40" />
-                                 <div className="text-[10px] text-hc-muted uppercase font-black tracking-[0.5em]">No Structural Telemetry Available</div>
+                        
+                        <div className="flex items-center gap-10">
+                           <div className="flex flex-col items-end gap-1">
+                              <span className={`text-sm font-black tabular-nums tracking-tighter ${scoreColor}`}>{s.qualityScore}%</span>
+                              <div className={`h-1 w-16 rounded-full bg-hc-muted/10 overflow-hidden`}>
+                                 <div className={`h-full ${scoreColor.replace('text-', 'bg-')}`} style={{width: `${s.qualityScore}%`}} />
                               </div>
-                            )}
-                          </div>
+                           </div>
+                           <ChevronRight className={`w-5 h-5 text-hc-muted transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                         </div>
+                      </div>
 
-                   </div>
-
-                   {/* Right Side: Command Synthesis */}
-                    <div className="w-full md:w-[480px] bg-hc-card-solid border-l border-hc-border p-8 flex flex-col">
-
-                      {coachEntry ? (
-                        <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-10 duration-500">
-                          {/* Integrity Scanner */}
-                          <div className="bg-hc-navy border-2 border-flag-amber/20 rounded-2xl p-6 mb-8 shadow-2xl relative overflow-hidden">
-
-                             <div className="absolute top-0 right-0 p-4 opacity-10"><ShieldAlert className="w-12 h-12 text-flag-amber" /></div>
-                             <div className="text-[11px] font-black text-flag-amber uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                                <Zap className="w-5 h-5 fill-flag-amber" /> Integrity Signals
-                             </div>
-                             <div className="space-y-4">
-                                {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,6).map((gap, i) => (
-                                  <div key={i} className="flex gap-4">
-                                     <div className="w-1 h-auto bg-flag-amber/30 rounded-full" />
-                                     <div className="text-[11px] font-bold text-white/80 leading-relaxed uppercase tracking-wide">{gap}</div>
+                      {isExpanded && (
+                        <div className="px-8 pb-8 pt-4 animate-in slide-in-from-top-4 duration-500 flex flex-col gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              {s.moduleBreakdown.map((m) => (
+                                <div key={m.name} className="hc-clay-inset p-5">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{m.name}</span>
+                                    <span className={`text-[10px] font-black tabular-nums ${m.score >= 70 ? 'text-flag-green' : m.score >= 45 ? 'text-flag-amber' : 'text-flag-red'}`}>{m.score}%</span>
                                   </div>
-                                ))}
-                                {scoreEntry(coachEntry).modules.flatMap(m => m.missing).length === 0 && (
-                                   <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest flex items-center gap-2">
-                                      <CheckCircle className="w-4 h-4" /> Entry Meets Global Indicators
-                                   </div>
-                                )}
-                             </div>
-                          </div>
-                          
-                          <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-5 mb-8 rounded-2xl bg-hc-teal text-black text-[12px] font-black uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 hover:bg-teal-400 active:scale-95 transition-all group">
-                            {coachLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:scale-125 transition-transform" />} 
-                            SYNTHESISE_OUTREACH
-                          </button>
-
-                          {coachRewrite && (
-                            <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-700">
-                              <div className="flex flex-col gap-2 mb-6">
-                                 <label className="text-[9px] font-black text-hc-teal-light uppercase tracking-[0.3em] mb-1 ml-1">Engagement_Vector</label>
-                                 <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="w-full bg-hc-navy border-2 border-white/5 rounded-xl px-5 py-4 text-xs text-white font-black tracking-widest uppercase outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner hover:bg-white/5">
-                                    <option value="message">Direct Outreach (Tactical)</option>
-                                    <option value="email">Strategic Email (Gold Standard)</option>
-                                    <option value="coaching">Personnel Coaching Script</option>
-                                    <option value="urgent">Urgent Operational Notice</option>
-                                    <option value="support-first">Wellbeing Readiness Check</option>
-                                  </select>
-                              </div>
-
-                              <div className="relative flex-1 mb-8 group">
-                                <div className="absolute top-4 right-4 z-10"><FileText className="w-5 h-5 text-hc-teal opacity-20 group-hover:opacity-100 transition-opacity" /></div>
-                                <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} className="w-full h-full bg-hc-navy/40 border-2 border-white/5 rounded-2xl p-6 text-[12px] font-mono text-hc-text/90 outline-none scrollbar-thin leading-relaxed shadow-Inner font-medium italic border-hc-teal/10" />
-                              </div>
-                              
-                              <div className="space-y-4 mb-8 shrink-0">
-                                <textarea value={outcomeNotes} onChange={(e) => setOutcomeNotes(e.target.value)} placeholder="Personnel engagement telemetry/notes..." className="w-full bg-hc-navy border-2 border-white/5 rounded-xl p-5 text-[11px] text-hc-text h-28 outline-none shadow-inner focus:border-hc-teal transition-all placeholder:text-zinc-700" />
-                                <div className="flex flex-col gap-2">
-                                  <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] mb-1 ml-1">Pipeline_Outcome</label>
-                                  <select value={outcomeType} onChange={(e) => setOutcomeType(e.target.value as any)} className="w-full bg-hc-navy border-2 border-white/5 rounded-xl px-5 py-4 text-[10px] font-black text-hc-text uppercase tracking-widest outline-none cursor-pointer focus:border-hc-teal transition-all shadow-inner">
-                                    <option value="reached">Resolved via Outreach</option><option value="callback">Follow-up Sequence Queued</option><option value="resolved">Clinical Stability Validated</option>
-                                  </select>
+                                  <div className="h-1 rounded-full bg-hc-muted/5 overflow-hidden">
+                                    <div className={`h-full ${m.score >= 70 ? 'bg-flag-green' : m.score >= 45 ? 'bg-flag-amber' : 'bg-flag-red'}`} style={{width: `${m.score}%`}} />
+                                  </div>
                                 </div>
-                              </div>
-
-                              <button onClick={copyCoachingMessage} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all font-black text-sm uppercase tracking-[0.3em] shadow-2xl active:scale-95 ${coachCopied ? 'bg-flag-green text-white ring-4 ring-flag-green/20' : 'bg-hc-purple text-white hover:bg-hc-purple-light shadow-[0_0_40px_rgba(139,92,246,0.3)]'}`}>
-                                {coachCopied ? <CheckCircle className="w-6 h-6 animate-pulse" /> : <Zap className="w-6 h-6 fill-current" />}
-                                {coachCopied ? 'STABILITY_LOGGED' : 'INITIATE_DISPATCH'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center opacity-20 text-center px-12">
-                           <div className="w-24 h-24 rounded-3xl bg-hc-card border-2 border-hc-border flex items-center justify-center mb-10 shadow-2xl"><Search className="w-12 h-12 text-hc-muted" /></div>
-                           <h3 className="text-sm font-black uppercase tracking-[0.6em] mb-6">Diagnostic_Pending</h3>
-                           <p className="text-[11px] leading-loose font-bold uppercase tracking-[0.4em] max-w-[280px]">Select an operational signal from the ledger to activate structural synthesis.</p>
+                              ))}
+                           </div>
+                           <div className="flex justify-end gap-4">
+                              <button onClick={(e) => { e.stopPropagation(); setCoachStaff(s.carer); setCoachEntry(null); setCoachRewrite(''); setSelectedEscId(esc?.id || null); }}
+                                className="px-8 py-3.5 rounded-2xl btn-tactical text-[10px] font-black uppercase tracking-widest shadow-xl">Contextual Coaching Studio ➔</button>
+                           </div>
                         </div>
                       )}
-                   </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar Area */}
+          <div className="w-full xl:w-[500px] flex flex-col gap-10 shrink-0">
+            {coachStaff ? (
+              <div className="hc-clay-raised p-8 flex flex-col gap-8 relative overflow-hidden h-fit sticky top-10 animate-in slide-in-from-right-8 duration-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-2xl bg-hc-bg hc-clay-inset flex items-center justify-center text-xl font-black text-hc-teal shadow-xl">{coachStaff.charAt(0)}</div>
+                    <div>
+                      <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase leading-none mb-1.5">{coachStaff}</h2>
+                      <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Contextual Studio</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setCoachStaff(null)} className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-text transition-all active:scale-90">✕</button>
+                </div>
+
+                <div className="space-y-10">
+                  <section>
+                    <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-5 block opacity-60">1. Vector Target Selection</label>
+                    <select className="w-full hc-clay-inset px-5 py-4 text-xs font-black uppercase tracking-widest text-hc-text outline-none mb-4"
+                      onChange={(e) => { const entry = entriesByStaff[coachStaff]?.find(x => x.entry === e.target.value); if (entry) { setCoachEntry(entry); setCoachRewrite(''); } }} value={coachEntry?.entry || ''}>
+                      <option value="">-- CHOOSE DIAGNOSTIC NODE --</option>
+                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 10).map((e, i) => (
+                        <option key={i} value={e.entry}>{e.date} :: {scoreEntry(e).total}%</option>
+                      ))}
+                    </select>
+                  </section>
+
+                  {coachEntry && (
+                    <section className="space-y-8 animate-in fade-in duration-500">
+                      <div className="hc-clay-inset p-6 bg-flag-amber/[0.03]">
+                         <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.2em] mb-3">Diagnostic Gaps</div>
+                         <div className="space-y-2">
+                           {scoreEntry(coachEntry).modules.flatMap(m => m.missing).slice(0,2).map((gap, i) => <div key={i} className="text-[11px] font-bold text-hc-text opacity-70 leading-relaxed">• {gap}</div>)}
+                         </div>
+                      </div>
+
+                      <div className="hc-clay-raised p-8 relative overflow-hidden bg-hc-bg/50">
+                        <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.2em] mb-5 block">Transformation Output</div>
+                        <textarea readOnly value={script ? script.lines.join('\n') : coachRewrite} 
+                          placeholder={coachLoading ? "Clinical Brain is processing..." : "Initialize Gold Standard pipeline."}
+                          className="w-full bg-transparent text-[13px] leading-relaxed text-hc-text font-medium italic min-h-[160px] resize-none outline-none mb-6 scrollbar-thin" />
+                        
+                        <button onClick={generateGoldStandard} disabled={coachLoading} className="w-full py-4 rounded-2xl btn-tactical text-[11px] font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-4 transition-all">
+                          {coachLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                          {coachRewrite ? 'Regenerate Standard' : 'Execute Gold Standard'}
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <select value={callVariant} onChange={(e) => setCallVariant(e.target.value as CallPrepVariant)} className="w-full hc-clay-inset px-5 py-4 text-[10px] font-black uppercase text-hc-text">
+                           <option value="message">WhatsApp / Intercept</option>
+                           <option value="coaching">Supportive Call Script</option>
+                        </select>
+                        <button onClick={copyCoachingMessage} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl ${coachCopied ? 'bg-flag-green text-hc-bg' : 'bg-hc-teal text-hc-bg hover:brightness-110'}`}>
+                          {coachCopied ? <CheckCircle className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                          {coachCopied ? 'Message Copied' : 'Dispatch & Log Evidence'}
+                        </button>
+                      </div>
+                    </section>
+                  )}
                 </div>
               </div>
             ) : (
-              <div className="bg-hc-card border-2 border-dashed border-hc-border rounded-3xl flex flex-col items-center justify-center min-h-[700px] opacity-40 p-20 text-center shadow-inner group">
-                <div className="w-24 h-24 rounded-3xl bg-hc-navy flex items-center justify-center mb-10 border-2 border-hc-border shadow-2xl group-hover:scale-110 transition-transform">
-                  <Activity className="w-12 h-12 text-hc-muted animate-pulse" />
-                </div>
-                <div className="text-lg font-black text-hc-text uppercase tracking-[0.6em] mb-6">Command Pipeline Stalled</div>
-                <p className="text-[11px] text-hc-muted leading-loose max-w-[400px] font-bold uppercase tracking-[0.4em] mx-auto">Choose an operational asset from the Readiness Queue to initiate structural diagnostic analysis and activate the stability vector.</p>
+              <div className="hc-clay-raised p-16 flex flex-col items-center justify-center h-full opacity-30 text-center sticky top-10">
+                <MessageSquare className="w-16 h-16 text-hc-muted mb-8" strokeWidth={1} />
+                <div className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em] mb-4">Command Awaiting Input</div>
+                <p className="text-[11px] text-hc-muted font-bold uppercase tracking-widest leading-loose">Select personnel record from the matrix to initialize coaching studio.</p>
               </div>
             )}
           </div>
         </div>
+      )}
 
-        {/* GUIDANCE HUB */}
-        {exportHints.length > 0 && (
-          <div className="mt-16 bg-hc-card border border-hc-border rounded-2xl overflow-hidden shadow-2xl bg-hc-card-hover/10">
-             <div className="px-8 py-5 flex items-center gap-4 border-b border-hc-border bg-black/20">
-                <Lightbulb className="w-5 h-5 text-hc-teal" />
-                <span className="text-[11px] font-black uppercase tracking-[0.4em] text-hc-text">Strategic Training Indicators</span>
-             </div>
-             <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                {exportHints.map((hint, i) => (
-                  <div key={i} className="flex flex-col gap-3 group">
-                    <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-[0.3em] group-hover:text-white transition-colors">{hint.label}</div>
-                    <div className="text-[11px] text-hc-muted font-bold leading-relaxed">{hint.detail}</div>
-                  </div>
-                ))}
-             </div>
+      <div className="mt-16 hc-clay-raised overflow-hidden mb-20">
+        <div className="px-8 py-6 bg-black/5 border-b border-hc-muted/10 flex items-center justify-between">
+           <div className="flex items-center gap-4">
+            <History className="w-5 h-5 text-hc-muted" />
+            <span className="text-[11px] font-black tracking-[0.3em] text-hc-text uppercase">Diagnostic Follow-up Trail</span>
           </div>
-        )}
-
-        {/* HISTORICAL LEDGER */}
-        <div className="mt-16 bg-hc-card border border-hc-border rounded-2xl overflow-hidden shadow-2xl bg-hc-card-hover/5">
-           <div className="px-8 py-6 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-black/30">
-              <div className="flex items-center gap-4">
-                 <History className="w-5 h-5 text-hc-muted" />
-                 <span className="text-[11px] font-black uppercase tracking-[0.4em] text-hc-text">Historical Readiness Ledger</span>
-              </div>
-              <button onClick={exportMonitoringPack} className="flex items-center gap-3 px-8 py-3 rounded-xl bg-hc-navy border border-white/5 text-hc-text text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/5 hover:border-hc-teal/40 transition-all shadow-xl group"><Download className="w-4 h-4 group-hover:scale-110" /> Export Evidence Pack</button>
-           </div>
-           <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {loadCallOutcomes().map((o) => (
-                <div key={o.id} className="p-5 rounded-2xl bg-hc-navy/40 border border-hc-border flex flex-col gap-4 group/trail hover:bg-hc-navy/60 transition-all shadow-lg hover:shadow-hc-purple/5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-[12px] text-white tracking-tight uppercase tabular-nums">{o.carer}</span>
-                    <span className="text-hc-muted text-[9px] font-mono font-black uppercase opacity-60">{new Date(o.at).toLocaleDateString('en-GB')}</span>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <span className="px-2 py-1 rounded-lg bg-hc-purple/10 text-hc-purple-light border border-hc-purple/30 text-[8px] font-black uppercase tracking-widest mt-0.5 shadow-inner">{o.outcome}</span>
-                    <div className="text-[11px] text-hc-muted leading-relaxed italic border-l-2 border-hc-border pl-4 font-medium opacity-80 truncate" title={o.notes}>"{o.notes}"</div>
-                  </div>
-                </div>
-              ))}
-              {loadCallOutcomes().length === 0 && <div className="text-[10px] font-black text-hc-muted opacity-40 col-span-full text-center py-20 uppercase tracking-[0.5em]">No Readiness Performance History</div>}
-           </div>
+          <button onClick={exportMonitoringPack} className="flex items-center gap-3 px-8 py-3 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-teal-light hover:text-hc-text transition-all shadow-xl active:scale-95">
+             <Download className="w-4 h-4" /> Evidence pack
+          </button>
         </div>
-
-        {/* Footer padding */}
-        <div className="h-20" />
+        <div className="px-8 py-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[500px] overflow-y-auto scrollbar-thin">
+          {loadCallOutcomes().map((o) => (
+            <div key={o.id} className="p-6 rounded-2xl hc-clay-inset flex flex-col gap-4 group hover:bg-black/[0.02] transition-all">
+              <div className="flex justify-between items-center">
+                <span className="font-black text-sm text-hc-text uppercase tracking-tighter">{o.carer}</span>
+                <span className="text-hc-muted text-[10px] font-black tabular-nums opacity-40">{new Date(o.at).toLocaleString('en-GB', {day:'2-digit', month:'2-digit', hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="pill !bg-hc-bg text-hc-teal border border-hc-teal/20 text-[9px]">{o.outcome}</span>
+                <div className="text-[11px] text-hc-muted font-bold truncate italic opacity-80 flex-1">"{o.notes}"</div>
+              </div>
+            </div>
+          ))}
+          {loadCallOutcomes().length === 0 && <div className="text-[11px] font-black text-hc-muted opacity-40 col-span-full text-center py-20 uppercase tracking-[0.4em]">No clinical evidence logged.</div>}
+        </div>
       </div>
     </div>
   );
