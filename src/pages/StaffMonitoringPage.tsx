@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Activity, RefreshCw, History, FileText, CheckCircle, Sparkles, Download, Lightbulb, Zap, Search, X, ChevronRight, ShieldAlert } from 'lucide-react';
+import { Activity, RefreshCw, History, FileText, CheckCircle, Sparkles, Download, Lightbulb, Zap, Search, X, ChevronRight, ShieldAlert, Shield } from 'lucide-react';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
@@ -47,17 +47,17 @@ interface Props {
   onDataParsed: (data: WeekSummary) => void;
 }
 
-function entryTypeLabel(category?: string, rawType?: string): { label: string; icon: string; colorClass: string } {
+function entryTypeLabel(category?: string, rawType?: string): { label: string; icon: string } {
   const cat = (category || '').toLowerCase();
   const t = (rawType || '').toLowerCase();
-  if (cat === 'handover' || t.includes('handover')) return { label: 'Handover', icon: '🔄', colorClass: 'text-hc-teal-light bg-hc-teal/10 border-hc-teal/20' };
-  if (cat === 'daily_support' || t.includes('task note') || t.includes('daily 1:1') || t.includes('1:1')) return { label: 'Task Note', icon: '✅', colorClass: 'text-sky-400 bg-sky-500/10 border-sky-500/20' };
-  if (cat === 'medication' || t.includes('medication')) return { label: 'Medication', icon: '💊', colorClass: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
-  if (cat === 'safeguarding' || t.includes('safeguard')) return { label: 'Safeguarding', icon: '🛡️', colorClass: 'text-flag-red bg-flag-red/10 border-flag-red/20' };
-  if (cat === 'incident' || t.includes('incident') || t.includes('abc')) return { label: 'Incident', icon: '🚨', colorClass: 'text-flag-red bg-flag-red/10 border-flag-red/20' };
-  if (cat === 'finance' || t.includes('expense') || t.includes('mileage')) return { label: 'Finance', icon: '💷', colorClass: 'text-flag-green bg-flag-green/10 border-flag-green/20' };
-  if (cat === 'staff' || t.includes('senior support') || t.includes('supervision')) return { label: 'Staff Note', icon: '👤', colorClass: 'text-hc-purple-light bg-hc-purple/10 border-hc-purple/20' };
-  return { label: 'Entry', icon: '📋', colorClass: 'text-hc-muted bg-white/5 border-white/10' };
+  if (cat === 'handover' || t.includes('handover')) return { label: 'Handover', icon: '🔄' };
+  if (cat === 'daily_support' || t.includes('task note') || t.includes('daily 1:1') || t.includes('1:1')) return { label: 'Task Note', icon: '✅' };
+  if (cat === 'medication' || t.includes('medication')) return { label: 'Medication', icon: '💊' };
+  if (cat === 'safeguarding' || t.includes('safeguard')) return { label: 'Safeguarding', icon: '🛡️' };
+  if (cat === 'incident' || t.includes('incident') || t.includes('abc')) return { label: 'Incident', icon: '🚨' };
+  if (cat === 'finance' || t.includes('expense') || t.includes('mileage')) return { label: 'Finance', icon: '💷' };
+  if (cat === 'staff' || t.includes('senior support') || t.includes('supervision')) return { label: 'Staff Note', icon: '👤' };
+  return { label: 'Entry', icon: '📋' };
 }
 
 export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<Props, 'onDataParsed'> & { onDataParsed?: (data: WeekSummary) => void }) {
@@ -218,7 +218,6 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
   const searchedStaff = snapshot.staff.filter(s => s.carer.toLowerCase().includes(searchQuery.toLowerCase()));
   const trackingNames = new Set(trackingList.map(t => t.carer));
-  const activeMonitored = searchedStaff.filter(s => trackingNames.has(s.carer));
   const needsReview = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore < 65);
   const goodStanding = searchedStaff.filter(s => !trackingNames.has(s.carer) && s.qualityScore >= 65);
   
@@ -236,10 +235,10 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
             const scoreHex = s.qualityScore >= 70 ? '#22c55e' : s.qualityScore >= 45 ? '#f59e0b' : '#ef4444';
             const isExpanded = coachStaff === s.carer;
             const staffEntries = entriesByStaff[s.carer] || [];
-            const typeCounts: Record<string, { count: number; icon: string; colorClass: string }> = {};
+            const typeCounts: Record<string, { count: number; icon: string }> = {};
             staffEntries.forEach(e => {
-              const { label, icon, colorClass } = entryTypeLabel(e.category, e.type);
-              if (!typeCounts[label]) typeCounts[label] = { count: 0, icon, colorClass };
+              const { label, icon } = entryTypeLabel(e.category, e.type);
+              if (!typeCounts[label]) typeCounts[label] = { count: 0, icon };
               typeCounts[label].count++;
             });
             const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1].count - a[1].count).slice(0, 3);
@@ -271,8 +270,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                     <div className="min-w-0 flex-1 px-4">
                       <div className="text-sm font-black tracking-tight mb-1 truncate text-white/90">{s.carer}</div>
                       <div className="flex items-center gap-1 flex-wrap">
-                        {typeEntries.map(([label, { count, icon, colorClass }]) => (
-                          <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1.5 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap ${colorClass}`}>
+                        {typeEntries.map(([label, { count, icon }]) => (
+                          <span key={label} className={`inline-flex items-center gap-0.5 text-[7px] font-black px-1.5 py-0.5 rounded-[4px] border uppercase tracking-wide whitespace-nowrap text-hc-muted bg-white/5 border-hc-border/20`}>
                             {icon} {count}
                           </span>
                         ))}
@@ -329,73 +328,83 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   }
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col items-center">
-      <div className="w-full max-w-7xl p-6 lg:p-10 flex flex-col">
-
+    <div className="min-h-screen flex flex-col p-8 bg-hc-bg">
+      <div className="max-w-[1700px] mx-auto w-full flex flex-col gap-10">
         
-        {/* SITREP HEADER */}
-        <div className="mb-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-hc-border pb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-10 border-b border-hc-border">
           <div>
-            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Personnel Readiness Command</h2>
-            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-[0.4em] opacity-70 mt-1">Operational Oversight & Stability Tracking Matrix</p>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-12 h-12 rounded-2xl hc-clay-raised flex items-center justify-center">
+                 <Shield size={24} className="text-hc-teal" />
+              </div>
+              <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase">Force Protection</h1>
+            </div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.4em] ml-16">Operational Readiness & Personnel Governance</p>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-             <div className="bg-hc-card border border-hc-border px-6 py-3 rounded-xl flex items-center gap-8 shadow-inner shrink-0">
+          
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Live Telemetry Slab */}
+            <div className="hc-clay-raised px-8 py-4 flex items-center gap-8">
                 <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-1">Status</span>
-                  <span className="text-xs font-black text-hc-teal-light uppercase tracking-widest">ACTIVE</span>
+                  <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Status</span>
+                  <span className="text-xs font-black text-hc-teal uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-hc-green animate-pulse" /> LIVE
+                  </span>
                 </div>
-                <div className="w-px h-8 bg-hc-border" />
-                <div className="flex flex-col items-center text-center items-center">
-                   <span className="text-[8px] font-black text-hc-muted uppercase opacity-50 mb-1">Gaps_Found</span>
-                   <span className="text-xs font-black text-flag-amber uppercase tracking-widest">{needsReview.length} UNITS</span>
+                <div className="w-px h-8 bg-hc-clay-dark opacity-30" />
+                <div className="flex flex-col items-center">
+                   <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Gap_Load</span>
+                   <span className="text-xs font-black text-hc-amber uppercase tracking-widest">{needsReview.length} UNITS</span>
                 </div>
-             </div>
-             <button onClick={() => { onRecompute(); setPage('templates'); }} className="group/btn relative px-8 py-3.5 rounded-xl bg-hc-purple/10 border border-hc-purple/30 text-[10px] font-black uppercase tracking-[.3em] text-hc-purple-light hover:text-white hover:bg-hc-purple/20 flex items-center gap-3 transition-all">
-               <Sparkles className="w-5 h-5" /> SYNT_INTELLIGENCE
-             </button>
-             <button onClick={() => setPage('upload')} className="bg-white/5 border border-white/10 px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-hc-text hover:bg-white/10 transition-all">Sync Feed</button>
+            </div>
+
+            <button onClick={onRecompute} className="btn-clay btn-clay-teal h-[64px] px-8">
+              <RefreshCw size={14} className="animate-spin-slow" /> Sync Intel
+            </button>
+            <button onClick={exportMonitoringPack} className="btn-clay h-[64px] px-8">
+              <Download size={14} /> Export Pack
+            </button>
           </div>
         </div>
 
         {hourlyDue && !hourlyDismissed && (
-          <div className="mb-10 p-8 rounded-3xl bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-between shadow-2xl relative overflow-hidden group shrink-0">
-            <div className="absolute inset-0 bg-hc-dark/60 backdrop-blur-3xl -z-10" />
-            <div className="flex items-center gap-8 relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-flag-amber/20 flex items-center justify-center text-3xl border border-flag-amber/40 shadow-inner">⚠️</div>
+          <div className="hc-clay-raised p-8 flex items-center justify-between relative overflow-hidden bg-white/50">
+             <div className="flex items-center gap-8 relative z-10">
+              <div className="w-16 h-16 rounded-2xl hc-clay-inset flex items-center justify-center text-3xl">⚠️</div>
               <div>
-                <h3 className="text-xl font-black text-white tracking-tight uppercase">Operational Sync Required</h3>
-                <p className="text-[10px] text-flag-amber/80 font-bold uppercase tracking-[.3em] mt-2 leading-relaxed max-w-xl">Personnel intel is over 60 minutes old. Field readiness data may be stale and require structural re-validation.</p>
+                <h3 className="text-xl font-black text-hc-text tracking-tight uppercase">Operational Sync Required</h3>
+                <p className="text-[10px] text-hc-muted font-bold uppercase tracking-[.3em] mt-2 leading-relaxed max-w-xl">Personnel intel is over 60 minutes old. Field readiness data may be stale and require structural re-validation.</p>
               </div>
             </div>
             <div className="flex gap-4 relative z-10 shrink-0">
-              <button onClick={() => setHourlyDismissed(true)} className="px-6 py-3 border border-hc-border text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text rounded-xl transition-all">Dismiss</button>
-              <button onClick={() => { touchHourlyCheck(); setPage('upload'); }} className="px-10 py-3 bg-flag-amber text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-amber-400 transition-all shadow-2xl active:scale-95">Injest Data</button>
+              <button onClick={() => setHourlyDismissed(true)} className="btn-clay text-hc-muted">Dismiss</button>
+              <button onClick={() => { touchHourlyCheck(); setPage('upload'); }} className="btn-clay btn-clay-teal !rounded-2xl">Injest Data Feed</button>
             </div>
           </div>
         )}
 
+
         {growthAlerts.length > 0 && (
-          <div className="mb-12 p-10 rounded-[3rem] bg-hc-teal/5 border border-hc-teal/20 shadow-2xl overflow-hidden relative group shrink-0">
-            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.1),transparent_70%)]" />
-            <div className="flex items-center justify-between mb-10 relative z-10">
+          <div className="hc-clay-raised p-10 flex flex-col gap-8 bg-hc-teal/5">
+            <div className="flex items-center justify-between relative z-10">
                <div className="flex items-center gap-5">
                   <Sparkles className="w-8 h-8 text-hc-teal" />
-                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase tabular-nums">Performance Vector Indicators</h2>
+                  <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Performance Vector Indicators</h2>
                </div>
-               <button onClick={() => setGrowthAlerts([])} className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-white transition-colors border-b border-dashed border-hc-muted hover:border-white">Clear Matrix Signals</button>
+               <button onClick={() => setGrowthAlerts([])} className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal transition-colors border-b border-dashed border-hc-muted hover:border-hc-teal">Clear Matrix Signals</button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 relative z-10">
               {growthAlerts.map((a) => (
-                <div key={`${a.carer}-${a.module}`} className="bg-hc-card/60 backdrop-blur-xl border border-hc-border p-6 rounded-2xl flex flex-col gap-5 group/alert hover:border-hc-teal/50 transition-all">
+                <div key={`${a.carer}-${a.module}`} className="hc-clay-raised p-6 flex flex-col gap-6 hover:translate-y-[-4px] transition-all group/alert">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
-                      <div className="text-xs font-black text-hc-text uppercase tracking-widest mb-1.5 truncate">{a.carer}</div>
-                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest leading-relaxed">
-                         <span className="text-hc-teal">{a.module}</span> improved {a.previousScore}% → <span className="text-white font-black">{a.currentScore}%</span>
+                      <div className="text-[11px] font-black text-hc-text uppercase tracking-widest mb-2 truncate">{a.carer}</div>
+                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.25em] leading-relaxed">
+                         <span className="text-hc-teal font-black">{a.module}</span> improved <br />
+                         <span className="text-hc-text opacity-40">{a.previousScore}%</span> → <span className="text-hc-teal font-black">{a.currentScore}%</span>
                       </div>
                     </div>
-                    <div className="px-3 py-1.5 bg-hc-teal/10 border border-hc-teal/30 rounded-lg text-[10px] font-black text-hc-teal tabular-nums shadow-inner">+{a.delta} PTS</div>
+                    <div className="hc-clay-inset px-3 py-2 text-[10px] font-black text-hc-teal tabular-nums">+{a.delta}</div>
                   </div>
                   <button
                     onClick={() => {
@@ -403,10 +412,10 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                        setCopiedGrowthAlert(`${a.carer}-${a.module}`);
                        setTimeout(() => setCopiedGrowthAlert(null), 2500);
                     }}
-                    className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-hc-border text-hc-muted hover:bg-hc-teal hover:text-black hover:border-hc-teal transition-all flex items-center justify-center gap-2 group-hover/alert:border-hc-teal/30 shadow-lg"
+                    className="btn-clay w-full h-[40px] text-[9px]"
                   >
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? <CheckCircle className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4 opacity-0 group-hover/alert:opacity-100 transition-opacity" />}
-                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? 'REINFORCEMENT LOGGED' : 'Copy Reinforcement'}
+                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? <CheckCircle className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                    {copiedGrowthAlert === `${a.carer}-${a.module}` ? 'LOGGED' : 'REINFORCE'}
                   </button>
                 </div>
               ))}
@@ -414,29 +423,30 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
           </div>
         )}
 
+
         <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-10 items-start">
           
           {/* MASTER PANE: Staff Queue */}
-          <div className="bg-hc-card/95 backdrop-blur-3xl border border-hc-border rounded-2xl shadow-2xl flex flex-col overflow-hidden xl:sticky xl:top-6 z-10 h-fit max-h-[calc(100vh-100px)]">
-            <div className="p-6 border-b border-hc-border bg-hc-card-hover/20 flex flex-col gap-4 shrink-0">
+          <div className="hc-clay-raised flex flex-col overflow-hidden xl:sticky xl:top-6 z-10 h-fit max-h-[calc(100vh-100px)]">
+            <div className="p-6 border-b border-hc-border bg-hc-clay/50 flex flex-col gap-4 shrink-0">
                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2">
-                 {snapshot.houses.length > 0 ? [{ name: 'ALL', avgQuality: 100 }, ...snapshot.houses].map((h) => (
-                   <button key={h.name} onClick={() => setHouse(h.name)} 
-                     className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${house === h.name ? 'bg-hc-teal text-black border-hc-teal' : 'text-hc-muted hover:text-white border-white/5 bg-white/5 hover:bg-white/10'}`}>
-                     {h.name === 'all' ? 'NETWORK' : h.name}
+                 {snapshot.houses.length > 0 ? [{ name: 'NETWORK', avgQuality: 100 }, ...snapshot.houses].map((h) => (
+                   <button key={h.name} onClick={() => setHouse(h.name.toLowerCase())} 
+                     className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap btn-clay ${house === h.name.toLowerCase() ? 'btn-clay-teal' : 'text-hc-muted hover:text-hc-text'}`}>
+                     {h.name}
                    </button>
                  )) : <div className="px-3 py-1 text-[9px] text-hc-muted">No units</div>}
                </div>
               <div className="relative group">
                 <Search className="w-4 h-4 text-hc-muted absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-hc-teal transition-colors" />
                 <input type="text" placeholder="QUERY READINESS COMMAND..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} 
-                  className="w-full bg-hc-navy/60 border-2 border-white/5 text-hc-text text-sm font-mono font-bold rounded-xl pl-11 pr-4 py-3.5 outline-none focus:border-hc-teal transition-all shadow-inner placeholder:text-zinc-700" />
+                  className="w-full hc-clay-inset text-hc-text text-sm font-mono font-bold pl-11 pr-4 py-4 outline-none focus:ring-2 focus:ring-hc-teal/20 transition-all placeholder:text-hc-muted/40" />
               </div>
             </div>
 
-            <div className="max-h-[80vh] overflow-y-auto scrollbar-thin p-5 space-y-2 bg-hc-navy/10 flex-1">
-               {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-flag-amber', 'border-flag-amber/40', '0 units.')}
-               {renderStaffQueue(activeMonitored, 'ACTIVE TRACKING', 'text-hc-teal', 'border-hc-teal/40', '0 units.')}
+
+            <div className="max-h-[80vh] overflow-y-auto scrollbar-thin p-5 space-y-4 bg-hc-clay/20 flex-1">
+               {renderStaffQueue(needsReview, 'CRITICAL REVIEW', 'text-hc-amber', 'hc-clay-raised', '0 units.')}
                {renderStaffQueue(goodStanding, 'OPTIMAL STANDING', 'text-hc-muted', 'border-hc-border', '0 units.')}
             </div>
           </div>
@@ -449,8 +459,9 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-hc-teal via-hc-purple to-flag-red" />
                 
-                {/* Detail Header — HARDENED SOLID BASE */}
-                <div className="px-8 py-8 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-6 bg-hc-card-solid sticky top-0 z-20 backdrop-blur-none shrink-0">
+                {/* Detail Header — HARDENED CLAY CORE */}
+                <div className="px-10 py-10 border-b border-hc-border flex flex-col md:flex-row md:items-center justify-between gap-8 bg-hc-card-solid sticky top-0 z-20 shrink-0">
+
 
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-2xl border-4 border-white/5 ${selectedStaffData.qualityScore < 65 ? 'bg-flag-amber/20 text-flag-amber' : 'bg-hc-teal/20 text-hc-teal'}`}>
@@ -482,85 +493,85 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
                         {/* Sequence Tracker */}
                         <div className="mb-12 shrink-0">
-                          <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                             <div className="w-6 h-px bg-hc-border" />
-                             Stability Pipeline
-                          </div>
-                          {(() => {
-                            const seq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
-                            if (!seq) {
-                              return (
-                                <div className="border-2 border-dashed border-hc-border rounded-2xl p-8 bg-hc-card-hover/5 flex flex-col items-center text-center">
-                                  <div className="text-[10px] text-hc-muted font-bold mb-6 uppercase tracking-widest opacity-40">No active tracking sequence detected for this personnel unit.</div>
-                                  <div className="flex flex-wrap justify-center gap-3">
-                                    {STANDARD_SEQUENCES.map(ss => (
-                                      <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="px-6 py-3 rounded-xl bg-hc-purple/10 border border-hc-purple/30 text-hc-purple-light text-[10px] font-black uppercase tracking-[0.2em] hover:bg-hc-purple hover:text-white transition-all shadow-lg active:scale-95">
-                                        ENROLL: {ss.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            }
-                            const sequenceData = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId);
-                            return (
-                              <div className="border-2 border-hc-purple/20 rounded-2xl p-8 bg-hc-purple/[0.03] shadow-inner">
-                                <div className="flex items-center justify-between mb-8">
-                                  <span className="text-xs font-black text-hc-text uppercase tracking-widest">{sequenceData?.name}</span>
-                                  <div className="flex items-center gap-2 px-3 py-1 bg-hc-purple/10 rounded-full border border-hc-purple/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-hc-purple animate-pulse" />
-                                    <span className="text-[8px] font-black text-hc-purple-light uppercase tracking-widest">ACTIVE_ENGAGEMENT</span>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                  {sequenceData?.steps.map((step, idx) => {
-                                    const isDone = idx < seq.currentStepIndex;
-                                    const isCurrent = idx === seq.currentStepIndex;
-                                    return (
-                                      <div key={idx} className={`relative p-4 rounded-xl border-2 transition-all ${isDone ? 'bg-hc-purple/5 border-hc-purple/20 opacity-40' : isCurrent ? 'bg-hc-purple/10 border-hc-purple shadow-xl' : 'bg-black/20 border-white/5 opacity-30'}`}>
-                                        <div className={`text-[10px] font-black mb-2 ${isCurrent ? 'text-hc-purple-light' : 'text-hc-muted'}`}>STEP_0{idx + 1}</div>
-                                        <div className={`text-[11px] font-black uppercase tracking-tight ${isCurrent ? 'text-white' : 'text-hc-muted'}`}>{step.label}</div>
-                                        {isCurrent && <div className="mt-3 h-1 bg-hc-purple/20 rounded-full overflow-hidden"><div className="h-full bg-hc-purple animate-shimmer" style={{ width: '60%' }} /></div>}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })()}
+                          <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                              <div className="w-8 h-px bg-hc-clay-dark" />
+                              Stability Pipeline
+                           </div>
+                           {(() => {
+                             const seq = activeSequences.find(s => s.carer === coachStaff && s.status === 'active');
+                             if (!seq) {
+                               return (
+                                 <div className="hc-clay-inset p-8 flex flex-col items-center text-center">
+                                   <div className="text-[10px] text-hc-muted font-bold mb-6 uppercase tracking-widest opacity-60">No active tracking sequence detected for this personnel unit.</div>
+                                   <div className="flex flex-wrap justify-center gap-4">
+                                     {STANDARD_SEQUENCES.map(ss => (
+                                       <button key={ss.id} onClick={() => handleEnroll(ss.id)} className="btn-clay text-[10px]">
+                                         ENROLL: {ss.name}
+                                       </button>
+                                     ))}
+                                   </div>
+                                 </div>
+                               );
+                             }
+                             const sequenceData = STANDARD_SEQUENCES.find(ss => ss.id === seq.sequenceId);
+                             return (
+                               <div className="hc-clay-inset p-8">
+                                 <div className="flex items-center justify-between mb-8">
+                                   <span className="text-xs font-black text-hc-text uppercase tracking-widest">{sequenceData?.name}</span>
+                                   <div className="flex items-center gap-2 px-3 py-1 bg-hc-purple/10 rounded-full border border-hc-purple/20">
+                                     <div className="w-1.5 h-1.5 rounded-full bg-hc-purple animate-pulse" />
+                                     <span className="text-[8px] font-black text-hc-purple uppercase tracking-widest">ACTIVE_ENGAGEMENT</span>
+                                   </div>
+                                 </div>
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                   {sequenceData?.steps.map((step, idx) => {
+                                     const isDone = idx < seq.currentStepIndex;
+                                     const isCurrent = idx === seq.currentStepIndex;
+                                     return (
+                                       <div key={idx} className={`relative p-5 rounded-[var(--hc-radius)] transition-all ${isDone ? 'hc-clay-inset opacity-40' : isCurrent ? 'hc-clay-raised bg-hc-clay-light' : 'hc-clay-inset opacity-20'}`}>
+                                         <div className={`text-[10px] font-black mb-2 ${isCurrent ? 'text-hc-teal' : 'text-hc-muted'}`}>STEP_0{idx + 1}</div>
+                                         <div className={`text-[11px] font-black uppercase tracking-tight ${isCurrent ? 'text-hc-text' : 'text-hc-muted'}`}>{step.label}</div>
+                                          {isCurrent && <div className="mt-4 h-1 bg-hc-clay-dark rounded-full overflow-hidden"><div className="h-full bg-hc-teal animate-shimmer" style={{ width: '60%' }} /></div>}
+                                       </div>
+                                     );
+                                   })}
+                                 </div>
+                               </div>
+                             );
+                           })()}
                         </div>
 
-                        {/* Diagnostic Ledger */}
+                         {/* Diagnostic Ledger */}
                         <div className="flex-1 flex flex-col min-h-0">
-                          <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                             <div className="w-6 h-px bg-hc-border" />
-                             Diagnostic Ledger
+                          <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                              <div className="w-8 h-px bg-hc-clay-dark" />
+                              Diagnostic Ledger
                           </div>
-                          <div className="grid grid-cols-1 gap-2 overflow-y-visible">
+                          <div className="grid grid-cols-1 gap-4 overflow-y-visible">
                             {[...(entriesByStaff[coachStaff!] || [])]
                               .sort((a, b) => scoreEntry(a).total - scoreEntry(b).total)
                               .slice(0, 25)
                               .map((e, i) => {
-                                const { icon, colorClass } = entryTypeLabel(e.category, e.type);
+                                const { icon } = entryTypeLabel(e.category, e.type);
                                 const score = scoreEntry(e).total;
                                 const isSelected = coachEntry?.id === e.id;
                                 return (
                                   <div key={i}
                                     onClick={() => { setCoachEntry(e); setCoachRewrite(''); }}
-                                    className={`cursor-pointer rounded-xl px-5 py-4 flex items-center gap-6 transition-all border-2 ${isSelected ? 'bg-hc-teal/10 border-hc-teal/40 shadow-2xl ring-2 ring-hc-teal/10' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10 shadow-lg'}`}
+                                    className={`cursor-pointer px-6 py-5 flex items-center gap-8 transition-all ${isSelected ? 'hc-clay-raised scale-[1.02] bg-hc-clay-light border-hc-teal/30' : 'hc-clay-raised hover:bg-hc-clay-light shadow-sm'}`}
                                   >
-                                    <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-xl border-2 ${colorClass.split(' ')[2]} ${colorClass.split(' ')[1]} ${colorClass.split(' ')[0]}`}>{icon}</div>
+                                    <div className={`shrink-0 w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-xl`}>{icon}</div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-3 mb-1.5">
-                                         <span className="text-xs font-black text-white/90 uppercase tracking-tight tabular-nums">{e.client || 'SYSTEM'}</span>
-                                         <span className="text-[9px] font-black text-hc-muted uppercase opacity-50 tabular-nums">{e.date}</span>
+                                      <div className="flex items-center gap-3 mb-2">
+                                         <span className="text-xs font-black text-hc-text uppercase tracking-widest tabular-nums">{e.client || 'SYSTEM'}</span>
+                                         <span className="text-[9px] font-black text-hc-muted uppercase tabular-nums">/ {e.date}</span>
                                       </div>
-                                      <div className="text-[10px] text-hc-muted truncate opacity-80 font-mono font-medium leading-relaxed italic">"{(e.entry || '').slice(0, 110)}…"</div>
+                                      <div className="text-[10px] text-hc-muted truncate font-medium leading-relaxed italic">"{(e.entry || '').slice(0, 110)}…"</div>
                                     </div>
                                     <div className="flex flex-col items-center shrink-0 ml-4">
-                                       <span className="text-xs font-black tabular-nums mb-1" style={{ color: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }}>{score}%</span>
-                                       <div className="w-10 h-1 bg-black/40 rounded-full overflow-hidden">
-                                          <div className="h-full rounded-full" style={{ width: score + '%', backgroundColor: score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444' }} />
+                                       <span className="text-[10px] font-black tabular-nums mb-1" style={{ color: score >= 70 ? 'var(--hc-green)' : score >= 45 ? 'var(--hc-amber)' : 'var(--hc-red)' }}>{score}%</span>
+                                       <div className="w-12 h-1 hc-clay-inset overflow-hidden !rounded-none">
+                                          <div className="h-full" style={{ width: score + '%', backgroundColor: score >= 70 ? 'var(--hc-green)' : score >= 45 ? 'var(--hc-amber)' : 'var(--hc-red)' }} />
                                        </div>
                                     </div>
                                   </div>
@@ -568,13 +579,14 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
                               })
                             }
                             {!(entriesByStaff[coachStaff!]?.length) && (
-                              <div className="text-center py-24 border-2 border-dashed border-hc-border rounded-2xl bg-white/[0.01]">
-                                 <Activity className="w-12 h-12 text-hc-muted mx-auto mb-6 opacity-20" />
-                                 <div className="text-[10px] text-hc-muted opacity-40 uppercase font-black tracking-[0.5em]">No Structural Telemetry Available</div>
+                              <div className="hc-clay-inset py-24 text-center">
+                                 <Activity className="w-12 h-12 text-hc-muted mx-auto mb-6 opacity-40" />
+                                 <div className="text-[10px] text-hc-muted uppercase font-black tracking-[0.5em]">No Structural Telemetry Available</div>
                               </div>
                             )}
                           </div>
                         </div>
+
                    </div>
 
                    {/* Right Side: Command Synthesis */}

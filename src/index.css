@@ -3,44 +3,43 @@
 @import "tailwindcss";
 
 :root {
-  /* ── CLAYMORPHIC TACTICAL PALETTE ── */
-  --hc-bg: #f0f2f5;
-  --hc-clay: #e6e9ef;
+  /* ── 1:1 CLAYMORPHIC TACTICAL (WARM BONE / SAGE) ── */
+  --hc-bg: #f3efe0;
+  --hc-clay: #f3efe0;
   --hc-clay-light: #ffffff;
-  --hc-clay-dark: #d1d9e6;
+  --hc-clay-dark: #d1c9b8;
   
-  --hc-teal: #4d7c78;
-  --hc-teal-light: #5f9a94;
-  --hc-lavender: #b0a8d9;
-  --hc-lavender-light: #c5bfe6;
+  --hc-teal: #004d40;
+  --hc-teal-light: #00695c;
+  --hc-lavender: #ada2d4;
   
-  --hc-red: #d97a7a;
-  --hc-amber: #e6b87c;
-  --hc-green: #7ca88a;
+  --hc-red: #d57e7e;
+  --hc-amber: #e6c19c;
+  --hc-green: #004d40;
   
   --color-flag-red: var(--hc-red);
   --color-flag-amber: var(--hc-amber);
   --color-flag-green: var(--hc-green);
 
   /* ── SHARED VARIABLES ── */
-  --hc-text: #3d4757; 
-  --hc-muted: #7a869a;
+  --hc-text: #2d3436; 
+  --hc-muted: #858a8c;
   --hc-border: rgba(0, 0, 0, 0.05);
   --hc-radius: 24px;
   --hc-radius-pill: 9999px;
   
-  /* ── THEME OVERRIDES ── */
   --hc-card: var(--hc-clay);
   --hc-card-solid: var(--hc-clay);
 }
 
 [data-theme="dark"] {
-  --hc-bg: #1a1d23;
-  --hc-clay: #23272f;
-  --hc-clay-light: #2d323c;
-  --hc-clay-dark: #14171c;
+  /* Matte Carbon Clay */
+  --hc-bg: #1a1c1e;
+  --hc-clay: #1a1c1e;
+  --hc-clay-light: #25282b;
+  --hc-clay-dark: #0f1012;
   --hc-text: #e2e8f0;
-  --hc-muted: #94a3b8;
+  --hc-muted: #64748b;
   --hc-border: rgba(255, 255, 255, 0.05);
 }
 
@@ -66,15 +65,15 @@ body {
   transition: background-color 0.4s ease;
 }
 
-/* ─── CLAYMORPHIC UTILITIES ─────────────────────────────────── */
+/* ─── 1:1 CLAYMORPHIC PHYSICS ───────────────────────────────── */
 
 .hc-clay-raised {
   background: var(--hc-clay);
   box-shadow: 
-    8px 8px 16px var(--hc-clay-dark), 
-    -8px -8px 16px var(--hc-clay-light);
+    10px 10px 20px var(--hc-clay-dark), 
+    -10px -10px 20px var(--hc-clay-light);
   border-radius: var(--hc-radius);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .hc-clay-inset {
@@ -82,76 +81,97 @@ body {
   box-shadow: 
     inset 6px 6px 12px var(--hc-clay-dark), 
     inset -6px -6px 12px var(--hc-clay-light);
-  border-radius: var(--hc-radius);
+  border-radius: 12px;
 }
 
 .hc-clay-pill {
   border-radius: var(--hc-radius-pill);
 }
 
-.hc-type-pill {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 10px;
-}
-
-/* Standardize Card to Clay Slab */
+/* Base card mapping */
 .bg-hc-card, .bg-hc-card-solid {
   background: var(--hc-clay) !important;
   box-shadow: 
-    10px 10px 20px var(--hc-clay-dark), 
-    -10px -10px 20px var(--hc-clay-light) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    12px 12px 24px var(--hc-clay-dark), 
+    -12px -12px 24px var(--hc-clay-light) !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: var(--hc-radius) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
-/* Buttons */
+/* ─── BUTTONS & CONTROLS ────────────────────────────────────── */
+
 .btn-clay {
   background: var(--hc-clay);
   box-shadow: 6px 6px 12px var(--hc-clay-dark), -6px -6px 12px var(--hc-clay-light);
   border-radius: var(--hc-radius-pill);
-  padding: 10px 24px;
-  font-weight: 700;
+  padding: 12px 28px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.1em;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--hc-text);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .btn-clay:hover {
   transform: translateY(-2px);
-  box-shadow: 8px 8px 20px var(--hc-clay-dark), -8px -8px 20px var(--hc-clay-light);
+  box-shadow: 10px 10px 20px var(--hc-clay-dark), -10px -10px 20px var(--hc-clay-light);
 }
 
 .btn-clay:active {
   transform: translateY(1px);
   box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light);
+  border-color: transparent;
 }
 
 .btn-clay-teal {
   background: var(--hc-teal);
-  color: white;
-  box-shadow: 6px 6px 12px rgba(77, 124, 120, 0.3), -6px -6px 12px rgba(255, 255, 255, 0.1);
-  border: none;
+  color: #ffffff;
+  box-shadow: 6px 6px 15px rgba(0, 77, 64, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-clay-teal:hover {
+  box-shadow: 10px 10px 25px rgba(0, 77, 64, 0.35), -10px -10px 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Tab/Switch Inset */
+.tab-inset {
+  background: var(--hc-clay);
+  box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light);
+  border-radius: var(--hc-radius-pill);
+  padding: 4px;
+}
+
+/* Form Styles */
+input, select, textarea {
+  background: var(--hc-clay) !important;
+  box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  color: var(--hc-text) !important;
+  font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--hc-teal-light) !important;
+  outline-offset: 2px;
 }
 
 /* ─── SCROLL ──────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--hc-bg); }
-::-webkit-scrollbar-thumb { background: var(--hc-clay-dark); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--hc-teal); }
+::-webkit-scrollbar-thumb { background: var(--hc-clay-dark); border-radius: 10px; border: 2px solid var(--hc-bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--hc-muted); }
 
-#root { min-height: 100vh; display: flex; }
+#root { min-height: 100vh; display: flex; width: 100%; }
 
-.font-mono, .tabular-nums {
-  font-family: 'JetBrains Mono', monospace !important;
-}
+.font-mono { font-family: 'JetBrains Mono', monospace !important; }

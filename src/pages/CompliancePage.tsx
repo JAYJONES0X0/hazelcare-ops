@@ -8,7 +8,7 @@ import {
   type ComplianceAudit, type LegalDocument,
 } from '../lib/compliance-store';
 import { ORG_CONFIG } from '../lib/config';
-import { FileText, Trash2, Edit3, CheckCircle2, ChevronRight, X, Sparkles, Printer } from 'lucide-react';
+import { FileText, Trash2, Edit3, CheckCircle2, X, Sparkles, Printer, Plus } from 'lucide-react';
 import type { StaffMember } from '../lib/types';
 
 // ============================================================
@@ -113,54 +113,56 @@ function AuditModal({ audit, onSave, onClose }: { audit: ComplianceAudit; onSave
   const set = (k: keyof ComplianceAudit, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
-      <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-blue/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-        <div className="p-8 border-b border-white/5 relative z-10">
-          <h3 className="text-2xl font-black text-white tracking-tighter text-shimmer">Log Service Audit</h3>
-          <p className="text-xs font-semibold text-hc-muted uppercase tracking-[0.08em] mt-1">Quality control and compliance audit</p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="hc-clay-raised w-full max-w-lg p-10 flex flex-col gap-8 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div>
+           <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Service Audit Entry</h3>
+           <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.4em] mt-2">Quality Control & Regulatory Alignment</p>
         </div>
-        <div className="p-8 space-y-6 relative z-10">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="section-header mb-2 ml-1 block opacity-90">House</label>
-              <select value={form.house} onChange={e => set('house', e.target.value)}
-                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
-                {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="section-header mb-2 ml-1 block opacity-90">Audit Type</label>
-              <select value={form.type} onChange={e => set('type', e.target.value as ComplianceAudit['type'])}
-                className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner">
-                {AUDIT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="section-header mb-2 ml-1 block opacity-90">Last Completed</label>
-              <input value={form.lastCompleted} onChange={e => set('lastCompleted', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
-            </div>
-            <div>
-              <label className="section-header mb-2 ml-1 block opacity-90">Next Due</label>
-              <input value={form.dueDate} onChange={e => set('dueDate', e.target.value)} placeholder="DD/MM/YYYY"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
-            </div>
-            <div className="col-span-2">
-              <label className="section-header mb-2 ml-1 block opacity-90">Completed By</label>
-              <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Name"
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner" />
-            </div>
-            <div className="col-span-2">
-              <label className="section-header mb-2 ml-1 block opacity-90">Findings and Observations</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Summary of findings..."
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none" rows={3} />
-            </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Sector_ID</label>
+            <select value={form.house} onChange={e => set('house', e.target.value)} className="hc-clay-inset w-full p-4 text-[10px] font-black uppercase tracking-widest text-hc-text">
+               {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+            </select>
           </div>
-          <div className="flex gap-4 pt-2">
-            <button onClick={() => onSave(form)} className="flex-[2] btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">Save Audit Result</button>
-            <button onClick={onClose} className="flex-1 glass-light border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white py-4 rounded-xl transition-all">Cancel</button>
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Type_Lock</label>
+            <select value={form.type} onChange={e => set('type', e.target.value as ComplianceAudit['type'])} className="hc-clay-inset w-full p-4 text-[10px] font-black uppercase tracking-widest text-hc-text">
+               {AUDIT_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Last_Execution</label>
+            <input value={form.lastCompleted} onChange={e => set('lastCompleted', e.target.value)} placeholder="DD/MM/YYYY" 
+                className="hc-clay-inset w-full p-4 text-sm font-bold text-hc-text transition-all outline-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Next_Due</label>
+            <input value={form.dueDate} onChange={e => set('dueDate', e.target.value)} placeholder="DD/MM/YYYY" 
+                className="hc-clay-inset w-full p-4 text-sm font-bold text-hc-text transition-all outline-none" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Field_Auditor</label>
+          <input value={form.completedBy} onChange={e => set('completedBy', e.target.value)} placeholder="Full Name" 
+              className="hc-clay-inset w-full p-4 text-sm font-bold text-hc-text transition-all outline-none" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Operational_Findings</label>
+          <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Detail results..." rows={3}
+              className="hc-clay-inset w-full p-4 text-sm font-bold text-hc-text transition-all outline-none resize-none" />
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button onClick={() => onSave(form)} className="btn-clay btn-clay-teal flex-1 h-[64px] text-[11px]">Commit Audit Result</button>
+          <button onClick={onClose} className="btn-clay flex-1 h-[64px] text-[11px] text-hc-muted">Cancel</button>
         </div>
       </div>
     </div>
@@ -373,64 +375,40 @@ function FounderChecklist() {
   const prog = Math.round((checked.length / total) * 100);
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-700">
-      <div className="glass border border-hc-purple/30 rounded-2xl p-6 mb-6 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-purple/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
-          <div className="w-16 h-16 rounded-xl bg-hc-purple/10 border border-hc-purple/20 flex flex-col items-center justify-center shrink-0 shadow-lg glow-purple">
-            <span className="text-xl font-black text-white">{prog}%</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Launch Readiness Matrix</h2>
-            <p className="text-[10px] text-hc-muted font-bold tracking-widest uppercase">"Six months to build it. One week to protect it. Do the week."</p>
-          </div>
-          <div className="w-full md:w-64 h-2 bg-black/50 rounded-full overflow-hidden border border-white/5">
-            <div className="h-full bg-hc-purple transition-all duration-700" style={{ width: `${prog}%`, boxShadow: '0 0 10px rgba(139,92,246,0.6)' }} />
-          </div>
+    <div className="flex flex-col gap-10">
+      <div className="hc-clay-raised p-10 flex flex-col md:flex-row items-center gap-10">
+        <div className="w-24 h-24 rounded-full hc-clay-raised flex items-center justify-center text-2xl font-black text-hc-teal">
+          {prog}%
+        </div>
+        <div className="flex-1">
+          <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase mb-1">Launch Readiness Matrix</h2>
+          <p className="text-[10px] text-hc-muted font-bold tracking-[0.4em] uppercase">Tactical Verification of Governance Assets</p>
+        </div>
+        <div className="w-64 h-3 hc-clay-inset overflow-hidden p-1">
+          <div className="h-full bg-hc-teal rounded-full transition-all duration-700" style={{ width: `${prog}%` }} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {FOUNDER_CHECKLIST.map((cat, i) => {
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        {FOUNDER_CHECKLIST.map((cat) => {
           const catChecked = cat.items.filter(item => checked.includes(item.id)).length;
-          const isComplete = catChecked === cat.items.length;
           
           return (
-            <div key={cat.category} className={`glass-light border rounded-2xl p-5 shadow-xl transition-all duration-500 card-glow
-              ${isComplete ? 'border-hc-teal/30 bg-hc-teal/[0.02]' : 'border-white/5'}`}
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] ${isComplete ? 'text-hc-teal-light' : 'text-white'}`}>{cat.category}</h3>
-                <span className="text-[10px] font-black tabular-nums text-hc-muted">{catChecked} / {cat.items.length}</span>
+            <div key={cat.category} className="hc-clay-raised p-8 flex flex-col gap-6">
+              <div className="flex justify-between items-center pb-4 border-b border-hc-border">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-hc-text">{cat.category}</h3>
+                <span className="text-[10px] font-black text-hc-muted tabular-nums">{catChecked}/{cat.items.length}</span>
               </div>
               
-              <div className="space-y-1">
+              <div className="flex flex-col gap-3">
                 {cat.items.map(item => {
                   const isChecked = checked.includes(item.id);
-                  const hasDraft = loadLegalDocument(item.id);
                   const it = item as any;
                   return (
-                    <div key={item.id} 
-                      onClick={() => it.templateKey ? setActiveItem(it) : toggle(item.id)} 
-                      className="group flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-all border border-transparent hover:border-white/5 hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      <div onClick={(e) => toggle(item.id, e)} className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border transition-all duration-300
-                        ${isChecked ? 'bg-hc-teal border-hc-teal shadow-[0_0_8px_rgba(20,184,166,0.5)]' : 'bg-black/50 border-white/20 group-hover:border-white/40'}`}>
-                        {isChecked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-[11px] font-bold leading-relaxed transition-colors duration-300 ${isChecked ? 'text-hc-muted line-through' : 'text-white/80'}`}>{item.label}</div>
-                        {hasDraft && !isChecked && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="w-1 h-1 rounded-full bg-hc-purple animate-pulse" />
-                            <span className="text-[7px] font-black text-hc-purple-light uppercase tracking-widest">Intelligence Live</span>
-                          </div>
-                        )}
-                      </div>
-                      {it.templateKey && (
-                        <ChevronRight className="w-3 h-3 text-hc-muted opacity-0 group-hover:opacity-100 transition-opacity" />
-                      )}
+                    <div key={item.id} onClick={() => it.templateKey ? setActiveItem(it) : toggle(item.id)} 
+                      className={`hc-clay-inset p-4 flex items-center gap-4 cursor-pointer transition-all hover:bg-white/10 ${isChecked ? 'opacity-40' : ''}`}>
+                      <div className={`w-4 h-4 rounded-full border-2 transition-all ${isChecked ? 'bg-hc-teal border-hc-teal' : 'border-hc-muted'}`} />
+                      <div className="text-[11px] font-bold text-hc-text uppercase tracking-tight">{item.label}</div>
                     </div>
                   );
                 })}
@@ -443,6 +421,7 @@ function FounderChecklist() {
     </div>
   );
 }
+
 
 // ============================================================
 // MAIN COMPONENT
@@ -512,66 +491,60 @@ export function CompliancePage({ staff, onUpdate }: Props) {
   const dueSoon = items.filter(i => i.status === 'due_soon');
   const ok = items.filter(i => i.status === 'ok');
   const compRate = items.length > 0 ? Math.round((ok.length / items.length) * 100) : 100;
-  const compColor = compRate >= 90 ? '#22c55e' : compRate >= 70 ? '#f59e0b' : '#ef4444';
 
   const filteredStaff = houseFilter === 'all' ? staff : staff.filter(s => s.house === houseFilter);
 
   const housesInAudits = [...new Set(audits.map(a => a.house))].sort();
 
   return (
-    <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+    <div className="p-10 flex flex-col gap-12 bg-hc-bg">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-8 pb-10 border-b border-hc-border">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Compliance & Quality</h1>
-          <div className="flex items-center gap-3">
-            <span className="pill pill-teal text-[10px] font-black uppercase tracking-wider shadow-lg">Compliance Status</span>
-            <p className="text-hc-muted text-[10px] font-bold uppercase tracking-widest ml-1">
-              DBS · Training · Supervision · Service Audits
-            </p>
+          <div className="flex items-center gap-4 mb-2">
+             <div className="w-10 h-10 rounded-2xl hc-clay-raised flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-hc-teal" />
+             </div>
+             <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase">Compliance Matrix</h1>
           </div>
+          <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.4em] ml-14">Regulatory Oversight & Operational Hardening</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setEditAudit(emptyAudit())}
-            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-blue/30 group shadow-xl">
-            <svg className="w-4 h-4 text-hc-blue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-            Log Audit
+        <div className="flex gap-4">
+          <button onClick={() => setEditAudit(emptyAudit())} className="btn-clay h-[64px] px-8 text-hc-muted">
+             <FileText size={16} /> Log Service Audit
           </button>
-          <button onClick={() => setEditStaff(emptyStaff())}
-            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Add Staff Member
+          <button onClick={() => setEditStaff(emptyStaff())} className="btn-clay btn-clay-teal h-[64px] px-8">
+             <Plus size={16} /> Enroll Personnel
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      {/* ── KPI SLABS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'OVERALL COMPLIANCE', value: `${compRate}%`, color: compColor, sub: `${items.length} items tracked` },
-          { label: 'OVERDUE ITEMS', value: overdue.length, color: '#ef4444', sub: 'Action required', glow: 'glow-red' },
-          { label: 'DUE SOON', value: dueSoon.length, color: '#f59e0b', sub: 'Next 30 days', glow: 'glow-amber' },
-          { label: 'COMPLIANT ITEMS', value: ok.length, color: '#22c55e', sub: 'Status: Good' },
-        ].map(s => (
-          <div key={s.label} className={`glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:scale-[1.02] active:scale-95 group relative overflow-hidden cursor-default ${s.glow || ''}`}>
-            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.05] group-hover:opacity-[0.1] transition-opacity blur-3xl -translate-y-1/2 translate-x-1/2" style={{ background: s.color }} />
-            <div className="section-header text-[8px] md:text-[9px] mb-1.5 opacity-60 tracking-[0.15em]">{s.label}</div>
-            <div className="text-2xl md:text-3xl font-black tabular-nums tracking-tighter" style={{ color: s.color, textShadow: `0 0 30px ${s.color}40` }}>{s.value}</div>
-            <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-2 opacity-40 group-hover:opacity-100 transition-opacity">{s.sub}</div>
+          { label: 'System_Integrity', value: `${compRate}%`, colorClass: 'text-hc-teal' },
+          { label: 'Critical_Alerts', value: overdue.length, colorClass: 'text-hc-red' },
+          { label: 'Upcoming_Renewals', value: dueSoon.length, colorClass: 'text-hc-amber' },
+          { label: 'Validated_Assets', value: ok.length, colorClass: 'text-hc-text' },
+        ].map(kpi => (
+          <div key={kpi.label} className="hc-clay-raised p-8 flex flex-col gap-4">
+             <div className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em]">{kpi.label}</div>
+             <div className={`text-4xl font-black tabular-nums transition-all ${kpi.colorClass}`}>{kpi.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/5 shadow-xl mb-6 w-fit mx-auto md:mx-0">
+      {/* ── TAB SWITCH ── */}
+      <div className="tab-inset flex gap-2 w-fit">
         {(['overview', 'staff', 'audits', 'founder'] as const).map(id => (
           <button key={id} onClick={() => setTab(id)}
-            className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.25rem] transition-all duration-500 ease-out active:scale-95
-              ${tab === id ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/30 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-            {id === 'overview' ? 'Overview' : id === 'staff' ? 'Staff Records' : id === 'audits' ? 'Audit Logs' : 'Legal Checklist'}
+             className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300
+               ${tab === id ? 'hc-clay-raised !rounded-full bg-white/20' : 'text-hc-muted hover:text-hc-text'}`}>
+             {id}
           </button>
         ))}
       </div>
+
 
       {/* === OVERVIEW TAB === */}
       {tab === 'overview' && (
