@@ -1,177 +1,109 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-:root {
-  /* ── 1:1 CLAYMORPHIC TACTICAL (WARM BONE / SAGE) ── */
-  --hc-bg: #f3efe0;
-  --hc-clay: #f3efe0;
-  --hc-clay-light: #ffffff;
-  --hc-clay-dark: #d1c9b8;
-  
-  --hc-teal: #004d40;
-  --hc-teal-light: #00695c;
-  --hc-lavender: #ada2d4;
-  
-  --hc-red: #d57e7e;
-  --hc-amber: #e6c19c;
-  --hc-green: #004d40;
-  
-  --color-flag-red: var(--hc-red);
-  --color-flag-amber: var(--hc-amber);
-  --color-flag-green: var(--hc-green);
-
-  /* ── SHARED VARIABLES ── */
-  --hc-text: #2d3436; 
-  --hc-muted: #858a8c;
-  --hc-border: rgba(0, 0, 0, 0.05);
-  --hc-radius: 24px;
-  --hc-radius-pill: 9999px;
-  
-  --hc-card: var(--hc-clay);
-  --hc-card-solid: var(--hc-clay);
-}
-
-[data-theme="dark"] {
-  /* Matte Carbon Clay */
-  --hc-bg: #1a1c1e;
-  --hc-clay: #1a1c1e;
-  --hc-clay-light: #25282b;
-  --hc-clay-dark: #0f1012;
-  --hc-text: #e2e8f0;
-  --hc-muted: #64748b;
-  --hc-border: rgba(255, 255, 255, 0.05);
-}
-
 @theme {
-  --color-hc-teal: var(--hc-teal);
-  --color-hc-teal-light: var(--hc-teal-light);
-  --color-hc-lavender: var(--hc-lavender);
-  --color-hc-text: var(--hc-text);
-  --color-hc-muted: var(--hc-muted);
-  --color-hc-card: var(--hc-card);
-  --color-hc-bg: var(--hc-bg);
+  /* ── HAZEL CARE TACTICAL PROTOCOL — ORGANIC SUBSTRATE ── */
+  --color-hc-bg: #f3efe0;          /* Warm Bone foundation */
+  --color-hc-text: #0d2d2d;        /* Nocturnal Pine (The new black) */
+  --color-hc-muted: #8a8b82;       /* Olive Anchor (The new grey) */
+  --color-hc-teal: #1c4e4e;        /* Deep Matte Pine Primary */
+  --color-hc-sage: #4c7c7c;        /* Tactical Sage Accent */
+  --color-hc-amber: #e6c19c;       /* Apricot Alert */
+  --color-hc-lavender: #ada2d4;    /* Chalky Lavender (Intelligence) */
+  --color-hc-clay-dark: #d1c9b8;   /* Sandy Shadow vector */
+  --color-hc-clay-light: #ffffff;  /* Bone Highlight */
+  
+  --color-flag-red: #d94e4e;       /* Milled Red */
+  --color-flag-amber: #d9974e;
+  --color-flag-green: #4e8d4e;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  background-color: var(--hc-bg);
-  color: var(--hc-text);
-  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  background-color: #f3efe0;
+  color: #0d2d2d;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
-  transition: background-color 0.4s ease;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ─── 1:1 CLAYMORPHIC PHYSICS ───────────────────────────────── */
+/* JetBrains Mono for tabular numbers */
+.font-mono, .tabular-nums {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums;
+}
 
+#root { min-height: 100vh; display: flex; }
+
+/* ─── CLAYMORPHIC HARDWARE SYSTEM ──────────────────────────── */
+
+/* Physical Slab (Raised) */
 .hc-clay-raised {
-  background: var(--hc-clay);
+  background: #f3efe0;
+  border-radius: 16px;
   box-shadow: 
-    10px 10px 20px var(--hc-clay-dark), 
-    -10px -10px 20px var(--hc-clay-light);
-  border-radius: var(--hc-radius);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+    8px 8px 16px #d1c9b8,
+    -8px -8px 16px #ffffff;
+  border: 1px solid rgba(255,255,255,0.4);
 }
 
+/* Tactile Input (Inset) */
 .hc-clay-inset {
-  background: var(--hc-clay);
-  box-shadow: 
-    inset 6px 6px 12px var(--hc-clay-dark), 
-    inset -6px -6px 12px var(--hc-clay-light);
+  background: #f3efe0;
   border-radius: 12px;
-}
-
-.hc-clay-pill {
-  border-radius: var(--hc-radius-pill);
-}
-
-/* Base card mapping */
-.bg-hc-card, .bg-hc-card-solid {
-  background: var(--hc-clay) !important;
   box-shadow: 
-    12px 12px 24px var(--hc-clay-dark), 
-    -12px -12px 24px var(--hc-clay-light) !important;
-  border: 2px solid rgba(255, 255, 255, 0.5) !important;
-  border-radius: var(--hc-radius) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+    inset 4px 4px 8px #d1c9b8,
+    inset -4px -4px 8px #ffffff;
+  border: none;
 }
 
-/* ─── BUTTONS & CONTROLS ────────────────────────────────────── */
-
-.btn-clay {
-  background: var(--hc-clay);
-  box-shadow: 6px 6px 12px var(--hc-clay-dark), -6px -6px 12px var(--hc-clay-light);
-  border-radius: var(--hc-radius-pill);
-  padding: 12px 28px;
+/* Command Bun (Primary Action) */
+.btn-tactical {
+  background: #1c4e4e;
+  color: #f3efe0;
+  border-radius: 12px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--hc-text);
-  font-size: 10px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 4px 4px 10px rgba(28, 78, 78, 0.2);
 }
-
-.btn-clay:hover {
-  transform: translateY(-2px);
-  box-shadow: 10px 10px 20px var(--hc-clay-dark), -10px -10px 20px var(--hc-clay-light);
+.btn-tactical:hover {
+  transform: translateY(-1px);
+  box-shadow: 6px 6px 15px rgba(28, 78, 78, 0.3);
+  filter: brightness(1.1);
 }
-
-.btn-clay:active {
+.btn-tactical:active {
   transform: translateY(1px);
-  box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light);
-  border-color: transparent;
-}
-
-.btn-clay-teal {
-  background: var(--hc-teal);
-  color: #ffffff;
-  box-shadow: 6px 6px 15px rgba(0, 77, 64, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-clay-teal:hover {
-  box-shadow: 10px 10px 25px rgba(0, 77, 64, 0.35), -10px -10px 20px rgba(255, 255, 255, 0.1);
-}
-
-/* Tab/Switch Inset */
-.tab-inset {
-  background: var(--hc-clay);
-  box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light);
-  border-radius: var(--hc-radius-pill);
-  padding: 4px;
-}
-
-/* Form Styles */
-input, select, textarea {
-  background: var(--hc-clay) !important;
-  box-shadow: inset 4px 4px 8px var(--hc-clay-dark), inset -4px -4px 8px var(--hc-clay-light) !important;
-  border: none !important;
-  border-radius: 12px !important;
-  padding: 12px 16px !important;
-  color: var(--hc-text) !important;
-  font-family: inherit;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: 2px solid var(--hc-teal-light) !important;
-  outline-offset: 2px;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
 }
 
 /* ─── SCROLL ──────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--hc-bg); }
-::-webkit-scrollbar-thumb { background: var(--hc-clay-dark); border-radius: 10px; border: 2px solid var(--hc-bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--hc-muted); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1c9b8; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #4c7c7c; }
 
-#root { min-height: 100vh; display: flex; width: 100%; }
+/* ─── PILLS ────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: #f3efe0;
+  box-shadow: 2px 2px 5px #d1c9b8, -2px -2px 5px #ffffff;
+}
+.pill-active { color: #1c4e4e; border: 1px solid rgba(28, 78, 78, 0.2); }
 
-.font-mono { font-family: 'JetBrains Mono', monospace !important; }
+/* ─── UI CLEANUP ─────────────────────────────────────────────── */
+[class*="text-[8px]"],
+[class*="text-[9px]"] {
+  font-size: 11px !important;
+}
+[class*="tracking-[0.3em]"] {
+  letter-spacing: 0.15em !important;
+}

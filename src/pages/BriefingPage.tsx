@@ -3,6 +3,7 @@ import type { WeekSummary, Action } from '../lib/types';
 import type { Page } from '../App';
 import { detectTrends } from '../lib/trends';
 import { useCollapseStore } from '../lib/collapse-store';
+import { Activity, ChevronRight, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -26,10 +27,9 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
       }
     }
     return Object.values(m).filter(c => c.red > 0 || c.amber > 0)
-      .sort((a, b) => (b.red * 10 + b.amber) - (a.red * 10 + a.amber)).slice(0, 10);
+      .sort((a, b) => (b.red * 10 + b.amber) - (a.red * 10 + a.amber)).slice(0, 6);
   }, [weekData]);
 
-  const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
   const {
     collapseAll: collapseAllSections,
     expandAll: expandAllSections,
@@ -37,20 +37,19 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
     isCollapsed: isSectionCollapsed,
     toggle: toggleSection,
   } = useCollapseStore('briefing-sections');
+  
+  const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
   const allCollapsed = allSectionsCollapsed(SECTION_IDS);
 
   if (!weekData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-slate-950 animate-in fade-in duration-700">
-        <div className="text-[11px] font-black tracking-[0.3em] text-hc-teal-light uppercase mb-6 border-b border-hc-teal/30 pb-2">INTELLIGENCE OFFLINE</div>
-        <div className="w-16 h-px bg-slate-800 mb-8" />
-        <h2 className="text-2xl font-black text-white mb-4 tracking-tighter uppercase">No Live Telemetry</h2>
-        <p className="text-slate-400 text-[11px] font-bold mb-10 text-center max-w-xs uppercase tracking-widest leading-relaxed">
-          Sync regional operational data to generate service briefing.
-        </p>
-        <button onClick={() => setPage('upload')} className="px-10 py-3 border border-hc-teal/40 bg-hc-teal/5 text-hc-teal-light hover:bg-hc-teal/10 text-[10px] font-black uppercase tracking-[0.25em] transition-all">
-          Initialize Sync
-        </button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-hc-bg animate-in fade-in duration-1000">
+        <div className="w-32 h-32 rounded-3xl hc-clay-raised flex items-center justify-center mb-10">
+          <Activity className="w-12 h-12 text-hc-teal opacity-20" />
+        </div>
+        <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-6 text-center">Protocol Offline</h2>
+        <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm opacity-60">Initialize the region telemetry to generate service briefing.</p>
+        <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Initialize Field Sync</button>
       </div>
     );
   }
@@ -58,125 +57,120 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
   const openActions = actions.filter(a => a.status !== 'completed');
 
   return (
-    <div className="min-h-screen flex flex-col bg-transparent animate-in fade-in duration-700 font-mono">
-
-      {/* ── SITREP HEADER ── */}
-      <div className="shrink-0 border-b border-hc-border bg-hc-navy/40 px-8 py-6 flex items-center justify-between gap-8 backdrop-blur-xl">
-
+    <div className="min-h-screen p-10 flex flex-col gap-12 bg-hc-bg overflow-y-auto scrollbar-thin">
+      
+      {/* ── MISSION HEADER ── */}
+      <div className="flex flex-col xl:flex-row items-center justify-between gap-10 pb-12 border-b border-hc-border">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Operational Briefing</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-hc-teal-light tracking-[0.2em] uppercase">Intelligence SITREP</span>
-            <div className="h-3 w-px bg-slate-800" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{weekData.dateFrom} — {weekData.dateTo}</span>
-          </div>
+          <div className="text-[10px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Hazel Care // Service Intelligence</div>
+          <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Mission Briefing</h1>
         </div>
-        <button
-          onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
-          className="px-5 py-2.5 border border-hc-border bg-hc-card text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text hover:bg-hc-card-hover transition-all"
-        >
-          {allCollapsed ? 'EXPAND_ALL' : 'COLLAPSE_ALL'}
-        </button>
-
+        
+        <div className="flex items-center gap-6">
+           <div className="flex flex-col items-end">
+              <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Sitrep Interval</span>
+              <span className="text-[11px] font-black text-hc-muted uppercase tabular-nums">{weekData.dateFrom} — {weekData.dateTo}</span>
+           </div>
+           <button
+             onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
+             className="btn-clay h-[54px] !rounded-2xl px-8 text-[9px]"
+           >
+             {allCollapsed ? 'EXPAND_MATRIX' : 'COLLAPSE_MATRIX'}
+           </button>
+        </div>
       </div>
 
-      <div className="flex-1 p-8 bg-transparent">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto w-full space-y-12 pb-24">
 
+        {/* ── PRIORITY INTERVENTIONS ── */}
+        <Section id="interventions" title="Intervention Backlog" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={openActions.length}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {openActions.slice(0, 6).map(a => (
+              <div key={a.id} onClick={() => setPage('actions')} className="hc-clay-raised p-8 flex flex-col gap-6 group cursor-pointer transition-all hover:translate-y-[-4px]">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[8px] font-black px-3 py-1 rounded border uppercase tracking-widest ${a.priority === 'critical' ? 'bg-hc-red/10 border-hc-red text-hc-red' : 'bg-hc-teal/10 border-hc-teal text-hc-teal'}`}>{a.priority}</span>
+                  <Activity size={14} className="text-hc-muted opacity-20" />
+                </div>
+                <div className="flex flex-col gap-2">
+                   <div className="text-xs font-black text-hc-text uppercase tracking-wider group-hover:text-hc-teal transition-colors">{a.title}</div>
+                   <div className="text-[9px] font-black text-hc-muted tracking-widest opacity-40 flex justify-between uppercase">
+                      <span>Target: {a.owner}</span>
+                      <span className="tabular-nums">{a.dueDate}</span>
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
 
-          {/* Interventions */}
-          <Section id="interventions" title="Intervention Backlog" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={openActions.length}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {openActions.slice(0, 6).map(a => (
-                <button key={a.id} onClick={() => setPage('actions')} className="border border-hc-border bg-hc-card p-4 text-left transition-all hover:bg-hc-card-hover group">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[8px] font-black px-2 py-0.5 uppercase tracking-widest ${a.priority === 'critical' || a.priority === 'high' ? 'bg-red-950/40 text-red-500 border border-red-900/60' : 'bg-blue-950/40 text-blue-500 border border-blue-900/60'}`}>{a.priority}</span>
-                    <span className="text-[9px] font-bold text-hc-muted tabular-nums">{a.dueDate}</span>
-                  </div>
-                  <div className="text-xs font-bold text-hc-text mb-2 uppercase line-clamp-1">{a.title}</div>
-                  <div className="text-[10px] font-medium text-hc-muted line-clamp-2 leading-relaxed uppercase">TARGET: {a.owner}</div>
-                </button>
-              ))}
-
-            </div>
-            {openActions.length > 6 && (
-              <button onClick={() => setPage('actions')} className="mt-3 text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:underline">
-                + {openActions.length - 6} more →
-              </button>
-            )}
-          </Section>
-
-          {/* Client Matrix */}
-          <Section id="clients" title="Client Stability Matrix" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
-            <div className="overflow-hidden border border-hc-border bg-hc-card/40">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-hc-navy/40 border-b border-hc-border text-[9px] font-black text-hc-muted uppercase tracking-widest">
-                    <th className="px-6 py-3">IDENTIFIER</th>
-                    <th className="px-6 py-3">STATION</th>
-                    <th className="px-6 py-3 text-center">ALERTS</th>
-                    <th className="px-6 py-3">LATEST_TELEMETRY</th>
+        {/* ── CLIENT STABILITY MATRIX ── */}
+        <Section id="clients" title="Client Stability Matrix" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
+          <div className="hc-clay-inset p-2 overflow-hidden">
+            <table className="w-full text-left border-separate border-spacing-2">
+              <thead>
+                <tr className="text-[9px] font-black text-hc-muted uppercase tracking-[0.4em]">
+                  <th className="px-6 py-4">Identifier</th>
+                  <th className="px-6 py-4">Station</th>
+                  <th className="px-6 py-4 text-center">Alerts</th>
+                  <th className="px-6 py-4">Latest Telemetry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {priorityClients.map(c => (
+                  <tr key={c.name} onClick={() => setPage('client-diary')} className="group cursor-pointer">
+                    <td className="px-6 py-5 hc-clay-raised !rounded-r-none text-xs font-black text-hc-text uppercase tracking-widest">{c.name}</td>
+                    <td className="px-6 py-5 hc-clay-raised !rounded-none text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60 text-center">{c.house}</td>
+                    <td className="px-6 py-5 hc-clay-raised !rounded-none">
+                      <div className="flex justify-center gap-3">
+                        {c.red > 0 && <span className="bg-hc-red/10 text-hc-red px-2 py-0.5 text-[10px] font-black border border-hc-red/30 rounded">{c.red}</span>}
+                        {c.amber > 0 && <span className="bg-hc-amber/10 text-hc-amber px-2 py-0.5 text-[10px] font-black border border-hc-amber/30 rounded">{c.amber}</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 hc-clay-raised !rounded-l-none text-[10px] font-black text-hc-muted italic truncate max-w-sm">"{c.latest}..."</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-hc-border">
-                  {priorityClients.map(c => (
-                    <tr
-                      key={c.name}
-                      onClick={() => setPage('client-diary')}
-                      className="hover:bg-white/[0.04] cursor-pointer transition-colors border-b border-hc-border/40 last:border-0 text-[11px]"
-                    >
-                      <td className="px-6 py-4 font-black text-hc-text uppercase tracking-tight">{c.name}</td>
-                      <td className="px-6 py-4 font-bold text-hc-muted uppercase tracking-widest text-[9px]">{c.house}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center gap-2 tabular-nums">
-                          {c.red > 0 && <span className="bg-red-950/40 text-red-500 px-2 py-0.5 text-[10px] font-black border border-red-900/60 transition-all">{c.red}</span>}
-                          {c.amber > 0 && <span className="bg-amber-950/40 text-amber-500 px-2 py-0.5 text-[10px] font-black border border-amber-900/60 transition-all">{c.amber}</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-hc-muted italic max-w-xs truncate leading-relaxed text-[10px]">"{c.latest}"</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
 
-
-          {/* Trends */}
-          <Section id="trends" title="Operational Trends" collapsed={isSectionCollapsed('trends')} onToggle={() => toggleSection('trends')} count={trends.length}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {trends.map(t => (
-                <div key={t.id} className="border border-hc-border bg-hc-card p-5 flex items-start gap-5">
-                  <div className="shrink-0 w-12 h-12 border border-hc-border bg-hc-navy/40 flex items-center justify-center text-xl">
-                    {t.severity === 'critical' ? '⚠️' : '📈'}
-                  </div>
-                  <div>
-                    <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${t.severity === 'critical' ? 'text-red-500' : 'text-hc-teal-light'}`}>{t.title}</div>
-                    <p className="text-[11px] font-medium text-hc-muted leading-relaxed uppercase">{t.detail}</p>
-                  </div>
+        {/* ── OPERATIONAL TRENDS ── */}
+        <Section id="trends" title="Operational Trends" collapsed={isSectionCollapsed('trends')} onToggle={() => toggleSection('trends')} count={trends.length}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {trends.map(t => (
+              <div key={t.id} className="hc-clay-raised p-8 flex items-start gap-8">
+                <div className="w-14 h-14 rounded-2xl hc-clay-inset flex items-center justify-center text-hc-teal">
+                  {t.severity === 'critical' ? <AlertTriangle size={20} className="text-hc-red" /> : <TrendingUp size={20} />}
                 </div>
-              ))}
-            </div>
-          </Section>
-
-
-          {/* Station Matrix */}
-          <Section id="houses" title="Station Performance Index" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Object.values(weekData.houses).map(h => (
-                <div key={h.name} className="border border-slate-800 bg-slate-900/30 p-5 flex flex-col">
-                  <div className="text-sm font-black text-white uppercase tracking-tight mb-4 border-b border-slate-800 pb-3">{h.name}</div>
-                  <div className="space-y-3 mt-auto">
-                    <Metric label="CAPTURED" val={h.entries.length} />
-                    <Metric label="CRITICAL" val={h.flags.red} red />
-                    <Metric label="MONITOR" val={h.flags.amber} amber />
-                  </div>
+                <div>
+                  <div className={`text-[10px] font-black uppercase tracking-[0.3em] mb-3 ${t.severity === 'critical' ? 'text-hc-red' : 'text-hc-teal'}`}>{t.title}</div>
+                  <p className="text-[11px] font-black text-hc-muted leading-relaxed uppercase opacity-60 italic">"{t.detail}"</p>
                 </div>
-              ))}
-            </div>
-          </Section>
+              </div>
+            ))}
+          </div>
+        </Section>
 
-        </div>
+        {/* ── STATION PERFORMANCE ── */}
+        <Section id="houses" title="Station Performance Index" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Object.values(weekData.houses).map(h => (
+              <div key={h.name} className="hc-clay-raised p-8 flex flex-col gap-8 group">
+                <div className="flex items-center justify-between border-b border-hc-border pb-4">
+                   <h3 className="text-sm font-black text-hc-text uppercase tracking-widest">{h.name.toUpperCase()}</h3>
+                   <div className={`w-2 h-2 rounded-full ${h.flags.red > 0 ? 'bg-hc-red animate-pulse' : 'bg-hc-teal'}`} />
+                </div>
+                <div className="space-y-4">
+                  <Metric label="Captured" val={h.entries.length} />
+                  <Metric label="Critical" val={h.flags.red} red />
+                  <Metric label="Monitor" val={h.flags.amber} amber />
+                </div>
+                <button onClick={() => setPage('dashboard')} className="btn-clay !py-2.5 !rounded-xl text-[8px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Audit Site</button>
+              </div>
+            ))}
+          </div>
+        </Section>
+
       </div>
     </div>
   );
@@ -184,27 +178,29 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
 
 function Section({ title, count, children, collapsed, onToggle }: { id: string; title: string; count?: number; children: React.ReactNode; collapsed: boolean; onToggle: () => void }) {
   return (
-    <div className="border border-slate-800 bg-slate-900/10">
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-800/30 transition-all border-b border-slate-800/60">
-        <div className="flex items-center gap-4">
-          <div className="w-1.5 h-4 bg-hc-teal" />
-          <h2 className="text-xs font-black text-white uppercase tracking-[0.3em] font-mono">{title}</h2>
-        </div>
+    <div className="flex flex-col gap-6">
+      <button onClick={onToggle} className="flex items-center justify-between px-2 group">
         <div className="flex items-center gap-6">
-          {count != null && <span className="text-[10px] font-mono text-slate-600 bg-slate-950 px-2 py-0.5 border border-slate-800">{String(count).padStart(3, '0')}</span>}
-          <svg className={`w-3.5 h-3.5 text-slate-600 transition-transform ${collapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          <div className="w-1 h-6 bg-hc-teal rounded-full" />
+          <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
+        </div>
+        <div className="flex items-center gap-8">
+          {count != null && <div className="text-[10px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-clay-dark/20 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
+          <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
+             <ChevronRight size={16} />
+          </div>
         </div>
       </button>
-      {!collapsed && <div className="p-6 bg-slate-950/40 animate-in fade-in slide-in-from-top-1 duration-300">{children}</div>}
+      {!collapsed && <div className="animate-in fade-in slide-in-from-top-4 duration-500">{children}</div>}
     </div>
   );
 }
 
 function Metric({ label, val, red, amber }: { label: string; val: number; red?: boolean; amber?: boolean }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
-      <span className={`text-[10px] font-black tabular-nums ${red ? 'text-red-500' : amber ? 'text-amber-500' : 'text-slate-400'}`}>{val}</span>
+    <div className="flex items-center justify-between group/met">
+      <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 group-hover/met:opacity-100 transition-opacity">{label}</span>
+      <span className={`text-[12px] font-black tabular-nums transition-all ${red ? 'text-hc-red scale-110' : amber ? 'text-hc-amber' : 'text-hc-text'}`}>{val}</span>
     </div>
   );
 }

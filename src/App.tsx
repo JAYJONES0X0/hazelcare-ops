@@ -697,7 +697,7 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
 
         <div className="relative z-10 w-full min-h-screen">
           {page === 'briefing' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><BriefingPage weekData={weekData} actions={actions} setPage={setPage} /></div>}
-          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} staff={staff} shifts={shifts} onUpdateShifts={handleUpdateShifts} onQuickAction={triggerQuickAction} /></div>}
+          {page === 'dashboard' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} /></div>}
           {page === 'communications' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><CommunicationsPage /></div>}
           {page === 'upload' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><UploadPage onDataParsed={handleDataParsed} setPage={setPage} /></div>}
           {page === 'templates' && <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700"><TemplatesPage weekData={weekData} /></div>}

@@ -57,7 +57,7 @@ export function careEntriesToEvidenceCsv(entries: CareEntry[]): string {
 
 export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
   const lines: string[] = [
-    '# Hazel Care — coordinator evidence pack',
+    '# HAZEL CARE — COORDINATOR EVIDENCE PACK',
     `Generated (UTC): ${meta.generatedAt}`,
     `Source: ${meta.source === 'upload-hub' ? 'Upload Hub' : 'Staff Intelligence'}`,
     `Window: ${meta.windowLabel}`,
@@ -71,7 +71,7 @@ export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
     lines.push(`Entry type filter (contains): ${meta.typeFilter.trim()}`);
   }
   lines.push('');
-  lines.push('## Next exports to consider');
+  lines.push('## NEXT EXPORTS TO CONSIDER');
   if (meta.exportHints?.length) {
     for (const h of meta.exportHints) {
       lines.push(`- **${h.label}**: ${h.detail}`);
@@ -80,9 +80,12 @@ export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
     lines.push('- (No automated hints for this snapshot.)');
   }
   lines.push('');
-  lines.push('## Use');
+  lines.push('## USE');
   lines.push('- CSV: open in Excel; join on id/date/house for triangulation.');
   lines.push('- HTML: print to PDF for meetings / handover packs.');
+  lines.push('');
+  lines.push('---');
+  lines.push('HAZEL CARE LTD — AUTHORISED PERSONNEL ONLY');
   return lines.join('\n');
 }
 
@@ -92,44 +95,59 @@ function ex(s: string | undefined | null): string {
 
 /** Printable, chronology-style table; entry text truncated in table (full text in CSV). */
 export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: CoordinatorPackMeta): string {
-  const title = meta.source === 'upload-hub' ? 'Coordinator evidence extract' : 'Staff monitoring evidence extract';
+  const title = meta.source === 'upload-hub' ? 'Field Injest Evidence' : 'Force Protection Diagnostic';
   const typeNote = meta.typeFilter?.trim()
-    ? `<p style="margin:8px 0 0;font-size:11px;color:#64748b;">Type filter (contains): <strong>${ex(meta.typeFilter.trim())}</strong></p>`
+    ? `<p style="margin:8px 0 0;font-size:11px;color:#8a8b82;">Type filter (contains): <strong>${ex(meta.typeFilter.trim())}</strong></p>`
     : '';
   let rows = '';
   for (const e of entries) {
     const ent = (e.entry || '').length > 600 ? `${(e.entry || '').slice(0, 600)}…` : e.entry || '';
+    const sevColor = e.severity === 'red' ? '#ef4444' : e.severity === 'amber' ? '#f59e0b' : '#0d2d2d';
     rows += `<tr>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;white-space:nowrap;">${ex(e.date)} ${ex(e.time)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;">${ex(e.house)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;">${ex(e.type)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;">${ex(e.carer)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;">${ex(e.client)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;">${ex(e.severity)}</td>
-      <td style="padding:8px;border:1px solid #e2e8f0;vertical-align:top;font-size:11px;line-height:1.45;">${ex(ent)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;white-space:nowrap;font-family:monospace;">${ex(e.date)} ${ex(e.time)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;font-weight:900;text-transform:uppercase;">${ex(e.house)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;text-transform:uppercase;color:#4c7c7c;">${ex(e.type)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;font-weight:700;">${ex(e.carer)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;font-weight:700;">${ex(e.client)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:10px;font-weight:900;color:${sevColor};text-transform:uppercase;">${ex(e.severity)}</td>
+      <td style="padding:12px 8px;border:1px solid #d1c9b8;vertical-align:top;font-size:11px;line-height:1.6;color:#1a1a1a;">${ex(ent)}</td>
     </tr>`;
   }
   return `<!DOCTYPE html>
 <html lang="en-GB"><head><meta charset="utf-8"/><title>${ex(title)}</title>
 <style>
-  body{font-family:Segoe UI,Tahoma,sans-serif;color:#1e293b;background:#f8fafc;margin:0;padding:24px;}
-  @media print{ body{padding:0;background:#fff;} }
-  table{border-collapse:collapse;width:100%;font-size:12px;background:#fff;}
-  th{background:#f1f5f9;text-align:left;padding:10px;border:1px solid #cbd5e1;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;}
+  @page { margin: 2cm; @bottom-center { content: element(footer); } }
+  body{font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;color:#0d2d2d;background:#fff;margin:0;padding:40px;line-height:1.5;}
+  @media print{ body{padding:0;} .no-print{display:none;} }
+  table{border-collapse:collapse;width:100%;font-size:12px;background:#fff;margin-bottom:60px;}
+  th{background:#f3efe0;text-align:left;padding:12px 8px;border:1px solid #d1c9b8;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;font-weight:900;color:#1c4e4e;}
+  .footer { position: fixed; bottom: 0; left: 0; right: 0; height: 50px; background: #fff; border-top: 1px solid #d1c9b8; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; letter-spacing: 0.3em; color: #0d2d2d; text-transform: uppercase; }
 </style></head><body>
-  <div style="border-bottom:4px solid #0d9488;padding-bottom:16px;margin-bottom:20px;">
-    <h1 style="margin:0;font-size:20px;color:#0f766e;text-transform:uppercase;letter-spacing:-0.02em;">${ex(title)}</h1>
-    <p style="margin:8px 0 0;font-size:12px;color:#64748b;">Window: <strong>${ex(meta.windowLabel)}</strong> · House: <strong>${ex(meta.houseScope)}</strong> · Rows: <strong>${meta.entryCount}</strong></p>
-    <p style="margin:6px 0 0;font-size:10px;color:#94a3b8;">Generated: ${ex(meta.generatedAt)} · Source: ${ex(meta.source)}</p>
-    ${typeNote}
+  <div style="border-bottom:6px solid #1c4e4e;padding-bottom:24px;margin-bottom:30px;display:flex;justify-content:between;align-items:end;">
+    <div style="flex:1;">
+      <h1 style="margin:0;font-size:24px;color:#0d2d2d;text-transform:uppercase;letter-spacing:0.1em;font-weight:900;">${ex(title)}</h1>
+      <p style="margin:8px 0 0;font-size:11px;font-weight:700;color:#8a8b82;text-transform:uppercase;letter-spacing:0.2em;">Hazel Care Operations Portal // Evidence Pack</p>
+    </div>
+    <div style="text-align:right;">
+      <p style="margin:0;font-size:10px;font-weight:900;color:#1c4e4e;">WINDOW: ${ex(meta.windowLabel)}</p>
+      <p style="margin:4px 0 0;font-size:9px;color:#8a8b82;text-transform:uppercase;">Rows: ${meta.entryCount} // Gen: ${ex(meta.generatedAt)}</p>
+    </div>
   </div>
+  
+  <div style="margin-bottom:30px;background:#f3efe0;padding:15px;border:1px solid #d1c9b8;font-size:10px;font-weight:700;color:#1c4e4e;text-transform:uppercase;letter-spacing:0.1em;">
+    Scope: ${ex(meta.houseScope)} ${typeNote ? ' // ' + meta.typeFilter : ''}
+  </div>
+
   <table>
     <thead><tr>
-      <th>Date/time</th><th>House</th><th>Type</th><th>Carer</th><th>Client</th><th>Severity</th><th>Entry (preview)</th>
+      <th>Timestamp</th><th>Station</th><th>Type</th><th>Personnel</th><th>Asset</th><th>Severity</th><th>Intelligence Preview</th>
     </tr></thead>
-    <tbody>${rows || `<tr><td colspan="7" style="padding:16px;color:#94a3b8;">No rows in this filter.</td></tr>`}</tbody>
+    <tbody>${rows || `<tr><td colspan="7" style="padding:32px;text-align:center;color:#8a8b82;font-weight:900;text-transform:uppercase;letter-spacing:0.2em;">No validated intelligence in this selection filter.</td></tr>`}</tbody>
   </table>
-  <p style="margin-top:20px;font-size:10px;color:#94a3b8;">Full text for each row is in the companion CSV. This HTML is for review and print-to-PDF.</p>
+
+  <div class="footer">
+    HAZEL CARE LTD — Precision Care Operations Portals
+  </div>
 </body></html>`;
 }
 
