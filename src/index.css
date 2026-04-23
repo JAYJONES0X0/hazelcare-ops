@@ -22,7 +22,8 @@
 
   /* ── REFINED DARK (DEFAULT) ── */
   --hc-bg: #070a11;
-  --hc-navy: #0e1117;
+  --hc-navy: rgba(7, 10, 17, 0.8);
+
   --hc-navy-light: #141821;
   --hc-dark: #0d111b; /* Softened from #080b12 for better depth */
   --hc-darker: #050810;
