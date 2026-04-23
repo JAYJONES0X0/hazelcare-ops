@@ -22,6 +22,18 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   const ext = (fileName.split('.').pop() || '').toLowerCase();
   const lowerName = fileName.toLowerCase();
 
+  // 1. HIGH PRIORITY: Explicit Filename Hints (If content is messy/short)
+  if (lowerName.includes('admission') || lowerName.includes('admission-pack')) {
+    return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.85 };
+  }
+  if (lowerName.includes('diary') || lowerName.includes('notes')) {
+    return { id: 'generic-diary-hint', type: 'diary', confidence: 0.8 };
+  }
+  if (lowerName.includes('roster')) {
+    return { id: 'care-planner-roster', type: 'roster', confidence: 0.85 };
+  }
+
+  // 2. Content-Based Policy/Governance
   if (
     lower.includes('controlled drugs policy') ||
     lower.includes('daily quality meeting') ||
@@ -32,7 +44,8 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
     return { id: 'ops-governance', type: 'unknown', confidence: 0.9 };
   }
 
-  if (ext === 'csv' && (lower.includes('diary entry') || lower.includes('incident type') || lower.includes('display from'))) {
+  // 3. Legacy & Generic CSV/PDF Diaries
+  if (ext === 'csv' && (lower.includes('diary entry') || lower.includes('incident type') || lower.includes('display from') || lower.includes('carer'))) {
     return { id: 'legacy-csv-diary', type: 'diary', confidence: 0.95 };
   }
   if (lower.includes('carer,day,time,client') || (ext === 'csv' && lowerName.includes('roster') && lower.includes('carer'))) {
@@ -42,32 +55,38 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
     lower.includes('weekly activity plan') ||
     lower.includes('daily 1:1 support') ||
     lowerName.includes('activity planner') ||
-    lowerName.includes('notes')
+    lower.includes('support notes')
   ) {
     return { id: 'daily-support-notes', type: 'diary', confidence: 0.72 };
   }
-  if (ext === 'pdf' && (lower.includes('client diary') || lower.includes('diary for') || lower.includes('display from'))) {
+  if (ext === 'pdf' && (lower.includes('client diary') || lower.includes('diary for') || lower.includes('display from') || lower.includes('occurred'))) {
     return { id: 'legacy-pdf-diary', type: 'diary', confidence: 0.82 };
   }
-  if (ext === 'pdf' && (/emergency admission pack/i.test(rawText) || /care plan\s*[–-]\s*.+report run on/i.test(rawText))) {
+  if (ext === 'pdf' && (lower.includes('emergency admission') || lower.includes('care plan') || lower.includes('report run on'))) {
     return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.9 };
   }
+  
+  // 4. Incident/Crisis Docs
   if (
     lower.includes('incident report') ||
     lower.includes('crisis & contingency plan') ||
     lower.includes('crisis and contingency plan') ||
-    lowerName.includes('incident report') ||
-    lowerName.includes('crisis and contigency plan')
+    lowerName.includes('incident')
   ) {
     return { id: 'incident-crisis-doc', type: 'support-plan', confidence: 0.88 };
   }
+
+  // 5. Support Plans
   if (ext === 'docx' || lower.includes('my support plan') || (lower.includes('what i can do') && lower.includes('how to support'))) {
     return { id: 'support-plan', type: 'support-plan', confidence: ext === 'docx' ? 0.93 : 0.72 };
   }
+
+  // 6. Generic Fallbacks
   if (ext === 'csv') return { id: 'generic-csv-diary', type: 'diary', confidence: 0.65 };
   if (/\d{2}\/\d{2}\/\d{4}/.test(rawText) && (rawText.includes(',') || rawText.includes('|') || rawText.includes('\t'))) {
     return { id: 'generic-delimited-diary', type: 'diary', confidence: 0.58 };
   }
+  
   return { id: 'unknown', type: 'unknown', confidence: 0.2 };
 }
 

@@ -193,16 +193,21 @@ function parseCSVRaw(text: string): string[][] {
   return rows;
 }
 
-const DIARY_KEYWORDS = ['diary', 'display', 'entry', 'client', 'carer', 'incident', 'staff', 'notes', 'date'];
+const DIARY_KEYWORDS = ['diary', 'display', 'entry', 'client', 'carer', 'incident', 'staff', 'notes', 'date', 'occurred', 'occurance', 'subject', 'report'];
 
 function looksLikeCSV(text: string): boolean {
-  const firstLine = text.trim().split('\n')[0] || '';
-  const lower = firstLine.toLowerCase();
-  return firstLine.includes(',') && DIARY_KEYWORDS.some(k => lower.includes(k));
+  const lines = text.trim().split('\n');
+  const firstLine = lines[0] || '';
+  const secondLine = lines[1] || '';
+  const lower = (firstLine + secondLine).toLowerCase();
+  
+  // If it has commas and any clinical keyword in first two lines
+  return (firstLine.includes(',') || secondLine.includes(',')) && DIARY_KEYWORDS.some(k => lower.includes(k));
 }
 
 function looksLikeTSV(text: string): boolean {
-  const firstLine = text.trim().split('\n')[0] || '';
+  const lines = text.trim().split('\n');
+  const firstLine = lines[0] || '';
   const lower = firstLine.toLowerCase();
   return firstLine.includes('\t') && DIARY_KEYWORDS.some(k => lower.includes(k));
 }
@@ -216,31 +221,50 @@ function parseTSVRaw(text: string): string[][] {
 export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] {
   const clean = text.replace(/^\uFEFF/, '');
   const parsedRows = rows ?? parseCSVRaw(clean);
-  if (parsedRows.length < 2) return [];
-  const rows2 = parsedRows;
+  if (parsedRows.length < 1) return [];
+  
+  // If first row doesn't look like headers, but data, we need a different strategy
+  let headers = parsedRows[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+  let startIdx = 1;
 
-  const headers = rows2[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+  // Heuristic: If first row has dates/long text, it might not be a header row
+  if (headers.some(h => /\d{2}\/\d{2}\/\d{4}/.test(h) || h.length > 50)) {
+     // No headers, or messy ones. Synthesise or guess.
+     startIdx = 0;
+     headers = []; 
+  }
 
-  const iDate  = findCol(headers, 'entry_occurred', 'display_from', 'occurred', 'date', 'entry_date', 'record_date');
-  const iType  = findCol(headers, 'incident_type', 'entry_type', 'type', 'category', 'record_type', 'diary_type');
-  const iCarers = findCol(headers, 'carers_involved', 'carer', 'carers', 'staff_involved', 'staff', 'worker');
-  const iClient = findCol(headers, 'clients_involved', 'client', 'clients', 'service_user', 'resident', 'person');
-  const iEntry  = findCol(headers, 'diary_entry', 'entry', 'notes', 'details', 'description', 'note', 'text', 'content', 'body');
-  const iHouse  = findCol(headers, 'house', 'location', 'property', 'address', 'home');
+  const iDate  = findCol(headers, 'entry_occurred', 'display_from', 'occurred', 'date', 'entry_date', 'record_date', 'occurance');
+  const iType  = findCol(headers, 'incident_type', 'entry_type', 'type', 'category', 'record_type', 'diary_type', 'event');
+  const iCarers = findCol(headers, 'carers_involved', 'carer', 'carers', 'staff_involved', 'staff', 'worker', 'author');
+  const iClient = findCol(headers, 'clients_involved', 'client', 'clients', 'service_user', 'resident', 'person', 'subject');
+  const iEntry  = findCol(headers, 'diary_entry', 'entry', 'notes', 'details', 'description', 'note', 'text', 'content', 'body', 'report');
+  const iHouse  = findCol(headers, 'house', 'location', 'property', 'address', 'home', 'site');
 
-  if (iEntry < 0) return [];
+  // Fallback: If no headers matched, guess by column content
+  let gDate = iDate, gType = iType, gCarer = iCarers, gClient = iClient, gEntry = iEntry, gHouse = iHouse;
+  
+  if (gEntry < 0 && parsedRows.length > startIdx) {
+    const sample = parsedRows[startIdx];
+    for (let c = 0; c < sample.length; c++) {
+      const val = sample[c].trim();
+      if (val.length > 40 && gEntry < 0) gEntry = c;
+      if (/\d{2}\/\d{2}\/\d{4}/.test(val) && gDate < 0) gDate = c;
+      if (isKnownHouse(val) && gHouse < 0) gHouse = c;
+    }
+  }
 
   const entries: CareEntry[] = [];
-  for (let i = 1; i < rows2.length; i++) {
-    const row = rows2[i];
+  for (let i = startIdx; i < parsedRows.length; i++) {
+    const row = parsedRows[i];
     if (row.every(cell => !cell.trim())) continue;
 
-    const dateRaw   = safeCell(row, iDate);
-    const typeRaw   = safeCell(row, iType);
-    const carersRaw = safeCell(row, iCarers);
-    const clientRaw = safeCell(row, iClient);
-    const entryRaw  = safeCell(row, iEntry);
-    const houseRaw  = safeCell(row, iHouse);
+    const dateRaw   = safeCell(row, gDate);
+    const typeRaw   = safeCell(row, gType);
+    const carersRaw = safeCell(row, gCarer);
+    const clientRaw = safeCell(row, gClient);
+    const entryRaw  = safeCell(row, gEntry);
+    const houseRaw  = safeCell(row, gHouse);
 
     if (!entryRaw && !typeRaw) continue;
 
@@ -260,7 +284,6 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
     }
 
     const carerClean = cleanCarerName(carersRaw);
-    // Skip header-like rows that were accidentally included
     if (carerClean.toLowerCase() === 'carer' || carerClean.toLowerCase() === 'staff' || carerClean.toLowerCase() === 'worker') continue;
     const carer = carerClean || 'Unassigned';
     const { severity, flags } = detectFlags(entryRaw + ' ' + typeRaw);
