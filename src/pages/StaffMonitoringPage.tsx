@@ -311,7 +311,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
 
   if (!weekData) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-hc-navy flex flex-col items-center justify-center p-8">
+      <div className="min-h-[calc(100vh-4rem)] bg-transparent flex flex-col items-center justify-center p-8">
+
         <Activity className="w-16 h-16 text-hc-muted opacity-20 mb-8" />
         <h2 className="text-2xl font-black text-hc-text uppercase tracking-[0.4em] mb-3 text-center">Personnel Intel Offline</h2>
         <p className="text-hc-muted text-xs uppercase tracking-[0.2em] mb-10 text-center max-w-md leading-relaxed opacity-60">Injest high-integrity field data to activate diagnostic command and stability pipelines.</p>
@@ -321,7 +322,8 @@ export function StaffMonitoringPage({ staff: _staff, weekData, setPage }: Omit<P
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-hc-navy flex flex-col">
+    <div className="min-h-[calc(100vh-4rem)] bg-transparent flex flex-col">
+
       <div className="max-w-[1920px] mx-auto w-full p-6 lg:p-10 flex flex-col overflow-visible">
         
         {/* SITREP HEADER */}

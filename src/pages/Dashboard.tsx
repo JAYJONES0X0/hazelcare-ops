@@ -342,7 +342,8 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-hc-navy overflow-hidden flex-1 flex flex-col">
+    <div className="h-[calc(100vh-4rem)] bg-transparent overflow-hidden flex-1 flex flex-col">
+
       <div className="p-4 lg:px-6 xl:px-8 flex-1 overflow-y-auto scrollbar-thin">
         {/* Header (Command Center Style) */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6 pb-4 border-b border-hc-border">
