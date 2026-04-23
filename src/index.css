@@ -28,8 +28,9 @@
   --hc-darker: #050810;
   --hc-card: #0d121c;
   --hc-card-hover: #121826;
-  --hc-border: #1e293b; /* Increased contrast from #1a2235 */
-  --hc-border-light: #334155;
+  --hc-border: #334155; /* Higher contrast slate */
+  --hc-border-light: #475569;
+
   --hc-text: #f8fafc; /* Pure white smoke */
   --hc-muted: #94a3b8; /* Increased contrast from #64748b */
   --hc-glass-bg: rgba(13, 17, 23, 0.75);
@@ -352,11 +353,6 @@ html { scroll-behavior: smooth; }
   border-color: rgba(30,48,72,0.6) !important;
 }
 
-/* Minimum readable size floor */
-[class*="text-[8px]"],
-[class*="text-[9px]"] {
-  font-size: 11px !important;
-}
-[class*="tracking-[0.3em]"] {
-  letter-spacing: 0.08em !important;
-}
+
+/* Minimum readable size floor — DELETED to restore high-density squashed UI */
+

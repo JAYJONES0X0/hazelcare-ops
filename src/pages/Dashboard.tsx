@@ -342,10 +342,11 @@ export function Dashboard({ weekData, setPage, actions, incidents, staff, shifts
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-hc-navy overflow-hidden flex flex-col">
-      <div className="p-6 lg:px-10 xl:px-12 flex-1 overflow-y-auto scrollbar-thin">
+    <div className="h-[calc(100vh-4rem)] bg-hc-navy overflow-hidden flex-1 flex flex-col">
+      <div className="p-4 lg:px-6 xl:px-8 flex-1 overflow-y-auto scrollbar-thin">
         {/* Header (Command Center Style) */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10 pb-6 border-b border-hc-border">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6 pb-4 border-b border-hc-border">
+
           <div>
             <div className="text-[10px] font-black tracking-[0.3em] text-hc-teal uppercase mb-1">{ORG_CONFIG.name} // Command Intel</div>
             <h1 className="text-[22px] font-black text-hc-text tracking-[0.2em] uppercase">SITREP Center</h1>
