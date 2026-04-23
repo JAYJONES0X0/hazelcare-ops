@@ -1,7 +1,8 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { ReactNode } from 'react';
 import type { Page } from '../App';
-import type { WeekSummary, Action, Incident } from '../lib/types';
-import { ORG_CONFIG } from '../lib/config';
+import type { Action, Incident, WeekSummary } from '../lib/types';
+import { ORG_CONFIG } from '../lib/client-store';
+import { LogOut, Sun, Moon, Info } from 'lucide-react';
 
 interface Props {
   page: Page;
@@ -9,8 +10,8 @@ interface Props {
   weekData: WeekSummary | null;
   actions: Action[];
   incidents: Incident[];
-  theme: 'dark' | 'light'; // kept for backwards compat — ignored internally
-  setTheme: (t: 'dark' | 'light') => void; // kept for backwards compat — ignored internally
+  theme: 'dark' | 'light';
+  setTheme: (t: 'dark' | 'light') => void;
   onSignOut: () => void;
 }
 
@@ -31,13 +32,11 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
       { id: 'incidents', label: 'Incident Governance', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg> },
       { id: 'risk', label: 'STABILITY VECTORS', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> },
       { id: 'staff', label: 'Personnel Ledger', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-      { id: 'handover' as Page, label: 'Operational Roster', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg> },
     ],
   },
   {
     items: [
       { id: 'notes' as Page, label: 'Note Intelligence', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> },
-      { id: 'handover' as Page, label: 'Shift Transition', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg> },
     ],
   },
   {
@@ -52,247 +51,86 @@ const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] =
   },
 ];
 
-const sidebarBg = {
-  background: 'var(--hc-navy)',
-  borderRight: '1px solid var(--hc-border)',
-};
-
 export function Sidebar({ page, setPage, weekData, actions, incidents, theme, setTheme, onSignOut }: Props) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem('hc-custom-logo-v1'));
-
-  useEffect(() => {
-    const handler = () => setCustomLogo(localStorage.getItem('hc-custom-logo-v1'));
-    window.addEventListener('hc-logo-change', handler);
-    return () => window.removeEventListener('hc-logo-change', handler);
-  }, []);
-
-  const redFlags = weekData?.allFlags?.red?.length ?? 0;
-  const amberFlags = weekData?.allFlags?.amber?.length ?? 0;
-  const openActions = actions.filter(a => a.status !== 'completed').length;
-  const activeIncidents = incidents.filter(i => i.stage !== 'closed').length;
-
-  function getBadge(id: Page): ReactNode | null {
-    if (id === 'dashboard' && redFlags > 0) return <span className="ml-auto pill pill-red">{redFlags}</span>;
-    if (id === 'actions' && openActions > 0) return <span className="ml-auto pill pill-blue">{openActions}</span>;
-    if (id === 'incidents' && activeIncidents > 0) return <span className="ml-auto pill pill-amber">{activeIncidents}</span>;
-    return null;
-  }
-
-  function handleNav(id: Page) {
-    setPage(id);
-    setMobileOpen(false);
-  }
-
-  const navItemBase = 'w-full px-2.5 py-2 rounded-lg flex items-center gap-2.5 text-[11px] font-semibold tracking-wide transition-all cursor-pointer';
-  const navItemActive = `${navItemBase} sidebar-nav-active`;
-  const navItemInactive = `${navItemBase} text-hc-muted hover:text-hc-text hover:bg-hc-card-hover border border-transparent`;
-
-  const sidebarContent = (
-    <>
-      {/* Logo + Brand */}
-      <div className="px-3 pt-4 pb-3" style={{ borderBottom: '1px solid var(--hc-border)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="relative shrink-0">
-            <img
-              src={customLogo || ORG_CONFIG.logoIcon}
-              alt={ORG_CONFIG.name}
-              className="h-7 w-7 rounded-lg object-cover relative z-10"
-            />
-            <div className="absolute inset-0 rounded-lg bg-hc-teal/20 blur-md" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-black tracking-[0.2em] text-hc-text truncate uppercase">Operational Intel</div>
-            <div className="text-[9px] text-hc-muted font-black uppercase tracking-[0.2em] truncate">{ORG_CONFIG.fullName}</div>
-          </div>
-          {/* Live status dot */}
-          <div className="flex items-center gap-1 shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-flag-green dot-pulse" />
-          </div>
-          {/* Mobile close */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1 rounded-md text-hc-muted hover:text-hc-text transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-2 overflow-y-auto scrollbar-thin space-y-0">
-        {navSections.map((section, si) => (
-          <div key={si}>
-            {si > 0 && (
-              <div className="my-1.5 mx-2.5" style={{ height: '1px', background: 'var(--hc-border)' }} />
-            )}
-            <div className="space-y-px">
-              {section.items.map(item => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleNav(item.id)}
-                  className={page === item.id ? navItemActive : navItemInactive}
-                >
-                  <span className={`shrink-0 ${page === item.id ? 'text-hc-teal-light' : 'text-hc-muted'}`}>
-                    {item.icon}
-                  </span>
-                  <span className="truncate text-left flex-1">{item.label}</span>
-                  {getBadge(item.id)}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Stats panel */}
-      <div className="px-2.5 pb-2 hidden lg:block" style={{ borderTop: '1px solid var(--hc-border)' }}>
-        {weekData ? (
-          <div className="mt-2 rounded-xl p-3"
-            style={{
-              background: 'var(--hc-card)',
-              border: '1px solid var(--hc-border)',
-            }}>
-            <div className="text-[9px] font-black tracking-[0.15em] text-hc-teal uppercase mb-2">This Week</div>
-            <div className="grid grid-cols-3 gap-1 text-center mb-2">
-              <div>
-                <div className="text-lg font-black tabular-nums text-hc-text leading-none">{weekData.totalEntries}</div>
-                <div className="text-[9px] text-hc-muted font-semibold uppercase tracking-wide mt-0.5">Notes</div>
-              </div>
-              <div>
-                <div className="text-lg font-black text-flag-red tabular-nums leading-none">{redFlags}</div>
-                <div className="text-[9px] text-hc-muted font-semibold uppercase tracking-wide mt-0.5">Flags</div>
-              </div>
-              <div>
-                <div className="text-lg font-black text-flag-amber tabular-nums leading-none">{amberFlags}</div>
-                <div className="text-[9px] text-hc-muted font-semibold uppercase tracking-wide mt-0.5">Alerts</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-hc-muted pt-2 opacity-50"
-              style={{ borderTop: '1px solid var(--hc-border)' }}>
-              <span>{Object.keys(weekData.houses).length} Houses</span>
-              <span>{weekData.clients.length} Clients</span>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2 text-[10px] text-hc-muted text-center py-3 opacity-30">No data loaded</div>
-        )}
-      </div>
-
-      {/* Bottom bar — settings + signout */}
-      <div className="px-2.5 pb-3 hidden lg:block space-y-1.5" style={{ borderTop: '1px solid var(--hc-border)', paddingTop: '8px' }}>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleNav('settings' as Page)}
-            className="flex-1 flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all cursor-pointer group"
-            style={{
-              background: page === 'settings' ? 'rgba(20,184,166,0.08)' : 'var(--hc-card)',
-              border: page === 'settings' ? '1px solid rgba(20,184,166,0.25)' : '1px solid var(--hc-border)',
-            }}
-          >
-            <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)' }}>
-              {(() => {
-                const name = localStorage.getItem('hc-profile-v1');
-                try {
-                  const p = name ? JSON.parse(name) : null;
-                  return p?.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || ORG_CONFIG.shortName;
-                } catch { return ORG_CONFIG.shortName; }
-              })()}
-            </div>
-            <span className="text-[11px] font-semibold text-hc-muted group-hover:text-hc-text transition-colors truncate">Settings</span>
-          </button>
-          
-          {/* Theme Toggle */}
-          <button
-            type="button"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all group shrink-0"
-            style={{ background: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}
-          >
-            {theme === 'dark' ? (
-              <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-teal-light transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-              </svg>
-            ) : (
-              <svg className="w-3.5 h-3.5 text-hc-muted group-hover:text-hc-purple transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-              </svg>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={onSignOut}
-            title="Sign out"
-            className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-all group shrink-0"
-            style={{ background: 'var(--hc-card)', border: '1px solid var(--hc-border)' }}
-          >
-            <svg className="w-3.5 h-3.5 text-hc-muted/50 group-hover:text-flag-red transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Quick links */}
-        <div className="flex gap-1.5">
-          <a href={`https://www.${ORG_CONFIG.domain}`} target="_blank" rel="noopener noreferrer"
-            className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
-            style={{ background: 'var(--hc-card-hover)', border: '1px solid var(--hc-border)' }}>
-            {ORG_CONFIG.name}
-          </a>
-          <a href="https://www.care-planner.co.uk" target="_blank" rel="noopener noreferrer"
-            className="flex-1 text-[10px] font-medium text-center py-1.5 text-hc-muted/40 hover:text-hc-muted rounded-lg transition-colors cursor-pointer"
-            style={{ background: 'var(--hc-card-hover)', border: '1px solid var(--hc-border)' }}>
-            CarePlanner
-          </a>
-        </div>
-      </div>
-    </>
-  );
+  const openActionsCount = actions.filter(a => a.status !== 'completed').length;
+  const highIncidentsCount = incidents.filter(i => i.severity === 'red').length;
 
   return (
-    <>
-      {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 py-3 glass"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          className="text-hc-muted hover:text-white transition-colors cursor-pointer"
-          aria-label="Open menu"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <img src={ORG_CONFIG.logoIcon} alt={ORG_CONFIG.name} className="h-6 w-6 rounded-lg" />
-        <span className="text-sm font-black text-white tracking-tight">Care Portal</span>
-        {redFlags > 0 && <span className="pill pill-red ml-auto">{redFlags}</span>}
+    <div className="flex flex-col w-64 h-full border-r border-hc-border bg-hc-navy/40 backdrop-blur-xl animate-in fade-in slide-in-from-left-4 duration-700">
+      <div className="p-6 border-b border-hc-border text-center">
+        <div className="inline-block px-4 py-2 border-2 border-hc-teal/40 bg-hc-teal/5 text-hc-text rounded">
+          <div className="text-[12px] font-black tracking-widest uppercase">Operational In...</div>
+          <div className="text-[8px] font-bold text-hc-teal uppercase tracking-[0.4em] opacity-80 mt-1">{ORG_CONFIG.name}</div>
+        </div>
       </div>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col" style={sidebarBg}>
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8 scrollbar-none">
+        {navSections.map((section, idx) => (
+          <div key={idx} className="space-y-1">
+            {section.items.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setPage(item.id)}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all group ${
+                  page === item.id 
+                    ? 'bg-hc-teal text-white shadow-lg shadow-hc-teal/20' 
+                    : 'text-hc-muted hover:bg-hc-card-hover hover:text-hc-text border border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`${page === item.id ? 'text-white' : 'text-hc-teal group-hover:scale-110 transition-transform'}`}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </div>
+                {item.id === 'actions' && openActionsCount > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${page === 'actions' ? 'bg-white text-hc-teal' : 'bg-red-500 text-white animate-pulse'}`}>
+                    {openActionsCount}
+                  </span>
+                )}
+                {item.id === 'incidents' && highIncidentsCount > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black bg-red-500 text-white animate-pulse`}>
+                    {highIncidentsCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
 
-      {/* Desktop Sidebar */}
-      <aside
-        className="hidden lg:flex w-[13.5rem] flex-col shrink-0 h-screen sticky top-0"
-        style={{ ...sidebarBg, overflow: 'clip' }}
-      >
-        {sidebarContent}
-      </aside>
-    </>
+      <div className="p-4 mt-auto border-t border-hc-border bg-hc-navy/20">
+        <div className="bg-hc-card p-4 rounded-xl border border-hc-border shadow-inner">
+          <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Info className="w-3 h-3" /> This Week
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-xl font-black text-hc-text tabular-nums">{weekData ? Object.values(weekData.houses).reduce((acc, h) => acc + h.entries.length, 0) : '0'}</div>
+              <div className="text-[7px] font-bold text-hc-muted uppercase tracking-widest">Notes</div>
+            </div>
+            <div>
+              <div className="text-xl font-black text-hc-text tabular-nums">{weekData ? Object.values(weekData.houses).length : '0'}</div>
+              <div className="text-[7px] font-bold text-hc-muted uppercase tracking-widest">Houses</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-6 px-2">
+          <div className="flex gap-1">
+             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2.5 bg-hc-card border border-hc-border rounded-lg text-hc-muted hover:text-hc-text transition-all active:scale-90">
+               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+             </button>
+             <button onClick={onSignOut} className="p-2.5 bg-hc-card border border-hc-border rounded-lg text-hc-muted hover:text-red-500 transition-all active:scale-90">
+               <LogOut className="w-4 h-4" />
+             </button>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] font-black text-hc-text uppercase opacity-40">System_v4.2</div>
+            <div className="text-[7px] font-bold text-hc-teal uppercase tracking-widest">Encrypted</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
