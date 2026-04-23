@@ -37,13 +37,13 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 placeholder:text-hc-muted/20 shadow-inner transition-all focus:bg-hc-dark';
+  const cls = 'w-full hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 placeholder:text-hc-muted/40 shadow-inner transition-all';
   return (
-    <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500">
-      <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
+    <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500 text-hc-text">
+      <label className="text-[10px] mb-2.5 ml-1 block font-black opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
       {area
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin font-medium italic'} />
-        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls + ' font-bold'} />}
+        ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin italic'} />
+        : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls} />}
     </div>
   );
 }
@@ -56,29 +56,29 @@ function ListField({ label, items, onChange, placeholder = 'Enter details…', r
   const add = () => onChange([...items, '']);
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   return (
-    <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
-        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add Item</button>
+    <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500 text-hc-text">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <label className="text-[10px] font-black opacity-60 tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[10px] font-black text-hc-teal hover:brightness-90 uppercase tracking-widest transition-all">+ Add Protocol</button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {items.map((item, i) => (
-          <div key={i} className="flex gap-3 items-start group">
+          <div key={i} className="flex gap-4 items-start group">
             {rows > 1
               ? <textarea value={item} onChange={e => update(i, e.target.value)} rows={rows} placeholder={placeholder}
-                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-y placeholder:text-hc-muted/20 shadow-inner transition-all font-medium italic" />
+                  className="flex-1 hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 resize-y placeholder:text-hc-muted/40 shadow-inner transition-all italic" />
               : <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-                  className="flex-1 bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all font-bold" />}
-            <button onClick={() => remove(i)} className="mt-2 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-40 group-hover:opacity-100">
+                  className="flex-1 hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 shadow-inner transition-all" />}
+            <button onClick={() => remove(i)} className="mt-2 w-10 h-10 rounded-xl hc-clay-raised border border-hc-muted/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         ))}
         {items.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[1.5rem] py-6 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            className="w-full hc-clay-raised border-2 border-dashed border-hc-muted/10 rounded-[1.5rem] py-10 text-[11px] font-black text-hc-muted hover:text-hc-teal hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-4">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Add to List
+            Initialize Protocol Array
           </button>
         )}
       </div>
