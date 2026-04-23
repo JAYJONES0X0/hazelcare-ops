@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Page } from '../App';
-import type { Action, Incident, WeekSummary } from '../lib/types';
+import type { Action, WeekSummary } from '../lib/types';
+
 import { ORG_CONFIG } from '../lib/config';
 import { LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield, Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck, Database, Settings2 } from 'lucide-react';
 
