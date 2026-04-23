@@ -8,7 +8,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 mesh-bg gap-4">
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-hc-bg gap-4">
+
           <div className="text-flag-red font-black text-lg">App crashed</div>
           <pre className="text-hc-muted text-xs bg-black/40 p-4 rounded-xl max-w-xl overflow-auto">{this.state.error}</pre>
           <button onClick={() => this.setState({ error: null })} className="btn-gradient px-6 py-2 rounded-xl text-xs font-black">Retry</button>
@@ -677,14 +678,16 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
         setTheme={setTheme}
         onSignOut={onSignOut}
       />
-      <main className="flex-1 overflow-y-auto lg:h-full mesh-bg relative scrollbar-thin">
+      <main className="flex-1 overflow-y-auto lg:h-full bg-hc-bg relative scrollbar-thin">
+
         {/* Staff share buttons on Staff Tools pages */}
         {(page === 'notes' || page === 'handover' || page === 'actions' || page === 'incidents') && (
           <div className="px-6 pt-6 flex justify-end animate-in fade-in duration-1000 relative z-20">
             <button
               onClick={() => copyStaffLink(page)}
-              className="group flex items-center gap-3 px-6 py-3 glass-light border border-white/10 text-hc-muted hover:text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:bg-white/5 hover:border-hc-teal/30 shadow-xl"
+              className="group flex items-center gap-3 px-6 py-3 btn-clay text-hc-muted hover:text-hc-teal-light text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl"
             >
+
               <svg className={`w-4 h-4 transition-transform ${showShareModal === page ? 'scale-125 text-flag-green' : 'group-hover:rotate-12'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
               {showShareModal === page ? 'Link Copied' : 'Share Staff Link'}
             </button>
@@ -784,14 +787,16 @@ function QuickActionPortal({ opts, onClose, onSave }: { opts: { type: 'action' |
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
-      <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-hc-text/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+      <div className="bg-hc-card-solid p-0 w-full max-w-lg shadow-[20px_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+
         <div className={`absolute top-0 left-0 w-full h-1 ${opts.type === 'action' ? 'bg-hc-teal' : 'bg-flag-red'}`} />
         <div className="p-8 border-b border-white/5 flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-black text-white tracking-tighter">Escalate to {opts.type === 'action' ? 'Action' : 'Incident'}</h3>
+            <h3 className="text-2xl font-black text-hc-text tracking-tighter">Escalate to {opts.type === 'action' ? 'Action' : 'Incident'}</h3>
             <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">Convert identified risk into management pipeline</p>
           </div>
+
           <button onClick={onClose} className="text-hc-muted hover:text-white transition-colors">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -800,30 +805,31 @@ function QuickActionPortal({ opts, onClose, onSave }: { opts: { type: 'action' |
           <div className="space-y-4">
             <div>
               <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">Subject / Title</label>
-              <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50" />
+              <input value={title} onChange={e => setTitle(e.target.value)} className="w-full hc-clay-inset px-4 py-3 text-sm text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 transition-all" />
             </div>
             <div>
               <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">Evidence / Description</label>
-              <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 resize-none font-mono text-xs italic opacity-80" />
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} className="w-full hc-clay-inset px-4 py-3 text-sm text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 resize-none font-mono text-xs italic opacity-80 transition-all" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full btn-clay px-4 py-3 text-[10px] font-black uppercase text-hc-text outline-none">
                   {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest block mb-2">{opts.type === 'action' ? 'Priority' : 'Severity'}</label>
                 {opts.type === 'action' ? (
-                  <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                  <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full btn-clay px-4 py-3 text-[10px] font-black uppercase text-hc-text outline-none">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                     <option value="critical">Critical</option>
                   </select>
                 ) : (
-                  <select value={severity} onChange={e => setSeverity(e.target.value as any)} className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-white outline-none">
+                  <select value={severity} onChange={e => setSeverity(e.target.value as any)} className="w-full btn-clay px-4 py-3 text-[10px] font-black uppercase text-hc-text outline-none">
                     <option value="amber">Amber</option>
                     <option value="red">Red</option>
                   </select>
@@ -831,9 +837,10 @@ function QuickActionPortal({ opts, onClose, onSave }: { opts: { type: 'action' |
               </div>
             </div>
           </div>
-          <button onClick={handleSave} className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all ${opts.type === 'action' ? 'btn-gradient' : 'bg-flag-red text-white'}`}>
+          <button onClick={handleSave} className={`w-full py-5 btn-clay btn-clay-teal text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all`}>
             Log {opts.type === 'action' ? 'Action' : 'Incident'}
           </button>
+
         </div>
       </div>
     </div>

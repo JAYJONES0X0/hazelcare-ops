@@ -63,8 +63,10 @@ function LiveStatusWidget({ shifts, weekData }: { shifts: Shift[]; weekData: Wee
 
           const hasGap = activeShifts.length === 0;
           return (
-            <div key={hId} className={`border rounded-lg p-3 transition-all duration-300 relative group/ls min-h-[90px] flex flex-col justify-between
-              ${hasGap ? 'bg-flag-red/5 border-flag-red shadow-[0_4px_12px_rgba(239,68,68,0.15)]' : 'border-hc-border bg-hc-card hover:bg-hc-card-hover'}`}>
+            <div key={hId} className={`rounded-[var(--hc-radius)] p-5 transition-all duration-300 relative group/ls min-h-[100px] flex flex-col justify-between shadow-[4px_4px_10px_var(--hc-clay-dark),-4px_-4px_10px_var(--hc-clay-light)]
+              ${hasGap ? 'bg-hc-red/10 border-2 border-hc-red shadow-[4px_4px_12px_rgba(217,122,122,0.15)]' : 'bg-hc-card hc-clay-raised'}`}>
+
+
               <div className="flex items-center justify-between mb-2 relative z-10">
                 <span className={`text-[10px] font-black uppercase tracking-widest ${hasGap ? 'text-flag-red' : 'text-hc-muted group-hover/ls:text-hc-text'}`}>{hId.split(' ')[0]}</span>
                 {hasGap ? (
@@ -98,17 +100,18 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
   const flagged = house.entries.filter(e => e.severity === 'red' || e.severity === 'amber');
   
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-navy border-l border-hc-border z-[60] shadow-2xl animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
+    <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-hc-bg border-l border-hc-border z-[60] shadow-2xl animate-in slide-in-from-right-full duration-500 overflow-y-auto scrollbar-thin">
       <div className="p-8">
-        <div className="flex items-center justify-between mb-10 pb-6 border-b border-hc-border">
+        <div className="flex items-center justify-between mb-10 pb-6 border-b border-hc-border bg-hc-card-solid p-6 rounded-[var(--hc-radius)] shadow-[10px_10px_30px_rgba(0,0,0,0.05)]">
           <div>
             <h2 className="text-xl font-black text-hc-text tracking-[0.2em] uppercase">{house.name} Tactical Audit</h2>
             <p className="text-hc-muted text-[9px] font-black uppercase tracking-[0.3em] mt-1">Operational Intelligence Vector Feed</p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded border border-hc-border flex items-center justify-center text-hc-muted hover:text-hc-text transition-all hover:bg-hc-card-hover group">
+          <button onClick={onClose} className="w-12 h-12 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all active:scale-95 group">
             <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
           </button>
         </div>
+
 
         <div className="space-y-4">
           <div className="text-[10px] font-black tracking-[0.3em] text-hc-muted mb-6 uppercase">Critical Diagnostics ({flagged.length})</div>
@@ -128,25 +131,27 @@ function HouseDetailDrawer({ house, onClose, onQuickAction }: { house: HouseSumm
                     <span className="opacity-20 text-hc-border">|</span>
                     <span className="text-[10px] font-black text-hc-teal uppercase tracking-widest">{entry.carer}</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <button 
                       onClick={() => onQuickAction({ type: 'action', content: entry.entry, house: house.name, client: entry.client })}
-                      className="px-4 py-2 bg-hc-card-hover border border-hc-border text-hc-text text-[9px] font-black uppercase tracking-widest rounded hover:bg-hc-text hover:text-hc-navy transition-all"
+                      className="btn-clay px-4 py-2 text-[8px] font-black"
                     >
                       Log Readiness Action
                     </button>
                     <button 
                       onClick={() => onQuickAction({ type: 'incident', content: entry.entry, house: house.name, client: entry.client })}
-                      className="px-4 py-2 bg-flag-red/10 border border-flag-red text-flag-red text-[9px] font-black uppercase tracking-widest rounded hover:bg-flag-red hover:text-white transition-all"
+                      className="btn-clay btn-clay-teal px-4 py-2 text-[8px] font-black"
                     >
                       Record Incident
                     </button>
                   </div>
+
                 </div>
 
-                <div className="text-[11px] text-hc-text font-mono leading-relaxed mb-4 bg-hc-navy/40 p-5 rounded border border-hc-border/30 italic">
+                <div className="text-[11px] text-hc-text font-mono leading-relaxed mb-4 hc-clay-inset p-5 italic">
                   "{entry.entry}"
                 </div>
+
 
                 <div className="flex flex-wrap gap-2">
                   {entry.flags.map(f => (
