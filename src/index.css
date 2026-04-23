@@ -26,8 +26,9 @@
   --hc-navy-light: #141821;
   --hc-dark: #0d111b; /* Softened from #080b12 for better depth */
   --hc-darker: #050810;
-  --hc-card: #0d121c;
-  --hc-card-hover: #121826;
+  --hc-card: rgba(0, 0, 0, 0.4);
+  --hc-card-hover: rgba(0, 0, 0, 0.55);
+
   --hc-border: #334155; /* Higher contrast slate */
   --hc-border-light: #475569;
 
@@ -64,6 +65,9 @@
   --color-hc-darker: var(--hc-darker);
   --color-hc-card: var(--hc-card);
   --color-hc-card-hover: var(--hc-card-hover);
+  --hc-glass-bg: rgba(0, 0, 0, 0.3);
+  --hc-glass-border: rgba(255, 255, 255, 0.1);
+
   --color-hc-border: var(--hc-border);
   --color-hc-border-light: var(--hc-border-light);
   --color-hc-text: var(--hc-text);
@@ -334,8 +338,20 @@ html { scroll-behavior: smooth; }
 .progress-bar { background: linear-gradient(90deg, #0d9488, #14b8a6, #3b82f6); border-radius: 99px; transition: width 0.5s ease; }
 .divider-gradient { height: 1px; background: linear-gradient(90deg, transparent, rgba(20,184,166,0.25), rgba(59,130,246,0.15), transparent); }
 
-.stat-card { transition: border-color 0.2s ease; cursor: default; }
-.stat-card:hover { border-color: rgba(255,255,255,0.1) !important; }
+.stat-card { 
+  transition: border-color 0.2s ease; 
+  cursor: default;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.stat-card:hover { border-color: rgba(255,255,255,0.2) !important; }
+
+/* Global Card Translucency */
+.bg-hc-card, [class*="bg-hc-card"] {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 
 .section-header {
   font-size: 0.8125rem; font-weight: 700;
