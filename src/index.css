@@ -5,11 +5,17 @@
   /* ── HAZEL CARE TACTICAL PROTOCOL — ORGANIC SUBSTRATE ── */
   --color-hc-bg: #f3efe0;          /* Warm Bone foundation */
   --color-hc-bone: #f3efe0;        /* Alias — same substrate */
+  --color-hc-card: #f3efe0;        /* Card surface alias */
+  --color-hc-clay: #f3efe0;        /* Clay surface alias */
   --color-hc-text: #0d2d2d;        /* Nocturnal Pine (The new black) */
   --color-hc-muted: #8a8b82;       /* Olive Anchor (The new grey) */
+  --color-hc-border: #d1c9b8;      /* Clay shadow / border */
   --color-hc-teal: #1c4e4e;        /* Deep Matte Pine Primary */
   --color-hc-sage: #4c7c7c;        /* Tactical Sage Accent */
-  --color-hc-amber: #e6c19c;       /* Apricot Alert */
+  --color-hc-amber: #d9974e;       /* Apricot Alert (tactical amber) */
+  --color-hc-red: #d94e4e;         /* Milled Red alert */
+  --color-hc-purple: #6b5b9e;      /* Night-shift violet */
+  --color-hc-navy: #1a2744;        /* Deep navy accent */
   --color-hc-lavender: #ada2d4;    /* Chalky Lavender (Intelligence) */
   --color-hc-clay-dark: #d1c9b8;   /* Sandy Shadow vector */
   --color-hc-clay-light: #ffffff;  /* Bone Highlight */
@@ -101,6 +107,56 @@ body {
 .pill-active { color: #1c4e4e; border: 1px solid rgba(28, 78, 78, 0.2); }
 .pill-teal   { color: #1c4e4e; background: rgba(28, 78, 78, 0.08); border: 1px solid rgba(28, 78, 78, 0.2); }
 .pill-blue   { color: #4c7c7c; background: rgba(76, 124, 124, 0.08); border: 1px solid rgba(76, 124, 124, 0.2); }
+
+/* ─── BUTTON VARIANTS ────────────────────────────────────────── */
+.btn-clay {
+  background: #f3efe0;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 20px;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px #d1c9b8, -5px -5px 10px #ffffff;
+  border: 1px solid rgba(255,255,255,0.5);
+  color: #0d2d2d;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-clay:hover {
+  transform: translateY(-1px);
+  box-shadow: 7px 7px 14px #d1c9b8, -7px -7px 14px #ffffff;
+}
+.btn-clay:active {
+  transform: translateY(1px);
+  box-shadow: inset 3px 3px 6px #d1c9b8, inset -3px -3px 6px #ffffff;
+}
+.btn-clay-teal {
+  background: #1c4e4e;
+  color: #f3efe0;
+  box-shadow: 4px 4px 10px rgba(28,78,78,0.25);
+}
+.btn-clay-teal:hover {
+  filter: brightness(1.1);
+  box-shadow: 6px 6px 14px rgba(28,78,78,0.35);
+}
+
+/* ─── GLASS ──────────────────────────────────────────────────── */
+.glass {
+  background: rgba(243,239,224,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+/* ─── ANIMATIONS ─────────────────────────────────────────────── */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 8px rgba(28,78,78,0.4); } 50% { box-shadow: 0 0 16px rgba(28,78,78,0.7); } }
+
+.animate-spin-slow   { animation: spin-slow 3s linear infinite; }
+.animate-pulse-soft  { animation: pulse-soft 2.5s ease-in-out infinite; }
+.glow-teal           { animation: glow-pulse 2s ease-in-out infinite; }
 
 /* ─── UI CLEANUP ─────────────────────────────────────────────── */
 [class*="text-[8px]"],
