@@ -136,16 +136,16 @@ html { scroll-behavior: smooth; }
 /* Industrial pages use hardcoded slate-* Tailwind colors.       */
 /* These overrides make them respond to [data-theme="light"].    */
 [data-theme="light"] .bg-slate-950 { background-color: #f8fafc !important; }
-[data-theme="light"] .bg-slate-900\/\d+,
 [data-theme="light"] .bg-slate-900\/10,
 [data-theme="light"] .bg-slate-900\/20,
 [data-theme="light"] .bg-slate-900\/30,
 [data-theme="light"] .bg-slate-900\/40,
 [data-theme="light"] .bg-slate-900\/50 { background-color: rgba(241,245,249,0.8) !important; }
+
 [data-theme="light"] .bg-slate-900 { background-color: #f1f5f9 !important; }
-[data-theme="light"] .bg-slate-950\/\d+,
 [data-theme="light"] .bg-slate-950\/20,
 [data-theme="light"] .bg-slate-950\/40 { background-color: rgba(248,250,252,0.9) !important; }
+
 [data-theme="light"] .border-slate-800 { border-color: #cbd5e1 !important; }
 [data-theme="light"] .border-slate-700 { border-color: #94a3b8 !important; }
 [data-theme="light"] .text-slate-400 { color: #475569 !important; }
