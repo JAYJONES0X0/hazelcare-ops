@@ -20,8 +20,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Pick<Props,
   const houseList = weekData
     ? Object.values(weekData.houses).sort((a, b) => (b.flags.red * 10 + b.flags.amber) - (a.flags.red * 10 + a.flags.amber))
     : [];
-  const houseIds = houseList.map(h => h.name);
-  const { allCollapsed: allHousesCollapsed } = useCollapseStore('dashboard-houses');
 
   const openActions = weekData ? actions.filter(a => a.status === 'open' || a.status === 'in_progress') : [];
   const activeIncidents = weekData ? incidents.filter(i => i.stage !== 'closed' && i.stage !== 'resolved') : [];

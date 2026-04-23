@@ -647,10 +647,6 @@ function FullApp({ page, setPage, generateStaffLink, theme, setTheme, onSignOut 
     saveStaff(updated);
   }
 
-  function handleUpdateShifts(updated: Shift[]) {
-    saveShifts(updated);
-  }
-
   async function copyStaffLink(toolId: string) {
     try {
       const { link, code } = await generateStaffLink(toolId);
