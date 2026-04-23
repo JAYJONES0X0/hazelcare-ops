@@ -10,8 +10,8 @@ interface Props {
   setPage: (p: Page) => void;
   weekData: WeekSummary | null;
   actions: Action[];
-  incidents: Incident[];
   theme: 'dark' | 'light';
+
   setTheme: (t: 'dark' | 'light') => void;
   onSignOut: () => void;
 }
