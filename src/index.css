@@ -2,50 +2,62 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── TACTICAL SIGNATURES ── */
+  /* ── PERCEPTION TOKENS ── */
   --color-hc-bg: var(--hc-bg);
   --color-hc-surface: var(--hc-surface);
+  --color-hc-surface-2: var(--hc-surface-2);
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-border: var(--hc-border);
-  
-  /* Hub Colors */
-  --color-hub-teal: #1c4e4e;
-  --color-hub-indigo: #4c51bf;
-  --color-hub-amber: #b45309;
-  --color-hub-red: #991b1b;
-  --color-hub-slate: #475569;
-  
   --color-hc-teal: #1c4e4e;
+  --color-hc-teal-light: #4c7c7c;
   --color-flag-red: #d94e4e;
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
 }
 
 :root {
+  /* LIGHT: SUPERVISORY CALM (ORGANIC BONE) */
   --hc-bg: #f3efe0;
   --hc-surface: #f3efe0;
+  --hc-surface-2: #e8e4d5;
   --hc-text: #0d2d2d;
   --hc-muted: #6b6653;
-  --hc-border: rgba(13, 45, 45, 0.05);
+  --hc-border: rgba(13, 45, 45, 0.04);
   
-  /* 3D Hardware Shadows (Light) */
-  --clay-raised: 8px 8px 16px rgba(13, 45, 45, 0.1), -6px -6px 16px rgba(255, 255, 255, 0.9);
-  --clay-inset: inset 4px 4px 8px rgba(13, 45, 45, 0.08), inset -4px -4px 8px rgba(255, 255, 255, 0.8);
-  --clay-pressed: inset 6px 6px 12px rgba(13, 45, 45, 0.12), inset -3px -3px 10px rgba(255, 255, 255, 0.6);
+  --shadow-depth: 1;
+  
+  /* 3D HARDware Shadows (Light) */
+  --clay-raised: calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) rgba(13, 45, 45, 0.1), 
+                 calc(-6px * var(--shadow-depth)) calc(-6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) rgba(255, 255, 255, 0.9);
+  --clay-inset: inset calc(4px * var(--shadow-depth)) calc(4px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) rgba(13, 45, 45, 0.08), 
+                inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) rgba(255, 255, 255, 0.8);
+  --clay-pressed: inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) rgba(13, 45, 45, 0.12), 
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) rgba(255, 255, 255, 0.6);
+  
+  --btn-bg: #1c4e4e;
+  --btn-text: #f3efe0;
 }
 
 [data-theme='dark'] {
+  /* DARK: IMMERSIVE COMMAND (NOCTURNAL TEAL) */
   --hc-bg: #092323;
   --hc-surface: #0d2d2d;
+  --hc-surface-2: #163a3a;
   --hc-text: #f3efe0;
-  --hc-muted: #a3a395;
+  --hc-muted: #8a8b82;
   --hc-border: rgba(243, 239, 224, 0.03);
 
-  /* 3D Hardware Shadows (Dark) */
-  --clay-raised: 10px 10px 20px rgba(0, 0, 0, 0.4), -4px -4px 15px rgba(255, 255, 255, 0.02);
-  --clay-inset: inset 6px 6px 12px rgba(0, 0, 0, 0.5), inset -3px -3px 10px rgba(255, 255, 255, 0.01);
-  --clay-pressed: inset 8px 8px 16px rgba(0, 0, 0, 0.6), inset -2px -2px 8px rgba(255, 255, 255, 0.01);
+  /* 3D HARDware Shadows (Dark) */
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) rgba(0, 0, 0, 0.4), 
+                 calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(15px * var(--shadow-depth)) rgba(255, 255, 255, 0.02);
+  --clay-inset: inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) rgba(0, 0, 0, 0.5), 
+                inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) rgba(255, 255, 255, 0.01);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) rgba(0, 0, 0, 0.6), 
+                  inset calc(-2px * var(--shadow-depth)) calc(-2px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) rgba(255, 255, 255, 0.01);
+
+  --btn-bg: #f3efe0;
+  --btn-text: #0d2d2d;
 }
 
 @layer base {
@@ -59,22 +71,33 @@
 .hc-clay-raised {
   background-color: var(--hc-surface);
   transition: all 400ms;
+  border-radius: 2.25rem;
   box-shadow: var(--clay-raised);
   border: 1px solid var(--hc-border);
-  border-radius: 2.25rem;
 }
 
 .hc-clay-inset {
   background-color: var(--hc-surface);
   transition: all 400ms;
+  border-radius: 1.5rem;
   box-shadow: var(--clay-inset);
   border: 1px solid var(--hc-border);
-  border-radius: 1.5rem;
 }
 
 .hc-clay-pressed {
   box-shadow: var(--clay-pressed) !important;
 }
+
+/* ── COMPACT DENSITY OVERRIDES ── */
+.compact-density .p-8 { padding: 1.25rem !important; }
+.compact-density .p-12 { padding: 1.75rem !important; }
+.compact-density .gap-8 { gap: 1rem !important; }
+.compact-density .gap-12 { gap: 1.5rem !important; }
+.compact-density section { border-radius: 1.5rem !important; }
+.compact-density h2 { font-size: 1rem !important; }
+.compact-density .text-3xl { font-size: 1.5rem !important; }
+.compact-density .w-20, .compact-density .h-20 { width: 4rem !important; height: 4rem !important; }
+.compact-density .w-12, .compact-density .h-12 { width: 2.5rem !important; height: 2.5rem !important; }
 
 /* ── NUKE SCROLLBAR ── */
 .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -83,10 +106,11 @@
 
 @layer components {
   .btn-tactical {
-    @apply bg-hc-teal text-hc-bg font-black uppercase tracking-[0.2em] px-8 py-4 rounded-2xl 
-           transition-all duration-300 hover:scale-[1.02];
-    background-color: var(--hc-surface);
-    box-shadow: var(--clay-raised);
+    @apply font-black uppercase tracking-[0.2em] px-8 py-4 rounded-2xl 
+           transition-all duration-300 hover:scale-[1.02] shadow-2xl;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .btn-tactical:active {
@@ -99,6 +123,7 @@
   }
 }
 
+/* ── HIGH DENSITY TEXT ── */
 [class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"] {
   font-size: 10px !important;
   font-weight: 900 !important;

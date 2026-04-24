@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import type { WeekSummary, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
 import { escapeHtml } from '../lib/html-escape';
@@ -187,19 +187,12 @@ function generateGeneric(title: string, subtitle: string, color: string): string
 }
 
 export function TemplatesPage({ weekData }: Props) {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
-  const [html, setHtml] = useState<string | null>(null);
-  const [recIds, setRecIds] = useState<TemplateType[]>([]);
+  const [recIds] = useState<TemplateType[]>(() => loadRecommendedTemplateIds());
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(() => recIds.length > 0 ? recIds[0] : null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  useEffect(() => {
-    const ids = loadRecommendedTemplateIds();
-    setRecIds(ids);
-    if (ids.length > 0) setSelectedTemplate(ids[0]);
-  }, []);
-
-  const generate = useCallback(() => {
-    if (!weekData || !selectedTemplate) return;
+  const html = useMemo(() => {
+    if (!weekData || !selectedTemplate) return null;
     const ctx = readTemplateImportContext();
     let res = '';
     switch (selectedTemplate) {
@@ -229,10 +222,8 @@ export function TemplatesPage({ weekData }: Props) {
       default:
         res = generateServiceSitrep(weekData, ctx); break;
     }
-    setHtml(res);
+    return res;
   }, [selectedTemplate, weekData]);
-
-  useEffect(() => { generate(); }, [generate]);
 
   if (!weekData) {
     return (

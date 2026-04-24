@@ -58,6 +58,12 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('hc-theme', theme);
+    
+    // Apply UI persistent settings
+    const isCompact = localStorage.getItem('hc-compact-density') === 'true';
+    const shadowDepth = Number(localStorage.getItem('hc-shadow-depth')) || 3;
+    document.documentElement.classList.toggle('compact-density', isCompact);
+    document.documentElement.style.setProperty('--shadow-depth', String(shadowDepth / 3));
   }, [theme]);
 
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
@@ -89,6 +95,21 @@ export default function App() {
       .catch(() => setSessionLoaded(true));
   }, []);
 
+  const handleSignOut = async () => {
+    // Remove this session from the registry before signing out
+    const sessionId = sessionStorage.getItem('hc-session-id');
+    if (sessionId) {
+      const raw = localStorage.getItem('hc-registered-sessions');
+      if (raw) {
+        const sessions = JSON.parse(raw).filter((s: { id: string }) => s.id !== sessionId);
+        localStorage.setItem('hc-registered-sessions', JSON.stringify(sessions));
+      }
+    }
+    sessionStorage.removeItem('hc-pin-unlocked');
+    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+    window.location.reload();
+  };
+
   // Register/refresh session record when authenticated
   useEffect(() => {
     if (!authed) return;
@@ -117,23 +138,7 @@ export default function App() {
     const others = sessions.filter(s => s.id !== sessionId);
     others.push({ id: sessionId, device, browser, timestamp: thisEntry?.timestamp || now, lastActive: now, revoked: false });
     localStorage.setItem('hc-registered-sessions', JSON.stringify(others.slice(-20)));
-  }, [authed]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSignOut = async () => {
-    // Remove this session from the registry before signing out
-    const sessionId = sessionStorage.getItem('hc-session-id');
-    if (sessionId) {
-      const raw = localStorage.getItem('hc-registered-sessions');
-      if (raw) {
-        const sessions = JSON.parse(raw).filter((s: { id: string }) => s.id !== sessionId);
-        localStorage.setItem('hc-registered-sessions', JSON.stringify(sessions));
-      }
-    }
-    sessionStorage.removeItem('hc-pin-unlocked');
-    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
-    window.location.reload();
-  };
-
+  }, [authed]); 
   if (!sessionLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-hc-bg">
@@ -176,7 +181,7 @@ export default function App() {
               {page === 'client-docs' && <ClientDocsPage />}
               {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} onQuickAction={() => {}} />}
               {page === 'agency' && <AgencyPortalPage />}
-              {page === 'staff-monitoring' && <StaffMonitoringPage staff={staff} weekData={weekData} setPage={setPage} onDataParsed={handleDataParsed} />}
+              {page === 'staff-monitoring' && <StaffMonitoringPage staff={staff} weekData={weekData} onDataParsed={handleDataParsed} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
             </div>

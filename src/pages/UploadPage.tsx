@@ -121,7 +121,7 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
           include: true,
         });
       } else readErrors.push(`${displayName}: empty`);
-    } catch (err: any) {
+    } catch {
       readErrors.push(`${displayName}: failed`);
     }
     if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));

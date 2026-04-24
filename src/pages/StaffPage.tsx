@@ -96,7 +96,7 @@ function StaffDocumentDrawer({ staff, onClose }: { staff: StaffMember; onClose: 
     const dbsS = staffStatus(staff.dbsExpiry || '', 60);
     const trainS = staffStatus(staff.trainingExpiry || '', 30);
 
-    let content = template
+    const content = template
       .replace(/{{ORG_NAME}}/g, ORG_CONFIG.fullName)
       .replace(/{{STAFF_NAME}}/g, staff.name)
       .replace(/{{STAFF_ROLE}}/g, staff.role)

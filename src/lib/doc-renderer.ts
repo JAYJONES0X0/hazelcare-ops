@@ -163,18 +163,9 @@ function renderCover(title: string, client: FullClient, planDate: string) {
 }
 
 function renderSigBlock(sigs?: Sig[]) {
-  let profileName = 'Registered Manager';
-  let profileRole = 'Operations Manager';
+  const profileName = localStorage.getItem('hc-user-name') || 'Registered Manager';
+  const profileRole = localStorage.getItem('hc-user-role') || 'Operations Manager';
   
-  try {
-    const raw = localStorage.getItem('hc-profile-v1');
-    if (raw) {
-      const p = JSON.parse(raw);
-      if (p.name) profileName = p.name;
-      if (p.role) profileRole = p.role;
-    }
-  } catch { /* fallback */ }
-
   const rows = sigs && sigs.length
     ? sigs.filter((s) => s.include !== false)
     : [
