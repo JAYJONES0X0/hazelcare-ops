@@ -8,7 +8,7 @@ import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
   Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
   Database, Settings2, Sparkles, ChevronLeft, ChevronRight, Activity, HardDrive,
-  UserCheck, ShieldCheck, Cog
+  BarChart2, Mic, ShieldCheck
 } from 'lucide-react';
 
 interface Props {
@@ -32,50 +32,44 @@ const navSections: NavSection[] = [
     label: 'Mission Control',
     icon: <LayoutDashboard size={16} />,
     items: [
-      { id: 'briefing' as Page,      label: 'Strategy Briefing', icon: <LayoutDashboard size={16} /> },
-      { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={16} /> },
-      { id: 'upload',                label: 'Field Injest',      icon: <Upload size={16} /> },
-      { id: 'communications' as Page,label: 'Comms Intercept',   icon: <MessageSquare size={16} /> },
+      { id: 'briefing' as Page,       label: 'Strategy Briefing',  icon: <LayoutDashboard size={16} /> },
+      { id: 'dashboard',              label: 'Sitrep Center',      icon: <BarChart3 size={16} /> },
+      { id: 'upload',                 label: 'Field Injest',       icon: <Upload size={16} /> },
+      { id: 'communications' as Page, label: 'Comms Intercept',    icon: <MessageSquare size={16} /> },
     ],
   },
   {
     label: 'Clinical Intelligence',
     icon: <Activity size={16} />,
     items: [
-      { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
-      { id: 'client-diary' as Page,    label: 'Diagnostic Feed',   icon: <BookOpen size={16} /> },
-      { id: 'client-docs' as Page,     label: 'Clinical Records',  icon: <HardDrive size={16} /> },
-      { id: 'handover' as Page,        label: 'Clinical Handover', icon: <FileText size={16} /> },
-      { id: 'templates',               label: 'Builder Templates', icon: <Database size={16} /> },
+      { id: 'note-workspace' as Page, label: 'Note Workspace',     icon: <Sparkles size={16} /> },
+      { id: 'notes' as Page,          label: 'Notes Assistant',    icon: <Mic size={16} /> },
+      { id: 'client-diary' as Page,   label: 'Diagnostic Feed',    icon: <BookOpen size={16} /> },
+      { id: 'client-docs' as Page,    label: 'People & Plans',     icon: <HardDrive size={16} /> },
+      { id: 'handover' as Page,       label: 'Clinical Handover',  icon: <FileText size={16} /> },
+      { id: 'risk' as Page,           label: 'Risk Scores',        icon: <ShieldCheck size={16} /> },
     ],
   },
   {
-    label: 'Personnel & Protection',
-    icon: <ShieldCheck size={16} />,
+    label: 'Personnel & Ops',
+    icon: <Users size={16} />,
     items: [
       { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={16} /> },
       { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={16} /> },
-      { id: 'compliance',              label: 'Personnel Audit',   icon: <UserCheck size={16} /> },
-      { id: 'notes' as Page,           label: 'Staff Supervision', icon: <FileText size={16} /> },
-    ],
-  },
-  {
-    label: 'Operations & Audit',
-    icon: <Zap size={16} />,
-    items: [
       { id: 'actions',                 label: 'Command Vectors',   icon: <Zap size={16} /> },
       { id: 'incidents',               label: 'Incident Govt',     icon: <AlertTriangle size={16} /> },
-      { id: 'compliance',              label: 'Regulatory Audit',  icon: <ClipboardCheck size={16} /> },
       { id: 'agency' as Page,          label: 'External Support',  icon: <Briefcase size={16} /> },
-      { id: 'risk' as Page,            label: 'Risk Matrix',       icon: <Activity size={16} /> },
     ],
   },
   {
-    label: 'Sovereign System',
-    icon: <Cog size={16} />,
+    label: 'Governance',
+    icon: <ClipboardCheck size={16} />,
     items: [
-      { id: 'settings' as Page,   label: 'System Settings',   icon: <Settings2 size={16} /> },
-      { id: 'admin' as Page,      label: 'Admin Matrix',      icon: <Shield size={16} /> },
+      { id: 'compliance',             label: 'Compliance & Audit', icon: <ClipboardCheck size={16} /> },
+      { id: 'reports' as Page,        label: 'Diagnostic Reports', icon: <BarChart2 size={16} /> },
+      { id: 'templates',              label: 'Builder Templates',  icon: <Database size={16} /> },
+      { id: 'settings' as Page,       label: 'System Settings',    icon: <Settings2 size={16} /> },
+      { id: 'admin' as Page,          label: 'Admin Matrix',       icon: <Shield size={16} /> },
     ],
   },
 ];
