@@ -165,7 +165,7 @@ export function NoteWorkspace() {
             disabled={importLoading}
             className="w-full flex items-center justify-center gap-2 btn-tactical text-[10px] py-2.5 rounded-xl">
             <Download className="w-3.5 h-3.5" />
-            {importLoading ? 'Loading...' : hasData ? 'Add More Data' : 'Import Diary CSV'}
+            {importLoading ? 'Loading...' : hasData ? 'Add More Data' : 'Import CSV / Excel'}
           </button>
           {importInfo && (
             <p className={`mt-2 text-[11px] font-black uppercase tracking-widest leading-relaxed ${importInfo.includes('Failed') ? 'text-flag-red' : 'text-hc-teal'}`}>
@@ -239,7 +239,9 @@ export function NoteWorkspace() {
               <span className="pill pill-teal text-[11px] font-black px-3 py-1">Note Workspace</span>
             </div>
             <p className="text-[11px] text-hc-muted font-black uppercase tracking-widest mt-1">
-              {filtered.length} entries in view · Select a client to focus · Set date range to narrow
+              {filtered.length.toLocaleString()} entries in view
+              {!selectedClient && filtered.length > 0 && ' · Select a client to focus'}
+              {filtered.length === 0 && hasData && storeBounds && ` · Data range: ${storeBounds.from} → ${storeBounds.to}`}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -284,7 +286,7 @@ export function NoteWorkspace() {
             <div className="flex flex-col items-center justify-center h-full text-hc-muted text-center">
               <FileText className="w-16 h-16 text-hc-muted mb-6" />
               <div className="text-sm font-black text-hc-text uppercase tracking-[0.2em]">Import a diary export to begin</div>
-              <p className="text-[11px] text-hc-muted mt-2 uppercase tracking-widest">Supports CSV, PDF, ZIP — one import covers all clients</p>
+              <p className="text-[11px] text-hc-muted mt-2 uppercase tracking-widest">Supports CSV, Excel, PDF, ZIP — one import covers all clients</p>
             </div>
           )}
 
@@ -293,6 +295,11 @@ export function NoteWorkspace() {
               <Search className="w-16 h-16 text-hc-muted mb-6" />
               <div className="text-sm font-black text-hc-text uppercase tracking-[0.2em]">No entries matched</div>
               <p className="text-[11px] text-hc-muted mt-2 uppercase tracking-widest">Adjust the date range or select a different client</p>
+              {storeBounds && (
+                <p className="text-[11px] text-hc-teal mt-3 font-black uppercase tracking-widest">
+                  Store covers {storeBounds.from} → {storeBounds.to}
+                </p>
+              )}
             </div>
           )}
 

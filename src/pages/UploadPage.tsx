@@ -336,10 +336,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <div className="text-center">
                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialise Intake Stream</div>
                 <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] leading-loose">
-                  Drop Clinical ZIP Packs, PDF Audits, CSV Diary Exports,<br />or Roster Intelligence Vectors
+                  Drop Clinical ZIP Packs, PDF Audits, CSV/Excel Diary Exports,<br />or Roster Intelligence Vectors
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-6">
-                  {['.zip', '.csv', '.pdf', '.txt', '.docx'].map(ext => (
+                  {['.zip', '.csv', '.xlsx', '.pdf', '.txt', '.docx'].map(ext => (
                     <span key={ext} className="pill pill-teal text-[11px] font-black px-2 py-1 flex items-center gap-1">
                       {ext === '.zip' && <Archive className="w-3 h-3" />}
                       {ext}

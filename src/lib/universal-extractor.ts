@@ -1,5 +1,6 @@
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
@@ -37,9 +38,23 @@ export async function extractDocxText(file: File): Promise<string> {
   return result.value;
 }
 
+export async function extractXlsxText(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const lines: string[] = [];
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    // Convert to CSV — preserves column alignment for our diary parser
+    const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+    if (csv.trim()) lines.push(csv);
+  }
+  return lines.join('\n');
+}
+
 export async function extractFileText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
   if (ext === 'pdf') return extractPdfText(file, onProgress);
   if (ext === 'docx') return extractDocxText(file);
+  if (ext === 'xlsx' || ext === 'xls' || ext === 'xlsm') return extractXlsxText(file);
   return file.text();
 }
