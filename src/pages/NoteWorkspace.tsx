@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
-import { FileText, Search, User, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntries, appendEntries, getStoreBounds } from '../lib/entry-store';
-import { DateRangePicker, type DateRange, getPresetRange } from '../components/DateRangePicker';
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
