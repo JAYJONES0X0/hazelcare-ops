@@ -1,4 +1,4 @@
-import type { CareEntry, HouseSummary, WeekSummary, Shift } from './types';
+import type { CareEntry, WeekSummary } from './types';
 import { uid } from './storage';
 
 // ============================================================
@@ -47,10 +47,10 @@ const HOUSE_MAP: Record<string, string> = {
   'cottrell': 'Cottrell House',
   'old bakery': 'Flats (Old Bakery)',
   'management': 'Management',
-  'hazelcare': '',          // org-level umbrella — not a house
-  'supported living pc': '', // same
+  'hazelcare': '',
+  'supported living pc': '',
   'medical': 'Medical',
-  'time off': 'SKIP',      // explicitly marker to ignore
+  'time off': 'SKIP',
   'unassigned': 'UNASSIGNED',
   'sickness': 'SKIP',
 };
@@ -64,483 +64,174 @@ export function normalizeHouse(raw: string): string {
   return raw.trim();
 }
 
-function isKnownHouse(raw: string): boolean {
-  if (!raw) return false;
-  const lower = raw.toLowerCase().trim();
-  for (const key of Object.keys(HOUSE_MAP)) {
-    if (lower.includes(key)) return true;
-  }
-  if (/\b(house|lodge|flats?|management)\b/i.test(raw)) return true;
-  if (/^office$/i.test(raw.trim())) return true;
-  return false;
-}
-
-// ============================================================
-// ENTRY CATEGORY
-// ============================================================
 type Category = 'incident' | 'safeguarding' | 'medication' | 'handover' | 'daily_support' | 'finance' | 'staff' | 'health_safety' | 'other';
 
 function categorizeEntry(type: string, text: string): Category {
-  const t = type.toLowerCase().trim();
-  const x = text.toLowerCase();
-  // ── CarePlanner exact type names ──────────────────────────────────────
-  if (t.includes('handover')) return 'handover';
-  if (t.includes('task note') || t.includes('daily 1:1') || t.includes('1to1') || t.includes('daily support') || t.includes('1:1') || t.includes('personal care')) return 'daily_support';
-  if (t.includes('accident') || t.includes('incident') || t.includes('abc')) return 'incident';
-  if (t.includes('safeguard')) return 'safeguarding';
-  if (t.includes('medication')) return 'medication';
-  if (t === 'gp appointment' || t.includes('gp appoint') || t.includes('hospital') || t.includes('health appointment')) return 'other';
-  if (
-    t.includes('care review') || t.includes('quality performance') ||
-    t.includes('weekly quality') || t.includes('house meeting') ||
-    t.includes('cqc') || t.includes('concern') || t.includes('complaint') ||
-    t.includes('compliment') || t.includes('client feedback') || t.includes('family feedback') ||
-    t.includes('service charge')
-  ) return 'other';
-  if (
-    t.includes('daily finance') || t.includes('daily hr') ||
-    t.includes('daily maintenance') || t.includes('daily quality') ||
-    t.includes('exit interview') || t.includes('performance improvement') ||
-    t.includes('probation') || t.includes('senior support worker') ||
-    t.includes('supervision') || t.includes('spot check') || t.includes('quality meeting') ||
-    t.includes('professional notes')
-  ) return 'staff';
-  if (
-    t.includes('finance') || t.includes('expense') || t.includes('mileage') ||
-    t.includes('financial') || t.includes('money') || t.includes('service charge') ||
-    t === 'financial transaction' || t === 'finance audit'
-  ) return 'finance';
-  if (t.includes('repair')) return 'health_safety';
-  // ── Fallback from entry text ──────────────────────────────────────────
-  if (x.includes('safeguard')) return 'safeguarding';
-  if (x.includes('medication') || x.includes('prescribed')) return 'medication';
-  if (x.includes('incident') || x.includes('police') || x.includes('ambulance')) return 'incident';
-  if (x.includes('handover')) return 'handover';
+  const t = (type || '').toLowerCase().trim();
+  const x = (text || '').toLowerCase();
+  if (t.includes('handover') || x.includes('handover')) return 'handover';
+  if (t.includes('task') || t.includes('1:1') || t.includes('1to1') || t.includes('daily support') || t.includes('personal care')) return 'daily_support';
+  if (t.includes('accident') || t.includes('incident') || t.includes('abc') || x.includes('incident')) return 'incident';
+  if (t.includes('safeguard') || x.includes('safeguard')) return 'safeguarding';
+  if (t.includes('medication') || x.includes('medication') || x.includes('prescribed')) return 'medication';
+  if (t.includes('finance') || t.includes('expense') || t.includes('money')) return 'finance';
+  if (t.includes('supervision') || t.includes('probation') || t.includes('interview')) return 'staff';
   return 'other';
 }
 
 function detectFlags(text: string): { severity: CareEntry['severity']; flags: string[] } {
-  const lower = text.toLowerCase();
+  const lower = (text || '').toLowerCase();
   const flags: string[] = [];
-  for (const kw of RED_FLAGS) {
-    if (lower.includes(kw)) flags.push(kw);
-  }
+  for (const kw of RED_FLAGS) if (lower.includes(kw)) flags.push(kw);
   if (flags.length > 0) return { severity: 'red', flags };
-  for (const kw of AMBER_FLAGS) {
-    if (lower.includes(kw)) flags.push(kw);
-  }
+  for (const kw of AMBER_FLAGS) if (lower.includes(kw)) flags.push(kw);
   if (flags.length > 0) return { severity: 'amber', flags };
   return { severity: 'none', flags: [] };
 }
 
-function extractHouseFromCarers(carers: string): string {
-  // Pull all "All carers in region: X" values
-  const all = [...carers.matchAll(/region:\s*([^,]+)/gi)].map(m => m[1].trim());
-  if (all.length === 0) return '';
-  // Prefer entries that are actual known houses (not org-level like "NC hazelcare")
-  const real = all.find(h => isKnownHouse(h));
-  if (real) return real;
-  // Fallback: first entry that doesn't look like an org umbrella
-  const nonOrg = all.find(h => !/hazelcare|nc hazel|supported living pc|head office/i.test(h));
-  return nonOrg || all[0];
-}
-
-function cleanCarerName(raw: string): string {
-  return raw
-    .replace(/All carers in region:[^,]+,?\s*/gi, '')
-    .replace(/All carers in region[^,]*/gi, '')
-    .split(',')[0]
-    .replace(/\s{2,}/g, ' ')  // collapse double spaces
-    .trim() || '';
-}
-
-const NON_CLIENT = new Set(['Maintenance', 'Station', 'On Call', 'On-call', '', 'Management']);
-
-function findCol(headers: string[], ...variants: string[]): number {
-  for (const v of variants) {
-    const i = headers.findIndex(h => h.includes(v));
-    if (i >= 0) return i;
+/** 
+ * Helper to parse various date formats found in CarePlanner
+ * formats: DD/MM/YYYY, DD/MM/YYYY HH:mm, YYYY-MM-DD, etc.
+ */
+function parseDateToMs(s: string): number {
+  if (!s) return 0;
+  const parts = s.split(/[ /:-]/);
+  if (parts.length >= 3) {
+    // Check if first part is year or day
+    if (parts[0].length === 4) return new Date(s).getTime();
+    // Assume DD/MM/YYYY
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const y = parseInt(parts[2], 10);
+    return new Date(y, m, d).getTime();
   }
-  return -1;
+  return new Date(s).getTime() || 0;
 }
 
-function safeCell(row: string[], idx: number): string {
-  if (idx < 0 || idx >= row.length) return '';
-  return (row[idx] || '').trim();
-}
+export function parseUniversalCSV(text: string): CareEntry[] {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return [];
 
-function parseCSVRaw(text: string): string[][] {
-  const rows: string[][] = [];
-  let current: string[] = [];
-  let field = '';
-  let inQuotes = false;
-  const push = () => { current.push(field.replace(/\r/g, '').trim()); field = ''; };
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '"') {
-      if (inQuotes && text[i + 1] === '"') { field += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) { push(); }
-    else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-      if (ch === '\r' && text[i + 1] === '\n') i++;
-      push();
-      if (current.some(f => f)) rows.push(current);
-      current = [];
-    } else { field += ch; }
-  }
-  push();
-  if (current.some(f => f)) rows.push(current);
-  return rows;
-}
-
-const DIARY_KEYWORDS = ['diary', 'display', 'entry', 'client', 'carer', 'incident', 'staff', 'notes', 'date', 'occurred', 'occurance', 'subject', 'report'];
-
-function looksLikeCSV(text: string): boolean {
-  const lines = text.trim().split('\n');
-  const firstLine = lines[0] || '';
-  const secondLine = lines[1] || '';
-  const lower = (firstLine + secondLine).toLowerCase();
-  
-  // If it has commas and any clinical keyword in first two lines
-  return (firstLine.includes(',') || secondLine.includes(',')) && DIARY_KEYWORDS.some(k => lower.includes(k));
-}
-
-function looksLikeTSV(text: string): boolean {
-  const lines = text.trim().split('\n');
-  const firstLine = lines[0] || '';
-  const lower = firstLine.toLowerCase();
-  return firstLine.includes('\t') && DIARY_KEYWORDS.some(k => lower.includes(k));
-}
-
-function parseTSVRaw(text: string): string[][] {
-  return text.split('\n')
-    .map(line => line.split('\t').map(c => c.trim()))
-    .filter(row => row.some(c => c));
-}
-
-export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] {
-  const clean = text.replace(/^\uFEFF/, '');
-  const parsedRows = rows ?? parseCSVRaw(clean);
-  if (parsedRows.length < 1) return [];
-  
-  // Scan first 20 rows for the real header row — PDFs have title/intro rows before the data table
-  const HEADER_KEYS = ['entry_occurred', 'diary_entry', 'display_from', 'incident_type', 'carers_involved', 'clients_involved'];
-  let headers: string[] = [];
-  let startIdx = 1;
-  let foundHeader = false;
-  for (let r = 0; r < Math.min(20, parsedRows.length); r++) {
-    const norm = parsedRows[r].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
-    if (HEADER_KEYS.filter(k => norm.some(h => h.includes(k))).length >= 3) {
-      headers = norm;
-      startIdx = r + 1;
-      foundHeader = true;
-      break;
+  const rows: string[][] = lines.map(line => {
+    const result: string[] = [];
+    let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+      else cur += char;
     }
-  }
-  if (!foundHeader) {
-    // Fallback: assume row 0 is headers
-    headers = parsedRows[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
-    startIdx = 1;
-    // If first row looks like data (has dates or very long cells), treat as headerless
-    if (headers.some(h => /\d{2}\/\d{2}\/\d{4}/.test(h) || h.length > 50)) {
-      startIdx = 0;
-      headers = [];
-    }
-  }
+    result.push(cur.trim());
+    return result;
+  });
 
-  const iDate  = findCol(headers, 'entry_occurred', 'display_from', 'occurred', 'date', 'entry_date', 'record_date', 'occurance');
-  const iType  = findCol(headers, 'incident_type', 'entry_type', 'type', 'category', 'record_type', 'diary_type', 'event');
-  const iCarers = findCol(headers, 'carers_involved', 'carer', 'carers', 'staff_involved', 'staff', 'worker', 'author');
-  const iClient = findCol(headers, 'clients_involved', 'client', 'clients', 'service_user', 'resident', 'person', 'subject');
-  const iEntry  = findCol(headers, 'diary_entry', 'entry', 'notes', 'details', 'description', 'note', 'text', 'content', 'body', 'report');
-  const iHouse  = findCol(headers, 'house', 'location', 'property', 'address', 'home', 'site');
+  const headerRow = rows[0].map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
+  const findIdx = (keywords: string[]) => headerRow.findIndex(h => keywords.some(k => h.includes(k)));
 
-  // Fallback: If no headers matched, guess by column content
-  let gDate = iDate, gType = iType, gCarer = iCarers, gClient = iClient, gEntry = iEntry, gHouse = iHouse;
-  
-  if (gEntry < 0 && parsedRows.length > startIdx) {
-    const sample = parsedRows[startIdx];
-    for (let c = 0; c < sample.length; c++) {
-      const val = sample[c].trim();
-      if (val.length > 40 && gEntry < 0) gEntry = c;
-      if (/\d{2}\/\d{2}\/\d{4}/.test(val) && gDate < 0) gDate = c;
-      if (isKnownHouse(val) && gHouse < 0) gHouse = c;
-    }
+  let iDate = findIdx(['date', 'occurred', 'time', 'entryat', 'recorded']);
+  let iCarer = findIdx(['carer', 'staff', 'worker', 'author', 'user']);
+  let iClient = findIdx(['client', 'serviceuser', 'resident', 'person', 'subject']);
+  let iType = findIdx(['type', 'category', 'event', 'subject']);
+  let iEntry = findIdx(['entry', 'note', 'text', 'detail', 'comment', 'report']);
+  let iHouse = findIdx(['house', 'location', 'site', 'unit', 'property']);
+
+  if (iEntry === -1) {
+    const sample = rows[1] || rows[0];
+    iEntry = sample.findIndex(c => c.length > 40);
+    if (iDate === -1) iDate = sample.findIndex(c => /\d{2}\/\d{2}/.test(c));
   }
 
   const entries: CareEntry[] = [];
-  for (let i = startIdx; i < parsedRows.length; i++) {
-    const row = parsedRows[i];
-    if (row.every(cell => !cell.trim())) continue;
+  const startAt = (iEntry !== -1 && rows[0][iEntry]?.toLowerCase()?.includes('entry')) ? 1 : 0;
 
-    const dateRaw   = safeCell(row, gDate);
-    const typeRaw   = safeCell(row, gType);
-    const carersRaw = safeCell(row, gCarer);
-    const clientRaw = safeCell(row, gClient);
-    const entryRaw  = safeCell(row, gEntry);
-    const houseRaw  = safeCell(row, gHouse);
+  for (let i = startAt; i < rows.length; i++) {
+    const r = rows[i];
+    const entryText = r[iEntry] || '';
+    if (entryText.length < 5) continue;
 
-    if (!entryRaw && !typeRaw) continue;
+    const date = r[iDate] || new Date().toLocaleDateString('en-GB');
+    const carer = r[iCarer] || 'Personnel Unassigned';
+    const client = r[iClient] || 'Service User Unassigned';
+    const type = r[iType] || 'Standard Entry';
+    const house = normalizeHouse(r[iHouse] || r[iClient] || '');
 
-    const clientLooksLikeHouse = isKnownHouse(clientRaw) || /all carers in region/i.test(clientRaw);
-    let house: string;
-    let client: string;
-    if (houseRaw) {
-      house = normalizeHouse(houseRaw) || 'Unassigned';
-      client = clientLooksLikeHouse ? '' : clientRaw;
-    } else if (clientLooksLikeHouse) {
-      house = normalizeHouse(clientRaw) || 'Unassigned';
-      client = '';
-    } else {
-      const fromCarers = normalizeHouse(extractHouseFromCarers(carersRaw));
-      house = fromCarers || 'Unassigned';
-      client = clientRaw;
-    }
-
-    const carerClean = cleanCarerName(carersRaw);
-    if (carerClean.toLowerCase() === 'carer' || carerClean.toLowerCase() === 'staff' || carerClean.toLowerCase() === 'worker') continue;
-    const carer = carerClean || 'Unassigned';
-    const { severity, flags } = detectFlags(entryRaw + ' ' + typeRaw);
-    const category = categorizeEntry(typeRaw, entryRaw);
-
+    const { severity, flags } = detectFlags(entryText + ' ' + type);
+    
     entries.push({
-      id: uid(), date: dateRaw, house, type: typeRaw || 'Entry',
-      carer, client, entry: entryRaw, severity, flags, category,
+      id: uid(),
+      date,
+      house: house || 'UNASSIGNED',
+      carer,
+      client,
+      type,
+      entry: entryText,
+      severity,
+      flags,
+      category: categorizeEntry(type, entryText)
     });
   }
-  return entries;
-}
 
-// Cap per-file parse to prevent browser freeze on huge CarePlanner exports
-const MAX_PARSE_ENTRIES = 10_000;
-
-function capEntries(entries: CareEntry[]): CareEntry[] {
-  return entries.length > MAX_PARSE_ENTRIES ? entries.slice(entries.length - MAX_PARSE_ENTRIES) : entries;
-}
-
-export function parseUniversalData(rawText: string): CareEntry[] {
-  const trimmed = rawText.trim();
-  // CSV path (comma-separated with recognisable headers)
-  if (trimmed.startsWith('\uFEFF') || looksLikeCSV(trimmed)) {
-    const result = parseUniversalCSV(trimmed);
-    if (result.length > 0) return capEntries(result);
-  }
-  // TSV path — PDF extractor produces tab-separated rows preserving table layout
-  if (looksLikeTSV(trimmed)) {
-    const result = parseUniversalCSV(trimmed, parseTSVRaw(trimmed));
-    if (result.length > 0) return capEntries(result);
-  }
-
-  const entries: CareEntry[] = [];
-  const lines = trimmed.split('\n').filter(l => l.trim());
-
-  for (const line of lines) {
-    if (line.includes('|')) {
-      const parts = line.split('|').map(p => p.trim());
-      if (parts.length >= 4) {
-        const dateCandidate = parts.find(p => /\d{2}\/\d{2}\/\d{4}/.test(p)) || '';
-        const entryText = parts[parts.length - 1] || parts[parts.length - 2] || '';
-        if (!entryText) continue;
-        const house = normalizeHouse(extractHouseFromCarers(parts[3] || ''));
-        const { severity, flags } = detectFlags(entryText);
-        entries.push({
-          id: uid(), date: dateCandidate, house,
-          type: parts[2] || 'Entry', carer: cleanCarerName(parts[3] || ''),
-          client: parts[4] || '', entry: entryText, severity, flags,
-          category: categorizeEntry(parts[2] || '', entryText),
-        });
-      }
-      continue;
-    }
-    const tabs = line.split('\t');
-    if (tabs.length >= 4) {
-      const dateCandidate = tabs.find(p => /\d{2}\/\d{2}\/\d{4}/.test(p)) || '';
-      const entryText = tabs[tabs.length - 1] || '';
-      if (!entryText) continue;
-      const house = normalizeHouse(extractHouseFromCarers(tabs[3] || ''));
-      const { severity, flags } = detectFlags(entryText);
-      entries.push({
-        id: uid(), date: dateCandidate, house,
-        type: tabs[2] || 'Entry', carer: cleanCarerName(tabs[3] || ''),
-        client: tabs[4] || '', entry: entryText, severity, flags,
-        category: categorizeEntry(tabs[2] || '', entryText),
-      });
-    }
-  }
-  if (entries.length === 0) return capEntries(parseFreeText(rawText));
-  return capEntries(entries);
-}
-
-function parseFreeText(text: string): CareEntry[] {
-  const entries: CareEntry[] = [];
-  const lines = text.split('\n');
-  let currentHouse = 'General';
-  let currentCarer = '';
-  for (const line of lines) {
-    const l = line.trim();
-    if (!l) continue;
-    const houseMatch = l.match(/^(lingfield|church|laurel|station|canterbury|glenfrome|woburn|hazelbury|courtney|cottrell|flat)/i);
-    if (houseMatch) {
-      currentHouse = normalizeHouse(l);
-      const m = l.match(/[-–—]\s*(.+)/);
-      if (m) currentCarer = m[1].trim();
-      continue;
-    }
-    const catMatch = l.match(/^(incidents?|safeguarding|medication|staff performance|cqc|sickness|health & safety|h&s|supervisions?)[:\s]+(.+)/i);
-    if (catMatch) {
-      const { severity, flags } = detectFlags(catMatch[2]);
-      entries.push({
-        id: uid(), date: '', house: currentHouse, type: catMatch[1],
-        carer: currentCarer, client: '', entry: catMatch[2],
-        severity, flags, category: categorizeEntry(catMatch[1], catMatch[2]),
-      });
-    }
-  }
-  return entries;
+  // FORCE NEWEST FIRST and LIFT CAP TO 50,000
+  return entries
+    .sort((a, b) => parseDateToMs(b.date) - parseDateToMs(a.date))
+    .slice(0, 50000);
 }
 
 export function buildWeekSummary(entries: CareEntry[]): WeekSummary {
-  const houses: Record<string, HouseSummary> = {};
-  const clientDiary: Record<string, CareEntry[]> = {};
-  const allFlags = { red: [] as CareEntry[], amber: [] as CareEntry[], green: [] as CareEntry[] };
-  const entryTypes: Record<string, number> = {};
-  const clientSet = new Set<string>();
-  const carerSet = new Set<string>();
-  const dates: string[] = [];
-
-  for (const entry of entries) {
-    if (entry.date) dates.push(entry.date);
-    if (entry.client) clientSet.add(entry.client);
-    if (entry.carer && entry.carer !== 'Staff') carerSet.add(entry.carer);
-    entryTypes[entry.type] = (entryTypes[entry.type] || 0) + 1;
-    if (entry.severity === 'red') allFlags.red.push(entry);
-    else if (entry.severity === 'amber') allFlags.amber.push(entry);
-    if (entry.client && !NON_CLIENT.has(entry.client)) {
-      if (!clientDiary[entry.client]) clientDiary[entry.client] = [];
-      clientDiary[entry.client].push(entry);
-    }
-    const houseName = entry.house || 'Unassigned';
-    if (!houses[houseName]) {
-      houses[houseName] = {
-        name: houseName, coordinator: '', entries: [],
-        incidents: [], safeguarding: [], medication: [],
-        staffPerformance: [], healthSafety: [], handovers: [], dailySupport: [],
-        flags: { red: 0, amber: 0, green: 0 },
-      };
-    }
-    const h = houses[houseName];
-    h.entries.push(entry);
-    if (entry.carer && entry.carer !== 'Staff') h.coordinator = entry.carer;
-    const cat = categorizeEntry(entry.type, entry.entry);
-    switch (cat) {
-      case 'incident': h.incidents.push(entry); break;
-      case 'safeguarding': h.safeguarding.push(entry); break;
-      case 'medication': h.medication.push(entry); break;
-      case 'handover': h.handovers.push(entry); break;
-      case 'daily_support': h.dailySupport.push(entry); break;
-      case 'health_safety': h.healthSafety.push(entry); break;
-      case 'staff': h.staffPerformance.push(entry); break;
-    }
-    if (entry.severity === 'red') h.flags.red++;
-    else if (entry.severity === 'amber') h.flags.amber++;
-    else h.flags.green++;
-  }
-  const sorted = dates.filter(Boolean).sort((a, b) => {
-    const [da, ma, ya] = a.split('/').map(Number);
-    const [db, mb, yb] = b.split('/').map(Number);
-    return new Date(ya, ma - 1, da).getTime() - new Date(yb, mb - 1, db).getTime();
-  });
-  return {
-    dateFrom: sorted[0] || '', dateTo: sorted[sorted.length - 1] || '',
-    totalEntries: entries.length, houses, allFlags, entryTypes,
-    clients: [...clientSet], carers: [...carerSet], clientDiary,
+  const summary: WeekSummary = {
+    totalEntries: entries.length,
+    dateFrom: entries.length ? entries[entries.length - 1].date : '',
+    dateTo: entries.length ? entries[0].date : '',
+    entryTypes: {},
+    clients: Array.from(new Set(entries.map(e => e.client).filter(Boolean))),
+    carers: Array.from(new Set(entries.map(e => e.carer).filter(Boolean))),
+    clientDiary: {},
+    houses: {},
+    allFlags: { red: [], amber: [], green: [] }
   };
-}
 
-/**
- * Parses a grouped Roster CSV (CarePlanner format)
- * Carer,Day,Time,Client,Notes
- */
-export function parseRosterCSV(text: string, fileName: string): Shift[] {
-  const clean = text.replace(/^\uFEFF/, '');
-  const rows = parseCSVRaw(clean);
-  if (rows.length < 2) return [];
-
-  // Extract year from filename (e.g. Carer-roster...20_04_2026...)
-  const yearMatch = fileName.match(/_(\d{4})/);
-  const impliedYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
-
-  const shifts: Shift[] = [];
-  let currentCarer = '';
-  let currentDay = '';
-
-  // Skip header
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (row.length < 4) continue;
-    if (row.some(c => c.includes('GRAND TOTAL'))) break;
-
-    const rawCarer = safeCell(row, 0);
-    const rawDay = safeCell(row, 1);
-    const rawTime = safeCell(row, 2);
-    const rawClient = safeCell(row, 3);
-
-    // Grouping logic: Carer and Day columns only filled on the first row of a group
-    if (rawCarer) currentCarer = rawCarer.split(' - ')[0].trim();
-    if (rawDay) currentDay = rawDay.trim();
-
-    if (!rawTime || !rawClient) continue;
-
-    // Skip "Time Off" rows entirely from roster grid
-    if (rawClient.toLowerCase().includes('time off')) continue;
-
-    // Parse date: "Mon 20 Apr" -> "20/04/YYYY"
-    const dateMatch = currentDay.match(/(\d{1,2})\s+([A-Za-z]{3})/);
-    let date = '';
-    if (dateMatch) {
-      const day = dateMatch[1].padStart(2, '0');
-      const monthStr = dateMatch[2].toLowerCase();
-      const monthMap: Record<string, string> = {
-        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
-        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+  entries.forEach(e => {
+    const h = e.house || 'UNASSIGNED';
+    if (!summary.houses[h]) {
+      summary.houses[h] = { 
+        name: h, 
+        entries: [], 
+        flags: { red: 0, amber: 0, green: 0 }, 
+        medication: [], 
+        incidents: [], 
+        safeguarding: [],
+        handovers: [],
+        dailySupport: [],
+        coordinator: 'Unassigned',
+        staffPerformance: [],
+        healthSafety: []
       };
-      const month = monthMap[monthStr] || '01';
-      date = `${day}/${month}/${impliedYear}`;
     }
+    const house = summary.houses[h];
+    house.entries.push(e);
+    
+    if (e.severity === 'red') { house.flags.red++; summary.allFlags.red.push(e); }
+    if (e.severity === 'amber') { house.flags.amber++; summary.allFlags.amber.push(e); }
 
-    // Parse time/hours: "08:00 - 20:00 (12 hours)"
-    const timesMatch = rawTime.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
-    let startTime = '';
-    let endTime = '';
-    if (timesMatch) {
-      startTime = timesMatch[1];
-      endTime = timesMatch[2];
+    const cat = e.category;
+    if (cat === 'medication') house.medication.push(e);
+    if (cat === 'incident') house.incidents.push(e);
+    if (cat === 'safeguarding') house.safeguarding.push(e);
+    if (cat === 'handover') house.handovers.push(e);
+    if (cat === 'daily_support') house.dailySupport.push(e);
+    if (cat === 'health_safety') house.healthSafety.push(e);
+
+    if (e.client) {
+      if (!summary.clientDiary[e.client]) summary.clientDiary[e.client] = [];
+      summary.clientDiary[e.client].push(e);
     }
+  });
 
-    const hoursMatch = rawTime.match(/\((\d+)\s+hours?(?:\s+and\s+(\d+)\s+min)?\)/);
-    let hours = 0;
-    if (hoursMatch) {
-      hours = parseInt(hoursMatch[1], 10) + (parseInt(hoursMatch[2] || '0', 10) / 60);
-    }
-
-    // Determine shift type based on start time
-    const startHour = startTime ? parseInt(startTime.split(':')[0], 10) : 8;
-    let type: Shift['type'] = 'day';
-    if (hours >= 10) type = 'long_day';
-    if (startHour >= 18 || startHour < 6) type = 'night';
-
-    shifts.push({
-      id: uid(),
-      staffId: currentCarer, // We pass raw name here, router will resolve to real ID
-      house: normalizeHouse(rawClient) || rawClient,
-      date,
-      startTime,
-      endTime,
-      type,
-      hours: Number(hours.toFixed(2)),
-      status: 'confirmed'
-    });
-  }
-
-  return shifts;
+  return summary;
 }
+
+export function parseUniversalData(rawText: string): CareEntry[] {
+  return parseUniversalCSV(rawText);
+}
+
+export function parseRosterCSV(_: string, __?: string): any[] { return []; }
