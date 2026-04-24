@@ -1,4 +1,4 @@
-import type { CareEntry, WeekSummary } from './types';
+import type { CareEntry, WeekSummary, Shift } from './types';
 import { uid } from './storage';
 
 // ============================================================
@@ -94,98 +94,161 @@ function parseDateMs(s: string): number {
   return new Date(s).getTime() || 0;
 }
 
-// ─── THE HARDENED INTELLIGENT PARSER ────────────────────────────────────────
+// ─── CSV ROW PARSER (handles quoted multi-line fields) ────────────────────────
+function parseCSVRows(text: string): string[][] {
+  const clean = text.replace(/^\uFEFF/, ''); // strip BOM
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = '';
+  let inQuotes = false;
 
-export function parseUniversalCSV(text: string): CareEntry[] {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  if (!lines.length) return [];
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    const next = clean[i + 1];
 
-  const rows: string[][] = lines.map(line => {
-    const result: string[] = [];
-    let cur = '', inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') inQuotes = !inQuotes;
-      else if (char === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
-      else cur += char;
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        // escaped quote
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      row.push(cur.trim());
+      cur = '';
+    } else if ((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuotes) {
+      if (ch === '\r') i++; // skip \n of \r\n
+      row.push(cur.trim());
+      // only keep non-empty rows
+      if (row.some(c => c.length > 0)) rows.push(row);
+      row = [];
+      cur = '';
+    } else {
+      cur += ch;
     }
-    result.push(cur.trim());
-    return result;
+  }
+  // flush last row
+  if (cur.length > 0 || row.length > 0) {
+    row.push(cur.trim());
+    if (row.some(c => c.length > 0)) rows.push(row);
+  }
+
+  return rows;
+}
+
+/**
+ * Find a column index by checking if any alias is a substring of the
+ * normalised header (spaces allowed). This is the key fix — the previous
+ * version stripped spaces, so "Carers involved" became "carersinvolved"
+ * and never matched "carer".
+ */
+function findCol(headers: string[], ...aliases: string[]): number {
+  return headers.findIndex(h => {
+    const norm = h.toLowerCase().trim();
+    return aliases.some(a => norm.includes(a.toLowerCase()));
   });
+}
 
-  // 1. Identify Headers (High-Precision)
-  const headerRow = rows[0].map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
-  const findIdx = (keywords: string[]) => headerRow.findIndex(h => keywords.some(k => h === k || (h.includes(k) && h.length < k.length + 5)));
+function safeCell(row: string[], idx: number): string {
+  if (idx < 0 || idx >= row.length) return '';
+  return (row[idx] || '').trim();
+}
 
-  let iDate = findIdx(['date', 'occurred', 'time', 'entryat', 'recorded']);
-  let iCarer = findIdx(['carer', 'staff', 'worker', 'author', 'user']);
-  let iClient = findIdx(['client', 'serviceuser', 'resident', 'person']); // REMOVED 'subject'
-  const iType = findIdx(['type', 'category', 'event']); // REMOVED 'subject'
-  let iEntry = findIdx(['entry', 'note', 'text', 'detail', 'comment', 'report', 'subject']); // ADDED 'subject'
-  const iHouse = findIdx(['house', 'location', 'site', 'unit', 'property']);
+// ─── MAIN CSV DIARY PARSER ────────────────────────────────────────────────────
+export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] {
+  const parsedRows = rows ?? parseCSVRows(text);
+  if (parsedRows.length < 2) return [];
 
-  // 2. Multi-Point Heuristic Fallback (If headers are missing or malformed)
-  if (iEntry === -1 || iClient === -1) {
-    const sample = rows[1] || rows[0];
-    
-    // Find the clinical note (usually the longest block)
-    if (iEntry === -1) iEntry = sample.findIndex(c => c.length > 50);
-    
-    // Find the date
-    if (iDate === -1) iDate = sample.findIndex(c => /\d{2}\/\d{2}/.test(c));
-    
-    // Find the client (usually Proper Case, 2-3 words, short length)
-    if (iClient === -1) {
-      iClient = sample.findIndex((c, idx) => 
-        idx !== iEntry && idx !== iDate && c.length > 3 && c.length < 40 && /^[A-Z]/.test(c)
-      );
+  const headers = parsedRows[0];
+
+  // STEP 1 — Precision header matching using the real CarePlanner column names
+  const iDate   = findCol(headers, 'entry occurred', 'display from', 'occurred', 'date', 'entry_date');
+  const iType   = findCol(headers, 'incident type', 'entry type', 'type', 'category');
+  const iCarer  = findCol(headers, 'carers involved', 'carer', 'staff', 'worker');
+  const iClient = findCol(headers, 'clients involved', 'client', 'service user', 'resident');
+  const iEntry  = findCol(headers, 'diary entry', 'entry', 'notes', 'details', 'description', 'note');
+  const iHouse  = findCol(headers, 'house', 'location', 'property', 'unit', 'site');
+
+  // STEP 2 — Only run heuristics if we have NO entry column at all
+  // (this prevents treating notes-in-cells as client names)
+  let gDate = iDate, gType = iType, gCarer = iCarer, gClient = iClient, gEntry = iEntry, gHouse = iHouse;
+
+  if (gEntry < 0) {
+    // True headerless file — scan a data row for the longest text block
+    const sample = parsedRows[1] || [];
+    for (let c = 0; c < sample.length; c++) {
+      const val = sample[c].trim();
+      if (val.length > 60 && gEntry < 0) gEntry = c;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(val) && gDate < 0) gDate = c;
     }
-
-    // Find the carer (same signature as client, but usually different column)
-    if (iCarer === -1) {
-      iCarer = sample.findIndex((c, idx) => 
-        idx !== iEntry && idx !== iDate && idx !== iClient && c.length > 3 && c.length < 40 && /^[A-Z]/.test(c)
-      );
+    // Only guess client/carer if we're in true headerless mode AND have an entry col
+    // Use short Proper-Case cells that aren't dates or the entry
+    if (gEntry >= 0) {
+      for (let c = 0; c < sample.length; c++) {
+        if (c === gEntry || c === gDate) continue;
+        const val = sample[c].trim();
+        const isName = val.length > 2 && val.length < 50 && /^[A-Z]/.test(val) && !/^\d/.test(val);
+        if (isName && gClient < 0) { gClient = c; continue; }
+        if (isName && gCarer < 0) { gCarer = c; }
+      }
     }
   }
 
-  // 3. Transformation
-  const entries: CareEntry[] = [];
-  const startAt = (iDate !== -1 && rows[0][iDate]?.toLowerCase()?.includes('date')) ? 1 : 0;
+  // If we still have no entry column, nothing to parse
+  if (gEntry < 0) return [];
 
-  for (let i = startAt; i < rows.length; i++) {
-    const r = rows[i];
-    const rawEntry = r[iEntry] || '';
+  // STEP 3 — Row transformation (skip header row)
+  const MAX_ENTRIES = 10000;
+  const entries: CareEntry[] = [];
+
+  for (let i = 1; i < parsedRows.length && entries.length < MAX_ENTRIES; i++) {
+    const r = parsedRows[i];
+    const rawEntry = safeCell(r, gEntry);
     if (rawEntry.length < 5) continue;
 
-    const date = r[iDate] || new Date().toLocaleDateString('en-GB');
-    const carer = r[iCarer] || 'Personnel Unassigned';
-    const client = r[iClient] || 'Service User Unassigned';
-    const type = r[iType] || 'Standard Entry';
-    const house = normalizeHouse(r[iHouse] || ''); // Removed client-to-house fallback
+    const dateRaw   = safeCell(r, gDate);
+    const typeRaw   = safeCell(r, gType);
+    const carerRaw  = safeCell(r, gCarer);
+    const clientRaw = safeCell(r, gClient);
+    const houseRaw  = safeCell(r, gHouse);
+
+    // Skip rows where "entry" looks like a header label
+    if (rawEntry.toLowerCase() === 'diary entry' || rawEntry.toLowerCase() === 'entry' || rawEntry.toLowerCase() === 'notes') continue;
+    // Skip rows that are clearly just date values repeated (artifact of multi-line CSV parse)
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawEntry)) continue;
+
+    const date   = dateRaw || new Date().toLocaleDateString('en-GB');
+    const carer  = carerRaw || 'Personnel Unassigned';
+    const client = clientRaw || 'Service User Unassigned';
+    const type   = typeRaw || 'Standard Entry';
+    const house  = normalizeHouse(houseRaw) || 'UNASSIGNED';
+
+    // Validate date is parseable
+    const ms = parseDateMs(date);
+    if (ms === 0 && dateRaw) continue; // garbage date
 
     const { severity, flags } = detectFlags(rawEntry + ' ' + type);
-    
+
     entries.push({
       id: uid(),
       date,
-      house: house || 'UNASSIGNED',
+      house,
       carer,
       client,
       type,
       entry: rawEntry,
       severity,
       flags,
-      category: categorizeEntry(type, rawEntry)
+      category: categorizeEntry(type, rawEntry),
     });
   }
 
-  // Descending Temporal Sort
-  return entries
-    .sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date))
-    .slice(0, 50000);
+  // Descending temporal sort
+  return entries.sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date));
 }
 
+// ─── WEEK SUMMARY BUILDER ────────────────────────────────────────────────────
 export function buildWeekSummary(entries: CareEntry[]): WeekSummary {
   const summary: WeekSummary = {
     totalEntries: entries.length,
@@ -196,28 +259,28 @@ export function buildWeekSummary(entries: CareEntry[]): WeekSummary {
     carers: Array.from(new Set(entries.map(e => e.carer).filter(Boolean))),
     clientDiary: {},
     houses: {},
-    allFlags: { red: [], amber: [], green: [] }
+    allFlags: { red: [], amber: [], green: [] },
   };
 
   entries.forEach(e => {
     const h = e.house || 'UNASSIGNED';
     if (!summary.houses[h]) {
-      summary.houses[h] = { 
-        name: h, entries: [], flags: { red: 0, amber: 0, green: 0 }, 
-        medication: [], incidents: [], safeguarding: [], 
-        handovers: [], dailySupport: [], coordinator: 'Unassigned', 
-        staffPerformance: [], healthSafety: [] 
+      summary.houses[h] = {
+        name: h, entries: [], flags: { red: 0, amber: 0, green: 0 },
+        medication: [], incidents: [], safeguarding: [],
+        handovers: [], dailySupport: [], coordinator: 'Unassigned',
+        staffPerformance: [], healthSafety: [],
       };
     }
     const house = summary.houses[h];
     house.entries.push(e);
-    if (e.severity === 'red') { house.flags.red++; summary.allFlags.red.push(e); }
-    if (e.severity === 'amber') { house.flags.amber++; summary.allFlags.amber.push(e); }
-    
-    if (e.category === 'medication') house.medication.push(e);
-    if (e.category === 'incident') house.incidents.push(e);
-    if (e.category === 'safeguarding') house.safeguarding.push(e);
-    if (e.category === 'handover') house.handovers.push(e);
+    if (e.severity === 'red')   { house.flags.red++;   summary.allFlags.red.push(e); }
+    if (e.severity === 'amber') { house.flags.amber++;  summary.allFlags.amber.push(e); }
+
+    if (e.category === 'medication')    house.medication.push(e);
+    if (e.category === 'incident')      house.incidents.push(e);
+    if (e.category === 'safeguarding')  house.safeguarding.push(e);
+    if (e.category === 'handover')      house.handovers.push(e);
     if (e.category === 'daily_support') house.dailySupport.push(e);
     if (e.category === 'health_safety') house.healthSafety.push(e);
 
@@ -234,4 +297,84 @@ export function parseUniversalData(rawText: string): CareEntry[] {
   return parseUniversalCSV(rawText);
 }
 
-export function parseRosterCSV(_text?: string, _name?: string): any[] { return []; }
+/**
+ * Parses a grouped Roster CSV (CarePlanner format)
+ * Carer, Day, Time, Client, Notes
+ */
+export function parseRosterCSV(text: string, fileName: string): Shift[] {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const parseRow = (line: string): string[] => {
+    const result: string[] = [];
+    let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') inQuotes = !inQuotes;
+      else if (ch === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
+  const rows = lines.map(parseRow);
+  const yearMatch = fileName.match(/_(\d{4})/);
+  const impliedYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+
+  const shifts: Shift[] = [];
+  let currentCarer = '';
+  let currentDay = '';
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (row.length < 4) continue;
+    if (row.some(c => c.includes('GRAND TOTAL'))) break;
+
+    const rawCarer  = row[0]?.trim() || '';
+    const rawDay    = row[1]?.trim() || '';
+    const rawTime   = row[2]?.trim() || '';
+    const rawClient = row[3]?.trim() || '';
+
+    if (rawCarer) currentCarer = rawCarer.split(' - ')[0].trim();
+    if (rawDay)   currentDay   = rawDay.trim();
+    if (!rawTime || !rawClient) continue;
+    if (rawClient.toLowerCase().includes('time off')) continue;
+
+    const dateMatch = currentDay.match(/(\d{1,2})\s+([A-Za-z]{3})/);
+    let date = '';
+    if (dateMatch) {
+      const day = dateMatch[1].padStart(2, '0');
+      const monthMap: Record<string, string> = {
+        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+      };
+      const month = monthMap[dateMatch[2].toLowerCase()] || '01';
+      date = `${day}/${month}/${impliedYear}`;
+    }
+
+    const timesMatch = rawTime.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    const startTime = timesMatch?.[1] || '';
+    const endTime   = timesMatch?.[2] || '';
+
+    const hoursMatch = rawTime.match(/\((\d+)\s+hours?(?:\s+and\s+(\d+)\s+min)?\)/);
+    let hours = 0;
+    if (hoursMatch) hours = parseInt(hoursMatch[1], 10) + (parseInt(hoursMatch[2] || '0', 10) / 60);
+
+    const startHour = startTime ? parseInt(startTime.split(':')[0], 10) : 8;
+    let type: Shift['type'] = 'day';
+    if (hours >= 10) type = 'long_day';
+    if (startHour >= 18 || startHour < 6) type = 'night';
+
+    shifts.push({
+      id: uid(),
+      staffId: currentCarer,
+      house: normalizeHouse(rawClient) || rawClient,
+      date, startTime, endTime, type,
+      hours: Number(hours.toFixed(2)),
+      status: 'confirmed',
+    });
+  }
+
+  return shifts;
+}
