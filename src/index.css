@@ -15,9 +15,6 @@
   --color-flag-red: #d94e4e;
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
-  
-  --shadow-hc-raised: 8px 8px 16px var(--hc-shadow-dark), -8px -8px 16px var(--hc-shadow-light);
-  --shadow-hc-inset: inset 4px 4px 8px var(--hc-shadow-dark), inset -4px -4px 8px var(--hc-shadow-light);
 }
 
 :root {
@@ -26,71 +23,72 @@
   --hc-surface: #f3efe0;
   --hc-surface-2: #e8e4d5;
   --hc-text: #0d2d2d;
-  --hc-muted: #8a8b82;
-  --hc-border: rgba(13, 45, 45, 0.1);
-  --hc-shadow-dark: rgba(0, 0, 0, 0.05);
-  --hc-shadow-light: rgba(255, 255, 255, 0.8);
+  --hc-muted: #6b6653;
+  --hc-border: rgba(13, 45, 45, 0.05);
+  --hc-shadow-dark: rgba(13, 45, 45, 0.08);
+  --hc-shadow-light: rgba(255, 255, 255, 0.9);
 }
 
 [data-theme='dark'] {
   /* DARK: NOCTURNAL TEAL PROTOCOL (ROLE SWAP) */
-  --hc-bg: #0d2d2d;         /* Nocturnal Pine is now the canvas */
+  --hc-bg: #0d2d2d;
   --hc-surface: #0d2d2d;
   --hc-surface-2: #163a3a;
-  --hc-text: #f3efe0;       /* Bone is now the light/text */
+  --hc-text: #f3efe0;
   --hc-muted: #a3a395;
-  --hc-border: rgba(243, 239, 224, 0.1);
-  --hc-shadow-dark: rgba(0, 0, 0, 0.4);
-  --hc-shadow-light: rgba(255, 255, 255, 0.05);
+  --hc-border: rgba(243, 239, 224, 0.08);
+  --hc-shadow-dark: rgba(0, 0, 0, 0.45);
+  --hc-shadow-light: rgba(255, 255, 255, 0.03);
 }
 
 @layer base {
   body {
-    @apply bg-hc-bg text-hc-text transition-colors duration-500 font-sans antialiased selection:bg-hc-teal/20;
+    @apply bg-hc-bg text-hc-text transition-colors duration-700 font-sans antialiased selection:bg-hc-teal/20 overflow-x-hidden;
     font-feature-settings: "ss01", "ss03", "cv01", "cv11";
   }
 }
 
 @layer components {
   .hc-clay-raised {
-    @apply bg-hc-surface transition-all duration-500;
-    box-shadow: var(--shadow-hc-raised);
+    @apply bg-hc-surface transition-all duration-500 rounded-[2rem];
+    box-shadow: 12px 12px 32px var(--hc-shadow-dark), -10px -10px 32px var(--hc-shadow-light);
     border: 1px solid var(--hc-border);
   }
   
   .hc-clay-inset {
-    @apply bg-hc-surface transition-all duration-500;
-    box-shadow: var(--shadow-hc-inset);
+    @apply bg-hc-surface transition-all duration-500 rounded-[1.5rem];
+    box-shadow: inset 6px 6px 16px var(--hc-shadow-dark), inset -6px -6px 16px var(--hc-shadow-light);
     border: 1px solid var(--hc-border);
   }
 
   .btn-tactical {
     @apply bg-hc-teal text-hc-bone font-black uppercase tracking-widest px-8 py-4 rounded-2xl 
-           transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 
-           disabled:opacity-20 disabled:cursor-not-allowed border border-hc-teal-light/20;
+           transition-all duration-300 shadow-2xl hover:scale-[1.02] active:scale-95 
+           disabled:opacity-20 disabled:cursor-not-allowed border border-hc-teal-light/10;
   }
 
   .pill {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest border transition-all;
+    @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all;
   }
 
-  .pill-teal { @apply bg-hc-teal/10 text-hc-teal border-hc-teal/30; }
-  .pill-red { @apply bg-flag-red/10 text-flag-red border-flag-red/30; }
-  .pill-amber { @apply bg-flag-amber/10 text-flag-amber border-flag-amber/30; }
-  .pill-green { @apply bg-flag-green/10 text-flag-green border-flag-green/30; }
+  .pill-teal { @apply bg-hc-teal/10 text-hc-teal border-hc-teal/20; }
+  .pill-red { @apply bg-flag-red/10 text-flag-red border-flag-red/20; }
+  .pill-amber { @apply bg-flag-amber/10 text-flag-amber border-flag-amber/20; }
+  .pill-green { @apply bg-flag-green/10 text-flag-green border-flag-green/20; }
 }
 
-/* ── UI CLEANUP ── */
-[class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"] {
-  font-size: 11px !important;
-}
-
-.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+/* ── UI TENSION & DENSITY ── */
+.scrollbar-thin::-webkit-scrollbar { width: 3px; }
 .scrollbar-thin::-webkit-scrollbar-track { @apply bg-transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-hc-muted/20 rounded-full hover:bg-hc-teal/40 transition-colors; }
+.scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-hc-muted/20 rounded-full hover:bg-hc-teal/40; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
-.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float { animation: float 5s ease-in-out infinite; }
+
+/* Purge oversized font enforcement */
+[class*="text-[8px]"] { font-size: 8px !important; }
+[class*="text-[9px]"] { font-size: 9px !important; }
+[class*="text-[10px]"] { font-size: 10px !important; }

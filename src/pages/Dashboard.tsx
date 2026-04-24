@@ -78,20 +78,20 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
          </div>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {houseStats.map(h => (
-               <div key={h.name} onClick={() => setPage('client-diary', { house: h.name })} className="hc-clay-raised p-8 rounded-[2.5rem] flex flex-col gap-8 group cursor-pointer hover:shadow-2xl transition-all relative overflow-hidden border border-hc-border/5">
-                  {h.red > 0 && <div className="absolute top-0 right-0 w-32 h-32 bg-flag-red/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />}
+               <div key={h.name} onClick={() => setPage('client-diary', { house: h.name })} className="hc-clay-raised p-6 rounded-[2.25rem] flex flex-col gap-6 group cursor-pointer hover:shadow-2xl transition-all relative overflow-hidden border border-hc-border/5">
+                  {h.red > 0 && <div className="absolute top-0 right-0 w-24 h-24 bg-flag-red/5 blur-2xl rounded-full -translate-y-1/2 translate-x-1/2" />}
                   <div className="flex items-center justify-between relative z-10">
-                     <h3 className="text-lg font-black text-hc-text uppercase tracking-tight group-hover:text-hc-teal transition-colors">{h.name}</h3>
-                     <div className={`w-2 h-2 rounded-full ${h.red > 0 ? 'bg-flag-red animate-pulse shadow-[0_0_10px_#d94e4e]' : 'bg-flag-green'}`} />
+                     <h3 className="text-sm font-black text-hc-text uppercase tracking-tight group-hover:text-hc-teal transition-colors">{h.name}</h3>
+                     <div className={`w-2 h-2 rounded-full ${h.red > 0 ? 'bg-flag-red animate-pulse shadow-[0_0_8px_#d94e4e]' : 'bg-flag-green'}`} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 relative z-10">
-                     <div className="hc-clay-inset p-5 flex flex-col items-center gap-1 bg-hc-bg/50">
-                        <span className="text-[10px] font-black text-hc-muted uppercase opacity-60">Signals</span>
-                        <span className="text-3xl font-black text-hc-text tabular-nums">{h.entries.length}</span>
+                  <div className="grid grid-cols-2 gap-3 relative z-10">
+                     <div className="hc-clay-inset p-4 flex flex-col items-center gap-1">
+                        <span className="text-[9px] font-black text-hc-muted uppercase opacity-60">Signals</span>
+                        <span className="text-2xl font-black text-hc-text tabular-nums">{h.entries.length}</span>
                      </div>
-                     <div className={`hc-clay-inset p-5 flex flex-col items-center gap-1 transition-all hover:bg-hc-clay-dark/10 ${h.red > 0 ? 'bg-flag-red/5' : ''}`}>
-                        <span className="text-[10px] font-black text-hc-muted uppercase opacity-60">Audit</span>
-                        <Activity className={`w-6 h-6 ${h.red > 0 ? 'text-flag-red' : 'text-hc-teal'}`} />
+                     <div className={`hc-clay-inset p-4 flex flex-col items-center gap-1 transition-all hover:bg-hc-clay-dark/10 ${h.red > 0 ? 'bg-flag-red/5' : ''}`}>
+                        <span className="text-[9px] font-black text-hc-muted uppercase opacity-60">Audit</span>
+                        <Activity className={`w-5 h-5 ${h.red > 0 ? 'text-flag-red' : 'text-hc-teal'}`} />
                      </div>
                   </div>
                </div>
