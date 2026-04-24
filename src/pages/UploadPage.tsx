@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2 } from 'lucide-react';
+import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive } from 'lucide-react';
 import JSZip from 'jszip';
 import { loadClients } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
@@ -10,6 +10,7 @@ import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
 import { extractFileText } from '../lib/universal-extractor';
+import { appendEntries } from '../lib/entry-store';
 
 type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
@@ -279,24 +280,34 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (!selectedTargets.length) { setErrorMsg('Select target vector.'); return; }
     const res = routeImport(preview.envelope, { targets: selectedTargets, clientMode, selectedClientId });
     if (res.ok) {
-       if (selectedTargets.includes('reports')) {
-         const data = loadWeekData();
-         if (data) onDataParsed(data);
-       }
-       setResultMsg(res.messages.join(' ')); setStep('done');
+      // Persist raw entries to temporal store so date-range analysis works
+      if (preview.envelope.diaryEntries?.length) {
+        const added = appendEntries(preview.envelope.diaryEntries);
+        if (added > 0) res.messages.push(`${added} entries added to temporal store.`);
+      }
+      if (selectedTargets.includes('reports')) {
+        const data = loadWeekData();
+        if (data) onDataParsed(data);
+      }
+      setResultMsg(res.messages.join(' ')); setStep('done');
     } else { setErrorMsg(res.warnings.join(' | ')); setStep('error'); }
   };
 
   const applyZipRows = (rows: ZipGuidanceRow[]) => {
     let success = 0;
+    let entriesAdded = 0;
     for (const r of rows) {
       const res = routeImport(r.envelope, { targets: [r.selectedTarget as ImportTarget], clientMode: r.clientMode, selectedClientId: r.selectedClientId });
-      if (res.ok) success++;
+      if (res.ok) {
+        success++;
+        if (r.envelope.diaryEntries?.length) entriesAdded += appendEntries(r.envelope.diaryEntries);
+      }
     }
-    if (success > 0) { 
+    if (success > 0) {
       const data = loadWeekData();
       if (data) onDataParsed(data);
-      setResultMsg(`Processed ${rows.length} units: ${success} active.`); setStep('done'); 
+      setResultMsg(`Processed ${rows.length} units: ${success} active. ${entriesAdded} entries added to temporal store.`);
+      setStep('done');
     } else { setErrorMsg('Unit ingestion failed.'); setStep('error'); }
   };
 
@@ -324,7 +335,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
               <div className="text-center">
                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialize Intake Stream</div>
-                <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 leading-loose">Drop Clinical ZIP Packs, PDF Quality Audits,<br />or Roster Intelligence Vectors</p>
+                <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 leading-loose">
+                  Drop Clinical ZIP Packs, PDF Audits, CSV Diary Exports,<br />or Roster Intelligence Vectors
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-6">
+                  {['.zip', '.csv', '.pdf', '.txt', '.docx'].map(ext => (
+                    <span key={ext} className="pill pill-teal text-[9px] font-black px-2 py-1 flex items-center gap-1">
+                      {ext === '.zip' && <Archive className="w-3 h-3" />}
+                      {ext}
+                    </span>
+                  ))}
+                </div>
               </div>
             </label>
             <div className="flex-1 hc-clay-raised rounded-[3rem] p-10 flex flex-col shadow-2xl border border-hc-muted/5 bg-black/[0.01]">

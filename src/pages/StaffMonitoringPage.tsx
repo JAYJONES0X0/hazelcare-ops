@@ -1,6 +1,8 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import type { Page } from '../App';
+import { getEntriesForRange, getStoreBounds } from '../lib/entry-store';
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { ORG_CONFIG } from '../lib/config';
 import { scoreEntry } from '../lib/entry-rubric';
 import {
@@ -103,6 +105,15 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
   const [house, setHouse] = useState<string>('all');
   const [dateFrom] = useState(def.dateFrom);
   const [dateTo] = useState(def.dateTo);
+
+  // Temporal intelligence — date range for persistent entry store
+  const [temporalRange, setTemporalRange] = useState<DateRange>({ from: null, to: null });
+  const persistedEntries = useMemo(() => {
+    if (!temporalRange.from && !temporalRange.to) return null; // null = use weekData
+    return getEntriesForRange(temporalRange.from, temporalRange.to);
+  }, [temporalRange]);
+  const storeBounds = getStoreBounds();
+
   const [selectedEscId, setSelectedEscId] = useState<string | null>(null);
   const [callVariant, setCallVariant] = useState<CallPrepVariant>('message');
 
@@ -145,7 +156,13 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
     mergeMonitoringIntoTemplateContext(ctx);
   }, [snapshot, house, dateFrom, dateTo]);
 
-  const filteredEntries = useMemo(() => weekData ? filterEntries(flattenWeekEntries(weekData), filters) : [], [weekData, filters]);
+  // When a temporal range is active, pull from persistent store; otherwise use weekData
+  const filteredEntries = useMemo(() => {
+    if (persistedEntries !== null) {
+      return filterEntries(persistedEntries, { ...filters, dateFrom: undefined, dateTo: undefined });
+    }
+    return weekData ? filterEntries(flattenWeekEntries(weekData), filters) : [];
+  }, [persistedEntries, weekData, filters]);
 
   function exportMonitoringPack() {
     const meta = buildCoordinatorPackMeta(snapshot, 'staff-monitoring', { entryCount: filteredEntries.length });
@@ -248,6 +265,30 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
         <div className={`mb-10 px-8 py-5 rounded-[2rem] hc-clay-inset text-xs font-black uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 ${importError.includes('Merged') ? 'text-flag-green' : 'text-flag-red'}`}>
           <div className={`w-2.5 h-2.5 rounded-full ${importError.includes('Merged') ? 'bg-flag-green animate-pulse' : 'bg-flag-red'}`} />
           {importError}
+        </div>
+      )}
+
+      {/* ── Temporal Intelligence Range Picker ── */}
+      {(storeBounds || persistedEntries !== null) && (
+        <div className="mb-8 animate-in slide-in-from-top-2 duration-500">
+          <DateRangePicker
+            range={temporalRange}
+            onChange={setTemporalRange}
+            entryCount={filteredEntries.length}
+          />
+          {persistedEntries !== null && (
+            <div className="mt-3 px-4 py-2 bg-hc-teal/5 border border-hc-teal/20 rounded-xl text-[10px] font-black text-hc-teal uppercase tracking-widest flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
+              Temporal mode active · showing {filteredEntries.length.toLocaleString()} entries from persistent store
+              · all analysis below reflects selected range
+              <button
+                onClick={() => setTemporalRange({ from: null, to: null })}
+                className="ml-auto text-hc-muted hover:text-hc-text transition-colors"
+              >
+                ✕ reset to current week
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -395,9 +436,16 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                     <select className="w-full hc-clay-inset px-5 py-4 text-xs font-black uppercase tracking-widest text-hc-text outline-none mb-4 shadow-inner"
                       onChange={(e) => { const entry = entriesByStaff[coachStaff]?.find(x => x.entry === e.target.value); if (entry) { setCoachEntry(entry); setCoachRewrite(''); } }} value={coachEntry?.entry || ''}>
                       <option value="">-- CHOOSE DIAGNOSTIC NODE --</option>
-                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 10).map((e, i) => (
-                        <option key={i} value={e.entry}>{e.date} :: {scoreEntry(e).total}%</option>
-                      ))}
+                      {[...(entriesByStaff[coachStaff] || [])].sort((a, b) => scoreEntry(a).total - scoreEntry(b).total).slice(0, 20).map((e, i) => {
+                        const cat = (e.category || 'entry').replace(/_/g, ' ');
+                        const client = e.client ? e.client.split(' ')[0] : '—';
+                        const score = scoreEntry(e).total;
+                        return (
+                          <option key={i} value={e.entry}>
+                            {e.date} · {cat} · {client} · {score}%
+                          </option>
+                        );
+                      })}
                     </select>
                   </section>
 
