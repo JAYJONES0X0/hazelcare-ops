@@ -223,15 +223,29 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
   const parsedRows = rows ?? parseCSVRaw(clean);
   if (parsedRows.length < 1) return [];
   
-  // If first row doesn't look like headers, but data, we need a different strategy
-  let headers = parsedRows[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+  // Scan first 20 rows for the real header row — PDFs have title/intro rows before the data table
+  const HEADER_KEYS = ['entry_occurred', 'diary_entry', 'display_from', 'incident_type', 'carers_involved', 'clients_involved'];
+  let headers: string[] = [];
   let startIdx = 1;
-
-  // Heuristic: If first row has dates/long text, it might not be a header row
-  if (headers.some(h => /\d{2}\/\d{2}\/\d{4}/.test(h) || h.length > 50)) {
-     // No headers, or messy ones. Synthesise or guess.
-     startIdx = 0;
-     headers = []; 
+  let foundHeader = false;
+  for (let r = 0; r < Math.min(20, parsedRows.length); r++) {
+    const norm = parsedRows[r].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+    if (HEADER_KEYS.filter(k => norm.some(h => h.includes(k))).length >= 3) {
+      headers = norm;
+      startIdx = r + 1;
+      foundHeader = true;
+      break;
+    }
+  }
+  if (!foundHeader) {
+    // Fallback: assume row 0 is headers
+    headers = parsedRows[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+    startIdx = 1;
+    // If first row looks like data (has dates or very long cells), treat as headerless
+    if (headers.some(h => /\d{2}\/\d{2}\/\d{4}/.test(h) || h.length > 50)) {
+      startIdx = 0;
+      headers = [];
+    }
   }
 
   const iDate  = findCol(headers, 'entry_occurred', 'display_from', 'occurred', 'date', 'entry_date', 'record_date', 'occurance');
