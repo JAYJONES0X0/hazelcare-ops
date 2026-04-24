@@ -251,7 +251,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
             {importLoading ? 'Analysingâ€¦' : 'Sync daily CSV'}
           </button>
           <button type="button" onClick={() => { onRecompute(); setPage('templates'); }}
-            className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-90 transition-all">
+            className="px-6 py-3.5 hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-90 transition-all">
             Templates
           </button>
         </div>
@@ -300,7 +300,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
           { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || 'â€”', color: snapshot.dataFreshness.staleHours != null && snapshot.dataFreshness.staleHours > 24 ? 'text-flag-amber' : 'text-hc-text', icon: <RefreshCw className="w-4 h-4" /> },
           { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), color: 'text-hc-text', icon: <History className="w-4 h-4" /> },
         ].map(({ label, value, color, icon }) => (
-          <div key={label} className="hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]">
+          <div key={label} className="hc-clay-raised px-8 py-8 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px] rounded-[2.25rem]">
             <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{icon}</div>
             <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3">{label}</div>
             <div className={`text-xl font-black ${color} truncate tracking-tighter tabular-nums`}>{value}</div>
@@ -391,7 +391,7 @@ export function StaffMonitoringPage({ weekData, setPage, onDataParsed }: Props) 
                       <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Contextual Studio</p>
                     </div>
                   </div>
-                  <button onClick={() => setCoachStaff(null)} className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-text hover:bg-black/5 transition-all">âœ•</button>
+                  <button onClick={() => setCoachStaff(null)} className="w-10 h-10 hc-clay-raised flex items-center justify-center text-hc-text hover:bg-black/5 transition-all">âœ•</button>
                 </div>
 
                 <div className="space-y-10">

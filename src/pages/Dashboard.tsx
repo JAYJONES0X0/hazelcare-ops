@@ -61,7 +61,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           { label: 'Open Command Tasks', val: pendingActions, sub: 'Pipeline', color: 'text-flag-amber' },
           { label: 'Active Incidents', val: activeIncidents, sub: 'Force Protection', color: 'text-flag-red' }
         ].map(s => (
-          <div key={s.label} className="hc-clay-raised p-8 rounded-[2rem] flex flex-col gap-4 relative overflow-hidden group hover:scale-[1.02] transition-all">
+          <div key={s.label} className="hc-clay-raised p-8 flex flex-col gap-4 relative overflow-hidden group hover:scale-[1.02] transition-all">
             <div className={`absolute top-2 right-4 w-1.5 h-1.5 rounded-full bg-hc-text opacity-20`} />
             <div className="text-[11px] font-black text-hc-muted uppercase tracking-widest">{s.label}</div>
             <div className={`text-4xl font-black tabular-nums tracking-tighter ${s.color}`}>{s.val}</div>
@@ -69,7 +69,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
         ))}
       </div>
-
       {/* ── REGIONAL OPERATIONS MATRIX (HOUSE CARDS) ── */}
       <div className="space-y-8">
          <div className="flex items-center justify-between px-2">

@@ -61,6 +61,7 @@
   transition: all 400ms;
   box-shadow: var(--clay-raised);
   border: 1px solid var(--hc-border);
+  border-radius: 2.25rem;
 }
 
 .hc-clay-inset {
@@ -68,6 +69,7 @@
   transition: all 400ms;
   box-shadow: var(--clay-inset);
   border: 1px solid var(--hc-border);
+  border-radius: 1.5rem;
 }
 
 .hc-clay-pressed {
