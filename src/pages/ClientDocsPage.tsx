@@ -154,7 +154,7 @@ export function ClientDocsPage() {
 
   const handlePreview = async (useAI = false) => {
     if (!importText.trim()) return;
-    
+
     if (useAI) {
       setIsAnalyzing(true);
       setImportResult(['Initiating Clinical AI Intelligence Pipeline...']);
@@ -248,16 +248,16 @@ export function ClientDocsPage() {
     return (
       <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
         <button onClick={() => { setSubView('list'); setImportResult([]); setImportText(''); setImportPreview(null); }}
-          className="group flex items-center gap-2 text-hc-muted hover:text-white text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
-          <span className="w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center group-hover:bg-white/5">←</span>
+          className="group flex items-center gap-2 text-hc-muted hover:text-hc-text text-xs font-black uppercase tracking-[0.08em] mb-8 transition-all">
+          <span className="w-6 h-6 rounded-lg hc-clay-inset flex items-center justify-center">←</span>
           Back
         </button>
 
-        <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight text-shimmer flex items-center gap-3">
+        <h1 className="text-3xl font-extrabold text-hc-text mb-2 tracking-tight flex items-center gap-3">
           Intelligence Sync
           <span className="pill pill-teal text-[10px] font-black uppercase tracking-widest px-3 py-1">Operational Pipeline</span>
         </h1>
-        <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium opacity-80 leading-relaxed">
+        <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium leading-relaxed">
           Upload person-centred clinical documents or raw unstructured text. The AI Brain will map all 21 care domains and 15 risk areas automatically.
         </p>
 
@@ -265,9 +265,9 @@ export function ClientDocsPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isExtracting || isAnalyzing}
-            className="flex-1 flex items-center justify-center gap-3 glass border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all shadow-xl hover:bg-white/5"
+            className="flex-1 flex items-center justify-center gap-3 hc-clay-raised text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all hover:brightness-105"
           >
-            <FileText className="w-5 h-5 text-hc-teal-light" />
+            <FileText className="w-5 h-5 text-hc-teal" />
             {isExtracting ? 'Extracting Text...' : 'Upload PDF Document'}
           </button>
           <input
@@ -279,26 +279,26 @@ export function ClientDocsPage() {
           />
         </div>
 
-        <div className="glass-light border border-hc-teal/20 rounded-2xl px-6 py-4 mb-8 flex items-center gap-4 group">
+        <div className="bg-hc-teal/5 border border-hc-teal/20 rounded-2xl px-6 py-4 mb-8 flex items-center gap-4 group">
           <div className="w-10 h-10 rounded-xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-hc-teal-light animate-pulse" />
+            <Sparkles className="w-5 h-5 text-hc-teal animate-pulse" />
           </div>
           <div>
-            <p className="text-xs text-hc-teal-light font-black uppercase tracking-wide mb-0.5">Clinical Protocol</p>
-            <p className="text-sm text-hc-muted font-medium italic opacity-90 group-hover:opacity-100 transition-opacity">
+            <p className="text-xs text-hc-teal font-black uppercase tracking-wide mb-0.5">Clinical Protocol</p>
+            <p className="text-sm text-hc-muted font-medium italic leading-relaxed">
               For Social Worker reports or Hospital Discharge notes, use the "Clinical AI Analysis" button below for maximum precision.
             </p>
           </div>
         </div>
 
         {importTarget && (
-          <div className="pill pill-teal text-[10px] font-black px-4 py-2 mb-6 shadow-lg inline-flex items-center gap-2">
+          <div className="pill pill-teal text-[10px] font-black px-4 py-2 mb-6 inline-flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
             TARGET OVERWRITE: {clients.find(c => c.id === importTarget)?.name || 'Unknown'}
           </div>
         )}
 
-        <div className="relative rounded-2xl border border-white/5 glass p-1 shadow-2xl mb-6 overflow-hidden">
+        <div className="hc-clay-inset rounded-2xl p-1 mb-6 overflow-hidden">
           <textarea
             value={importText}
             onChange={e => setImportText(e.target.value)}
@@ -309,13 +309,13 @@ export function ClientDocsPage() {
         </div>
 
         {importResult.length > 0 && (
-          <div className="glass-light border border-white/5 rounded-2xl px-6 py-4 mb-6 space-y-1">
+          <div className="bg-hc-border/10 border border-hc-border/30 rounded-2xl px-6 py-4 mb-6 space-y-1">
             {importResult.map((w, i) => (
-              <p key={i} className="text-xs font-bold text-hc-muted/95 uppercase tracking-wide leading-relaxed flex items-center gap-2">
-                {w.includes('AI Analysis Complete') || w.includes('Clinical analysis complete') 
+              <p key={i} className="text-xs font-bold text-hc-muted uppercase tracking-wide leading-relaxed flex items-center gap-2">
+                {w.includes('AI Analysis Complete') || w.includes('Clinical analysis complete')
                   ? <CheckCircle className="w-3 h-3 text-flag-green" />
                   : <span className="w-1 h-1 rounded-full bg-hc-teal/40" />
-                } 
+                }
                 {w}
               </p>
             ))}
@@ -323,7 +323,7 @@ export function ClientDocsPage() {
         )}
 
         {importPreview && (
-          <div className="glass border-2 border-hc-teal/30 rounded-[2rem] p-8 mb-8 animate-in zoom-in-95 duration-500 shadow-2xl glow-teal relative overflow-hidden">
+          <div className="hc-clay-raised border-2 border-hc-teal/30 rounded-[2rem] p-8 mb-8 animate-in zoom-in-95 duration-500 glow-teal relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
               <p className="section-header text-[10px] mb-6 flex items-center gap-2">
@@ -331,30 +331,30 @@ export function ClientDocsPage() {
                 Detected Profile Structure
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Clinical Designation</div>
-                  <div className="text-sm font-black text-white truncate">{importPreview.name}</div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="section-header text-xs mb-1">Clinical Designation</div>
+                  <div className="text-sm font-black text-hc-text truncate">{importPreview.name}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Temporal ID</div>
-                  <div className="text-sm font-black text-white tabular-nums">{importPreview.dob}</div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="section-header text-xs mb-1">Temporal ID</div>
+                  <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">CQC Domains</div>
-                  <div className="text-sm font-black text-hc-teal-light tabular-nums">{importPreview.domainsDetected} / 21</div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="section-header text-xs mb-1">CQC Domains</div>
+                  <div className="text-sm font-black text-hc-teal tabular-nums">{importPreview.domainsDetected} / 21</div>
                 </div>
-                <div className="glass-light border border-white/5 rounded-2xl p-4 shadow-inner">
-                  <div className="section-header text-xs opacity-90 mb-1">Risk Logic</div>
-                  <div className="text-sm font-black text-hc-teal-light">ENABLED</div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="section-header text-xs mb-1">Risk Logic</div>
+                  <div className="text-sm font-black text-hc-teal">ENABLED</div>
                 </div>
               </div>
               <div className="flex gap-4">
                 <button onClick={handleImport}
-                  className="flex-1 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl hover:scale-[1.02] transition-all">
+                  className="flex-1 btn-tactical text-[11px] py-4 rounded-xl">
                   Commit Intelligence to Profile
                 </button>
                 <button onClick={() => setImportPreview(null)}
-                  className="px-8 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-xl transition-all">
+                  className="px-8 btn-clay text-[11px] py-4 rounded-xl">
                   Discard
                 </button>
               </div>
@@ -364,28 +364,28 @@ export function ClientDocsPage() {
 
         {!importPreview && (
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <button 
-              onClick={() => handlePreview(true)} 
+            <button
+              onClick={() => handlePreview(true)}
               disabled={!importText.trim() || isAnalyzing}
-              className="w-full md:w-auto btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 rounded-xl shadow-xl transition-all flex items-center justify-center gap-3 group"
+              className="w-full md:w-auto btn-tactical disabled:opacity-20 disabled:grayscale text-[11px] px-10 py-4 rounded-xl flex items-center justify-center gap-3 group"
             >
               {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
               {isAnalyzing ? 'Clinical AI Working...' : 'Initiate Clinical AI Analysis'}
             </button>
-            <button 
-              onClick={() => handlePreview(false)} 
+            <button
+              onClick={() => handlePreview(false)}
               disabled={!importText.trim() || isAnalyzing}
-              className="w-full md:w-auto glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-xl transition-all"
+              className="w-full md:w-auto btn-clay disabled:opacity-20 text-[11px] px-8 py-4 rounded-xl"
             >
               Basic Pattern Sync
             </button>
             {!importTarget && (
-              <div className="flex items-center gap-4 glass-light border border-white/5 px-5 py-3 rounded-2xl shadow-xl ml-auto">
+              <div className="flex items-center gap-4 hc-clay-inset px-5 py-3 rounded-2xl ml-auto">
                 <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Target Map:</span>
                 <select
                   value={importTarget || ''}
                   onChange={e => setImportTarget(e.target.value || null)}
-                  className="bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-2 text-[11px] font-black text-white focus:outline-none focus:border-hc-teal/50 shadow-inner min-w-[180px]">
+                  className="bg-hc-bone border border-hc-border/30 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text focus:outline-none focus:border-hc-teal/50 min-w-[180px]">
                   <option value="">New Clinical Profile</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -410,7 +410,7 @@ export function ClientDocsPage() {
       {/* Page header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">People & Support Plans</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold text-hc-text mb-1 tracking-tight">People & Support Plans</h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className="pill pill-blue text-xs font-black uppercase tracking-wide">{clients.length} People</span>
             <span className="pill pill-teal text-xs font-black uppercase tracking-wide">{pbsCount} PBS Profiles</span>
@@ -422,19 +422,19 @@ export function ClientDocsPage() {
           <select
             value={exportLayout}
             onChange={e => setExportLayout(e.target.value as ExportLayout)}
-            className="bg-hc-dark/80 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-white"
+            className="bg-hc-bone border border-hc-border/30 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none"
             title="Default export orientation"
           >
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
           </select>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
-            className="flex items-center gap-2.5 glass-light border border-white/10 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded-xl transition-all hover:bg-white/5 hover:border-hc-teal/30 group">
-            <Sparkles className="w-4 h-4 text-hc-teal-light group-hover:scale-110 transition-transform" />
+            className="flex items-center gap-2.5 btn-clay text-[10px] px-5 py-3 rounded-xl group">
+            <Sparkles className="w-4 h-4 text-hc-teal group-hover:scale-110 transition-transform" />
             Intelligence Sync
           </button>
           <button onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2.5 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow-xl transition-all hover:scale-105">
+            className="flex items-center gap-2.5 btn-tactical text-[10px] px-6 py-3 rounded-xl">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -460,19 +460,19 @@ export function ClientDocsPage() {
             value={filterText}
             onChange={e => setFilterText(e.target.value)}
             placeholder="Search people…"
-            className="w-full bg-hc-dark/60 border border-white/10 rounded-xl px-10 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder-hc-muted/40 focus:bg-hc-dark"
+            className="hc-clay-inset w-full rounded-xl px-10 py-3 text-sm text-hc-text focus:outline-none transition-all placeholder:text-hc-muted/50"
           />
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
-            <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-40 group-focus-within:opacity-80 transition-opacity">
+            <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
       )}
 
       {/* Client cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-24 glass border border-white/5 rounded-3xl animate-in zoom-in duration-700">
+        <div className="text-center py-24 hc-clay-raised rounded-3xl animate-in zoom-in duration-700">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
+          <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
           <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">{filterText ? 'Try a different search' : 'Click "Add Person" to get started'}</div>
         </div>
       ) : (
@@ -496,23 +496,23 @@ export function ClientDocsPage() {
 
             return (
               <div key={client.id}
-                className="glass border border-white/10 rounded-[2rem] overflow-hidden transition-all duration-500 card-glow group animate-in slide-in-from-bottom-4"
+                className="hc-clay-raised rounded-[2rem] overflow-hidden transition-all duration-500 group animate-in slide-in-from-bottom-4"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 {/* Client header */}
                 <div className="px-8 py-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.06]" style={{ background: riskColor }} />
+                  <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.03] blur-[60px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-[0.08]" style={{ background: riskColor }} />
                   <div className="flex flex-col md:flex-row md:items-center gap-6 relative z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-white/10 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                      <span className="text-xl font-black text-hc-teal-light">
+                    <div className="w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-border/20 flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-500">
+                      <span className="text-xl font-black text-hc-teal">
                         {client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <h2 className="text-2xl font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{client.name}</h2>
+                        <h2 className="text-2xl font-black text-hc-text tracking-tight group-hover:text-hc-teal transition-colors">{client.name}</h2>
                         {topRisk > 0 && (
-                          <span className="pill text-[9px] font-black uppercase tracking-widest shadow-lg animate-pulse-soft"
+                          <span className="pill text-[9px] font-black uppercase tracking-widest animate-pulse-soft"
                             style={{ background: riskColor + '22', color: riskColor, border: `1px solid ${riskColor}44` }}>
                             RISK: {topRisk}
                           </span>
@@ -522,30 +522,30 @@ export function ClientDocsPage() {
                         {client.dob && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">DOB:</span>
-                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.dob}</span>
+                            <span className="text-[11px] font-bold text-hc-text/70 tabular-nums">{client.dob}</span>
                           </div>
                         )}
                         {client.nhs && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">NHS:</span>
-                            <span className="text-[11px] font-bold text-white/70 tabular-nums">{client.nhs}</span>
+                            <span className="text-[11px] font-bold text-hc-text/70 tabular-nums">{client.nhs}</span>
                           </div>
                         )}
-                        <div className="h-3 w-px bg-white/10 hidden md:block" />
+                        <div className="h-3 w-px bg-hc-border/40 hidden md:block" />
                         <div className="flex items-center gap-2">
                           {client.diagnoses.slice(0, 3).map((d, i) => (
-                            <span key={i} className="text-[9px] font-black bg-black/40 border border-white/5 px-2.5 py-0.5 rounded-lg text-hc-muted/80 uppercase tracking-tighter truncate max-w-[140px]">
+                            <span key={i} className="text-[9px] font-black bg-hc-border/20 border border-hc-border/20 px-2.5 py-0.5 rounded-lg text-hc-muted uppercase tracking-tighter truncate max-w-[140px]">
                               {d}
                             </span>
                           ))}
                           {client.diagnoses.length > 3 && (
-                            <span className="text-[9px] font-black text-hc-teal-light/60">+{client.diagnoses.length - 3}</span>
+                            <span className="text-[9px] font-black text-hc-teal/60">+{client.diagnoses.length - 3}</span>
                           )}
                         </div>
                       </div>
                     </div>
                     {topRisk > 0 && (
-                      <div className="hidden lg:flex flex-col items-end shrink-0 pl-6 border-l border-white/5">
+                      <div className="hidden lg:flex flex-col items-end shrink-0 pl-6 border-l border-hc-border/30">
                         <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Risk Status</span>
                         <span className="text-[13px] font-black uppercase tracking-widest" style={{ color: riskColor }}>{riskLabel}</span>
                       </div>
@@ -554,7 +554,7 @@ export function ClientDocsPage() {
                 </div>
 
                 {/* Document actions */}
-                <div className="border-t border-white/5 px-8 py-5 bg-black/20 backdrop-blur-md">
+                <div className="border-t border-hc-border/20 px-8 py-5 bg-hc-border/10">
                   <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasRisk ? 'pill-amber' : 'pill-blue'}`}>
                       Risk Assessment {hasRisk ? 'Ready' : 'Missing'}
@@ -571,18 +571,18 @@ export function ClientDocsPage() {
                       {/* PBS */}
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasPBS ? 'bg-hc-teal glow-teal' : 'bg-white/10'}`} />
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasPBS ? 'bg-hc-teal glow-teal' : 'bg-hc-border'}`} />
                           <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">PBS</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openPBS(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal-light border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasPBS ? 'bg-hc-teal/10 text-hc-teal border border-hc-teal/30 hover:bg-hc-teal/20' : 'bg-hc-border/20 text-hc-muted border border-hc-border/20 hover:text-hc-text'}`}>
                             {hasPBS ? 'Edit' : 'Create'}
                           </button>
                           {hasPBS && (
                             <button onClick={() => printDoc(client, 'pbs')}
-                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              className="text-[10px] font-black text-hc-muted/50 hover:text-hc-text transition-colors p-1.5">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </button>
                           )}
@@ -592,18 +592,18 @@ export function ClientDocsPage() {
                       {/* Risk */}
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasRisk ? 'bg-flag-amber glow-amber' : 'bg-white/10'}`} />
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasRisk ? 'bg-flag-amber glow-amber' : 'bg-hc-border'}`} />
                           <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Risk</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openRisk(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasRisk ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/30 hover:bg-flag-amber/20' : 'bg-hc-border/20 text-hc-muted border border-hc-border/20 hover:text-hc-text'}`}>
                             {hasRisk ? 'Edit' : 'Create'}
                           </button>
                           {hasRisk && (
                             <button onClick={() => printDoc(client, 'risk')}
-                              className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5">
+                              className="text-[10px] font-black text-hc-muted/50 hover:text-hc-text transition-colors p-1.5">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </button>
                           )}
@@ -613,23 +613,23 @@ export function ClientDocsPage() {
                       {/* Support Plan */}
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasCarePlan ? 'bg-hc-blue glow-blue' : 'bg-white/10'}`} />
+                          <div className={`w-2 h-2 rounded-full shadow-sm ${hasCarePlan ? 'bg-hc-sage glow-blue' : 'bg-hc-border'}`} />
                           <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Plan</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openCarePlan(client.id)}
                             className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl transition-all
-                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-white/5 text-hc-muted border border-white/5 hover:text-white'}`}>
+                              ${hasCarePlan ? 'bg-hc-blue/10 text-hc-blue border border-hc-blue/30 hover:bg-hc-blue/20' : 'bg-hc-border/20 text-hc-muted border border-hc-border/20 hover:text-hc-text'}`}>
                             {hasCarePlan ? `Update (${cpFilled}/${cpDomains.length})` : 'Create'}
                           </button>
                           {hasCarePlan && (
                             <>
                               <button onClick={() => printDoc(client, 'careplan')}
-                                className="text-[10px] font-black text-white/40 hover:text-white transition-colors p-1.5" title="Print care plan">
+                                className="text-[10px] font-black text-hc-muted/50 hover:text-hc-text transition-colors p-1.5" title="Print care plan">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                               </button>
                               <button onClick={() => printDoc(client, 'easyread')}
-                                className="text-[10px] font-black text-hc-teal-light/50 hover:text-hc-teal-light transition-colors px-2 py-1 rounded-lg hover:bg-hc-teal/10" title="Easy Read version">
+                                className="text-[10px] font-black text-hc-teal/50 hover:text-hc-teal transition-colors px-2 py-1 rounded-lg hover:bg-hc-teal/10" title="Easy Read version">
                                 📖
                               </button>
                             </>
@@ -640,12 +640,12 @@ export function ClientDocsPage() {
 
                     <div className="flex items-center gap-4 ml-auto">
                       <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
-                        className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest hover:text-white transition-colors">
+                        className="text-[10px] font-black text-hc-teal uppercase tracking-widest hover:text-hc-text transition-colors">
                         Intelligence Sync
                       </button>
-                      <div className="h-4 w-px bg-white/10" />
+                      <div className="h-4 w-px bg-hc-border/40" />
                       <button onClick={() => handleDelete(client.id, client.name)}
-                        className="text-[10px] font-black text-white/20 hover:text-flag-red transition-colors uppercase tracking-widest">
+                        className="text-[10px] font-black text-hc-muted/40 hover:text-flag-red transition-colors uppercase tracking-widest">
                         Delete
                       </button>
                     </div>
@@ -653,7 +653,7 @@ export function ClientDocsPage() {
                 </div>
 
                 {/* External Document Storage */}
-                <div className="border-t border-white/5 px-8 py-6 bg-hc-dark/60">
+                <div className="border-t border-hc-border/20 px-8 py-6 bg-hc-border/10">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <span className="section-header text-[10px] tracking-widest opacity-60">External Evidence Pack</span>
@@ -662,7 +662,7 @@ export function ClientDocsPage() {
                     <button
                       disabled={isUploading === client.id}
                       onClick={() => { setSelectedId(client.id); docUploadRef.current?.click(); }}
-                      className="flex items-center gap-2 px-4 py-2 glass border border-white/10 text-hc-teal-light hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:bg-hc-teal/10 hover:border-hc-teal/30 shadow-lg"
+                      className="flex items-center gap-2 px-4 py-2 btn-clay text-hc-teal hover:text-hc-teal text-[10px] font-black uppercase tracking-widest rounded-xl"
                     >
                       {isUploading === client.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                       {isUploading === client.id ? 'Uploading...' : 'Upload Document'}
@@ -670,26 +670,26 @@ export function ClientDocsPage() {
                   </div>
 
                   {(!client.documents || client.documents.length === 0) ? (
-                    <div className="py-8 text-center glass-light border border-dashed border-white/10 rounded-2xl">
-                      <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest opacity-40 italic">No external files attached to this profile</p>
+                    <div className="py-8 text-center bg-hc-border/10 border border-dashed border-hc-border/40 rounded-2xl">
+                      <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest italic">No external files attached to this profile</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {client.documents.map(doc => (
-                        <div key={doc.id} className="glass-light border border-white/5 rounded-xl p-3 flex items-center justify-between group/doc hover:border-hc-teal/20 transition-all">
+                        <div key={doc.id} className="bg-hc-bone border border-hc-border/20 rounded-xl p-3 flex items-center justify-between group/doc hover:border-hc-teal/20 transition-all">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-8 h-8 rounded-lg bg-hc-teal/10 flex items-center justify-center shrink-0">
-                              <FileText className="w-4 h-4 text-hc-teal-light" />
+                              <FileText className="w-4 h-4 text-hc-teal" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black text-white truncate pr-2" title={doc.name}>{doc.name}</p>
-                              <p className="text-[8px] text-hc-muted font-bold uppercase tracking-tighter opacity-60">
+                              <p className="text-[11px] font-black text-hc-text truncate pr-2" title={doc.name}>{doc.name}</p>
+                              <p className="text-[8px] text-hc-muted font-bold uppercase tracking-tighter">
                                 {new Date(doc.uploadedAt).toLocaleDateString('en-GB')}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover/doc:opacity-100 transition-opacity">
-                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-hc-muted hover:text-hc-teal-light transition-colors">
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-hc-muted hover:text-hc-teal transition-colors">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                             <button onClick={() => deleteDoc(client.id, doc.id)} className="p-1.5 text-hc-muted hover:text-flag-red transition-colors">
@@ -704,7 +704,7 @@ export function ClientDocsPage() {
 
                 {/* Care plan domains preview */}
                 {hasCarePlan && cpDomains.length > 0 && (
-                  <div className="border-t border-white/5 px-8 py-4 bg-hc-dark/40 overflow-hidden relative">
+                  <div className="border-t border-hc-border/20 px-8 py-4 bg-hc-border/10 overflow-hidden relative">
                     <div className="flex flex-wrap gap-2 relative z-10">
                       {cpDomains.slice(0, 12).map((d, i) => {
                         const colors = ['pill-green', 'pill-blue', 'pill-amber', 'pill-red', 'pill-red'];
@@ -715,7 +715,7 @@ export function ClientDocsPage() {
                         );
                       })}
                       {cpDomains.length > 12 && (
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest flex items-center">+{cpDomains.length - 12} more protocol areas</span>
+                        <span className="text-[9px] font-black text-hc-muted/50 uppercase tracking-widest flex items-center">+{cpDomains.length - 12} more protocol areas</span>
                       )}
                     </div>
                   </div>
@@ -727,22 +727,22 @@ export function ClientDocsPage() {
       )}
 
       {/* Danger Zone */}
-      <div className="mt-32 pt-12 border-t border-white/5 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
-        <div className="bg-flag-red/5 rounded-[2rem] p-8 border border-flag-red/20 flex flex-col md:flex-row items-center justify-between gap-8 backdrop-blur-sm">
+      <div className="mt-32 pt-12 border-t border-hc-border/30 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
+        <div className="bg-flag-red/5 rounded-[2rem] p-8 border border-flag-red/20 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-6 text-center md:text-left flex-col md:flex-row">
             <div className="w-16 h-16 rounded-3xl bg-flag-red/10 flex items-center justify-center text-flag-red glow-red shrink-0">
               <AlertTriangle className="w-8 h-8" />
             </div>
             <div>
               <h3 className="text-sm font-black text-flag-red uppercase tracking-[0.3em] mb-2">Clear All Data</h3>
-              <p className="text-hc-muted text-xs font-medium max-w-md leading-relaxed opacity-70">
+              <p className="text-hc-muted text-xs font-medium max-w-md leading-relaxed">
                 Delete all people, support plans, and documents from this device. This cannot be undone.
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => { if(confirm('Are you sure? This will delete every person and every document. This cannot be undone.')) purgeSystemData(); }}
-            className="px-10 py-4 bg-flag-red text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-3 shadow-xl shadow-red-900/20 active:scale-95"
+            className="px-10 py-4 bg-flag-red text-hc-bone rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-3 shadow-xl shadow-red-900/20 active:scale-95"
           >
             <Trash2 className="w-4 h-4" />
             Clear All
@@ -752,18 +752,18 @@ export function ClientDocsPage() {
 
       {/* New Person Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="glass border border-white/10 rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden">
+        <div className="fixed inset-0 bg-hc-text/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="hc-clay-raised rounded-[2.5rem] p-10 w-full max-w-lg animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-            
+
             <div className="relative z-10">
-              <h2 className="text-3xl font-black text-white mb-2 tracking-tighter text-shimmer">Add New Person</h2>
-              <p className="text-hc-muted text-sm mb-8 font-medium opacity-80 leading-relaxed">
+              <h2 className="text-3xl font-black text-hc-text mb-2 tracking-tighter">Add New Person</h2>
+              <p className="text-hc-muted text-sm mb-8 font-medium leading-relaxed">
                 Add a new person to the system. You will be taken to the PBS builder straight away.
               </p>
-              
+
               <div className="mb-10">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Full Name</label>
+                <label className="section-header text-[9px] mb-2 ml-1 block tracking-[0.2em]">Full Name</label>
                 <div className="relative group">
                   <input
                     autoFocus
@@ -772,21 +772,21 @@ export function ClientDocsPage() {
                     onChange={e => setNewName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleCreate()}
                     placeholder="e.g. Sarah Johnson"
-                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-6 py-4 text-lg font-bold text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all placeholder:text-hc-muted/20 focus:bg-hc-dark"
+                    className="hc-clay-inset w-full rounded-2xl px-6 py-4 text-lg font-bold text-hc-text focus:outline-none transition-all placeholder:text-hc-muted/40"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-hc-teal/10 flex items-center justify-center opacity-0 group-focus-within:opacity-100 transition-opacity">
-                    <svg className="w-4 h-4 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                    <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-4">
                 <button onClick={() => { setShowNewModal(false); setNewName(''); }}
-                  className="flex-1 glass-light border border-white/10 text-hc-muted hover:text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all">
+                  className="flex-1 btn-clay text-[11px] py-4 rounded-2xl">
                   Cancel
                 </button>
                 <button onClick={handleCreate} disabled={!newName.trim()}
-                  className="flex-[2] btn-gradient disabled:opacity-20 disabled:grayscale text-white text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
+                  className="flex-[2] btn-tactical disabled:opacity-20 disabled:grayscale text-[11px] py-4 rounded-2xl">
                   Create
                 </button>
               </div>
