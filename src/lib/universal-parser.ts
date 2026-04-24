@@ -56,6 +56,17 @@ export function normalizeHouse(raw: string): string {
   return raw.trim();
 }
 
+/** Scans free text (e.g. a diary entry body) for mentions of known house names */
+export function extractHouseFromText(text: string): string {
+  if (!text) return '';
+  const lower = text.toLowerCase();
+  for (const [key, value] of Object.entries(HOUSE_MAP)) {
+    if (key === 'unassigned' || key === 'management') continue;
+    if (lower.includes(key)) return value;
+  }
+  return '';
+}
+
 type Category = 'incident' | 'safeguarding' | 'medication' | 'handover' | 'daily_support' | 'finance' | 'staff' | 'health_safety' | 'other';
 
 function categorizeEntry(type: string, text: string): Category {
@@ -199,10 +210,10 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
   if (gEntry < 0) return [];
 
   // STEP 3 — Row transformation (skip header row)
-  const MAX_ENTRIES = 10000;
+  // No cap — parse the entire file (storage handles deduplication)
   const entries: CareEntry[] = [];
 
-  for (let i = 1; i < parsedRows.length && entries.length < MAX_ENTRIES; i++) {
+  for (let i = 1; i < parsedRows.length; i++) {
     const r = parsedRows[i];
     const rawEntry = safeCell(r, gEntry);
     if (rawEntry.length < 5) continue;
@@ -222,7 +233,8 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
     const carer  = carerRaw || 'Personnel Unassigned';
     const client = clientRaw || 'Service User Unassigned';
     const type   = typeRaw || 'Standard Entry';
-    const house  = normalizeHouse(houseRaw) || 'UNASSIGNED';
+    // If no explicit house column, try to extract from entry text or client name
+    const house  = normalizeHouse(houseRaw) || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
 
     // Validate date is parseable
     const ms = parseDateMs(date);
