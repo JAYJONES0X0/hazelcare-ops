@@ -7,7 +7,8 @@ import { ORG_CONFIG } from '../lib/config';
 import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
   Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
-  Database, Settings2, Sparkles, ChevronLeft, ChevronRight,
+  Database, Settings2, Sparkles, ChevronLeft, ChevronRight, Activity, HardDrive,
+  UserCheck, ShieldCheck, Cog
 } from 'lucide-react';
 
 interface Props {
@@ -20,36 +21,61 @@ interface Props {
   onSignOut: () => void;
 }
 
-const navSections: { items: { id: Page; label: string; icon: ReactNode }[] }[] = [
+interface NavSection {
+  label: string;
+  icon: ReactNode;
+  items: { id: Page; label: string; icon: ReactNode }[];
+}
+
+const navSections: NavSection[] = [
   {
+    label: 'Mission Control',
+    icon: <LayoutDashboard size={16} />,
     items: [
-      { id: 'briefing' as Page,      label: 'Mission Briefing',  icon: <LayoutDashboard size={18} /> },
-      { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={18} /> },
-      { id: 'communications' as Page,label: 'Comms Intercept',   icon: <MessageSquare size={18} /> },
-      { id: 'upload',                label: 'Field Injest',       icon: <Upload size={18} /> },
+      { id: 'briefing' as Page,      label: 'Strategy Briefing', icon: <LayoutDashboard size={16} /> },
+      { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={16} /> },
+      { id: 'upload',                label: 'Field Injest',      icon: <Upload size={16} /> },
+      { id: 'communications' as Page,label: 'Comms Intercept',   icon: <MessageSquare size={16} /> },
     ],
   },
   {
+    label: 'Clinical Intelligence',
+    icon: <Activity size={16} />,
     items: [
-      { id: 'client-diary' as Page,    label: 'Diagnostic Feed',   icon: <BookOpen size={18} /> },
-      { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={18} /> },
-      { id: 'actions',                 label: 'Command Vectors',   icon: <Zap size={18} /> },
-      { id: 'incidents',               label: 'Incident Govt',     icon: <AlertTriangle size={18} /> },
-      { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={18} /> },
+      { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
+      { id: 'client-diary' as Page,    label: 'Diagnostic Feed',   icon: <BookOpen size={16} /> },
+      { id: 'client-docs' as Page,     label: 'Clinical Records',  icon: <HardDrive size={16} /> },
+      { id: 'handover' as Page,        label: 'Clinical Handover', icon: <FileText size={16} /> },
+      { id: 'templates',               label: 'Builder Templates', icon: <Database size={16} /> },
     ],
   },
   {
+    label: 'Personnel & Protection',
+    icon: <ShieldCheck size={16} />,
     items: [
-      { id: 'notes' as Page,          label: 'Note Intelligence', icon: <FileText size={18} /> },
-      { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={18} /> },
+      { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={16} /> },
+      { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={16} /> },
+      { id: 'compliance',              label: 'Personnel Audit',   icon: <UserCheck size={16} /> },
+      { id: 'notes' as Page,           label: 'Staff Supervision', icon: <FileText size={16} /> },
     ],
   },
   {
+    label: 'Operations & Audit',
+    icon: <Zap size={16} />,
     items: [
-      { id: 'agency' as Page,     label: 'External Support',  icon: <Briefcase size={18} /> },
-      { id: 'compliance',         label: 'Regulatory Audit',  icon: <ClipboardCheck size={18} /> },
-      { id: 'templates',          label: 'Builder Templates', icon: <Database size={18} /> },
-      { id: 'settings' as Page,   label: 'System Settings',   icon: <Settings2 size={18} /> },
+      { id: 'actions',                 label: 'Command Vectors',   icon: <Zap size={16} /> },
+      { id: 'incidents',               label: 'Incident Govt',     icon: <AlertTriangle size={16} /> },
+      { id: 'compliance',              label: 'Regulatory Audit',  icon: <ClipboardCheck size={16} /> },
+      { id: 'agency' as Page,          label: 'External Support',  icon: <Briefcase size={16} /> },
+      { id: 'risk' as Page,            label: 'Risk Matrix',       icon: <Activity size={16} /> },
+    ],
+  },
+  {
+    label: 'Sovereign System',
+    icon: <Cog size={16} />,
+    items: [
+      { id: 'settings' as Page,   label: 'System Settings',   icon: <Settings2 size={16} /> },
+      { id: 'admin' as Page,      label: 'Admin Matrix',      icon: <Shield size={16} /> },
     ],
   },
 ];
@@ -59,21 +85,39 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
   });
 
-  const toggle = () => setCollapsed(c => {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('hc-sidebar-expanded');
+    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Clinical Intelligence': true };
+  });
+
+  const toggleSidebar = () => setCollapsed(c => {
     const next = !c;
     try { localStorage.setItem('hc-sidebar-collapsed', String(next)); } catch { /* ignore */ }
     return next;
   });
 
+  const toggleSection = (label: string) => {
+    if (collapsed) {
+      setCollapsed(false);
+      setExpandedSections(prev => ({ ...prev, [label]: true }));
+      return;
+    }
+    setExpandedSections(prev => {
+      const next = { ...prev, [label]: !prev[label] };
+      localStorage.setItem('hc-sidebar-expanded', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const openActionsCount = actions.filter(a => a.status !== 'completed').length;
 
   return (
     <div
-      className={`h-full flex flex-col p-5 bg-hc-bg z-30 shrink-0 transition-all duration-300 ease-in-out relative ${collapsed ? 'w-20' : 'w-64'}`}
+      className={`h-full flex flex-col p-5 bg-hc-bg z-30 shrink-0 transition-all duration-300 ease-in-out relative ${collapsed ? 'w-24' : 'w-72'}`}
     >
       {/* Collapse toggle */}
       <button
-        onClick={toggle}
+        onClick={toggleSidebar}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         className="absolute -right-3 top-8 z-40 w-6 h-6 rounded-full hc-clay-raised border border-hc-border/20 flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all shadow-md"
       >
@@ -94,43 +138,61 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
       </div>
 
       {/* Nav List */}
-      <div className="flex-1 overflow-y-auto pr-1 space-y-8 scrollbar-none">
-        {navSections.map((section, idx) => (
-          <div key={idx} className="space-y-1.5">
-            {section.items.map((item) => {
-              const active = page === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setPage(item.id)}
-                  title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center transition-all duration-300 group relative
-                    ${collapsed ? 'justify-center px-2 py-3 rounded-2xl' : 'justify-between px-5 py-3.5 rounded-full'}
-                    ${active
-                      ? 'bg-hc-teal text-white shadow-[4px_4px_10px_rgba(77,124,120,0.3)]'
-                      : 'text-hc-muted hover:text-hc-text hover:bg-hc-clay shadow-none hover:shadow-[4px_4px_8px_var(--hc-clay-dark)]'
-                    }`}
-                >
-                  <div className={`flex items-center ${collapsed ? '' : 'gap-4'}`}>
-                    <span className={`${active ? 'text-white' : 'text-hc-teal opacity-60 group-hover:opacity-100'} transition-all shrink-0`}>
-                      {item.icon}
-                    </span>
-                    {!collapsed && (
-                      <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                    )}
-                  </div>
-                  {item.id === 'actions' && openActionsCount > 0 && (
-                    <span className={`flex items-center justify-center text-[8px] font-black rounded-full
-                      ${active ? 'bg-white text-hc-teal' : 'bg-hc-red text-white'}
-                      ${collapsed ? 'absolute -top-1 -right-1 w-4 h-4' : 'w-5 h-5'}`}>
-                      {openActionsCount}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto pr-1 space-y-4 scrollbar-none">
+        {navSections.map((section) => {
+          const isExpanded = expandedSections[section.label];
+          const hasActiveItem = section.items.some(item => page === item.id);
+
+          return (
+            <div key={section.label} className="space-y-1">
+              <button
+                onClick={() => toggleSection(section.label)}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${
+                  collapsed ? 'justify-center' : 'justify-between'
+                } ${hasActiveItem && !isExpanded ? 'bg-hc-teal/5 text-hc-teal' : 'text-hc-muted hover:text-hc-text'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`${hasActiveItem ? 'text-hc-teal' : 'opacity-60'}`}>{section.icon}</span>
+                  {!collapsed && <span className="text-[10px] font-black uppercase tracking-widest">{section.label}</span>}
+                </div>
+                {!collapsed && (
+                  <ChevronRight size={12} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                )}
+              </button>
+
+              {isExpanded && !collapsed && (
+                <div className="space-y-1 ml-4 border-l border-hc-border/10 pl-2 animate-in slide-in-from-top-2 duration-300">
+                  {section.items.map((item) => {
+                    const active = page === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setPage(item.id)}
+                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full transition-all duration-300 group
+                          ${active
+                            ? 'bg-hc-teal text-white shadow-lg'
+                            : 'text-hc-muted hover:text-hc-text hover:bg-hc-clay'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`${active ? 'text-white' : 'text-hc-teal opacity-60 group-hover:opacity-100'}`}>
+                            {item.icon}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
+                        </div>
+                        {item.id === 'actions' && openActionsCount > 0 && (
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black ${active ? 'bg-white text-hc-teal' : 'bg-hc-red text-white'}`}>
+                            {openActionsCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Footer Controls */}

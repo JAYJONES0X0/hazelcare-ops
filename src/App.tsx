@@ -107,7 +107,7 @@ export default function App() {
   }
 
   return (
-    <div 
+    <div
       className="relative min-h-screen bg-hc-bone"
       onDragOver={e => { e.preventDefault(); setIsDraggingFile(true); }}
       onDragLeave={() => setIsDraggingFile(false)}
@@ -116,7 +116,7 @@ export default function App() {
       <ErrorBoundary>
         <div className="flex h-screen overflow-hidden">
           <Sidebar page={page} setPage={setPage} weekData={weekData} actions={actions} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />
-          
+
           <main className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full min-h-screen">
               {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} setPage={setPage} />}
@@ -148,7 +148,7 @@ export default function App() {
         <div className="fixed inset-0 z-[200] pointer-events-none animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-hc-teal/10 backdrop-blur-sm border-[8px] border-dashed border-hc-teal/40 m-8 rounded-[4rem]" />
            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="hc-clay-raised p-12 flex flex-col items-center gap-6 animate-bounce shadow-2xl border border-hc-muted/5">
+              <div className="hc-clay-raised p-12 flex flex-col items-center gap-6 animate-bounce shadow-2xl border border-hc-teal/5">
                  <Upload className="w-16 h-16 text-hc-teal" />
                  <div className="text-xl font-black text-hc-text uppercase tracking-[0.4em]">Injest Clinical Stream</div>
               </div>
@@ -157,8 +157,8 @@ export default function App() {
       )}
 
       {globalInjestFile && (
-        <GlobalInjest 
-          file={globalInjestFile} 
+        <GlobalInjest
+          file={globalInjestFile}
           onClose={() => setGlobalInjestFile(null)}
           onDataParsed={handleDataParsed}
           setPage={setPage}
