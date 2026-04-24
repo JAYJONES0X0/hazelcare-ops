@@ -118,15 +118,15 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
               <tbody>
                 {priorityClients.map(c => (
                   <tr key={c.name} onClick={() => setPage('client-diary')} className="group cursor-pointer">
-                    <td className="px-6 py-5 hc-clay-raised !rounded-r-none text-xs font-black text-hc-text uppercase tracking-widest">{c.name}</td>
-                    <td className="px-6 py-5 hc-clay-raised !rounded-none text-[11px] font-black text-hc-muted uppercase tracking-widest text-center">{c.house}</td>
-                    <td className="px-6 py-5 hc-clay-raised !rounded-none">
+                    <td className="px-6 py-5 bg-hc-surface-2 rounded-l-2xl text-xs font-black text-hc-text uppercase tracking-widest group-hover:bg-hc-surface transition-colors">{c.name}</td>
+                    <td className="px-6 py-5 bg-hc-surface-2 text-[11px] font-black text-hc-muted uppercase tracking-widest text-center group-hover:bg-hc-surface transition-colors">{c.house}</td>
+                    <td className="px-6 py-5 bg-hc-surface-2 group-hover:bg-hc-surface transition-colors">
                       <div className="flex justify-center gap-3">
                         {c.red > 0 && <span className="bg-hc-red/10 text-hc-red px-2 py-0.5 text-[11px] font-black border border-hc-red/30 rounded">{c.red}</span>}
                         {c.amber > 0 && <span className="bg-hc-amber/10 text-hc-amber px-2 py-0.5 text-[11px] font-black border border-hc-amber/30 rounded">{c.amber}</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-5 hc-clay-raised !rounded-l-none text-[11px] font-black text-hc-muted italic truncate max-w-sm">"{c.latest}..."</td>
+                    <td className="px-6 py-5 bg-hc-surface-2 rounded-r-2xl text-[11px] font-black text-hc-muted italic truncate max-w-sm group-hover:bg-hc-surface transition-colors">"{c.latest}..."</td>
                   </tr>
                 ))}
               </tbody>
@@ -185,7 +185,7 @@ function Section({ title, count, children, collapsed, onToggle }: { id: string; 
           <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
         </div>
         <div className="flex items-center gap-8">
-          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-clay-dark/20 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
+          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-surface-2 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
           <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
              <ChevronRight size={16} />
           </div>

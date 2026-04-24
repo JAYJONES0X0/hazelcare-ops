@@ -89,14 +89,54 @@ export default function App() {
       .catch(() => setSessionLoaded(true));
   }, []);
 
+  // Register/refresh session record when authenticated
+  useEffect(() => {
+    if (!authed) return;
+
+    let sessionId = sessionStorage.getItem('hc-session-id');
+    if (!sessionId) {
+      sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      sessionStorage.setItem('hc-session-id', sessionId);
+    }
+
+    const raw = localStorage.getItem('hc-registered-sessions');
+    const sessions: { id: string; device: string; browser: string; timestamp: string; lastActive: string; revoked: boolean }[] = raw ? JSON.parse(raw) : [];
+
+    // If another device revoked this session, sign out
+    const thisEntry = sessions.find(s => s.id === sessionId);
+    if (thisEntry?.revoked) {
+      handleSignOut();
+      return;
+    }
+
+    const ua = navigator.userAgent;
+    const device = /Mobile|Android|iPhone|iPad/.test(ua) ? 'Mobile' : 'Desktop';
+    const browser = /Edg/.test(ua) ? 'Edge' : /Firefox/.test(ua) ? 'Firefox' : /Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'Browser';
+    const now = new Date().toISOString();
+
+    const others = sessions.filter(s => s.id !== sessionId);
+    others.push({ id: sessionId, device, browser, timestamp: thisEntry?.timestamp || now, lastActive: now, revoked: false });
+    localStorage.setItem('hc-registered-sessions', JSON.stringify(others.slice(-20)));
+  }, [authed]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSignOut = async () => {
+    // Remove this session from the registry before signing out
+    const sessionId = sessionStorage.getItem('hc-session-id');
+    if (sessionId) {
+      const raw = localStorage.getItem('hc-registered-sessions');
+      if (raw) {
+        const sessions = JSON.parse(raw).filter((s: { id: string }) => s.id !== sessionId);
+        localStorage.setItem('hc-registered-sessions', JSON.stringify(sessions));
+      }
+    }
+    sessionStorage.removeItem('hc-pin-unlocked');
     await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
     window.location.reload();
   };
 
   if (!sessionLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-hc-bone">
+      <div className="min-h-screen flex items-center justify-center bg-hc-bg">
         <div className="w-12 h-12 rounded-full border-4 border-hc-teal/20 border-t-hc-teal animate-spin" />
       </div>
     );
@@ -108,7 +148,7 @@ export default function App() {
 
   return (
     <div
-      className="relative min-h-screen bg-hc-bone"
+      className="relative min-h-screen bg-hc-bg"
       onDragOver={e => { e.preventDefault(); setIsDraggingFile(true); }}
       onDragLeave={() => setIsDraggingFile(false)}
       onDrop={handleGlobalDrop}
@@ -186,7 +226,7 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-hc-bone p-6">
+    <div className="min-h-screen flex items-center justify-center bg-hc-bg p-6">
       <form onSubmit={handleLogin} className="w-full max-w-sm hc-clay-raised p-10 space-y-8 rounded-[3rem] shadow-2xl border border-hc-muted/5">
         <div>
           <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">Sovereign Access</h1>

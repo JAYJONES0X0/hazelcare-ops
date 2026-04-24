@@ -40,7 +40,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-hc-border pb-12">
         <div>
           <div className="flex items-center gap-4 mb-4">
-            <span className="pill pill-teal text-[10px]">HAZEL CARE Â· COMMAND INTEL</span>
+            <span className="pill pill-teal text-[10px]">HAZEL CARE · COMMAND INTEL</span>
             <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE SITREP</span>
           </div>
@@ -74,7 +74,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       <div className="space-y-8">
          <div className="flex items-center justify-between px-2">
             <h2 className="text-[12px] font-black text-hc-muted uppercase tracking-[0.4em]">Regional Operations Matrix</h2>
-            <button onClick={() => setPage('client-docs')} className="text-[11px] font-black text-hc-teal hover:underline uppercase tracking-widest">Expand All Residences Â»</button>
+            <button onClick={() => setPage('client-docs')} className="text-[11px] font-black text-hc-teal hover:underline uppercase tracking-widest">Expand All Residences »</button>
          </div>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {houseStats.map(h => (

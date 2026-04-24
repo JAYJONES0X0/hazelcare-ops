@@ -330,7 +330,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-hc-bone animate-in fade-in duration-700">
+    <div className="flex flex-col h-screen overflow-hidden bg-hc-bg animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex items-center gap-6 px-8 py-5 hc-clay-raised m-4 z-20 shadow-2xl">
         <button onClick={onBack}

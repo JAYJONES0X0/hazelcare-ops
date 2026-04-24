@@ -2,11 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── SEMANTIC TOKENS ── */
+  /* ── ADVANCED CLAYMOPRHIC TOKENS ── */
   --color-hc-bg: var(--hc-bg);
-  --color-hc-bone: var(--hc-bg);
   --color-hc-surface: var(--hc-surface);
-  --color-hc-surface-2: var(--hc-surface-2);
   --color-hc-text: var(--hc-text);
   --color-hc-muted: var(--hc-muted);
   --color-hc-border: var(--hc-border);
@@ -21,24 +19,28 @@
   /* LIGHT: ORGANIC BONE PROTOCOL */
   --hc-bg: #f3efe0;
   --hc-surface: #f3efe0;
-  --hc-surface-2: #e8e4d5;
   --hc-text: #0d2d2d;
   --hc-muted: #6b6653;
   --hc-border: rgba(13, 45, 45, 0.05);
-  --hc-shadow-dark: rgba(13, 45, 45, 0.08);
-  --hc-shadow-light: rgba(255, 255, 255, 0.9);
+  
+  /* Tactical Multi-Layer Shadows (Light) */
+  --clay-raised: 12px 12px 24px rgba(13, 45, 45, 0.12), -8px -8px 24px rgba(255, 255, 255, 0.9);
+  --clay-inset: inset 6px 6px 12px rgba(13, 45, 45, 0.08), inset -6px -6px 12px rgba(255, 255, 255, 0.8);
+  --clay-pressed: inset 8px 8px 16px rgba(13, 45, 45, 0.15), inset -4px -4px 12px rgba(255, 255, 255, 0.6);
 }
 
 [data-theme='dark'] {
-  /* DARK: NOCTURNAL TEAL PROTOCOL (ROLE SWAP) */
+  /* DARK: NOCTURNAL TEAL PROTOCOL */
   --hc-bg: #0d2d2d;
   --hc-surface: #0d2d2d;
-  --hc-surface-2: #163a3a;
   --hc-text: #f3efe0;
   --hc-muted: #a3a395;
   --hc-border: rgba(243, 239, 224, 0.08);
-  --hc-shadow-dark: rgba(0, 0, 0, 0.45);
-  --hc-shadow-light: rgba(255, 255, 255, 0.03);
+
+  /* Tactical Multi-Layer Shadows (Dark) */
+  --clay-raised: 12px 12px 28px rgba(0, 0, 0, 0.5), -6px -6px 20px rgba(255, 255, 255, 0.03);
+  --clay-inset: inset 8px 8px 16px rgba(0, 0, 0, 0.4), inset -4px -4px 12px rgba(255, 255, 255, 0.02);
+  --clay-pressed: inset 10px 10px 20px rgba(0, 0, 0, 0.6), inset -2px -2px 8px rgba(255, 255, 255, 0.01);
 }
 
 @layer base {
@@ -48,47 +50,71 @@
   }
 }
 
+.hc-clay-raised {
+  background-color: var(--hc-surface);
+  transition: all 500ms;
+  border-radius: 2.5rem;
+  box-shadow: var(--clay-raised);
+  border: 1px solid var(--hc-border);
+}
+
+.hc-clay-inset {
+  background-color: var(--hc-surface);
+  transition: all 500ms;
+  border-radius: 1.5rem;
+  box-shadow: var(--clay-inset);
+  border: 1px solid var(--hc-border);
+}
+
+.hc-clay-pressed {
+  background-color: var(--hc-surface);
+  transition: all 300ms;
+  box-shadow: var(--clay-pressed);
+  border: 1px solid var(--hc-border);
+}
+
 @layer components {
-  .hc-clay-raised {
-    @apply bg-hc-surface transition-all duration-500 rounded-[2rem];
-    box-shadow: 12px 12px 32px var(--hc-shadow-dark), -10px -10px 32px var(--hc-shadow-light);
-    border: 1px solid var(--hc-border);
+  /* Tactical Control Hardware */
+  .btn-tactical {
+    @apply bg-hc-teal text-hc-bg font-black uppercase tracking-widest px-8 py-4 rounded-2xl 
+           transition-all duration-300 shadow-2xl hover:scale-[1.02] 
+           disabled:opacity-20 disabled:cursor-not-allowed border border-hc-teal-light/20;
+    box-shadow: 8px 8px 20px rgba(0,0,0,0.2), -4px -4px 15px rgba(255,255,255,0.05);
+  }
+  .btn-tactical:active {
+    box-shadow: var(--clay-pressed);
+    transform: scale(0.95);
+  }
+
+  /* Compact Synthesis Nodes */
+  .synthesis-card {
+    @apply border-l-4 p-6 transition-all hover:translate-x-1;
+    background-color: var(--hc-surface);
+    border-radius: 2.5rem;
+    box-shadow: var(--clay-raised);
+    border-top: 1px solid var(--hc-border);
+    border-right: 1px solid var(--hc-border);
+    border-bottom: 1px solid var(--hc-border);
   }
   
-  .hc-clay-inset {
-    @apply bg-hc-surface transition-all duration-500 rounded-[1.5rem];
-    box-shadow: inset 6px 6px 16px var(--hc-shadow-dark), inset -6px -6px 16px var(--hc-shadow-light);
-    border: 1px solid var(--hc-border);
-  }
-
-  .btn-tactical {
-    @apply bg-hc-teal text-hc-bone font-black uppercase tracking-widest px-8 py-4 rounded-2xl 
-           transition-all duration-300 shadow-2xl hover:scale-[1.02] active:scale-95 
-           disabled:opacity-20 disabled:cursor-not-allowed border border-hc-teal-light/10;
-  }
-
   .pill {
     @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
   }
 
-  .pill-teal { @apply bg-hc-teal/10 text-hc-teal border-hc-teal/20; }
+  .pill-teal { @apply bg-hc-teal text-hc-bg border-hc-teal-light/30 shadow-lg; }
   .pill-red { @apply bg-flag-red/10 text-flag-red border-flag-red/20; }
   .pill-amber { @apply bg-flag-amber/10 text-flag-amber border-flag-amber/20; }
   .pill-green { @apply bg-flag-green/10 text-flag-green border-flag-green/20; }
 }
 
-/* ── UI TENSION & DENSITY ── */
+/* ── HIGH DENSITY TEXT ── */
+[class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"] {
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.1em !important;
+}
+
 .scrollbar-thin::-webkit-scrollbar { width: 3px; }
 .scrollbar-thin::-webkit-scrollbar-track { @apply bg-transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-hc-muted/20 rounded-full hover:bg-hc-teal/40; }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-.animate-float { animation: float 5s ease-in-out infinite; }
-
-/* Purge oversized font enforcement */
-[class*="text-[8px]"] { font-size: 8px !important; }
-[class*="text-[9px]"] { font-size: 9px !important; }
-[class*="text-[10px]"] { font-size: 10px !important; }
