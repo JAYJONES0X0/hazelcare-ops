@@ -39,10 +39,10 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   }
 
   return (
-    <div className="glass border border-hc-teal/30 rounded-[2rem] p-6 mb-8 shadow-xl">
+    <div className="hc-clay-raised border border-hc-teal/30 rounded-[2rem] p-6 mb-8 shadow-xl">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Coordinator evidence pack</h2>
+          <h2 className="text-lg font-black text-hc-text tracking-tighter uppercase text-shimmer">Coordinator evidence pack</h2>
           <p className="text-[11px] text-hc-muted mt-1 max-w-xl leading-relaxed">
             Evidence-grade CSV (full text + ids), readme with next-export hints from your current registry, and printable HTML. Filter by house, dates, and optional diary type substring (e.g. <span className="text-hc-teal-light">1:1</span>, handover).
           </p>
@@ -50,7 +50,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
         <button
           type="button"
           onClick={runCoordinatorPack}
-          className="shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide"
+          className="shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide text-hc-text"
         >
           Download all 3 files
         </button>
@@ -61,7 +61,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
           <select
             value={house}
             onChange={(e) => setHouse(e.target.value)}
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white bg-transparent"
+            className="hc-clay-inset border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text bg-transparent"
           >
             <option value="all">All houses</option>
             {houseKeys.map((h) => (
@@ -77,7 +77,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             placeholder="DD/MM/YYYY"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+            className="hc-clay-inset border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text placeholder:text-hc-muted"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
@@ -86,7 +86,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             placeholder="DD/MM/YYYY"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+            className="hc-clay-inset border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text placeholder:text-hc-muted"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
@@ -95,7 +95,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             placeholder="e.g. 1:1"
-            className="glass border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-hc-muted/40"
+            className="hc-clay-inset border border-white/10 rounded-xl px-3 py-2.5 text-sm text-hc-text placeholder:text-hc-muted"
           />
         </label>
       </div>
@@ -150,15 +150,15 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
   ];
 
   return (
-    <div className="glass border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+    <div className="hc-clay-raised border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
-          <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1 opacity-60">Manage local care datasets and privacy</p>
+          <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
+          <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1">Manage local care datasets and privacy</p>
         </div>
         {datasets.some(d => d.present) && (
           <button onClick={() => { if (confirm('Delete ALL data from this device?')) onClearEverything(); }}
-            className="text-[9px] font-black text-flag-red hover:text-white uppercase tracking-[0.2em] px-4 py-2 glass-light border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
+            className="text-[11px] font-black text-flag-red hover:text-hc-text uppercase tracking-[0.2em] px-4 py-2 hc-clay-raised border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
             Purge All Data
           </button>
         )}
@@ -166,17 +166,17 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
 
       <div className="space-y-3">
         {datasets.map(d => (
-          <div key={d.key} className={`glass-light border border-white/5 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all ${!d.present && 'opacity-40'}`}>
+          <div key={d.key} className={`hc-clay-raised border border-white/5 rounded-2xl p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all ${!d.present && 'text-hc-muted'}`}>
             <div className="flex items-center gap-4">
               <div className={`w-3 h-3 rounded-full ${d.present ? 'bg-flag-green glow-green' : 'bg-white/5'}`} />
               <div>
-                <div className="text-xs font-black text-white uppercase tracking-tight">{d.label}</div>
+                <div className="text-xs font-black text-hc-text uppercase tracking-tight">{d.label}</div>
                 <div className="text-[10px] text-hc-muted">{d.desc}</div>
               </div>
             </div>
             {d.present && (
               <button onClick={() => { if (confirm(`Clear ${d.label}?`)) onClearType(d.key as any); }} 
-                className="text-[9px] font-black text-hc-muted hover:text-flag-red uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Clear</button>
+                className="text-[11px] font-black text-hc-muted hover:text-flag-red uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Clear</button>
             )}
           </div>
         ))}
@@ -185,13 +185,13 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
       <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-3">
         <button
           onClick={handleExportBackup}
-          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
+          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 hc-clay-raised border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
         >
           Export Persistent Backup
         </button>
         <button
           onClick={() => restoreRef.current?.click()}
-          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 glass-light border border-white/10 text-hc-muted hover:text-white rounded-xl transition-all hover:bg-white/5"
+          className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 hc-clay-raised border border-white/10 text-hc-muted hover:text-hc-text rounded-xl transition-all hover:bg-white/5"
         >
           Restore Backup
         </button>
@@ -230,8 +230,8 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
   return (
     <div className="p-10 max-w-6xl mx-auto animate-in fade-in duration-700">
       <div className="mb-10">
-        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Admin Hub</h1>
-        <p className="text-hc-muted text-[11px] font-bold uppercase tracking-widest mt-1 opacity-60">Operations & Data Management</p>
+        <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase text-shimmer">Admin Hub</h1>
+        <p className="text-hc-muted text-[11px] font-bold uppercase tracking-widest mt-1">Operations & Data Management</p>
       </div>
 
       {weekData && <CoordinatorExportCard weekData={weekData} />}

@@ -69,7 +69,7 @@ export function CommunicationsPage() {
         if (title.toUpperCase().includes('MEDICATION ALERT')) {
           const clientMatch = body.match(/recorded for (.*?) by/);
           const client = clientMatch ? clientMatch[1] : 'Unknown';
-          draft = `CRITICAL: Medication discrepancy detected for ${client}. Incident report workflow initialized. Please verify remaining stock immediately.`;
+          draft = `CRITICAL: Medication discrepancy detected for ${client}. Incident report workflow initialised. Please verify remaining stock immediately.`;
         }
 
         newIntel.push({
@@ -190,47 +190,47 @@ export function CommunicationsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-transparent font-mono">
+    <div className="min-h-screen flex flex-col bg-hc-bone font-mono">
       {/* Header telemetry */}
-      <div className="px-8 py-5 border-b border-hc-border flex items-center justify-between bg-hc-navy/40 backdrop-blur-xl">
+      <div className="px-8 py-5 border-b border-hc-border flex items-center justify-between hc-clay-raised m-4">
         <div>
           <div className="flex items-center gap-3">
             <Layers className="w-6 h-6 text-hc-teal" />
             <h1 className="text-xl font-black text-hc-text tracking-widest uppercase">COMMS_INTERCEPT</h1>
           </div>
-          <p className="text-[10px] font-bold text-hc-muted uppercase tracking-[0.3em] mt-1 ml-9">Multi-Vector Operational Intel Hub</p>
+          <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.3em] mt-1 ml-9">Multi-Vector Operational Intel Hub</p>
         </div>
         
         <div className="flex gap-3">
           <button 
             onClick={() => setShowGuide(!showGuide)}
-            className="flex flex-col items-center justify-center px-4 border border-hc-border bg-hc-card hover:bg-hc-card-hover transition-all rounded group"
+            className="flex flex-col items-center justify-center px-4 hc-clay-raised hover:bg-hc-clay-dark transition-all rounded group"
           >
             <HelpCircle className="w-4 h-4 text-hc-teal mb-1 group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] font-black text-hc-muted uppercase">Guide</span>
+            <span className="text-[11px] font-black text-hc-muted uppercase">Guide</span>
           </button>
           {[
-            { label: 'ALERTS', count: stats.alerts, color: 'text-red-500', bg: 'bg-red-500/10' },
-            { label: 'GAPS', count: stats.gaps, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-            { label: 'LEAVE', count: stats.leave, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+            { label: 'ALERTS', count: stats.alerts, color: 'text-hc-red', bg: 'bg-hc-red/10' },
+            { label: 'GAPS', count: stats.gaps, color: 'text-hc-amber', bg: 'bg-hc-amber/10' },
+            { label: 'LEAVE', count: stats.leave, color: 'text-hc-sage', bg: 'bg-hc-sage/10' },
             { label: 'TEXTS', count: stats.messages, color: 'text-hc-teal', bg: 'bg-hc-teal/10' }
           ].map(s => (
-            <div key={s.label} className={`px-4 py-2 ${s.bg} border border-hc-border rounded flex flex-col items-center min-w-[70px]`}>
-              <span className={`text-[8px] font-black uppercase opacity-60 ${s.color}`}>{s.label}</span>
-              <span className={`text-sm font-black tabular-nums ${s.color}`}>{s.count}</span>
+            <div key={s.label} className={`px-4 py-2 ${s.bg} border border-hc-border rounded-xl flex flex-col items-center min-w-[70px]`}>
+              <span className={`text-[11px] font-black uppercase opacity-60 ${s.color}`}>{s.label}</span>
+              <span className={`text-[11px] font-black tabular-nums ${s.color}`}>{s.count}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden px-4 pb-4 gap-4">
         {/* Left: Input Terminals */}
-        <div className="w-[450px] border-r border-hc-border p-6 flex flex-col gap-6 bg-hc-card/20">
+        <div className="w-[450px] hc-clay-inset p-6 flex flex-col gap-6">
           
           {showGuide && (
             <div className="bg-hc-teal/10 border border-hc-teal/20 p-4 rounded-lg animate-in fade-in duration-300">
-              <div className="text-[10px] font-black text-hc-teal uppercase mb-2">SYSTEM_GUIDANCE</div>
-              <p className="text-[10px] text-hc-muted leading-relaxed uppercase">
+              <div className="text-[11px] font-black text-hc-teal uppercase mb-2">SYSTEM_GUIDANCE</div>
+              <p className="text-[11px] text-hc-muted leading-relaxed uppercase">
                 1. Navigate to your source operational dashboard.<br/>
                 2. Press <span className="text-hc-text font-black">CTRL+A</span> then <span className="text-hc-text font-black">CTRL+C</span>.<br/>
                 3. Paste the entire dump into the terminal below.<br/>
@@ -242,14 +242,14 @@ export function CommunicationsPage() {
           <div className="flex-1 flex flex-col">
             <div className="flex items-center gap-2 mb-3">
               <Terminal className="w-4 h-4 text-hc-teal" />
-              <h2 className="text-[10px] font-black text-hc-text uppercase tracking-widest">INJESTION_STREAM</h2>
+              <h2 className="text-[11px] font-black text-hc-text uppercase tracking-widest">INGESTION_STREAM</h2>
             </div>
             <div className="relative flex-1 group">
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="PROMPT: PASTE FULL DASHBOARD DUMP HERE..."
-                className="w-full h-full bg-hc-card border-2 border-hc-border rounded-lg p-5 text-[11px] font-mono text-hc-text focus:border-hc-teal/50 outline-none resize-none transition-all placeholder:text-hc-muted/30"
+                className="w-full h-full bg-hc-bone hc-clay-inset rounded-lg p-5 text-[11px] font-mono text-hc-text focus:ring-2 ring-hc-teal/30 outline-none resize-none transition-all placeholder:text-hc-muted/30"
               />
               <div className="absolute top-4 right-4 pointer-events-none opacity-5 group-hover:opacity-10 transition-opacity">
                 <ShieldAlert className="w-12 h-12 text-hc-text" />
@@ -259,7 +259,7 @@ export function CommunicationsPage() {
           <button
             onClick={handleIntercept}
             disabled={!rawText.trim()}
-            className="w-full py-4 bg-hc-teal text-white text-xs font-black uppercase tracking-[0.3em] rounded-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] hover:saturate-150 disabled:opacity-20"
+            className="w-full py-4 btn-tactical text-xs font-black uppercase tracking-[0.3em] rounded-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-20"
           >
             <Zap className="w-4 h-4 fill-current" />
             SYNTHESIZE_VECTORS
@@ -268,7 +268,7 @@ export function CommunicationsPage() {
 
         {/* Right: Intelligence Matrix */}
         <div className="flex-1 flex flex-col bg-transparent">
-          <div className="p-4 border-b border-hc-border flex items-center justify-between bg-hc-navy/20">
+          <div className="p-4 hc-clay-raised mb-4 flex items-center justify-between">
             <div className="flex gap-1.5">
               {[
                 { id: 'all', label: 'ALL_VECTORS' },
@@ -280,7 +280,7 @@ export function CommunicationsPage() {
                 <button 
                   key={f.id}
                   onClick={() => setFilterType(f.id as any)}
-                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded border transition-all ${filterType === f.id ? 'bg-hc-teal text-white border-hc-teal' : 'text-hc-muted border-hc-border hover:bg-hc-card-hover hover:text-hc-text'}`}>
+                  className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${filterType === f.id ? 'bg-hc-teal text-hc-bone shadow-inner' : 'text-hc-muted hover:bg-hc-clay-dark hover:text-hc-text'}`}>
                   {f.label}
                 </button>
               ))}
@@ -291,12 +291,12 @@ export function CommunicationsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="SEARCH_TELEMETRY..."
-                className="w-full bg-hc-card border border-hc-border rounded px-9 py-2 text-[10px] font-black text-hc-text outline-none focus:border-hc-teal/50 transition-all font-mono"
+                className="w-full bg-hc-bone hc-clay-inset rounded-xl px-9 py-2 text-[11px] font-black text-hc-text outline-none focus:ring-2 ring-hc-teal/30 transition-all font-mono"
               />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin">
             {filteredIntel.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center opacity-20">
                 <Activity className="w-16 h-16 mb-4 text-hc-muted" />
@@ -305,23 +305,23 @@ export function CommunicationsPage() {
             )}
             {filteredIntel.map((item) => (
               <div key={item.id} className="group animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="bg-hc-card border border-hc-border rounded-lg overflow-hidden hover:border-hc-teal/30 transition-all flex h-42 shadow-xl">
+                <div className="hc-clay-raised rounded-2xl overflow-hidden hover:scale-[1.01] transition-all flex h-42 shadow-xl">
                   {/* Vector Accent */}
                   <div className={`w-1 shrink-0 ${
-                    item.type === 'alert' ? 'bg-red-600' : 
-                    item.type === 'gap' ? 'bg-amber-600' : 
-                    item.type === 'leave' ? 'bg-sky-600' : 'bg-hc-teal'
+                    item.type === 'alert' ? 'bg-hc-red' : 
+                    item.type === 'gap' ? 'bg-hc-amber' : 
+                    item.type === 'leave' ? 'bg-hc-sage' : 'bg-hc-teal'
                   }`} />
                   
                   <div className="flex-1 flex overflow-hidden">
                     {/* Left: Intelligence Detail */}
-                    <div className="flex-1 p-5 flex flex-col border-r border-hc-border/50 overflow-hidden bg-white/5">
+                    <div className="flex-1 p-5 flex flex-col border-r border-hc-border/50 overflow-hidden">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-7 h-7 rounded flex items-center justify-center ${
-                            item.type === 'alert' ? 'bg-red-500/20 text-red-500' : 
-                            item.type === 'gap' ? 'bg-amber-500/20 text-amber-500' : 
-                            item.type === 'leave' ? 'bg-sky-500/20 text-sky-500' : 'bg-hc-teal/20 text-hc-teal'
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                            item.type === 'alert' ? 'bg-hc-red/20 text-hc-red' : 
+                            item.type === 'gap' ? 'bg-hc-amber/20 text-hc-amber' : 
+                            item.type === 'leave' ? 'bg-hc-sage/20 text-hc-sage' : 'bg-hc-teal/20 text-hc-teal'
                           }`}>
                             {item.type === 'alert' && <AlertCircle className="w-4 h-4" />}
                             {item.type === 'gap' && <XCircle className="w-4 h-4" />}
@@ -329,23 +329,23 @@ export function CommunicationsPage() {
                             {item.type === 'message' && <MessageSquare className="w-4 h-4" />}
                           </div>
                           <div>
-                            <div className="text-xs font-black text-hc-text tracking-tight uppercase tabular-nums">{item.sender}</div>
+                            <div className="text-[11px] font-black text-hc-text tracking-tight uppercase tabular-nums">{item.sender}</div>
                             <div className="flex items-center gap-3 mt-0.5">
                               {item.phone && (
-                                <div className="flex items-center gap-1 text-[8px] font-bold text-hc-muted uppercase tracking-widest">
+                                <div className="flex items-center gap-1 text-[11px] font-bold text-hc-muted uppercase tracking-widest">
                                   <Phone className="w-2.5 h-2.5" /> {item.phone}
                                 </div>
                               )}
-                              <div className="flex items-center gap-1 text-[8px] font-bold text-hc-muted uppercase tracking-widest">
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-hc-muted uppercase tracking-widest">
                                 <Clock className="w-2.5 h-2.5" /> {item.timestamp}
                               </div>
                             </div>
                           </div>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-[0.2em] border ${
-                          item.type === 'alert' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
-                          item.type === 'gap' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
-                          item.type === 'leave' ? 'bg-sky-500/10 text-sky-500 border-sky-500/20' : 'bg-hc-teal/10 text-hc-teal border-hc-teal/20'
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-black uppercase tracking-[0.2em] border ${
+                          item.type === 'alert' ? 'bg-hc-red/10 text-hc-red border-hc-red/20' : 
+                          item.type === 'gap' ? 'bg-hc-amber/10 text-hc-amber border-hc-amber/20' : 
+                          item.type === 'leave' ? 'bg-hc-sage/10 text-hc-sage border-hc-sage/20' : 'bg-hc-teal/10 text-hc-teal border-hc-teal/20'
                         }`}>
                           {item.type === 'gap' ? 'OPERATIONAL_FAILURE' : item.type}
                         </span>
@@ -353,32 +353,32 @@ export function CommunicationsPage() {
                       <div className="flex-1 overflow-y-auto scrollbar-thin text-[11px] text-hc-text/80 font-medium leading-relaxed pr-3 font-mono">
                         {item.content.split('\n').map((line, i) => (
                           <div key={i} className="mb-0.5 last:mb-0">
-                            {line.startsWith('FAILED_TASK:') ? <span className="text-amber-500 font-black">{line}</span> : line}
+                            {line.startsWith('FAILED_TASK:') ? <span className="text-hc-amber font-black">{line}</span> : line}
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Right: Command Draft */}
-                    <div className="w-[320px] bg-black/5 p-5 flex flex-col gap-3">
+                    <div className="w-[320px] hc-clay-inset m-2 p-5 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                         <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] flex items-center gap-2">
+                         <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] flex items-center gap-2">
                            <Zap className="w-3.5 h-3.5" /> TACTICAL_DRAFT
                          </div>
                          <button 
                            onClick={() => setIntel(intel.filter(i => i.id !== item.id))}
-                           className="text-hc-muted hover:text-red-500 transition-colors"
+                           className="text-hc-muted hover:text-hc-red transition-colors"
                          >
                            <Trash2 className="w-3" />
                          </button>
                       </div>
-                      <div className="flex-1 bg-hc-navy/40 border border-hc-border rounded p-3 text-[10px] font-mono text-hc-teal leading-relaxed shadow-inner overflow-y-auto scrollbar-thin italic">
+                      <div className="flex-1 bg-hc-bone/50 hc-clay-inset rounded-xl p-3 text-[11px] font-mono text-hc-teal leading-relaxed shadow-inner overflow-y-auto scrollbar-thin italic">
                         {item.draft}
                       </div>
                       <button 
                         onClick={() => copyDraft(item)}
-                        className={`w-full py-2.5 rounded flex items-center justify-center gap-2 transition-all font-black text-[9px] uppercase tracking-[0.2em] shadow-xl ${
-                          copiedId === item.id ? 'bg-hc-teal text-white' : 'bg-hc-card border border-hc-border text-hc-text hover:bg-hc-card-hover'
+                        className={`w-full py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all font-black text-[11px] uppercase tracking-[0.2em] shadow-xl ${
+                          copiedId === item.id ? 'bg-hc-teal text-hc-bone' : 'hc-clay-raised text-hc-text hover:bg-hc-clay-dark'
                         }`}
                       >
                         {copiedId === item.id ? <CheckCircle className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}

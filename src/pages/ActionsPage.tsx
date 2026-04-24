@@ -94,9 +94,9 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Command Vectors</h1>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-hc-teal tracking-[0.2em] uppercase">Action Tracker</span>
+            <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Action Tracker</span>
             <div className="h-3 w-px bg-hc-border/40" />
-            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">
               {actions.filter(a => a.status !== 'completed').length} Open · {actions.filter(a => a.priority === 'critical' && a.status !== 'completed').length} Critical
             </span>
           </div>
@@ -104,13 +104,13 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => allCollapsed ? expandAllActions(actionIds) : collapseAllActions(actionIds)}
-            className="btn-clay text-[10px] py-2.5 px-5"
+            className="btn-clay text-[11px] py-2.5 px-5"
           >
             {allCollapsed ? 'Expand All' : 'Collapse All'}
           </button>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all
               ${showAdd ? 'hc-clay-inset text-hc-muted' : 'btn-tactical'}`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -123,10 +123,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
       {showAdd && (
         <div className="shrink-0 border-b border-hc-border/30 p-8 animate-in slide-in-from-top-4 duration-300">
           <div className="hc-clay-raised p-6 space-y-4">
-            <h3 className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] mb-4">New Action Vector</h3>
+            <h3 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-4">New Action Vector</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="lg:col-span-2">
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">Action Title</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Action Title</label>
                 <input
                   value={newAction.title}
                   onChange={e => setNewAction({ ...newAction, title: e.target.value })}
@@ -135,7 +135,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 />
               </div>
               <div>
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">House</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">House</label>
                 <select
                   value={newAction.house}
                   onChange={e => setNewAction({ ...newAction, house: e.target.value })}
@@ -145,7 +145,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 </select>
               </div>
               <div>
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">Assigned To</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Assigned To</label>
                 <input
                   value={newAction.owner}
                   onChange={e => setNewAction({ ...newAction, owner: e.target.value })}
@@ -154,7 +154,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 />
               </div>
               <div>
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">Priority</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Priority</label>
                 <select
                   value={newAction.priority}
                   onChange={e => setNewAction({ ...newAction, priority: e.target.value as ActionPriority })}
@@ -167,7 +167,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 </select>
               </div>
               <div>
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">Due Date</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Due Date</label>
                 <input
                   type="date"
                   value={newAction.dueDate}
@@ -176,7 +176,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 />
               </div>
               <div className="lg:col-span-2">
-                <label className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block opacity-70">Notes (Optional)</label>
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Notes (Optional)</label>
                 <input
                   value={newAction.description}
                   onChange={e => setNewAction({ ...newAction, description: e.target.value })}
@@ -186,10 +186,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
               </div>
             </div>
             <div className="flex justify-end gap-4 pt-2">
-              <button onClick={() => setShowAdd(false)} className="text-[10px] font-black text-hc-muted hover:text-hc-text uppercase tracking-[0.2em] transition-colors">
+              <button onClick={() => setShowAdd(false)} className="text-[11px] font-black text-hc-muted hover:text-hc-text uppercase tracking-[0.2em] transition-colors">
                 Cancel
               </button>
-              <button onClick={addAction} className="btn-tactical px-10 py-3 text-[10px]">
+              <button onClick={addAction} className="btn-tactical px-10 py-3 text-[11px]">
                 Add Action
               </button>
             </div>
@@ -203,14 +203,14 @@ export function ActionsPage({ actions, onUpdate }: Props) {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-5 py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${
+            className={`px-5 py-1.5 rounded-xl transition-all text-[11px] font-black uppercase tracking-widest flex items-center gap-2 ${
               filter === f
                 ? 'hc-clay-inset text-hc-text'
                 : 'text-hc-muted hover:text-hc-text'
             }`}
           >
             {f === 'all' ? 'All' : (STATUS_CONFIG[f as ActionStatus]?.label || f)}
-            <span className={`tabular-nums font-mono text-[9px] ${filter === f ? 'text-hc-teal' : 'opacity-50'}`}>
+            <span className={`tabular-nums font-mono text-[11px] ${filter === f ? 'text-hc-teal' : 'text-hc-muted'}`}>
               {counts[f] ?? 0}
             </span>
           </button>
@@ -264,7 +264,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                   </span>
                   <div className="h-px flex-1 bg-hc-border/30" />
                   {/* Priority badge */}
-                  <span className={`text-[9px] font-black px-2.5 py-0.5 rounded-lg border uppercase tracking-widest shrink-0
+                  <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-lg border uppercase tracking-widest shrink-0
                     ${action.priority === 'critical' ? 'bg-flag-red/10 border-flag-red/40 text-flag-red'
                     : action.priority === 'high'     ? 'bg-flag-amber/10 border-flag-amber/40 text-flag-amber'
                     : action.priority === 'medium'   ? 'bg-hc-teal/10 border-hc-teal/30 text-hc-teal'
@@ -276,15 +276,15 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 {/* Meta + controls */}
                 <div className="flex items-center gap-6 shrink-0">
                   <div className="hidden md:flex flex-col items-end gap-0.5">
-                    <span className="text-[8px] font-black text-hc-muted opacity-50 uppercase tracking-widest">Owner</span>
-                    <span className="text-[10px] font-bold text-hc-text uppercase">{action.owner}</span>
+                    <span className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Owner</span>
+                    <span className="text-[11px] font-bold text-hc-text uppercase">{action.owner}</span>
                   </div>
                   <div className="hidden md:flex flex-col items-end gap-0.5">
-                    <span className="text-[8px] font-black text-hc-muted opacity-50 uppercase tracking-widest">House</span>
-                    <span className="text-[10px] font-bold text-hc-text uppercase">{action.house}</span>
+                    <span className="text-[11px] font-black text-hc-muted uppercase tracking-widest">House</span>
+                    <span className="text-[11px] font-bold text-hc-text uppercase">{action.house}</span>
                   </div>
                   <span
-                    className="text-[10px] font-black uppercase tracking-widest w-24 text-center border-l border-hc-border/30 pl-6"
+                    className="text-[11px] font-black uppercase tracking-widest w-24 text-center border-l border-hc-border/30 pl-6"
                     style={{ color: sc.color }}
                   >
                     {sc.label}
@@ -307,27 +307,27 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 <div className="px-12 pb-6 pt-3 border-t border-hc-border/20 bg-hc-teal/[0.02] animate-in fade-in slide-in-from-top-1 duration-200">
                   <div className="grid grid-cols-3 gap-8 mb-4">
                     <div>
-                      <span className="text-[9px] font-black text-hc-muted opacity-50 uppercase tracking-[0.2em] mb-1 block">Created</span>
-                      <span className="text-[10px] font-bold text-hc-text uppercase">{action.createdAt}</span>
+                      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Created</span>
+                      <span className="text-[11px] font-bold text-hc-text uppercase">{action.createdAt}</span>
                     </div>
                     <div>
-                      <span className="text-[9px] font-black text-hc-muted opacity-50 uppercase tracking-[0.2em] mb-1 block">Due</span>
-                      <span className={`text-[10px] font-black uppercase ${isCritical ? 'text-flag-red' : 'text-hc-text'}`}>
+                      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Due</span>
+                      <span className={`text-[11px] font-black uppercase ${isCritical ? 'text-flag-red' : 'text-hc-text'}`}>
                         {action.dueDate || '—'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[9px] font-black text-hc-muted opacity-50 uppercase tracking-[0.2em] mb-1 block">Status</span>
-                      <span className="text-[10px] font-black uppercase" style={{ color: sc.color }}>{sc.label}</span>
+                      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Status</span>
+                      <span className="text-[11px] font-black uppercase" style={{ color: sc.color }}>{sc.label}</span>
                     </div>
                   </div>
 
                   {/* Notes */}
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[9px] font-black text-hc-muted opacity-50 uppercase tracking-[0.2em]">Notes</span>
+                      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em]">Notes</span>
                       {!isEditingThis && (
-                        <button onClick={() => setEditingDesc(action.id)} className="text-[9px] font-black text-hc-teal uppercase tracking-widest hover:underline">
+                        <button onClick={() => setEditingDesc(action.id)} className="text-[11px] font-black text-hc-teal uppercase tracking-widest hover:underline">
                           {action.description ? 'Edit' : '+ Add'}
                         </button>
                       )}
@@ -342,12 +342,12 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                           className="w-full hc-clay-inset px-4 py-3 text-[11px] text-hc-text font-mono outline-none resize-none"
                           placeholder="Context, evidence, links..."
                         />
-                        <div className="text-[9px] text-hc-muted opacity-40 uppercase tracking-widest">Click outside to save</div>
+                        <div className="text-[11px] text-hc-muted uppercase tracking-widest">Click outside to save</div>
                       </div>
                     ) : action.description ? (
                       <p className="text-[11px] text-hc-text/70 font-mono leading-relaxed">{action.description}</p>
                     ) : (
-                      <span className="text-[10px] text-hc-muted opacity-40 italic">No notes added</span>
+                      <span className="text-[11px] text-hc-muted italic">No notes added</span>
                     )}
                   </div>
                 </div>
@@ -357,10 +357,10 @@ export function ActionsPage({ actions, onUpdate }: Props) {
         })}
 
         {sorted.length === 0 && (
-          <div className="hc-clay-raised rounded-2xl flex flex-col items-center justify-center opacity-40 py-32 text-center">
+          <div className="hc-clay-raised rounded-2xl flex flex-col items-center justify-center py-32 text-center">
             <div className="text-5xl mb-6">🎯</div>
             <div className="text-xl font-black text-hc-text mb-2 uppercase tracking-tight">All Clear</div>
-            <div className="text-[10px] text-hc-muted uppercase tracking-[0.3em]">No actions matching this filter</div>
+            <div className="text-[11px] text-hc-muted uppercase tracking-[0.3em]">No actions matching this filter</div>
           </div>
         )}
       </div>

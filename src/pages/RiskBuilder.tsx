@@ -114,8 +114,8 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
           </div>
           <div className="flex-1 min-w-0">
             <span className={`text-xl font-black tracking-tighter uppercase transition-colors
-              ${risk.title ? 'text-hc-text group-hover:text-hc-teal' : 'text-hc-muted italic opacity-40'}`}>
-              {risk.title || 'NEW RISK AREA — CONFIGURE DETAILS'}
+              ${risk.title ? 'text-hc-text group-hover:text-hc-teal' : 'text-hc-muted italic'}`}>
+              {risk.title || 'NEW RISK AREA Â· CONFIGURE DETAILS'}
             </span>
           </div>
         </div>
@@ -123,10 +123,10 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
         <div className="flex items-center gap-6 relative z-10 shrink-0 md:pl-8 md:border-l md:border-hc-muted/10">
           {risk.title && (
             <div className="flex flex-col items-end">
-              <span className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 opacity-50">SCORE: {risk.likelihood}×{risk.impact}</span>
+              <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">SCORE: {risk.likelihood}Ã—{risk.impact}</span>
               <span className="pill text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1 shadow-xl"
                 style={{ background: color + '22', color, border: `1px solid ${color}44` }}>
-                {score} — {label}
+                {score} Â· {label}
               </span>
             </div>
           )}

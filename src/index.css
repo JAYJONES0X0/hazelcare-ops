@@ -2,226 +2,95 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── HAZEL CARE TACTICAL PROTOCOL — ORGANIC SUBSTRATE ── */
-  --color-hc-bg: #f3efe0;          /* Warm Bone foundation */
-  --color-hc-bone: #f3efe0;        /* Alias — same substrate */
-  --color-hc-card: #f3efe0;        /* Card surface alias */
-  --color-hc-clay: #f3efe0;        /* Clay surface alias */
-  --color-hc-text: #0d2d2d;        /* Nocturnal Pine (The new black) */
-  --color-hc-muted: #8a8b82;       /* Olive Anchor (The new grey) */
-  --color-hc-border: #d1c9b8;      /* Clay shadow / border */
-  --color-hc-teal: #1c4e4e;        /* Deep Matte Pine Primary */
-  --color-hc-sage: #4c7c7c;        /* Tactical Sage Accent */
-  --color-hc-amber: #d9974e;       /* Apricot Alert (tactical amber) */
-  --color-hc-red: #d94e4e;         /* Milled Red alert */
-  --color-hc-purple: #6b5b9e;      /* Night-shift violet */
-  --color-hc-navy: #1a2744;        /* Deep navy accent */
-  --color-hc-lavender: #ada2d4;    /* Chalky Lavender (Intelligence) */
-  --color-hc-clay-dark: #d1c9b8;   /* Sandy Shadow vector */
-  --color-hc-clay-light: #ffffff;  /* Bone Highlight */
-
-  --color-flag-red: #d94e4e;       /* Milled Red */
+  /* ── SEMANTIC TOKENS ── */
+  --color-hc-bg: var(--hc-bg);
+  --color-hc-bone: var(--hc-bg);
+  --color-hc-surface: var(--hc-surface);
+  --color-hc-surface-2: var(--hc-surface-2);
+  --color-hc-text: var(--hc-text);
+  --color-hc-muted: var(--hc-muted);
+  --color-hc-border: var(--hc-border);
+  --color-hc-teal: #1c4e4e;
+  --color-hc-teal-light: #4c7c7c;
+  --color-flag-red: #d94e4e;
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
+  
+  --shadow-hc-raised: 8px 8px 16px var(--hc-shadow-dark), -8px -8px 16px var(--hc-shadow-light);
+  --shadow-hc-inset: inset 4px 4px 8px var(--hc-shadow-dark), inset -4px -4px 8px var(--hc-shadow-light);
 }
 
-* { box-sizing: border-box; }
-
-body {
-  background-color: #f3efe0;
-  color: #0d2d2d;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
+:root {
+  /* LIGHT: ORGANIC BONE PROTOCOL */
+  --hc-bg: #f3efe0;
+  --hc-surface: #f3efe0;
+  --hc-surface-2: #e8e4d5;
+  --hc-text: #0d2d2d;
+  --hc-muted: #8a8b82;
+  --hc-border: rgba(13, 45, 45, 0.1);
+  --hc-shadow-dark: rgba(0, 0, 0, 0.05);
+  --hc-shadow-light: rgba(255, 255, 255, 0.8);
 }
 
-/* JetBrains Mono for tabular numbers */
-.font-mono, .tabular-nums {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-variant-numeric: tabular-nums;
+[data-theme='dark'] {
+  /* DARK: NOCTURNAL TEAL PROTOCOL (ROLE SWAP) */
+  --hc-bg: #0d2d2d;         /* Nocturnal Pine is now the canvas */
+  --hc-surface: #0d2d2d;
+  --hc-surface-2: #163a3a;
+  --hc-text: #f3efe0;       /* Bone is now the light/text */
+  --hc-muted: #a3a395;
+  --hc-border: rgba(243, 239, 224, 0.1);
+  --hc-shadow-dark: rgba(0, 0, 0, 0.4);
+  --hc-shadow-light: rgba(255, 255, 255, 0.05);
 }
 
-#root { min-height: 100vh; display: flex; }
-
-/* ─── CLAYMORPHIC HARDWARE SYSTEM ──────────────────────────── */
-
-/* Physical Slab (Raised) */
-.hc-clay-raised {
-  background: #f3efe0;
-  border-radius: 16px;
-  box-shadow: 
-    8px 8px 16px #d1c9b8,
-    -8px -8px 16px #ffffff;
-  border: 1px solid rgba(255,255,255,0.4);
+@layer base {
+  body {
+    @apply bg-hc-bg text-hc-text transition-colors duration-500 font-sans antialiased selection:bg-hc-teal/20;
+    font-feature-settings: "ss01", "ss03", "cv01", "cv11";
+  }
 }
 
-/* Tactile Input (Inset) */
-.hc-clay-inset {
-  background: #f3efe0;
-  border-radius: 12px;
-  box-shadow: 
-    inset 4px 4px 8px #d1c9b8,
-    inset -4px -4px 8px #ffffff;
-  border: none;
+@layer components {
+  .hc-clay-raised {
+    @apply bg-hc-surface transition-all duration-500;
+    box-shadow: var(--shadow-hc-raised);
+    border: 1px solid var(--hc-border);
+  }
+  
+  .hc-clay-inset {
+    @apply bg-hc-surface transition-all duration-500;
+    box-shadow: var(--shadow-hc-inset);
+    border: 1px solid var(--hc-border);
+  }
+
+  .btn-tactical {
+    @apply bg-hc-teal text-hc-bone font-black uppercase tracking-widest px-8 py-4 rounded-2xl 
+           transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 
+           disabled:opacity-20 disabled:cursor-not-allowed border border-hc-teal-light/20;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest border transition-all;
+  }
+
+  .pill-teal { @apply bg-hc-teal/10 text-hc-teal border-hc-teal/30; }
+  .pill-red { @apply bg-flag-red/10 text-flag-red border-flag-red/30; }
+  .pill-amber { @apply bg-flag-amber/10 text-flag-amber border-flag-amber/30; }
+  .pill-green { @apply bg-flag-green/10 text-flag-green border-flag-green/30; }
 }
 
-/* Command Bun (Primary Action) */
-.btn-tactical {
-  background: #1c4e4e;
-  color: #f3efe0;
-  border-radius: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 4px 4px 10px rgba(28, 78, 78, 0.2);
-}
-.btn-tactical:hover {
-  transform: translateY(-1px);
-  box-shadow: 6px 6px 15px rgba(28, 78, 78, 0.3);
-  filter: brightness(1.1);
-}
-.btn-tactical:active {
-  transform: translateY(1px);
-  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
-}
-
-/* ─── SCROLL ──────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1c9b8; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #4c7c7c; }
-
-/* ─── PILLS ────────────────────────────────────────────────── */
-.pill {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 99px;
-  font-size: 10px; font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  background: #f3efe0;
-  box-shadow: 2px 2px 5px #d1c9b8, -2px -2px 5px #ffffff;
-}
-.pill-active { color: #1c4e4e; border: 1px solid rgba(28, 78, 78, 0.2); }
-.pill-teal   { color: #1c4e4e; background: rgba(28, 78, 78, 0.08); border: 1px solid rgba(28, 78, 78, 0.2); }
-.pill-blue   { color: #4c7c7c; background: rgba(76, 124, 124, 0.08); border: 1px solid rgba(76, 124, 124, 0.2); }
-
-/* ─── BUTTON VARIANTS ────────────────────────────────────────── */
-.btn-clay {
-  background: #f3efe0;
-  border-radius: 12px;
-  font-weight: 800;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 10px 20px;
-  cursor: pointer;
-  box-shadow: 5px 5px 10px #d1c9b8, -5px -5px 10px #ffffff;
-  border: 1px solid rgba(255,255,255,0.5);
-  color: #0d2d2d;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.btn-clay:hover {
-  transform: translateY(-1px);
-  box-shadow: 7px 7px 14px #d1c9b8, -7px -7px 14px #ffffff;
-}
-.btn-clay:active {
-  transform: translateY(1px);
-  box-shadow: inset 3px 3px 6px #d1c9b8, inset -3px -3px 6px #ffffff;
-}
-.btn-clay-teal {
-  background: #1c4e4e;
-  color: #f3efe0;
-  box-shadow: 4px 4px 10px rgba(28,78,78,0.25);
-}
-.btn-clay-teal:hover {
-  filter: brightness(1.1);
-  box-shadow: 6px 6px 14px rgba(28,78,78,0.35);
-}
-
-/* ─── GLASS ──────────────────────────────────────────────────── */
-.glass {
-  background: rgba(243,239,224,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.5);
-}
-
-/* ─── ANIMATIONS ─────────────────────────────────────────────── */
-@keyframes spin-slow { to { transform: rotate(360deg); } }
-@keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 8px rgba(28,78,78,0.4); } 50% { box-shadow: 0 0 16px rgba(28,78,78,0.7); } }
-
-.animate-spin-slow   { animation: spin-slow 3s linear infinite; }
-.animate-pulse-soft  { animation: pulse-soft 2.5s ease-in-out infinite; }
-.glow-teal           { animation: glow-pulse 2s ease-in-out infinite; }
-
-/* ─── LEGACY DARK-THEME SHIMS (keep until full page rewrites) ── */
-
-/* bg-hc-dark → treat as inset well on bone */
-.bg-hc-dark { background: #ebe7d8 !important; }
-
-/* text-hc-teal-light → sage accent */
-.text-hc-teal-light { color: #4c7c7c !important; }
-
-/* hc-blue colour */
-.text-hc-blue  { color: #4c7c7c; }
-.bg-hc-blue    { background: rgba(76,124,124,0.12); }
-.border-hc-blue { border-color: rgba(76,124,124,0.3); }
-.glow-blue  { box-shadow: 0 0 12px rgba(76,124,124,0.4); }
-
-/* btn-gradient → maps to btn-tactical */
-.btn-gradient {
-  background: #1c4e4e;
-  color: #f3efe0;
-  border-radius: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 4px 4px 10px rgba(28,78,78,0.2);
-}
-.btn-gradient:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-/* glass-light → lighter glass variant */
-.glass-light {
-  background: rgba(243,239,224,0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* text-shimmer / card-glow → benign neutralisers */
-.text-shimmer { color: #0d2d2d; }
-.card-glow    { box-shadow: 8px 8px 16px #d1c9b8, -8px -8px 16px #ffffff; }
-
-/* pill colour variants */
-.pill-amber  { color: #d9974e; background: rgba(217,151,78,0.1); border: 1px solid rgba(217,151,78,0.3); }
-.pill-green  { color: #4e8d4e; background: rgba(78,141,78,0.1);  border: 1px solid rgba(78,141,78,0.3); }
-.pill-red    { color: #d94e4e; background: rgba(217,78,78,0.1);  border: 1px solid rgba(217,78,78,0.3); }
-.pill-purple { color: #6b5b9e; background: rgba(107,91,158,0.1); border: 1px solid rgba(107,91,158,0.3); }
-
-/* glow variants */
-@keyframes glow-amber-pulse { 0%,100%{box-shadow:0 0 8px rgba(217,151,78,0.4)} 50%{box-shadow:0 0 16px rgba(217,151,78,0.7)} }
-@keyframes glow-red-pulse   { 0%,100%{box-shadow:0 0 8px rgba(217,78,78,0.4)}  50%{box-shadow:0 0 16px rgba(217,78,78,0.7)} }
-.glow-amber { animation: glow-amber-pulse 2s ease-in-out infinite; }
-.glow-red   { animation: glow-red-pulse   2s ease-in-out infinite; }
-
-/* section-header utility used in ClientDocsPage */
-.section-header {
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: #8a8b82;
-}
-
-/* ─── UI CLEANUP ─────────────────────────────────────────────── */
-[class*="text-[8px]"],
-[class*="text-[9px]"] {
+/* ── UI CLEANUP ── */
+[class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"] {
   font-size: 11px !important;
 }
-[class*="tracking-[0.3em]"] {
-  letter-spacing: 0.15em !important;
+
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { @apply bg-transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-hc-muted/20 rounded-full hover:bg-hc-teal/40 transition-colors; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
+.animate-float { animation: float 6s ease-in-out infinite; }

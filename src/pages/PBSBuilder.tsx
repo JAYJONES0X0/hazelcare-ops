@@ -6,7 +6,7 @@ import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
 import { getAllEntries } from '../lib/entry-store';
-import { Sparkles, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight, ArrowLeft, Plus, Printer, Trash2, CheckCircle } from 'lucide-react';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 
@@ -19,7 +19,7 @@ const SECTIONS = [
   'Personal Profile',
   'About Me',
   'Diagnoses & Presentation',
-  'Behavior as Communication',
+  'Behaviour as Communication',
   'Proactive Support',
   'Early Warning Signs',
   'Reactive Strategies',
@@ -38,10 +38,10 @@ function Field({ label, value, onChange, area = false, rows = 3, placeholder = '
   label: string; value: string; onChange: (v: string) => void;
   area?: boolean; rows?: number; placeholder?: string;
 }) {
-  const cls = 'w-full hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 placeholder:text-hc-muted/40 shadow-inner transition-all';
+  const cls = 'w-full hc-clay-inset px-5 py-4 text-[13px] font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 placeholder:text-hc-muted/40 shadow-inner transition-all';
   return (
     <div className="mb-6 group animate-in fade-in slide-in-from-left-2 duration-500 text-hc-text">
-      <label className="text-[10px] mb-2.5 ml-1 block font-black opacity-60 tracking-[0.2em] group-focus-within:opacity-100 transition-opacity uppercase">{label}</label>
+      <label className="text-[11px] mb-2.5 ml-1 block font-black text-hc-muted tracking-[0.2em] group-focus-within:text-hc-teal transition-colors uppercase">{label}</label>
       {area
         ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={cls + ' resize-y scrollbar-thin italic'} />
         : <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className={cls} />}
@@ -59,27 +59,27 @@ function ListField({ label, items, onChange, placeholder = 'Enter details…', r
   return (
     <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500 text-hc-text">
       <div className="flex items-center justify-between mb-4 px-1">
-        <label className="text-[10px] font-black opacity-60 tracking-[0.2em] uppercase">{label}</label>
-        <button onClick={add} className="text-[10px] font-black text-hc-teal hover:brightness-90 uppercase tracking-widest transition-all">+ Add Protocol</button>
+        <label className="text-[11px] font-black text-hc-muted tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[11px] font-black text-hc-teal hover:brightness-90 uppercase tracking-widest transition-all">+ Add Protocol</button>
       </div>
       <div className="space-y-3.5">
         {items.map((item, i) => (
           <div key={i} className="flex gap-4 items-start group">
             {rows > 1
               ? <textarea value={item} onChange={e => update(i, e.target.value)} rows={rows} placeholder={placeholder}
-                  className="flex-1 hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 resize-y placeholder:text-hc-muted/40 shadow-inner transition-all italic" />
+                  className="flex-1 hc-clay-inset px-5 py-4 text-[13px] font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 resize-y placeholder:text-hc-muted/40 shadow-inner transition-all italic" />
               : <input value={item} onChange={e => update(i, e.target.value)} placeholder={placeholder}
-                  className="flex-1 hc-clay-inset px-5 py-4 text-sm font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 shadow-inner transition-all" />}
-            <button onClick={() => remove(i)} className="mt-2 w-10 h-10 rounded-xl hc-clay-raised border border-hc-muted/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  className="flex-1 hc-clay-inset px-5 py-4 text-[13px] font-black text-hc-text focus:outline-none focus:ring-2 focus:ring-hc-teal/20 shadow-inner transition-all" />}
+            <button onClick={() => remove(i)} className="mt-2 w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-red transition-all">
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ))}
         {items.length === 0 && (
           <button onClick={add}
-            className="w-full hc-clay-raised border-2 border-dashed border-hc-muted/10 rounded-[1.5rem] py-10 text-[11px] font-black text-hc-muted hover:text-hc-teal hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-4">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Initialize Protocol Array
+            className="w-full hc-clay-raised border-2 border-dashed border-hc-border rounded-[1.5rem] py-10 text-[11px] font-black text-hc-muted hover:text-hc-teal hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-4">
+            <Plus className="w-4 h-4" />
+            Initialise Protocol Array
           </button>
         )}
       </div>
@@ -104,25 +104,25 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
   return (
     <div className="mb-8 animate-in fade-in slide-in-from-left-2 duration-500">
       <div className="flex items-center justify-between mb-4 px-1">
-        <label className="section-header text-[9px] opacity-60 tracking-[0.2em] uppercase">{label}</label>
-        <button onClick={add} className="text-[10px] font-black text-hc-teal-light hover:text-white uppercase tracking-widest transition-all">+ Add New Row</button>
+        <label className="section-header text-[11px] text-hc-muted tracking-[0.2em] uppercase">{label}</label>
+        <button onClick={add} className="text-[11px] font-black text-hc-teal hover:text-hc-text uppercase tracking-widest transition-all">+ Add New Row</button>
       </div>
       <div className="space-y-4">
         {rows.map((row, i) => (
-          <div key={i} className="glass-light border border-white/5 rounded-[2rem] p-6 relative card-glow group active:scale-[0.99] transition-all">
+          <div key={i} className="hc-clay-raised rounded-[2rem] p-6 relative group transition-all">
             <button onClick={() => remove(i)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all opacity-0 group-hover:opacity-100 shadow-xl z-10">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              className="absolute top-4 right-4 w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-muted hover:text-hc-red transition-all opacity-0 group-hover:opacity-100 shadow-xl z-10">
+              <Trash2 className="w-4 h-4" />
             </button>
             <div className={`grid gap-6 ${cols.length >= 2 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
               {cols.map(col => (
                 <div key={col.key} className={col.area && cols.length === 1 ? 'w-full' : ''}>
-                  <label className="section-header text-[8px] mb-2 ml-1 block opacity-40 uppercase tracking-[0.2em]">{col.label}</label>
+                  <label className="section-header text-[11px] mb-2 ml-1 block text-hc-muted opacity-60 uppercase tracking-[0.2em]">{col.label}</label>
                   {col.area
                     ? <textarea value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        rows={3} className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner resize-none font-medium italic" />
+                        rows={3} className="w-full hc-clay-inset rounded-2xl px-5 py-3 text-[13px] text-hc-text focus:outline-none focus:ring-2 ring-hc-teal/20 shadow-inner resize-none font-black italic" />
                     : <input type="text" value={row[col.key] || ''} onChange={e => update(i, col.key, e.target.value)}
-                        className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-hc-teal/50 shadow-inner font-bold" />}
+                        className="w-full hc-clay-inset rounded-2xl px-5 py-3 text-[13px] text-hc-text focus:outline-none focus:ring-2 ring-hc-teal/20 shadow-inner font-black" />}
                 </div>
               ))}
             </div>
@@ -130,8 +130,8 @@ function TableEditor({ label, rows, onChange, cols, addRow }: {
         ))}
         {rows.length === 0 && (
           <button onClick={add}
-            className="w-full glass-light border-2 border-dashed border-white/5 rounded-[2rem] py-10 text-[10px] font-black text-hc-muted hover:text-hc-teal-light hover:border-hc-teal/30 transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            className="w-full hc-clay-raised border-2 border-dashed border-hc-border rounded-[2rem] py-10 text-[11px] font-black text-hc-muted hover:text-hc-teal transition-all uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+            <Plus className="w-5 h-5" />
             Add Details
           </button>
         )}
@@ -330,27 +330,27 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden animate-in fade-in duration-700">
+    <div className="flex flex-col h-screen overflow-hidden bg-hc-bone animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center gap-6 px-8 py-5 glass border-b border-white/10 z-20 shadow-2xl backdrop-blur-3xl">
+      <div className="flex items-center gap-6 px-8 py-5 hc-clay-raised m-4 z-20 shadow-2xl">
         <button onClick={onBack}
-          className="group flex items-center gap-3 text-hc-muted hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
-          <span className="w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center group-hover:bg-white/5 transition-all">
-            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          className="group flex items-center gap-3 text-hc-muted hover:text-hc-text text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 active:scale-90">
+          <span className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center group-hover:bg-hc-clay-dark transition-all">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
           </span>
           Back
         </button>
         
-        <div className="h-8 w-px bg-white/10 hidden md:block" />
+        <div className="h-8 w-px bg-hc-border hidden md:block" />
         
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
-            <span className="text-shimmer">{client.name || 'PERSON PROFILE'}</span>
-            <span className="pill pill-teal text-[9px] font-black tracking-widest px-3 py-0.5 shadow-lg">PBS PLAN BUILDER</span>
+          <h1 className="text-xl font-black text-hc-text tracking-tighter uppercase flex items-center gap-3">
+            <span>{client.name || 'PERSON PROFILE'}</span>
+            <span className="pill pill-teal text-[11px] font-black tracking-widest px-3 py-0.5 shadow-lg">PBS PLAN BUILDER</span>
           </h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Positive Behavior Support Planning</span>
-            <span className={`text-[10px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
+            <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">Positive Behaviour Support Planning</span>
+            <span className={`text-[11px] font-black uppercase tracking-widest tabular-nums ${saved ? 'text-flag-green' : 'text-flag-amber animate-pulse'}`}>
               {saved ? '✓ DATA SAVED' : '● SAVING CHANGES...'}
             </span>
           </div>
@@ -360,13 +360,13 @@ export function PBSBuilder({ clientId, onBack }: Props) {
           <button
             type="button"
             onClick={handleSynthesisePBS}
-            className="px-5 py-2.5 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal-light hover:text-white hover:bg-hc-teal/10 flex items-center gap-2 transition-all shadow-md">
+            className="px-5 py-2.5 rounded-xl hc-clay-raised text-[11px] font-black uppercase tracking-[0.2em] text-hc-teal hover:text-hc-text hover:bg-hc-clay-dark flex items-center gap-2 transition-all shadow-md">
             <Sparkles className="w-4 h-4" /> Synthesise from Intelligence
           </button>
           <button
             onClick={() => importFileRef.current?.click()}
             disabled={importing}
-            className="px-5 py-2.5 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal-light hover:bg-hc-teal/10 hover:text-white transition-colors disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl hc-clay-raised text-[11px] font-black uppercase tracking-[0.2em] text-hc-teal hover:bg-hc-clay-dark hover:text-hc-text transition-colors disabled:opacity-50"
           >
             {importing ? 'Importing...' : 'Import dataset'}
           </button>
@@ -384,7 +384,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             <select
               value={exportLayout}
               onChange={e => setExportLayout(e.target.value as ExportLayout)}
-              className="appearance-none bg-black/40 border border-white/10 hover:border-hc-teal/50 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white outline-none cursor-pointer transition-colors shadow-inner"
+              className="appearance-none bg-hc-bone hc-clay-inset border border-hc-border hover:border-hc-teal/50 rounded-xl pl-4 pr-10 py-2.5 text-[11px] font-black uppercase tracking-[0.2em] text-hc-text outline-none cursor-pointer transition-colors shadow-inner"
               title="Export page orientation"
             >
               <option value="portrait">Portrait</option>
@@ -393,31 +393,29 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-hc-muted pointer-events-none rotate-90" />
           </div>
           <button onClick={generatePDF}
-            className="flex items-center gap-3 px-8 py-3 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
-            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
+            className="flex items-center gap-3 px-8 py-3 btn-tactical text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group">
+            <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
             Print PBS Plan
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden mesh-bg">
+      <div className="flex flex-1 overflow-hidden px-4 pb-4 gap-4">
         {/* Section nav */}
-        <div className="w-72 flex-shrink-0 border-r border-white/5 overflow-y-auto glass backdrop-blur-3xl scrollbar-thin">
-          <div className="p-6 border-b border-white/5 bg-black/20">
-            <p className="section-header text-[9px] tracking-[0.3em] opacity-40 uppercase">Plan Sections</p>
+        <div className="w-72 flex-shrink-0 hc-clay-inset overflow-y-auto scrollbar-thin">
+          <div className="p-6 border-b border-hc-border bg-hc-clay-dark/20">
+            <p className="section-header text-[11px] text-hc-muted tracking-[0.3em] uppercase">Plan Sections</p>
           </div>
           <div className="py-4">
             {SECTIONS.map((name, i) => (
               <button key={i} onClick={() => setSection(i)}
                 className={`w-full text-left px-6 py-4 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all duration-500 group relative overflow-hidden active:scale-95
-                  ${section === i ? 'bg-hc-teal/10 text-hc-teal-light shadow-[inset_0_0_20px_rgba(20,184,166,0.05)]' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-                {section === i && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#14b8a6] z-10" />}
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-700 relative z-10 ${sectionComplete(i) ? 'bg-hc-teal glow-teal scale-110' : 'bg-white/10 group-hover:bg-white/30'}`} />
+                  ${section === i ? 'bg-hc-teal/10 text-hc-teal shadow-inner' : 'text-hc-muted hover:text-hc-text hover:bg-hc-clay-dark'}`}>
+                {section === i && <div className="absolute left-0 top-0 bottom-0 w-1 bg-hc-teal shadow-[0_0_15px_#1c4e4e] z-10" />}
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all duration-700 relative z-10 ${sectionComplete(i) ? 'bg-hc-teal scale-110' : 'bg-hc-border group-hover:bg-hc-muted'}`} />
                 <span className="flex-1 truncate relative z-10 group-hover:translate-x-1 transition-transform duration-500">{name}</span>
                 {sectionComplete(i) && (
-                  <svg className="w-3.5 h-3.5 text-hc-teal-light/60 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <CheckCircle className="w-3.5 h-3.5 text-hc-teal/60 relative z-10" />
                 )}
               </button>
             ))}
@@ -425,28 +423,28 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         </div>
 
         {/* Section content */}
-        <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-10 hc-clay-raised scrollbar-thin">
           <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
             {!!synthStatus && (
-              <div className="mb-4 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light flex items-center gap-2 animate-in slide-in-from-top-2">
+              <div className="mb-4 text-[11px] font-black rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal flex items-center gap-2 animate-in slide-in-from-top-2">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />{synthStatus}
               </div>
             )}
             {!!importStatus && (
-              <div className="mb-6 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light">
+              <div className="mb-6 text-[11px] font-black rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal">
                 {importStatus}
               </div>
             )}
             
             <div className="mb-12 flex items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl glass border-2 border-white/10 flex items-center justify-center text-3xl font-black text-hc-teal-light shadow-2xl glow-teal animate-float">
+              <div className="w-20 h-20 rounded-3xl hc-clay-inset flex items-center justify-center text-3xl font-black text-hc-teal shadow-2xl animate-float">
                 {section + 1}
               </div>
               <div>
-                <h2 className="text-3xl font-black text-white tracking-tighter uppercase text-shimmer mb-1">{SECTIONS[section]}</h2>
+                <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-1">{SECTIONS[section]}</h2>
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                  <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Configuring Section {section + 1} of 12</p>
+                  <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Configuring Section {section + 1} of 12</p>
                 </div>
               </div>
             </div>
@@ -466,7 +464,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                   </div>
                   <Field label="Primary Address" value={client.address} onChange={v => update({ address: v })} area rows={2} />
                   <ListField label="Diagnoses" items={client.diagnoses} onChange={v => update({ diagnoses: v })} placeholder="e.g. Autism Spectrum Disorder" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-8 pt-8 border-t border-white/5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mt-8 pt-8 border-t border-hc-border">
                     <Field label="Key Worker" value={client.keyWorker} onChange={v => update({ keyWorker: v })} />
                     <Field label="Responsible Manager" value={client.responsible} onChange={v => update({ responsible: v })} />
                     <Field label="Completed By" value={client.completedBy} onChange={v => update({ completedBy: v })} />
@@ -480,7 +478,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
                 <div className="animate-in fade-in duration-700">
                   <Field label="About the Person (Summary)" value={pbs.aboutText}
                     onChange={v => updatePBS({ aboutText: v })} area rows={8}
-                    placeholder="Summarize the person's core strengths, personality, interests, and how they like to be supported..." />
+                    placeholder="Summarise the person's core strengths, personality, interests, and how they like to be supported..." />
                   <div className="h-8" />
                   <ListField label="Important to Me" items={pbs.whatMatters}
                     onChange={v => updatePBS({ whatMatters: v })} placeholder="e.g. Spending time in my private space" />
@@ -494,7 +492,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
               {/* 2 — Diagnoses */}
               {section === 2 && (
                 <div className="animate-in fade-in duration-700">
-                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Describe how each diagnosis affects the person's daily life and support needs."</p>
+                  <p className="text-[13px] font-black text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Describe how each diagnosis affects the person's daily life and support needs."</p>
                   <TableEditor
                     label="Diagnoses & Presentation Table"
                     rows={pbs.diagnosisRows as unknown as Record<string, string>[]}
@@ -513,13 +511,13 @@ export function PBSBuilder({ clientId, onBack }: Props) {
               {/* 3 — Function */}
               {section === 3 && (
                 <div className="animate-in fade-in duration-700">
-                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Describe specific behaviors and what the person might be trying to communicate through them."</p>
+                  <p className="text-[13px] font-black text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Describe specific behaviours and what the person might be trying to communicate through them."</p>
                   <TableEditor
-                    label="Behavior as Communication Analysis"
+                    label="Behaviour as Communication Analysis"
                     rows={pbs.functionRows as unknown as Record<string, string>[]}
                     onChange={v => updatePBS({ functionRows: v as unknown as typeof pbs.functionRows })}
                     cols={[
-                      { key: 'behaviour', label: 'The Behavior' },
+                      { key: 'behaviour', label: 'The Behaviour' },
                       { key: 'func', label: 'What they are communicating', area: true },
                     ]}
                     addRow={() => ({ behaviour: '', func: '' })}
@@ -546,13 +544,13 @@ export function PBSBuilder({ clientId, onBack }: Props) {
               {/* 5 — Early Warning Signs */}
               {section === 5 && (
                 <div className="animate-in fade-in duration-700">
-                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Identify signs that the person is beginning to feel distressed and how staff should respond immediately."</p>
+                  <p className="text-[13px] font-black text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-teal pl-4 py-1">"Identify signs that the person is beginning to feel distressed and how staff should respond immediately."</p>
                   <TableEditor
                     label="Early Warning Signs & Actions"
                     rows={pbs.warningSignRows as unknown as Record<string, string>[]}
                     onChange={v => updatePBS({ warningSignRows: v as unknown as typeof pbs.warningSignRows })}
                     cols={[
-                      { key: 'sign', label: 'The Sign/Behavior', area: true },
+                      { key: 'sign', label: 'The Sign/Behaviour', area: true },
                       { key: 'staffAction', label: 'How staff should respond', area: true },
                     ]}
                     addRow={() => ({ sign: '', staffAction: '' })}
@@ -563,7 +561,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
               {/* 6 — Reactive Strategies */}
               {section === 6 && (
                 <div className="animate-in fade-in duration-700">
-                  <p className="text-[11px] font-medium text-hc-muted mb-8 leading-relaxed italic border-l-2 border-flag-red pl-4 py-1">"Step-by-step de-escalation strategies to follow when behavior has intensified."</p>
+                  <p className="text-[13px] font-black text-hc-muted mb-8 leading-relaxed italic border-l-2 border-hc-red pl-4 py-1">"Step-by-step de-escalation strategies to follow when behaviour has intensified."</p>
                   <div className="space-y-2">
                     {[
                       ['Step 1 — Low Arousal Response (Voice/Body)', pbs.reactiveStep1, (v: string) => updatePBS({ reactiveStep1: v })],
@@ -661,23 +659,23 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-16 pt-8 border-t border-white/5 relative z-10">
+            <div className="flex justify-between mt-16 pt-8 border-t border-hc-border relative z-10">
               {section > 0
                 ? <button onClick={() => setSection(s => s - 1)}
-                    className="flex items-center gap-3 px-8 py-4 glass-light border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-white rounded-2xl transition-all duration-500 hover:bg-white/[0.03] active:scale-90 shadow-xl">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    className="flex items-center gap-3 px-8 py-4 hc-clay-raised text-[11px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-hc-text transition-all duration-500 hover:bg-hc-clay-dark active:scale-90 shadow-xl">
+                    <ArrowLeft className="w-4 h-4" />
                     Previous Section
                   </button>
                 : <div />}
               {section < SECTIONS.length - 1
                 ? <button onClick={() => setSection(s => s + 1)}
-                    className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                    className="flex items-center gap-3 px-10 py-4 btn-tactical text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
                     Next Section
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 : <button onClick={generatePDF}
-                    className="flex items-center gap-3 px-10 py-4 btn-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all group/btn">
-                    <svg className="w-5 h-5 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    className="flex items-center gap-3 px-10 py-4 btn-tactical text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all group/btn">
+                    <Printer className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                     Print PBS Plan
                   </button>}
             </div>

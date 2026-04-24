@@ -191,15 +191,15 @@ function VerificationGrid({ items, type, onUpdate }: { items: any[], type: Uploa
   };
   return (
     <div className="hc-clay-raised rounded-[2rem] overflow-hidden mb-6 flex flex-col max-h-[400px]">
-      <div className="p-5 border-b border-hc-muted/10 text-[10px] font-black uppercase tracking-widest text-hc-teal bg-black/[0.02]">Forensic Injest Audit ({items.length} Units)</div>
+      <div className="p-5 border-b border-hc-muted/10 text-[11px] font-black uppercase tracking-widest text-hc-teal bg-black/[0.02]">Forensic Ingest Audit ({items.length} Units)</div>
       <div className="overflow-auto scrollbar-thin">
         <table className="w-full text-left border-collapse min-w-[600px]">
-          <thead className="sticky top-0 bg-hc-bone z-20 shadow-sm">
+          <thead className="sticky top-0 bg-hc-bg z-20 shadow-sm">
             <tr className="border-b border-hc-muted/10">
               {type === 'roster' ? (
-                ['Personnel', 'Asset', 'Temporal', 'Duration'].map(h => <th key={h} className="px-6 py-4 text-[9px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
+                ['Personnel', 'Asset', 'Temporal', 'Duration'].map(h => <th key={h} className="px-6 py-4 text-[11px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               ) : (
-                ['Temporal', 'Subject', 'Asset', 'Diagnostic'].map(h => <th key={h} className="px-6 py-4 text-[9px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
+                ['Temporal', 'Subject', 'Asset', 'Diagnostic'].map(h => <th key={h} className="px-6 py-4 text-[11px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               )}
             </tr>
           </thead>
@@ -209,7 +209,7 @@ function VerificationGrid({ items, type, onUpdate }: { items: any[], type: Uploa
                 <td className="px-6 py-3 text-[11px] text-hc-text font-black tabular-nums tracking-tighter">{it.date} {it.time || ''}</td>
                 <td className="px-6 py-3"><input value={it.client || it.staffId || ''} onChange={e => handleChange(idx, it.client ? 'client' : 'staffId', e.target.value)} className="bg-transparent text-[11px] font-black text-hc-text w-full focus:outline-none focus:text-hc-teal uppercase tracking-tighter" /></td>
                 <td className="px-6 py-3"><input value={it.house || ''} onChange={e => handleChange(idx, 'house', e.target.value)} className="bg-transparent text-[11px] font-black text-hc-text w-full focus:outline-none focus:text-hc-teal uppercase tracking-tighter" /></td>
-                <td className="px-6 py-3 text-[11px] text-hc-muted font-black truncate max-w-[300px] uppercase opacity-60 italic">{it.entry || it.hours || ''}</td>
+                <td className="px-6 py-3 text-[11px] text-hc-muted font-black truncate max-w-[300px] uppercase italic">{it.entry || it.hours || ''}</td>
               </tr>
             ))}
           </tbody>
@@ -312,17 +312,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-hc-bone overflow-hidden flex flex-col">
+    <div className="h-[calc(100vh-4rem)] bg-hc-bg overflow-hidden flex flex-col">
       <div className="flex-1 overflow-y-auto scrollbar-thin p-12">
         {/* Header */}
-        <div className="mb-12 pb-10 border-b border-hc-muted/10 flex items-center justify-between">
+        <div className="mb-12 pb-10 border-b border-hc-border/30 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Field Injest Matrix</h1>
-            <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">High-Density Operational Intake Protocol</p>
+            <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Field Ingest Matrix</h1>
+            <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">High-Density Operational Intake Protocol</p>
           </div>
           <div className="flex gap-4">
-            <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Command Center</button>
-            <button onClick={reset} className="px-8 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[10px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">Purge Buffer</button>
+            <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Command Center</button>
+            <button onClick={reset} className="px-8 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[11px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">Purge Buffer</button>
           </div>
         </div>
 
@@ -334,13 +334,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                  <Upload className="w-10 h-10 text-hc-teal" />
               </div>
               <div className="text-center">
-                <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialize Intake Stream</div>
-                <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 leading-loose">
+                <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialise Intake Stream</div>
+                <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] leading-loose">
                   Drop Clinical ZIP Packs, PDF Audits, CSV Diary Exports,<br />or Roster Intelligence Vectors
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-6">
                   {['.zip', '.csv', '.pdf', '.txt', '.docx'].map(ext => (
-                    <span key={ext} className="pill pill-teal text-[9px] font-black px-2 py-1 flex items-center gap-1">
+                    <span key={ext} className="pill pill-teal text-[11px] font-black px-2 py-1 flex items-center gap-1">
                       {ext === '.zip' && <Archive className="w-3 h-3" />}
                       {ext}
                     </span>
@@ -349,9 +349,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
             </label>
             <div className="flex-1 hc-clay-raised rounded-[3rem] p-10 flex flex-col shadow-2xl border border-hc-muted/5 bg-black/[0.01]">
-              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted mb-10 flex items-center gap-3">
+              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-hc-muted mb-10 flex items-center gap-3">
                  <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-                 Injest Buffer [{sourceBasket.length}]
+                 Ingest Buffer [{sourceBasket.length}]
               </div>
               <div className="flex-1 space-y-4 overflow-y-auto scrollbar-thin pr-2">
                 {sourceBasket.map(i => (
@@ -361,9 +361,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   </div>
                 ))}
                 {sourceBasket.length === 0 && (
-                   <div className="h-full flex flex-col items-center justify-center opacity-20 py-20 grayscale">
+                   <div className="h-full flex flex-col items-center justify-center text-hc-muted py-20 grayscale">
                       <Activity className="w-10 h-10 mb-4" />
-                      <div className="text-[10px] font-black uppercase tracking-widest">Buffer Empty</div>
+                      <div className="text-[11px] font-black uppercase tracking-widest">Buffer Empty</div>
                    </div>
                 )}
               </div>
@@ -373,7 +373,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
         {step === 'extracting' && (
           <div className="flex-1 flex flex-col items-center justify-center py-40">
-            <div className="w-full max-w-sm mb-8 hc-clay-inset h-5 rounded-full overflow-hidden p-1 shadow-inner">
+            <div className="w-full max-sm mb-8 hc-clay-inset h-5 rounded-full overflow-hidden p-1 shadow-inner">
               <div className="bg-hc-teal h-full rounded-full transition-all duration-300 shadow-[0_0_15px_#14b8a6]" style={{ width: `${progress}%` }} />
             </div>
             <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.4em] animate-pulse">Decoding Intelligence: {progress}%</div>
@@ -395,8 +395,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 { l: 'Threat Indicators', v: preview.redFlags || 0, c: 'text-flag-red', i: <AlertTriangle className="w-4 h-4" /> },
               ]).map(s => (
                 <div key={s.l} className="hc-clay-raised p-8 rounded-[2rem] relative overflow-hidden group/stat border border-hc-muted/5 transition-all hover:translate-y-[-2px]">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{s.i}</div>
-                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-4 opacity-60">{s.l}</div>
+                  <div className="absolute top-0 right-0 p-6 text-hc-muted group-hover/stat:scale-125 transition-transform">{s.i}</div>
+                  <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] mb-4">{s.l}</div>
                   <div className={`text-2xl font-black tabular-nums tracking-tighter ${s.c || 'text-hc-text'}`}>{s.v}</div>
                 </div>
               ))}
@@ -412,7 +412,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
                 <div className="space-y-6">
-                  <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Dispatch Targets</label>
+                  <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Dispatch Targets</label>
                   <div className="grid grid-cols-2 gap-4">
                     {['reports', 'templates', 'client-docs', 'roster'].map(t => (
                       <label key={t} className={`flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all border
@@ -421,15 +421,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                         <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all ${selectedTargets.includes(t as ImportTarget) ? 'bg-hc-teal border-hc-teal' : 'border-hc-muted/20'}`}>
                           {selectedTargets.includes(t as ImportTarget) && <Check className="w-3 h-3 text-hc-bg" strokeWidth={4} />}
                         </div>
-                        <span className="text-[10px] font-black uppercase text-hc-text tracking-widest">{t.replace('-', ' ')}</span>
+                        <span className="text-[11px] font-black uppercase text-hc-text tracking-widest">{t.replace('-', ' ')}</span>
                       </label>
                     ))}
                   </div>
                 </div>
                 <div className="space-y-6">
-                   <label className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Entity Resolution Strategy</label>
+                   <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Entity Resolution Strategy</label>
                    <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
-                     <option value="global">Injest to Global Ledger</option>
+                     <option value="global">Ingest to Global Ledger</option>
                      <option value="auto">Auto-Synthesise Intelligence</option>
                      <option value="specific">Target Specific Entity Matrix</option>
                    </select>
@@ -455,11 +455,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             <div className="w-28 h-24 rounded-[2.5rem] bg-flag-green/10 border-2 border-flag-green/30 flex items-center justify-center mb-12 shadow-2xl shadow-flag-green/10">
                <Check className="w-12 h-12 text-flag-green" strokeWidth={3} />
             </div>
-            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-4">Stream Injest Successful</h2>
-            <p className="text-[11px] text-hc-muted text-center max-w-sm mb-16 uppercase leading-relaxed tracking-[0.2em] font-black opacity-60 italic">"{resultMsg}"</p>
+            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-4">Stream Ingest Successful</h2>
+            <p className="text-[11px] text-hc-muted text-center max-w-sm mb-16 uppercase leading-relaxed tracking-[0.2em] font-black">"{resultMsg}"</p>
             <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-              <button onClick={() => setPage('dashboard')} className="py-5 hc-clay-raised rounded-2xl text-[10px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all shadow-xl">Command Center</button>
-              <button onClick={reset} className="py-5 btn-tactical text-hc-bg rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl">Next Segment</button>
+              <button onClick={() => setPage('dashboard')} className="py-5 hc-clay-raised rounded-2xl text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all shadow-xl">Command Center</button>
+              <button onClick={reset} className="py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl">Next Segment</button>
             </div>
           </div>
         )}
@@ -467,15 +467,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         {step === 'error' && (
           <div className="flex-1 flex flex-col items-center justify-center py-24">
             <AlertTriangle className="w-16 h-16 text-flag-red mb-8 animate-pulse" />
-            <h2 className="text-2xl font-black text-flag-red uppercase tracking-tighter mb-4">Injest Fault Protocol</h2>
-            <p className="text-[11px] text-hc-muted text-center max-w-md mb-12 font-mono italic opacity-60">"{errorMsg}"</p>
-            <button onClick={reset} className="px-12 py-4 hc-clay-raised border border-hc-muted/10 text-hc-text text-[10px] font-black uppercase tracking-widest rounded-2xl hover:brightness-95 transition-all shadow-xl">Reset Intake Module</button>
+            <h2 className="text-2xl font-black text-flag-red uppercase tracking-tighter mb-4">Ingest Fault Protocol</h2>
+            <p className="text-[11px] text-hc-muted text-center max-w-md mb-12 font-mono italic">"{errorMsg}"</p>
+            <button onClick={reset} className="px-12 py-4 hc-clay-raised border border-hc-muted/10 text-hc-text text-[11px] font-black uppercase tracking-widest rounded-2xl hover:brightness-95 transition-all shadow-xl">Reset Intake Module</button>
           </div>
         )}
       </div>
 
       <div className="mt-auto p-8 flex justify-center border-t border-hc-muted/10 bg-black/[0.02]">
-        <div className="flex items-center gap-3 text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] opacity-40">
+        <div className="flex items-center gap-3 text-[11px] font-black text-hc-muted uppercase tracking-[0.4em]">
            <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
            Field Extraction Intelligence // End-to-End Encryption Vector
         </div>

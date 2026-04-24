@@ -48,8 +48,8 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
           <Activity className="w-12 h-12 text-hc-teal opacity-20" />
         </div>
         <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-6 text-center">Protocol Offline</h2>
-        <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm opacity-60">Initialize the region telemetry to generate service briefing.</p>
-        <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Initialize Field Sync</button>
+        <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm">Initialise the region telemetry to generate service briefing.</p>
+        <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Initialise Field Sync</button>
       </div>
     );
   }
@@ -62,18 +62,18 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
       {/* ── MISSION HEADER ── */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-10 pb-12 border-b border-hc-border">
         <div>
-          <div className="text-[10px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Hazel Care // Service Intelligence</div>
+          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Hazel Care // Service Intelligence</div>
           <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Mission Briefing</h1>
         </div>
         
         <div className="flex items-center gap-6">
            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest">Sitrep Interval</span>
+              <span className="text-[11px] font-black text-hc-teal-light uppercase tracking-widest">Sitrep Interval</span>
               <span className="text-[11px] font-black text-hc-muted uppercase tabular-nums">{weekData.dateFrom} — {weekData.dateTo}</span>
            </div>
            <button
              onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
-             className="btn-clay h-[54px] !rounded-2xl px-8 text-[9px]"
+             className="btn-clay h-[54px] !rounded-2xl px-8 text-[11px]"
            >
              {allCollapsed ? 'EXPAND_MATRIX' : 'COLLAPSE_MATRIX'}
            </button>
@@ -88,12 +88,12 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
             {openActions.slice(0, 6).map(a => (
               <div key={a.id} onClick={() => setPage('actions')} className="hc-clay-raised p-8 flex flex-col gap-6 group cursor-pointer transition-all hover:translate-y-[-4px]">
                 <div className="flex items-center justify-between">
-                  <span className={`text-[8px] font-black px-3 py-1 rounded border uppercase tracking-widest ${a.priority === 'critical' ? 'bg-hc-red/10 border-hc-red text-hc-red' : 'bg-hc-teal/10 border-hc-teal text-hc-teal'}`}>{a.priority}</span>
+                  <span className={`text-[11px] font-black px-3 py-1 rounded border uppercase tracking-widest ${a.priority === 'critical' ? 'bg-hc-red/10 border-hc-red text-hc-red' : 'bg-hc-teal/10 border-hc-teal text-hc-teal'}`}>{a.priority}</span>
                   <Activity size={14} className="text-hc-muted opacity-20" />
                 </div>
                 <div className="flex flex-col gap-2">
                    <div className="text-xs font-black text-hc-text uppercase tracking-wider group-hover:text-hc-teal transition-colors">{a.title}</div>
-                   <div className="text-[9px] font-black text-hc-muted tracking-widest opacity-40 flex justify-between uppercase">
+                   <div className="text-[11px] font-black text-hc-muted tracking-widest flex justify-between uppercase">
                       <span>Target: {a.owner}</span>
                       <span className="tabular-nums">{a.dueDate}</span>
                    </div>
@@ -108,7 +108,7 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
           <div className="hc-clay-inset p-2 overflow-hidden">
             <table className="w-full text-left border-separate border-spacing-2">
               <thead>
-                <tr className="text-[9px] font-black text-hc-muted uppercase tracking-[0.4em]">
+                <tr className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em]">
                   <th className="px-6 py-4">Identifier</th>
                   <th className="px-6 py-4">Station</th>
                   <th className="px-6 py-4 text-center">Alerts</th>
@@ -119,14 +119,14 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
                 {priorityClients.map(c => (
                   <tr key={c.name} onClick={() => setPage('client-diary')} className="group cursor-pointer">
                     <td className="px-6 py-5 hc-clay-raised !rounded-r-none text-xs font-black text-hc-text uppercase tracking-widest">{c.name}</td>
-                    <td className="px-6 py-5 hc-clay-raised !rounded-none text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60 text-center">{c.house}</td>
+                    <td className="px-6 py-5 hc-clay-raised !rounded-none text-[11px] font-black text-hc-muted uppercase tracking-widest text-center">{c.house}</td>
                     <td className="px-6 py-5 hc-clay-raised !rounded-none">
                       <div className="flex justify-center gap-3">
-                        {c.red > 0 && <span className="bg-hc-red/10 text-hc-red px-2 py-0.5 text-[10px] font-black border border-hc-red/30 rounded">{c.red}</span>}
-                        {c.amber > 0 && <span className="bg-hc-amber/10 text-hc-amber px-2 py-0.5 text-[10px] font-black border border-hc-amber/30 rounded">{c.amber}</span>}
+                        {c.red > 0 && <span className="bg-hc-red/10 text-hc-red px-2 py-0.5 text-[11px] font-black border border-hc-red/30 rounded">{c.red}</span>}
+                        {c.amber > 0 && <span className="bg-hc-amber/10 text-hc-amber px-2 py-0.5 text-[11px] font-black border border-hc-amber/30 rounded">{c.amber}</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-5 hc-clay-raised !rounded-l-none text-[10px] font-black text-hc-muted italic truncate max-w-sm">"{c.latest}..."</td>
+                    <td className="px-6 py-5 hc-clay-raised !rounded-l-none text-[11px] font-black text-hc-muted italic truncate max-w-sm">"{c.latest}..."</td>
                   </tr>
                 ))}
               </tbody>
@@ -143,8 +143,8 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
                   {t.severity === 'critical' ? <AlertTriangle size={20} className="text-hc-red" /> : <TrendingUp size={20} />}
                 </div>
                 <div>
-                  <div className={`text-[10px] font-black uppercase tracking-[0.3em] mb-3 ${t.severity === 'critical' ? 'text-hc-red' : 'text-hc-teal'}`}>{t.title}</div>
-                  <p className="text-[11px] font-black text-hc-muted leading-relaxed uppercase opacity-60 italic">"{t.detail}"</p>
+                  <div className={`text-[11px] font-black uppercase tracking-[0.3em] mb-3 ${t.severity === 'critical' ? 'text-hc-red' : 'text-hc-teal'}`}>{t.title}</div>
+                  <p className="text-[11px] font-black text-hc-muted leading-relaxed uppercase italic">"{t.detail}"</p>
                 </div>
               </div>
             ))}
@@ -165,7 +165,7 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
                   <Metric label="Critical" val={h.flags.red} red />
                   <Metric label="Monitor" val={h.flags.amber} amber />
                 </div>
-                <button onClick={() => setPage('dashboard')} className="btn-clay !py-2.5 !rounded-xl text-[8px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Audit Site</button>
+                <button onClick={() => setPage('dashboard')} className="btn-clay !py-2.5 !rounded-xl text-[11px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Audit Site</button>
               </div>
             ))}
           </div>
@@ -185,7 +185,7 @@ function Section({ title, count, children, collapsed, onToggle }: { id: string; 
           <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
         </div>
         <div className="flex items-center gap-8">
-          {count != null && <div className="text-[10px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-clay-dark/20 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
+          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-clay-dark/20 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
           <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
              <ChevronRight size={16} />
           </div>
@@ -199,7 +199,7 @@ function Section({ title, count, children, collapsed, onToggle }: { id: string; 
 function Metric({ label, val, red, amber }: { label: string; val: number; red?: boolean; amber?: boolean }) {
   return (
     <div className="flex items-center justify-between group/met">
-      <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-40 group-hover/met:opacity-100 transition-opacity">{label}</span>
+      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] group-hover/met:text-hc-text transition-opacity">{label}</span>
       <span className={`text-[12px] font-black tabular-nums transition-all ${red ? 'text-hc-red scale-110' : amber ? 'text-hc-amber' : 'text-hc-text'}`}>{val}</span>
     </div>
   );

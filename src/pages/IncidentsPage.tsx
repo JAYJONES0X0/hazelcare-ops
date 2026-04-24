@@ -49,7 +49,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
     <div className="min-h-screen flex flex-col bg-transparent text-hc-text font-mono">
 
       {/* Tactical Header */}
-      <div className="flex-none p-4 lg:p-6 border-b border-hc-border bg-hc-navy/40 backdrop-blur-xl">
+      <div className="flex-none p-4 lg:p-6 border-b border-hc-border hc-clay-raised">
 
         <div className="flex items-center justify-between">
           <div>
@@ -58,18 +58,18 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               <h1 className="text-xl font-black tracking-tighter uppercase text-hc-text">Stability Vector Hub</h1>
 
             </div>
-            <div className="flex items-center gap-4 text-[10px] font-bold">
+            <div className="flex items-center gap-4 text-[11px] font-bold">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">STATION_STATUS:</span>
+                <span className="text-hc-muted">STATION_STATUS:</span>
                 <span className="text-blue-400">OPERATIONAL // ENFORCED</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">VECTOR_LOAD:</span>
+                <span className="text-hc-muted">VECTOR_LOAD:</span>
                 <span className={totalActive > 0 ? "text-orange-500" : "text-green-500"}>{totalActive} ACTIVE</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">CRITICAL_FAULTS:</span>
-                <span className={totalRed > 0 ? "text-red-500 animate-pulse" : "text-slate-600"}>{totalRed} INTERCEPTS</span>
+                <span className="text-hc-muted">CRITICAL_FAULTS:</span>
+                <span className={totalRed > 0 ? "text-red-500 animate-pulse" : "text-hc-muted"}>{totalRed} INTERCEPTS</span>
               </div>
             </div>
           </div>
@@ -77,12 +77,12 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             {lastTransition && (
               <button
                 onClick={undoLastTransition}
-                className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors"
+                className="px-3 py-1.5 text-[11px] font-black uppercase tracking-widest bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors text-hc-text"
               >
                 Undo Last Transition
               </button>
             )}
-            <div className="px-3 py-1.5 bg-slate-900 border border-slate-800 text-[10px] font-black uppercase text-slate-500">
+            <div className="px-3 py-1.5 hc-clay-inset text-[11px] font-black uppercase text-hc-muted">
               SYS_REF: NC-STB-001
             </div>
           </div>
@@ -108,13 +108,13 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-1.5 h-1.5 shrink-0`} style={{ backgroundColor: stage.color }} />
                 {!isStageCollapsed(stage.id) && (
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate text-hc-muted">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] truncate text-hc-muted">
                     {stage.label}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-hc-muted opacity-50">{stage.items.length}</span>
+                <span className="text-[11px] font-black text-hc-muted">{stage.items.length}</span>
               </div>
             </div>
 
@@ -137,7 +137,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                         <div className="text-[11px] font-black text-hc-text uppercase tracking-tighter leading-tight mb-1">
                           {incident.title}
                         </div>
-                        <div className="flex items-center gap-2 text-[9px] font-bold text-hc-muted uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-hc-muted uppercase tracking-widest">
                           <span>{incident.house}</span>
                           {incident.client && (
                             <>
@@ -149,16 +149,16 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-hc-muted leading-relaxed mb-4 border-l border-hc-border pl-3 py-1">
+                    <div className="text-[11px] text-hc-muted leading-relaxed mb-4 border-l border-hc-border pl-3 py-1">
                       {incident.description}
                     </div>
 
                     {/* Actions Feed */}
                     {incident.actions.length > 0 && (
-                      <div className="bg-black/40 border border-hc-border p-2 mb-4 space-y-1">
-                        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Response_Log</div>
+                      <div className="hc-clay-inset p-2 mb-4 space-y-1">
+                        <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1">Response_Log</div>
                         {incident.actions.slice(0, 3).map((a, i) => (
-                          <div key={i} className="text-[9px] text-hc-muted leading-tight flex items-start gap-2">
+                          <div key={i} className="text-[11px] text-hc-muted leading-tight flex items-start gap-2">
                             <span className="text-blue-500/50 shrink-0">▸</span>
                             <span>{a.toUpperCase()}</span>
                           </div>
@@ -167,11 +167,11 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     )}
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{incident.date}</span>
+                      <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">{incident.date}</span>
                       {incident.stage !== 'closed' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); advanceStage(incident); }}
-                          className="px-3 py-1.5 text-[9px] font-black uppercase bg-slate-800 border border-slate-700 hover:bg-blue-900 hover:border-blue-700 text-slate-400 hover:text-white transition-all"
+                          className="px-3 py-1.5 text-[11px] font-black uppercase bg-slate-800 border border-slate-700 hover:bg-blue-900 hover:border-blue-700 text-hc-muted hover:text-hc-text transition-all"
                         >
                           Advance_Vector ▸
                         </button>
@@ -182,7 +182,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     {incident.flags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-3">
                         {incident.flags.map((f, i) => (
-                          <span key={i} className="text-[8px] font-black px-1.5 py-0.5 border border-slate-800 bg-slate-950 text-slate-500 uppercase">
+                          <span key={i} className="text-[11px] font-black px-1.5 py-0.5 border border-hc-border hc-clay-inset text-hc-muted uppercase">
                             {f}
                           </span>
                         ))}
@@ -192,8 +192,8 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                 ))}
 
                 {stage.items.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-20 opacity-20 border border-dashed border-slate-800 m-2">
-                    <span className="text-xs font-black uppercase text-slate-600 tracking-[0.2em]">Zero_Vectors</span>
+                  <div className="flex flex-col items-center justify-center py-20 border border-dashed border-hc-border m-2">
+                    <span className="text-[11px] font-black uppercase text-hc-muted tracking-[0.2em]">Zero_Vectors</span>
                   </div>
                 )}
               </div>

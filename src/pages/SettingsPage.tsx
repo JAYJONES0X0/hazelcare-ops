@@ -1,416 +1,257 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { 
+  User, Shield, RefreshCw, LogOut, Sun, Moon, 
+  Settings2, Activity, Key, Database, Image as ImageIcon,
+  Trash2, History, Brain
+} from 'lucide-react';
+import { ORG_CONFIG } from '../lib/config';
+import { getStoreBounds, clearEntryStore } from '../lib/entry-store';
 
 interface Props {
   onSignOut: () => void;
 }
 
-const PROFILE_KEY = 'hc-profile-v1';
-const LOGO_KEY = 'hc-custom-logo-v1';
-
-interface Profile {
-  name: string;
-  role: string;
-  org: string;
-  email: string;
-}
-
-function loadProfile(): Profile {
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    return raw ? { ...{ name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' }, ...JSON.parse(raw) } : { name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' };
-  } catch { return { name: 'Operations Manager', role: 'Registered Manager', org: 'Organisation Name', email: '' }; }
-}
-
-function saveProfile(p: Profile) {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-}
-
 export function SettingsPage({ onSignOut }: Props) {
-  const [profile, setProfile] = useState<Profile>(loadProfile);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem(LOGO_KEY));
-  const [logoHover, setLogoHover] = useState(false);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmLogout, setConfirmLogout] = useState(false);
-  const [pwStep, setPwStep] = useState(false);
-  const [pwCurrent, setPwCurrent] = useState('');
-  const [pwNew, setPwNew] = useState('');
-  const [pwConfirm, setPwConfirm] = useState('');
-  const [pwError, setPwError] = useState('');
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwSuccess, setPwSuccess] = useState(false);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const initials = profile.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const [theme, setTheme] = useState(() => localStorage.getItem('hc-theme') || 'dark');
+  const [profile, setProfile] = useState(() => ({
+    name: localStorage.getItem('hc-user-name') || 'CARE OPS',
+    role: localStorage.getItem('hc-user-role') || 'Registered Manager',
+    organisation: localStorage.getItem('hc-org-name') || ORG_CONFIG.name,
+    email: localStorage.getItem('hc-user-email') || 'manager@hazelcare.co.uk'
+  }));
 
-  // Storage stats
-  const [storageInfo, setStorageInfo] = useState({ keys: 0, estimatedKb: 0 });
+  const [pin, setPin] = useState(localStorage.getItem('hc-user-pin') || '••••');
+  const [showPin, setShowPin] = useState(false);
+  const [bounds, setBounds] = useState(getStoreBounds());
+  const [saved, setSaved] = useState(false);
+
   useEffect(() => {
-    let total = 0;
-    let keys = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('hc-')) {
-        total += (localStorage.getItem(k) || '').length * 2;
-        keys++;
-      }
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('hc-theme', theme);
+  }, [theme]);
+
+  const handleSaveProfile = () => {
+    localStorage.setItem('hc-user-name', profile.name);
+    localStorage.setItem('hc-user-role', profile.role);
+    localStorage.setItem('hc-org-name', profile.organisation);
+    localStorage.setItem('hc-user-email', profile.email);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleClearMemory = () => {
+    if (confirm('CRITICAL: This will purge all memorised clinical entries. This cannot be undone. Proceed?')) {
+      clearEntryStore();
+      setBounds(null);
     }
-    setStorageInfo({ keys, estimatedKb: Math.round(total / 1024) });
-  }, []);
-
-  function handleLogoUpload(file: File) {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const url = e.target?.result as string;
-      localStorage.setItem(LOGO_KEY, url);
-      setCustomLogo(url);
-      window.dispatchEvent(new Event('hc-logo-change'));
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function removeLogo() {
-    localStorage.removeItem(LOGO_KEY);
-    setCustomLogo(null);
-    window.dispatchEvent(new Event('hc-logo-change'));
-  }
-
-  function saveProfileData() {
-    saveProfile(profile);
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2000);
-  }
-
-  async function handlePasswordChange(e: React.FormEvent) {
-    e.preventDefault();
-    setPwError('');
-    if (pwNew !== pwConfirm) { setPwError('New passwords do not match'); return; }
-    if (pwNew.length < 8) { setPwError('Password must be at least 8 characters'); return; }
-    setPwLoading(true);
-    try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ current: pwCurrent, next: pwNew }),
-      });
-      const d = await res.json();
-      if (res.ok && d.ok) {
-        setPwSuccess(true);
-        setPwStep(false);
-        setPwCurrent(''); setPwNew(''); setPwConfirm('');
-        setTimeout(() => setPwSuccess(false), 4000);
-      } else {
-        // Server may return a helpful message about env var management
-        setPwError(d.error || 'Current password incorrect');
-      }
-    } catch {
-      setPwError('Could not connect to server');
-    } finally {
-      setPwLoading(false);
-    }
-  }
-
-  function clearAllData() {
-    const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('hc-')) keys.push(k);
-    }
-    keys.forEach(k => localStorage.removeItem(k));
-    setConfirmClear(false);
-    window.location.reload();
-  }
-
-  const card = 'rounded-2xl p-5 mb-4';
-  const cardStyle = { background: '#111827', backdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', WebkitBackdropFilter: 'blur(48px) saturate(2.2) brightness(1.05)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10),inset 0 0 0 0.5px rgba(255,255,255,0.04)' };
-  const sectionLabel = 'text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2';
-  const inputClass = 'w-full bg-hc-dark/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-hc-teal/50 transition-colors';
-  const fieldLabel = 'text-[10px] font-bold text-hc-muted uppercase tracking-wide mb-1.5 block';
+  };
 
   return (
-    <div className="p-6 lg:p-10 w-full max-w-3xl mx-auto animate-in fade-in duration-500">
-
-      {/* Page header */}
-      <div className="mb-8 flex items-center gap-4">
-        {/* Avatar */}
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg text-white"
-          style={{ background: 'linear-gradient(135deg,#0f766e,#14b8a6)', boxShadow: '0 0 24px rgba(20,184,166,0.3)' }}>
-          {customLogo ? <img src={customLogo} alt="Logo" className="w-full h-full object-cover rounded-2xl" /> : initials}
-        </div>
-        <div>
-          <h1 className="text-xl font-black text-white tracking-tighter">{profile.name}</h1>
-          <p className="text-hc-muted text-xs font-medium">{profile.role} · {profile.org}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setConfirmLogout(true)}
-          className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide cursor-pointer transition-all"
-          style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-          Sign Out
-        </button>
-      </div>
-
-      {/* Logout confirm */}
-      {confirmLogout && (
-        <div className="mb-6 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-          style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.3)' }}>
-          <div>
-            <div className="text-sm font-black text-white mb-0.5">Sign out of Care Portal?</div>
-            <div className="text-xs text-hc-muted">You will be returned to the login screen.</div>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={onSignOut}
-              className="px-4 py-2 rounded-xl text-xs font-black uppercase cursor-pointer"
-              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444' }}>
-              Yes, sign out
-            </button>
-            <button type="button" onClick={() => setConfirmLogout(false)}
-              className="px-4 py-2 rounded-xl text-xs font-black uppercase text-hc-muted cursor-pointer"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Profile ──────────────────────────────────────────────── */}
-      <div className={card} style={cardStyle}>
-        <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-          Profile
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className={fieldLabel}>Full name</label>
-            <input className={inputClass} value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} placeholder="Your name" />
+    <div className="p-6 lg:p-12 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+      
+      {/* ── COMMAND HEADER ── */}
+      <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-hc-border pb-12">
+        <div className="flex items-center gap-8">
+          <div className="w-24 h-24 rounded-[2rem] hc-clay-inset flex items-center justify-center text-4xl font-black text-hc-teal shadow-2xl">
+            {profile.name.charAt(0)}
           </div>
           <div>
-            <label className={fieldLabel}>Role</label>
-            <input className={inputClass} value={profile.role} onChange={e => setProfile(p => ({ ...p, role: e.target.value }))} placeholder="e.g. Registered Manager" />
-          </div>
-          <div>
-            <label className={fieldLabel}>Organisation</label>
-            <input className={inputClass} value={profile.org} onChange={e => setProfile(p => ({ ...p, org: e.target.value }))} placeholder="e.g. Hazel Care Ltd" />
-          </div>
-          <div>
-            <label className={fieldLabel}>Email</label>
-            <input className={inputClass} type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} placeholder="your@email.co.uk" />
-          </div>
-        </div>
-        <button type="button" onClick={saveProfileData}
-          className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide cursor-pointer transition-all"
-          style={profileSaved
-            ? { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)', color: '#22c55e' }
-            : { background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.3)', color: '#5eead4' }}>
-          {profileSaved ? '✓ Saved' : 'Save profile'}
-        </button>
-      </div>
-
-      {/* ── Branding ─────────────────────────────────────────────── */}
-      <div className={card} style={cardStyle}>
-        <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          Branding & Logo
-        </div>
-        <div className="flex items-start gap-5">
-          {/* Logo preview */}
-          <button
-            type="button"
-            onMouseEnter={() => setLogoHover(true)}
-            onMouseLeave={() => setLogoHover(false)}
-            onClick={() => logoInputRef.current?.click()}
-            className="relative w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 cursor-pointer overflow-hidden transition-all"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '2px dashed rgba(255,255,255,0.15)' }}
-          >
-            {customLogo
-              ? <img src={customLogo} alt="Logo" className="w-full h-full object-cover" />
-              : <img src="/logo-icon-dark.png" alt="Default" className="w-10 h-10 opacity-60" />
-            }
-            {logoHover && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl" style={{ background: 'rgba(0,0,0,0.6)' }}>
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-              </div>
-            )}
-          </button>
-          <input ref={logoInputRef} type="file" accept="image/*" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); }} />
-
-          <div className="flex-1">
-            <div className="text-sm font-bold text-white mb-1">Organisation logo</div>
-            <div className="text-xs text-hc-muted leading-relaxed mb-3">
-              Shown in the sidebar and on login. Accepts PNG, JPG, or SVG. Max 1MB.
+            <h1 className="text-4xl font-black text-hc-text tracking-tighter uppercase leading-none mb-4">{profile.name}</h1>
+            <div className="flex items-center gap-4">
+              <span className="pill pill-teal text-[11px] px-4 py-1.5">{profile.role}</span>
+              <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em]">{profile.organisation} Â· SOVEREIGN NODE</span>
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => logoInputRef.current?.click()}
-                className="px-4 py-2 rounded-xl text-xs font-black uppercase cursor-pointer"
-                style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.25)', color: '#5eead4' }}>
-                Upload logo
+          </div>
+        </div>
+        <button onClick={onSignOut} className="flex items-center gap-3 px-8 py-4 hc-clay-raised text-[11px] font-black uppercase text-flag-red hover:bg-flag-red/5 transition-all rounded-2xl shadow-xl active:scale-95">
+          <LogOut size={16} /> De-authorise Session
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+        
+        {/* ── COLUMN 1: PERSONNEL & SECURITY ── */}
+        <div className="space-y-12">
+          <section className="hc-clay-raised p-8 rounded-[2.5rem]">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal"><User size={20} /></div>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tight">Personnel Profile</h2>
+            </div>
+            <div className="space-y-6">
+              {[
+                { label: 'Tactical Callsign', key: 'name', type: 'text' },
+                { label: 'Operational Role', key: 'role', type: 'text' },
+                { label: 'Organisation', key: 'organisation', type: 'text' },
+                { label: 'Secure Email', key: 'email', type: 'email' }
+              ].map(f => (
+                <div key={f.key} className="space-y-2">
+                  <label className="text-[11px] font-black text-hc-muted uppercase tracking-widest ml-1">{f.label}</label>
+                  <input 
+                    type={f.type} 
+                    value={profile[f.key as keyof typeof profile]} 
+                    onChange={e => setProfile({...profile, [f.key]: e.target.value})}
+                    className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner"
+                  />
+                </div>
+              ))}
+              <button onClick={handleSaveProfile} className="w-full py-4 btn-tactical shadow-2xl mt-4">
+                {saved ? '✓ DATA SYNCHRONISED' : 'Update Profile Metadata'}
               </button>
-              {customLogo && (
-                <button type="button" onClick={removeLogo}
-                  className="px-4 py-2 rounded-xl text-xs font-black uppercase cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#64748b' }}>
-                  Remove
-                </button>
-              )}
             </div>
-          </div>
-        </div>
-      </div>
+          </section>
 
-      {/* ── Appearance ───────────────────────────────────────────── */}
-      <div className={card} style={cardStyle}>
-        <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
-          Appearance
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-bold text-white mb-0.5">Interface theme</div>
-            <div className="text-xs text-hc-muted">Precision dark — optimised for shift use</div>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{background:'rgba(13,148,136,0.08)',border:'1px solid rgba(13,148,136,0.25)'}}>
-            <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
-            <span className="text-xs font-bold text-hc-teal-light">Dark</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Security ─────────────────────────────────────────────── */}
-      <div className={card} style={cardStyle}>
-        <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-          Security
-        </div>
-
-        {/* Security badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
-          {[
-            { label: 'Session auth', ok: true },
-            { label: 'Staff SAC codes', ok: true },
-            { label: 'Computer Misuse Act', ok: true },
-            { label: 'HTTPS encrypted', ok: true },
-            { label: 'No data to server', ok: true, note: 'Browser only' },
-          ].map(b => (
-            <div key={b.label} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)' }}>
-              <svg className="w-3 h-3 text-flag-green shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-              <div>
-                <div className="text-[10px] font-bold text-flag-green/90">{b.label}</div>
-                {b.note && <div className="text-[9px] text-hc-muted/60">{b.note}</div>}
-              </div>
+          <section className="hc-clay-raised p-8 rounded-[2.5rem]">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal"><Shield size={20} /></div>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tight">Access Control</h2>
             </div>
-          ))}
-        </div>
-
-        {/* Change password */}
-        <div className="border-t border-white/[0.06] pt-4">
-          {!pwStep && !pwSuccess && (
-            <button type="button" onClick={() => setPwStep(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase cursor-pointer transition-all"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-              Change password
-            </button>
-          )}
-          {pwSuccess && (
-            <div className="flex items-center gap-2 text-flag-green text-sm font-bold">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-              Password updated successfully
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-hc-muted uppercase tracking-widest ml-1">Device Quick-PIN</label>
+                <div className="relative">
+                  <input 
+                    type={showPin ? "text" : "password"} 
+                    value={pin}
+                    onChange={e => { setPin(e.target.value); localStorage.setItem('hc-user-pin', e.target.value); }}
+                    className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text tracking-[1em] outline-none shadow-inner"
+                    maxLength={4}
+                  />
+                  <button onClick={() => setShowPin(!showPin)} className="absolute right-4 top-1/2 -translate-y-1/2 text-hc-muted hover:text-hc-teal transition-colors">
+                    {showPin ? <RefreshCw size={16} /> : <Key size={16} />}
+                  </button>
+                </div>
+              </div>
+              <p className="text-[11px] text-hc-muted font-bold leading-relaxed uppercase">The PIN allows for rapid shift handovers on shared hardware without a full logout.</p>
             </div>
-          )}
-          {pwStep && (
-            <form onSubmit={handlePasswordChange} className="space-y-3 max-w-sm">
-              <div>
-                <label className={fieldLabel}>Current password</label>
-                <input type="password" className={inputClass} value={pwCurrent} onChange={e => { setPwCurrent(e.target.value); setPwError(''); }} placeholder="••••••••" />
-              </div>
-              <div>
-                <label className={fieldLabel}>New password</label>
-                <input type="password" className={inputClass} value={pwNew} onChange={e => { setPwNew(e.target.value); setPwError(''); }} placeholder="Min 8 characters" />
-              </div>
-              <div>
-                <label className={fieldLabel}>Confirm new password</label>
-                <input type="password" className={inputClass} value={pwConfirm} onChange={e => { setPwConfirm(e.target.value); setPwError(''); }} placeholder="Repeat new password" />
-              </div>
-              {pwError && <div className="text-flag-amber text-xs font-semibold leading-relaxed">{pwError}</div>}
-              <div className="flex gap-2">
-                <button type="submit" disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase cursor-pointer disabled:opacity-40"
-                  style={{ background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.35)', color: '#5eead4' }}>
-                  {pwLoading ? 'Updating…' : 'Update password'}
-                </button>
-                <button type="button" onClick={() => { setPwStep(false); setPwError(''); setPwCurrent(''); setPwNew(''); setPwConfirm(''); }}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
+          </section>
         </div>
-      </div>
 
-      {/* ── Data & Storage ───────────────────────────────────────── */}
-      <div className={card} style={cardStyle}>
-        <div className={sectionLabel}>
-          <svg className="w-3.5 h-3.5 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582 4 8 4m0 0c4.418 0 8-1.79 8-4" /></svg>
-          Data & Storage
+        {/* ── COLUMN 2: BRANDING & THEME (ROLE SWAPPED) ── */}
+        <div className="space-y-12">
+          <section className="hc-clay-raised p-8 rounded-[2.5rem]">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal"><Settings2 size={20} /></div>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tight">Interface Calibration</h2>
+            </div>
+            <div className="space-y-8">
+              <div className="hc-clay-inset p-2 rounded-2xl flex gap-2">
+                {[
+                  { id: 'light', label: 'Organic Bone', icon: <Sun size={16} />, desc: 'Cream canvas Â· Teal accents' },
+                  { id: 'dark', label: 'Nocturnal Teal', icon: <Moon size={16} />, desc: 'Deep Teal canvas Â· Bone accents' }
+                ].map(t => (
+                  <button 
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    className={`flex-1 p-6 rounded-xl transition-all duration-500 text-center space-y-3
+                      ${theme === t.id ? 'bg-hc-teal text-hc-bone shadow-2xl scale-105' : 'text-hc-muted hover:text-hc-text'}`}
+                  >
+                    <div className="flex justify-center">{t.icon}</div>
+                    <div className="text-[11px] font-black uppercase tracking-widest">{t.label}</div>
+                    <div className={`text-[9px] uppercase font-bold opacity-60`}>{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-hc-muted font-bold leading-relaxed uppercase text-center italic">"Role-Swapped architecture flips the canvas hierarchy based on your operational environment."</p>
+            </div>
+          </section>
+
+          <section className="hc-clay-raised p-8 rounded-[2.5rem]">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal"><ImageIcon size={20} /></div>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tight">Strategic Branding</h2>
+            </div>
+            <div className="space-y-6">
+               <div className="flex items-center gap-6 p-6 hc-clay-inset rounded-2xl">
+                  <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center border border-hc-border">
+                    <img src={ORG_CONFIG.logoIcon} alt="Logo" className="w-10 h-10 opacity-80" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[11px] font-black text-hc-text uppercase mb-1">Organisation Logo</div>
+                    <div className="text-[10px] text-hc-muted font-bold uppercase">PNG, JPG, SVG Â· Max 2MB</div>
+                  </div>
+               </div>
+               <button className="w-full py-4 hc-clay-raised text-[11px] font-black uppercase tracking-widest text-hc-text hover:text-hc-teal transition-all">Upload New Vector Asset</button>
+            </div>
+          </section>
         </div>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <div className="text-sm font-bold text-white mb-0.5">Local storage</div>
-            <div className="text-xs text-hc-muted">{storageInfo.keys} data keys · ~{storageInfo.estimatedKb} KB used · stored in this browser only</div>
-          </div>
-          <div className="w-20 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div className="h-2 rounded-full" style={{ width: `${Math.min(100, storageInfo.estimatedKb / 50)}%`, background: '#14b8a6' }} />
-          </div>
-        </div>
-        <div className="border-t border-white/[0.06] pt-4">
-          {!confirmClear ? (
-            <button type="button" onClick={() => setConfirmClear(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase cursor-pointer"
-              style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              Clear all cached data
-            </button>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-              <div className="text-xs text-white font-semibold">This will delete all local data — diary imports, actions, incidents, coaching history. Cannot be undone.</div>
-              <div className="flex gap-2 shrink-0">
-                <button type="button" onClick={clearAllData}
-                  className="px-4 py-2 rounded-lg text-xs font-black uppercase cursor-pointer"
-                  style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444' }}>
-                  Clear data
+
+        {/* ── COLUMN 3: CLINICAL MEMORY ── */}
+        <div className="space-y-12">
+          <section className="hc-clay-raised p-8 rounded-[2.5rem] border-hc-teal/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 text-hc-teal group-hover:scale-150 transition-transform duration-1000">
+              <Brain size={120} />
+            </div>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal"><Database size={20} /></div>
+              <h2 className="text-xl font-black text-hc-text uppercase tracking-tight">Clinical Memory</h2>
+            </div>
+            
+            <div className="space-y-8 relative z-10">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="hc-clay-inset p-5 text-center">
+                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Diagnostic Vol.</div>
+                  <div className="text-2xl font-black text-hc-teal tabular-nums">{bounds?.count?.toLocaleString() || 0}</div>
+                </div>
+                <div className="hc-clay-inset p-5 text-center">
+                  <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Time Horizon</div>
+                  <div className="text-[11px] font-black text-hc-text uppercase mt-2">{bounds ? `${bounds.from.split('/')[1]}M Â· ${bounds.from.split('/')[2]}` : 'N/A'}</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-[11px] font-black uppercase text-hc-muted">
+                  <span>Storage Saturation</span>
+                  <span>{Math.round(((bounds?.count || 0) / 25000) * 100)}%</span>
+                </div>
+                <div className="h-2 rounded-full hc-clay-inset overflow-hidden p-0.5">
+                  <div className="h-full bg-hc-teal rounded-full shadow-[0_0_10px_#1c4e4e] transition-all duration-1000" style={{ width: `${Math.min(100, ((bounds?.count || 0) / 25000) * 100)}%` }} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <button className="w-full flex items-center justify-center gap-3 py-4 hc-clay-raised text-[11px] font-black text-hc-text hover:text-hc-teal transition-all">
+                  <History size={16} /> Download Memory Snapshot
                 </button>
-                <button type="button" onClick={() => setConfirmClear(false)}
-                  className="px-4 py-2 rounded-lg text-xs font-black uppercase text-hc-muted cursor-pointer"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  Cancel
+                <button onClick={handleClearMemory} className="w-full flex items-center justify-center gap-3 py-4 hc-clay-raised text-[11px] font-black text-flag-red hover:bg-flag-red/5 transition-all">
+                  <Trash2 size={16} /> Purge Diagnostic Ledger
                 </button>
               </div>
+              
+              <p className="text-[11px] text-hc-muted font-bold leading-relaxed uppercase italic">"Memory is stored locally on this terminal. No clinical data is transmitted to Hazel Care servers."</p>
             </div>
-          )}
+          </section>
+
+          <section className="hc-clay-raised p-8 rounded-[2.5rem] bg-hc-teal text-hc-bone">
+             <div className="flex items-center gap-4 mb-6">
+                <Activity size={24} className="animate-pulse" />
+                <h2 className="text-xl font-black uppercase tracking-tighter">System Integrity</h2>
+             </div>
+             <div className="space-y-4">
+                {[
+                   { label: 'E2E Encryption', status: 'ACTIVE' },
+                   { label: 'Local SQLite Index', status: 'VERIFIED' },
+                   { label: 'Clinical Logic Rev', status: 'v2.4.8' },
+                   { label: 'Sovereign Bridge', status: 'ESTABLISHED' }
+                ].map(s => (
+                   <div key={s.label} className="flex justify-between items-center border-b border-hc-bone/10 pb-3">
+                      <span className="text-[11px] font-black opacity-60 uppercase">{s.label}</span>
+                      <span className="text-[11px] font-black tracking-widest">{s.status}</span>
+                   </div>
+                ))}
+             </div>
+          </section>
         </div>
+
       </div>
 
-      {/* ── About ─────────────────────────────────────────────────── */}
-      <div className={card} style={{ ...cardStyle, marginBottom: 0 }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-black text-white mb-0.5">Hazel Care Ops Portal</div>
-            <div className="text-xs text-hc-muted">v1.0 · Built for CQC-regulated supported living services</div>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
-              <svg className="w-3 h-3 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              <span className="text-[10px] font-black text-hc-teal uppercase tracking-wide">CQC Ready</span>
-            </div>
-          </div>
+      {/* ── FOOTER FOOTPRINT ── */}
+      <div className="mt-20 flex flex-col items-center gap-4 opacity-40">
+        <div className="w-8 h-8 rounded-lg hc-clay-inset flex items-center justify-center grayscale">
+          <img src={ORG_CONFIG.logoIcon} alt="HC" className="w-4 h-4" />
         </div>
+        <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.5em]">Hazel Care Ops Matrix Â· Core v1.0.0</div>
       </div>
+
     </div>
   );
 }

@@ -181,7 +181,7 @@ function generateSafeguardingSitrep(data: WeekSummary, mon: TemplateImportContex
 
 function generateGeneric(title: string, subtitle: string, color: string): string {
   let html = renderHeader(title, subtitle, color);
-  html += `<div style="padding:40px; border:1px dashed #cbd5e1; text-align:center; font-size:10px; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:0.2em;">SYNTHESIZING_DETAILED_TELEMETRY...</div>`;
+  html += `<div style="padding:40px; border:1px dashed #cbd5e1; text-align:center; font-size:10px; font-weight:900; color:#94a3b8; text-transform:uppercase; letter-spacing:0.2em;">SYNTHESISING_DETAILED_TELEMETRY...</div>`;
   html += FOOTER_HTML;
   return html;
 }
@@ -238,12 +238,12 @@ export function TemplatesPage({ weekData }: Props) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-16 animate-in fade-in duration-500">
         <div className="hc-clay-raised w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8">
-          <span className="text-3xl opacity-30">📄</span>
+          <span className="text-3xl text-hc-muted">📄</span>
         </div>
         <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em] mb-3">Synthesis Offline</div>
         <h2 className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">No Live Telemetry</h2>
-        <p className="text-hc-muted text-[11px] font-bold text-center max-w-xs uppercase tracking-widest leading-relaxed opacity-60">
-          Sync regional operational data via Field Injest to initialise document synthesis.
+        <p className="text-hc-muted text-[11px] font-bold text-center max-w-xs uppercase tracking-widest leading-relaxed">
+          Sync regional operational data via Field Ingest to initialise document synthesis.
         </p>
       </div>
     );
@@ -257,9 +257,9 @@ export function TemplatesPage({ weekData }: Props) {
         <div>
           <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Synthesis Matrix</h1>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-hc-teal tracking-[0.2em] uppercase">Document Assembly Station</span>
+            <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Document Assembly Station</span>
             <div className="h-3 w-px bg-hc-border/40" />
-            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Protocols Loaded</span>
+            <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Protocols Loaded</span>
           </div>
         </div>
       </div>
@@ -269,7 +269,7 @@ export function TemplatesPage({ weekData }: Props) {
         {/* ── TEMPLATE SELECTOR RAIL ── */}
         <div className="w-72 shrink-0 border-r border-hc-border/30 flex flex-col">
           <div className="p-4 border-b border-hc-border/20">
-            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Protocol Selection</span>
+            <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Protocol Selection</span>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
             {TEMPLATES.map(t => {
@@ -284,10 +284,10 @@ export function TemplatesPage({ weekData }: Props) {
                       {t.name}
                     </span>
                     {isRecommended && (
-                      <span className="text-[7px] font-black bg-hc-teal text-hc-bg px-1.5 py-0.5 rounded uppercase tracking-widest">REC</span>
+                      <span className="text-[11px] font-black bg-hc-teal text-hc-bg px-1.5 py-0.5 rounded uppercase tracking-widest">REC</span>
                     )}
                   </div>
-                  <span className="text-[9px] font-bold text-hc-muted opacity-60 uppercase tracking-widest leading-tight">{t.desc}</span>
+                  <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest leading-tight">{t.desc}</span>
                 </button>
               );
             })}
@@ -301,10 +301,10 @@ export function TemplatesPage({ weekData }: Props) {
               <div className="shrink-0 flex items-center justify-between px-8 py-3 border-b border-hc-border/20">
                 <div className="flex items-center gap-3">
                   <div className="w-1.5 h-4 rounded-full bg-hc-teal" />
-                  <span className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] font-mono">{selectedTemplate}</span>
+                  <span className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] font-mono">{selectedTemplate}</span>
                 </div>
                 <button onClick={() => iframeRef.current?.contentWindow?.print()}
-                  className="btn-tactical px-8 py-2.5 text-[10px]">
+                  className="btn-tactical px-8 py-2.5 text-[11px]">
                   Release to Physical
                 </button>
               </div>
@@ -315,11 +315,11 @@ export function TemplatesPage({ weekData }: Props) {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 opacity-40">
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="hc-clay-raised w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-2xl">📄</span>
+                <span className="text-2xl text-hc-muted">📄</span>
               </div>
-              <p className="text-[10px] font-black tracking-widest text-hc-muted uppercase text-center">Select a template to synthesise</p>
+              <p className="text-[11px] font-black tracking-widest text-hc-muted uppercase text-center">Select a template to synthesise</p>
             </div>
           )}
         </div>
