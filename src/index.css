@@ -158,6 +158,65 @@ body {
 .animate-pulse-soft  { animation: pulse-soft 2.5s ease-in-out infinite; }
 .glow-teal           { animation: glow-pulse 2s ease-in-out infinite; }
 
+/* ─── LEGACY DARK-THEME SHIMS (keep until full page rewrites) ── */
+
+/* bg-hc-dark → treat as inset well on bone */
+.bg-hc-dark { background: #ebe7d8 !important; }
+
+/* text-hc-teal-light → sage accent */
+.text-hc-teal-light { color: #4c7c7c !important; }
+
+/* hc-blue colour */
+.text-hc-blue  { color: #4c7c7c; }
+.bg-hc-blue    { background: rgba(76,124,124,0.12); }
+.border-hc-blue { border-color: rgba(76,124,124,0.3); }
+.glow-blue  { box-shadow: 0 0 12px rgba(76,124,124,0.4); }
+
+/* btn-gradient → maps to btn-tactical */
+.btn-gradient {
+  background: #1c4e4e;
+  color: #f3efe0;
+  border-radius: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 4px 4px 10px rgba(28,78,78,0.2);
+}
+.btn-gradient:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* glass-light → lighter glass variant */
+.glass-light {
+  background: rgba(243,239,224,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* text-shimmer / card-glow → benign neutralisers */
+.text-shimmer { color: #0d2d2d; }
+.card-glow    { box-shadow: 8px 8px 16px #d1c9b8, -8px -8px 16px #ffffff; }
+
+/* pill colour variants */
+.pill-amber  { color: #d9974e; background: rgba(217,151,78,0.1); border: 1px solid rgba(217,151,78,0.3); }
+.pill-green  { color: #4e8d4e; background: rgba(78,141,78,0.1);  border: 1px solid rgba(78,141,78,0.3); }
+.pill-red    { color: #d94e4e; background: rgba(217,78,78,0.1);  border: 1px solid rgba(217,78,78,0.3); }
+.pill-purple { color: #6b5b9e; background: rgba(107,91,158,0.1); border: 1px solid rgba(107,91,158,0.3); }
+
+/* glow variants */
+@keyframes glow-amber-pulse { 0%,100%{box-shadow:0 0 8px rgba(217,151,78,0.4)} 50%{box-shadow:0 0 16px rgba(217,151,78,0.7)} }
+@keyframes glow-red-pulse   { 0%,100%{box-shadow:0 0 8px rgba(217,78,78,0.4)}  50%{box-shadow:0 0 16px rgba(217,78,78,0.7)} }
+.glow-amber { animation: glow-amber-pulse 2s ease-in-out infinite; }
+.glow-red   { animation: glow-red-pulse   2s ease-in-out infinite; }
+
+/* section-header utility used in ClientDocsPage */
+.section-header {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #8a8b82;
+}
+
 /* ─── UI CLEANUP ─────────────────────────────────────────────── */
 [class*="text-[8px]"],
 [class*="text-[9px]"] {

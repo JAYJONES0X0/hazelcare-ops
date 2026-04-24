@@ -16,7 +16,6 @@ const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
 
 interface TemplateImportContext {
   selectedTemplateIds?: TemplateType[];
-  /** Set when arriving from Staff Intelligence monitoring */
   source?: string;
   at?: string;
   monitoringRunId?: string;
@@ -41,7 +40,6 @@ function loadRecommendedTemplateIds(): TemplateType[] {
   return readTemplateImportContext()?.selectedTemplateIds || [];
 }
 
-/** Inline block inside document body (after header) when Staff Intelligence context is active. */
 function monitoringContextBlock(ctx: TemplateImportContext | null): string {
   if (!ctx || ctx.source !== 'staff-monitoring') return '';
   const win =
@@ -197,9 +195,7 @@ export function TemplatesPage({ weekData }: Props) {
   useEffect(() => {
     const ids = loadRecommendedTemplateIds();
     setRecIds(ids);
-    if (ids.length > 0) {
-      setSelectedTemplate(ids[0]);
-    }
+    if (ids.length > 0) setSelectedTemplate(ids[0]);
   }, []);
 
   const generate = useCallback(() => {
@@ -209,41 +205,29 @@ export function TemplatesPage({ weekData }: Props) {
     switch (selectedTemplate) {
       case 'quality_meeting':
       case 'weekly_quality_report':
-        res = generateQualityMeeting(weekData, ctx);
-        break;
+        res = generateQualityMeeting(weekData, ctx); break;
       case 'care_review':
-        res = generateMonthlyReview(weekData, ctx);
-        break;
+        res = generateMonthlyReview(weekData, ctx); break;
       case 'daily_quality':
-        res = generateServiceSitrep(weekData, ctx);
-        break;
+        res = generateServiceSitrep(weekData, ctx); break;
       case 'incident_report':
-        res = generateIncidentsSitrep(weekData, ctx);
-        break;
+        res = generateIncidentsSitrep(weekData, ctx); break;
       case 'safeguarding':
-        res = generateSafeguardingSitrep(weekData, ctx);
-        break;
+        res = generateSafeguardingSitrep(weekData, ctx); break;
       case 'medication_transaction':
-        res = generateGeneric('Medication Transaction Ledger', 'Controlled Substance Chain of Custody', '#0891b2');
-        break;
+        res = generateGeneric('Medication Transaction Ledger', 'Controlled Substance Chain of Custody', '#0891b2'); break;
       case 'finance_audit':
-        res = generateGeneric('Fiscal Audit Snapshot', 'Regional Resource & Petty Cash Recon', '#0f172a');
-        break;
+        res = generateGeneric('Fiscal Audit Snapshot', 'Regional Resource & Petty Cash Recon', '#0f172a'); break;
       case 'repairs_maintenance':
-        res = generateGeneric('Facilities Maintenance Log', 'Infrastructure & Environmental Safety Hub', '#0f172a');
-        break;
+        res = generateGeneric('Facilities Maintenance Log', 'Infrastructure & Environmental Safety Hub', '#0f172a'); break;
       case 'performance_improvement':
-        res = generateGeneric('Performance Improvement Plan', 'Personnel Engineering & Corrective Action', '#ef4444');
-        break;
+        res = generateGeneric('Performance Improvement Plan', 'Personnel Engineering & Corrective Action', '#ef4444'); break;
       case 'probation_review':
-        res = generateGeneric('Probation Audit Review', 'Commander Eligibility & Performance Gateway', '#0f172a');
-        break;
+        res = generateGeneric('Probation Audit Review', 'Commander Eligibility & Performance Gateway', '#0f172a'); break;
       case 'exit_interview':
-        res = generateGeneric('Personnel Exit Interview', 'Deployment Termination Diagnostic', '#64748b');
-        break;
+        res = generateGeneric('Personnel Exit Interview', 'Deployment Termination Diagnostic', '#64748b'); break;
       default:
-        res = generateServiceSitrep(weekData, ctx);
-        break;
+        res = generateServiceSitrep(weekData, ctx); break;
     }
     setHtml(res);
   }, [selectedTemplate, weekData]);
@@ -252,82 +236,90 @@ export function TemplatesPage({ weekData }: Props) {
 
   if (!weekData) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 animate-in fade-in duration-700">
-        <div className="text-[11px] font-black tracking-[0.3em] text-hc-teal-light uppercase mb-6 border-b border-hc-teal/30 pb-2">SYNTHESIS OFFLINE</div>
-        <div className="w-16 h-px bg-slate-800 mb-8" />
-        <h2 className="text-2xl font-black text-white mb-4 tracking-tighter uppercase">No Live Telemetry</h2>
-        <p className="text-slate-400 text-[11px] font-bold mb-10 text-center max-w-xs uppercase tracking-widest leading-relaxed">
-          Sync regional operational data to initialize document synthesis.
+      <div className="h-full flex flex-col items-center justify-center p-16 animate-in fade-in duration-500">
+        <div className="hc-clay-raised w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8">
+          <span className="text-3xl opacity-30">📄</span>
+        </div>
+        <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em] mb-3">Synthesis Offline</div>
+        <h2 className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">No Live Telemetry</h2>
+        <p className="text-hc-muted text-[11px] font-bold text-center max-w-xs uppercase tracking-widest leading-relaxed opacity-60">
+          Sync regional operational data via Field Injest to initialise document synthesis.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 animate-in fade-in duration-700">
-      
-      {/* ── SYNTHESIS HEADER ── */}
-      <div className="shrink-0 border-b border-slate-800 bg-slate-900/50 px-8 py-6 flex items-center justify-between gap-8">
+    <div className="h-screen overflow-hidden flex flex-col animate-in fade-in duration-500">
+
+      {/* ── HEADER ── */}
+      <div className="shrink-0 border-b border-hc-border/30 px-8 py-5 flex items-center justify-between gap-8">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase">Synthesis Matrix</h1>
+          <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Synthesis Matrix</h1>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-hc-teal-light tracking-[0.2em] uppercase">Document Assembly Station</span>
-            <div className="h-3 w-px bg-slate-800" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{TEMPLATES.length} PROTOCOLS_LOADED</span>
+            <span className="text-[10px] font-black text-hc-teal tracking-[0.2em] uppercase">Document Assembly Station</span>
+            <div className="h-3 w-px bg-hc-border/40" />
+            <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Protocols Loaded</span>
           </div>
         </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Template Selector Rail */}
-        <div className="w-80 shrink-0 border-r border-slate-800 bg-slate-950/40 flex flex-col">
-          <div className="p-4 border-b border-slate-800 text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">PROTOCOL_SELECTION</div>
+
+        {/* ── TEMPLATE SELECTOR RAIL ── */}
+        <div className="w-72 shrink-0 border-r border-hc-border/30 flex flex-col">
+          <div className="p-4 border-b border-hc-border/20">
+            <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60">Protocol Selection</span>
+          </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
             {TEMPLATES.map(t => {
               const isRecommended = recIds.includes(t.id);
+              const isSelected = selectedTemplate === t.id;
               return (
                 <button key={t.id} onClick={() => setSelectedTemplate(t.id)}
-                  className={`w-full text-left px-4 py-3 border transition-all flex flex-col gap-1
-                    ${selectedTemplate === t.id 
-                      ? 'bg-hc-teal/10 border-hc-teal/40 text-hc-teal-light' 
-                      : 'bg-slate-900/20 border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-900/40'}`}>
+                  className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1
+                    ${isSelected ? 'hc-clay-inset' : 'hover:bg-black/[0.03]'}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-tight">{t.name.replace(/ /g, '_')}</span>
-                    {isRecommended && <span className="text-[7px] font-black bg-hc-teal text-slate-950 px-1 rounded-none shadow-[0_0_8px_rgba(20,184,166,0.4)]">REC</span>}
+                    <span className={`text-[11px] font-black uppercase tracking-tight ${isSelected ? 'text-hc-teal' : 'text-hc-text'}`}>
+                      {t.name}
+                    </span>
+                    {isRecommended && (
+                      <span className="text-[7px] font-black bg-hc-teal text-hc-bg px-1.5 py-0.5 rounded uppercase tracking-widest">REC</span>
+                    )}
                   </div>
-                  <span className="text-[8px] font-bold opacity-60 uppercase tracking-widest leading-tight">{t.desc}</span>
+                  <span className="text-[9px] font-bold text-hc-muted opacity-60 uppercase tracking-widest leading-tight">{t.desc}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Preview Station */}
-        <div className="flex-1 flex flex-col bg-slate-950/20">
+        {/* ── PREVIEW STATION ── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           {selectedTemplate ? (
             <>
-              <div className="shrink-0 flex items-center justify-between px-8 py-4 border-b border-slate-800 bg-slate-900/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-1 h-3 bg-hc-teal" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-[0.3em] font-mono">{selectedTemplate.toUpperCase()}</span>
+              <div className="shrink-0 flex items-center justify-between px-8 py-3 border-b border-hc-border/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-4 rounded-full bg-hc-teal" />
+                  <span className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] font-mono">{selectedTemplate}</span>
                 </div>
                 <button onClick={() => iframeRef.current?.contentWindow?.print()}
-                  className="px-10 py-2.5 bg-hc-teal/10 border border-hc-teal/40 text-hc-teal-light text-[10px] font-black uppercase tracking-[0.25em] hover:bg-hc-teal/20 transition-all">
-                  RELEASE_TO_PHYSICAL
+                  className="btn-tactical px-8 py-2.5 text-[10px]">
+                  Release to Physical
                 </button>
               </div>
               <div className="flex-1 p-8 overflow-y-auto scrollbar-thin flex justify-center">
-                <div className="w-full max-w-4xl bg-white p-1 shadow-2xl relative min-h-[1200px]">
+                <div className="w-full max-w-4xl bg-white shadow-2xl relative min-h-[1200px]">
                   <iframe ref={iframeRef} srcDoc={html || ''} className="w-full h-full min-h-[1200px]" title="Document Synthesis Preview" />
                 </div>
               </div>
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 opacity-40">
-              <div className="w-16 h-16 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4">
+              <div className="hc-clay-raised w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
                 <span className="text-2xl">📄</span>
               </div>
-              <p className="text-[10px] font-black tracking-widest text-slate-500 uppercase text-center">SELECT_TEMPLATE_FOR_SYNTHESIS</p>
+              <p className="text-[10px] font-black tracking-widest text-hc-muted uppercase text-center">Select a template to synthesise</p>
             </div>
           )}
         </div>

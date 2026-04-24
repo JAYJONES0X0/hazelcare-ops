@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Activity, Check, AlertTriangle, Upload, FileText, Calendar, Trash2 } from 'lucide-react';
+import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2 } from 'lucide-react';
 import JSZip from 'jszip';
 import { loadClients } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
@@ -162,10 +162,20 @@ function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImport
   const merged = emptyEnvelope('Batch', envelopes.map(e => e.source.fileName).join(', '));
   envelopes.forEach(e => {
     if (e.weekSummary) merged.weekSummary = mergeWeekSummaries(merged.weekSummary, e.weekSummary);
+    // Carry admission / supportPlan from first envelope that has them
+    if (e.admission && !merged.admission) merged.admission = e.admission;
+    if (e.supportPlan && !merged.supportPlan) merged.supportPlan = e.supportPlan;
     merged.diaryEntries.push(...e.diaryEntries);
     merged.shifts.push(...(e.shifts || []));
     merged.clientCandidates.push(...e.clientCandidates);
     merged.suggestedTargets.push(...e.suggestedTargets);
+    merged.warnings.push(...e.warnings);
+    // Carry the first non-unknown detectedType so buildPreview routes correctly
+    if (merged.source.detectedType === 'unknown' && e.source.detectedType !== 'unknown') {
+      merged.source.detectedType = e.source.detectedType;
+      merged.source.parserProfile = e.source.parserProfile;
+      merged.source.confidence = e.source.confidence;
+    }
   });
   merged.suggestedTargets = Array.from(new Set(merged.suggestedTargets));
   return merged;
@@ -352,12 +362,17 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         {step === 'preview' && preview && (
           <div className="space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
+              {(preview.type === 'admission' ? [
+                { l: 'Client Detected', v: preview.clientName || '—', i: <FileText className="w-4 h-4" /> },
+                { l: 'Date of Birth', v: preview.dob || '—', i: <Calendar className="w-4 h-4" /> },
+                { l: 'Care Domains Mapped', v: preview.domainsDetected ?? 0, i: <Activity className="w-4 h-4" /> },
+                { l: 'Source Type', v: 'Admission Pack', i: <CheckCircle className="w-4 h-4" /> },
+              ] : [
                 { l: 'Clinical Vectors', v: preview.entryCount || preview.shiftCount || 0, i: <FileText className="w-4 h-4" /> },
-                { l: 'Temporal Scope', v: preview.dateRange, i: <Calendar className="w-4 h-4" /> },
+                { l: 'Temporal Scope', v: preview.dateRange || '—', i: <Calendar className="w-4 h-4" /> },
                 { l: 'Entities Active', v: preview.houseCount || 0, i: <Activity className="w-4 h-4" /> },
                 { l: 'Threat Indicators', v: preview.redFlags || 0, c: 'text-flag-red', i: <AlertTriangle className="w-4 h-4" /> },
-              ].map(s => (
+              ]).map(s => (
                 <div key={s.l} className="hc-clay-raised p-8 rounded-[2rem] relative overflow-hidden group/stat border border-hc-muted/5 transition-all hover:translate-y-[-2px]">
                   <div className="absolute top-0 right-0 p-6 opacity-5 text-hc-teal group-hover/stat:scale-125 transition-transform">{s.i}</div>
                   <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-4 opacity-60">{s.l}</div>
