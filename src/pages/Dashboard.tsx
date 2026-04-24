@@ -143,11 +143,11 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Pick<Props,
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                      <div className="hc-clay-inset p-4 flex flex-col items-center gap-1">
-                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-40">Signals</span>
+                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-60">Signals</span>
                         <span className="text-2xl font-black text-hc-text tabular-nums">{h.entries.length}</span>
                      </div>
                      <div className={`hc-clay-inset p-4 flex flex-col items-center gap-1 cursor-pointer transition-all hover:bg-hc-clay-dark/20 ${hasRed ? 'bg-hc-red/10' : ''}`}>
-                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-40">Audit</span>
+                        <span className="text-[8px] font-black text-hc-muted uppercase opacity-60">Audit</span>
                         <Activity className={`w-5 h-5 ${hasRed ? 'text-hc-red' : 'text-hc-teal'}`} />
                      </div>
                   </div>

@@ -149,14 +149,14 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
                 onClick={() => toggleSection(section.label)}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl transition-all ${
                   collapsed ? 'justify-center' : 'justify-between'
-                } ${hasActiveItem && !isExpanded ? 'bg-hc-teal/5 text-hc-teal' : 'text-hc-muted hover:text-hc-text'}`}
+                } ${hasActiveItem && !isExpanded ? 'text-hc-teal' : 'text-hc-text hover:text-hc-teal'}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className={`${hasActiveItem ? 'text-hc-teal' : 'opacity-60'}`}>{section.icon}</span>
+                  <span className={`${hasActiveItem ? 'text-hc-teal' : 'text-hc-text opacity-40'}`}>{section.icon}</span>
                   {!collapsed && <span className="text-[10px] font-black uppercase tracking-widest">{section.label}</span>}
                 </div>
                 {!collapsed && (
-                  <ChevronRight size={12} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                  <ChevronRight size={12} className={`text-hc-text opacity-20 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
                 )}
               </button>
 
@@ -170,18 +170,18 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
                         onClick={() => setPage(item.id)}
                         className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full transition-all duration-300 group
                           ${active
-                            ? 'bg-hc-teal text-white shadow-lg'
-                            : 'text-hc-muted hover:text-hc-text hover:bg-hc-clay'
+                            ? 'bg-hc-teal text-hc-bone shadow-md'
+                            : 'text-hc-text/60 hover:text-hc-text hover:bg-hc-clay'
                           }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className={`${active ? 'text-white' : 'text-hc-teal opacity-60 group-hover:opacity-100'}`}>
+                          <span className={`${active ? 'text-hc-bone' : 'text-hc-teal opacity-40 group-hover:opacity-100'}`}>
                             {item.icon}
                           </span>
                           <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
                         </div>
                         {item.id === 'actions' && openActionsCount > 0 && (
-                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black ${active ? 'bg-white text-hc-teal' : 'bg-hc-red text-white'}`}>
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black ${active ? 'bg-hc-bone text-hc-teal' : 'bg-hc-red text-hc-bone'}`}>
                             {openActionsCount}
                           </span>
                         )}
