@@ -15,11 +15,20 @@ export function getAllEntries(): CareEntry[] {
   } catch { return []; }
 }
 
+const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
+
+function isValidEntry(e: CareEntry): boolean {
+  // Must have a recognisable DD/MM/YYYY date and non-trivial entry text
+  return DATE_RE.test((e.date || '').trim()) && (e.entry || '').trim().length >= 10;
+}
+
 export function appendEntries(incoming: CareEntry[]): number {
   if (!incoming.length) return 0;
+  const valid = incoming.filter(isValidEntry);
+  if (!valid.length) return 0;
   const existing = getAllEntries();
   const seen = new Set(existing.map(fingerprint));
-  const toAdd = incoming.filter(e => !seen.has(fingerprint(e)));
+  const toAdd = valid.filter(e => !seen.has(fingerprint(e)));
   if (!toAdd.length) return 0;
 
   const merged = [...existing, ...toAdd];

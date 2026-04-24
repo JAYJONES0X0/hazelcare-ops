@@ -367,8 +367,8 @@ export function parseUniversalData(rawText: string): CareEntry[] {
       });
     }
   }
-  if (entries.length === 0) return parseFreeText(rawText);
-  return entries;
+  if (entries.length === 0) return capEntries(parseFreeText(rawText));
+  return capEntries(entries);
 }
 
 function parseFreeText(text: string): CareEntry[] {
