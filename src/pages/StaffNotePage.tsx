@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { uid } from '../lib/storage';
-import { ORG_CONFIG } from '../lib/config';
+import { Sparkles, RefreshCw, ChevronRight, FileText } from 'lucide-react';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -26,7 +26,7 @@ interface SpeechRecognitionLike {
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 // ============================================================
-// VOICE-TO-NOTE — Web Speech API
+// VOICE-TO-NOTE Â· Web Speech API
 // ============================================================
 const SpeechRecognitionAPI =
   typeof window !== 'undefined'
@@ -39,37 +39,31 @@ const SpeechRecognitionAPI =
 
 const speechSupported = !!SpeechRecognitionAPI;
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const VOICE_LANGUAGES = [
-  // English
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
-  // South Asia
-  { code: 'hi-IN', label: 'हिन्दी (Hindi)', flag: '🇮🇳' },
-  { code: 'bn-IN', label: 'বাংলা (Bengali)', flag: '🇧🇩' },
-  { code: 'ne-NP', label: 'नेपाली (Nepali)', flag: '🇳🇵' },
-  { code: 'si-LK', label: 'සිංහල (Sinhala)', flag: '🇱🇰' },
-  { code: 'ta-IN', label: 'தமிழ் (Tamil)', flag: '🇱🇰' },
-  { code: 'ur-PK', label: 'اردו (Urdu)', flag: '🇵🇰' },
-  { code: 'gu-IN', label: 'ગુજરાતી (Gujarati)', flag: '🇮🇳' },
-  { code: 'pa-Guru-IN', label: 'ਪੰਜਾਬੀ (Punjabi)', flag: '🇮🇳' },
-  { code: 'ml-IN', label: 'മലയാളം (Malayalam)', flag: '🇮🇳' },
-  { code: 'te-IN', label: 'తెలుగు (Telugu)', flag: '🇮🇳' },
-  // South-East & East Asia
-  { code: 'fil-PH', label: 'Filipino / Tagalog', flag: '🇵🇭' },
-  { code: 'zh-CN', label: '普通话 (Mandarin)', flag: '🇨🇳' },
-  { code: 'zh-HK', label: '廣東話 (Cantonese)', flag: '🇭🇰' },
+  { code: 'hi-IN', label: 'Hindi', flag: '🇮🇳' },
+  { code: 'bn-IN', label: 'Bengali', flag: '🇮🇳' },
+  { code: 'ne-NP', label: 'Nepali', flag: '🇳🇵' },
+  { code: 'si-LK', label: 'Sinhala', flag: '🇱🇰' },
+  { code: 'ta-IN', label: 'Tamil', flag: '🇮🇳' },
+  { code: 'ur-PK', label: 'Urdu', flag: '🇵🇰' },
+  { code: 'gu-IN', label: 'Gujarati', flag: '🇮🇳' },
+  { code: 'pa-Guru-IN', label: 'Punjabi', flag: '🇮🇳' },
+  { code: 'ml-IN', label: 'Malayalam', flag: '🇮🇳' },
+  { code: 'te-IN', label: 'Telugu', flag: '🇮🇳' },
+  { code: 'fil-PH', label: 'Filipino', flag: '🇵🇭' },
+  { code: 'zh-CN', label: 'Mandarin', flag: '🇨🇳' },
+  { code: 'zh-HK', label: 'Cantonese', flag: '🇭🇰' },
   { code: 'vi-VN', label: 'Tiếng Việt', flag: '🇻🇳' },
-  // Africa
   { code: 'sw-KE', label: 'Kiswahili', flag: '🇰🇪' },
   { code: 'yo-NG', label: 'Yorùbá', flag: '🇳🇬' },
   { code: 'ig-NG', label: 'Igbo', flag: '🇳🇬' },
-  { code: 'am-ET', label: 'አማርኛ (Amharic)', flag: '🇪🇹' },
+  { code: 'am-ET', label: 'Amharic', flag: '🇪🇹' },
   { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
-  // Europe
   { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
   { code: 'ro-RO', label: 'Română', flag: '🇷🇴' },
-  { code: 'pt-PT', label: 'Portุกês', flag: '🇵🇹' },
+  { code: 'pt-PT', label: 'Português', flag: '🇵🇹' },
   { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
   { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'lt-LT', label: 'Lietuvių', flag: '🇱🇹' },
@@ -77,11 +71,8 @@ export const VOICE_LANGUAGES = [
   { code: 'sk-SK', label: 'Slovenčina', flag: '🇸🇰' },
 ];
 
-// Global lang so all MicButtons share the same setting
 let _voiceLang = 'en-GB';
-// eslint-disable-next-line react-refresh/only-export-components
 export function setVoiceLang(lang: string) { _voiceLang = lang; }
-// eslint-disable-next-line react-refresh/only-export-components
 export function getVoiceLang() { return _voiceLang; }
 
 function useSpeechToText(onResult: (transcript: string) => void) {
@@ -129,14 +120,14 @@ function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript:
       type="button"
       onClick={toggle}
       title={`Tap to speak in ${lang?.label ?? _voiceLang}`}
-      className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-500 select-none shadow-xl
+      className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-500 select-none shadow-xl
         ${listening
-          ? 'bg-red-500/20 border-2 border-red-500 text-red-400 glow-red animate-pulse'
-          : 'glass-light border border-white/10 text-hc-teal-light hover:border-hc-teal hover:text-white hover:bg-hc-teal/5 hover:scale-105 active:scale-95'
+          ? 'bg-flag-red/20 border-2 border-flag-red text-flag-red glow-red animate-pulse'
+          : 'hc-clay-raised border border-hc-teal/20 text-hc-teal hover:bg-hc-teal/5 hover:scale-105 active:scale-95'
       }`}
     >
-      <div className={`w-2 h-2 rounded-full ${listening ? 'bg-red-500 animate-ping' : 'bg-hc-teal'}`} />
-      <span className="text-[10px]">
+      <div className={`w-2 h-2 rounded-full ${listening ? 'bg-flag-red animate-ping' : 'bg-hc-teal'}`} />
+      <span>
         {listening ? 'RECORDING VOICE...' : `${lang?.flag} DICTATE ${lang?.label?.split(' ')[0]}`}
       </span>
     </button>
@@ -152,9 +143,8 @@ interface NoteType {
 }
 
 const NOTE_TYPES: NoteType[] = [
-  // ── CLIENT NOTES ───────────────────────────────────────────
   {
-    id: 'daily_support', label: 'Daily Support Entry', group: 'client', color: '#14b8a6',
+    id: 'daily_support', label: 'Daily Support Entry', group: 'client', color: '#1c4e4e',
     prompts: [
       { key: 'mood', label: 'How was the person\'s mood and presentation?', placeholder: 'e.g. Appeared calm and engaged, good eye contact, responded well to prompts...', required: true },
       { key: 'activities', label: 'What activities or support was provided?', placeholder: 'e.g. Supported with personal care, attended community group, cooked lunch together...' },
@@ -163,697 +153,391 @@ const NOTE_TYPES: NoteType[] = [
     ],
   },
   {
-    id: 'keyworker_session', label: 'Key Worker Session', group: 'client', color: '#0f766e',
+    id: 'keyworker_session', label: 'Key Worker Session', group: 'client', color: '#1c4e4e',
     prompts: [
-      { key: 'topics', label: 'What topics were discussed in the session?', placeholder: 'e.g. Reviewed support plan goals, discussed community access, talked through recent concerns...', required: true },
-      { key: 'client_views', label: 'What were the person\'s views and wishes?', placeholder: 'e.g. Expressed desire to go to college, happy with current support...' },
-      { key: 'progress', label: 'Progress against support plan goals?', placeholder: 'e.g. Making good progress with independence. Has started cooking 2 meals per week independently...' },
-      { key: 'risks', label: 'Any risks or safeguarding matters?', placeholder: 'e.g. No new concerns. Previous concern regarding finances resolved...' },
-      { key: 'actions', label: 'Agreed actions before next session?', placeholder: 'e.g. Person to try bus journey independently. Review funding application next week...' },
-      { key: 'next', label: 'Next key worker session date?', placeholder: 'e.g. 4 weeks — 14/04/2026' },
+      { key: 'topics', label: 'What topics were discussed in the session?', placeholder: 'e.g. Reviewed support plan goals, discussed community access...' },
+      { key: 'feedback', label: 'What feedback did the person provide?', placeholder: 'e.g. Expressed happiness with current activities, requested more swimming sessions...' },
+      { key: 'actions', label: 'Agreed actions or next steps?', placeholder: 'e.g. Update support plan, book swimming for next Tuesday...' },
     ],
   },
   {
-    id: 'care_review', label: 'Care & Support Review', group: 'client', color: '#0f766e',
+    id: 'staff_supervision', label: 'Staff Supervision', group: 'staff', color: '#6b5b9e',
     prompts: [
-      { key: 'attendees', label: 'Who attended the review?', placeholder: 'e.g. Client, key worker, social worker, family member, house coordinator...', required: true },
-      { key: 'current_plan', label: 'How is the current support plan working?', placeholder: 'e.g. Plan is broadly working well. Achieving most goals. Medication support still required...' },
-      { key: 'client_views', label: 'Person\'s views on their care?', placeholder: 'e.g. Happy with support staff. Would like more community access. Finds morning routine rushed...' },
-      { key: 'changes', label: 'Changes to support plan agreed?', placeholder: 'e.g. Increase community access to 3x per week. Reduce prompting for personal care...' },
-      { key: 'risks', label: 'Risk assessment updates?', placeholder: 'e.g. Risk around finances to be updated. PBS to be reviewed following recent incidents...' },
-      { key: 'next_review', label: 'Next review date?', placeholder: 'e.g. 6 months — September 2026' },
-    ],
-  },
-  {
-    id: 'handover', label: 'Shift Handover', group: 'client', color: '#3b82f6',
-    prompts: [
-      { key: 'events', label: 'Key events this shift?', placeholder: 'e.g. Quiet shift overall. Person A attended day centre, Person B had GP appointment...', required: true },
-      { key: 'clients', label: 'Client updates?', placeholder: 'e.g. Person B refused dinner, offered alternative and accepted. Person C had positive mood all day...' },
-      { key: 'outstanding', label: 'Outstanding tasks for next shift?', placeholder: 'e.g. Medication round at 20:00, laundry needs completing, entry to be submitted...' },
-      { key: 'nextshift', label: 'Anything critical for incoming staff?', placeholder: 'e.g. GP calling back about Person A tomorrow morning. Night check required for Person C...' },
-    ],
-  },
-  {
-    id: 'abc_chart', label: 'ABC Chart (Behavior)', group: 'client', color: '#ef4444',
-    prompts: [
-      { key: 'antecedent', label: 'What happened before the behavior?', placeholder: 'e.g. Staff asked to turn off TV at 21:00. Person had not eaten dinner. Loud noise from outside...', required: true },
-      { key: 'behaviour', label: 'Behavior — What did the person do?', placeholder: 'e.g. Shouted at staff, threw remote control, paced around room for 10 minutes...', required: true },
-      { key: 'consequence', label: 'What happened as a result?', placeholder: 'e.g. Staff used low arousal approach. Person de-escalated after 15 minutes. Offered alternative activity...' },
-      { key: 'intensity', label: 'Intensity and duration?', placeholder: 'e.g. High intensity — lasted approximately 15 minutes before de-escalating' },
-      { key: 'action', label: 'Actions taken and by whom?', placeholder: 'e.g. PBS strategies followed. Redirected to preferred activity. Key worker notified...' },
-    ],
-  },
-  {
-    id: 'incident', label: 'Accident / Incident', group: 'client', color: '#dc2626',
-    prompts: [
-      { key: 'what', label: 'What happened?', placeholder: 'e.g. Person fell in bathroom while getting out of shower...', required: true },
-      { key: 'when', label: 'When did it happen (date/time)?', placeholder: 'e.g. 12/03/2026 at approximately 06:30' },
-      { key: 'who', label: 'Who was involved?', placeholder: 'e.g. Person: [Name]. Staff present: Sarah Mitchell...' },
-      { key: 'injuries', label: 'Any injuries?', placeholder: 'e.g. Small bruise on left forearm. No head injury. Person alert and oriented.' },
-      { key: 'action', label: 'What action was taken?', placeholder: 'e.g. First aid administered. Ice pack applied. GP notified by phone...' },
-      { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. House coordinator, on-call manager, GP surgery, family (NOK)...' },
-    ],
-  },
-  {
-    id: 'safeguarding', label: 'Safeguarding Record', group: 'client', color: '#be185d',
-    prompts: [
-      { key: 'concern', label: 'What is the safeguarding concern?', placeholder: 'e.g. Person disclosed that another resident made threatening comments...', required: true },
-      { key: 'who', label: 'Who is involved?', placeholder: 'e.g. Alleged victim: Robert Ellis. Alleged perpetrator: unnamed resident...' },
-      { key: 'disclosure', label: 'How was it disclosed/discovered?', placeholder: 'e.g. Person told staff member during 1:1 session...' },
-      { key: 'action', label: 'Immediate actions taken?', placeholder: 'e.g. Ensured person\'s safety. Statements taken. Manager notified...' },
-      { key: 'referral', label: 'Referrals made?', placeholder: 'e.g. Local authority safeguarding team contacted. Reference number pending...' },
-    ],
-  },
-  {
-    id: 'gp_appointment', label: 'GP Appointment', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'client', label: 'Person and reason for appointment?', placeholder: 'e.g. [Name] — review of Risperidone dosage and annual health check', required: true },
-      { key: 'outcome', label: 'What was the outcome?', placeholder: 'e.g. Medication adjusted. Blood test requested. Follow-up in 4 weeks...' },
-      { key: 'actions', label: 'Follow-up actions required?', placeholder: 'e.g. Collect new prescription from pharmacy. Book blood test. Update MAR chart...' },
-      { key: 'notified', label: 'Who was notified?', placeholder: 'e.g. Key worker informed. Family updated. Manager copy of letter filed...' },
-    ],
-  },
-  {
-    id: 'medication', label: 'Medication Entry', group: 'client', color: '#0891b2',
-    prompts: [
-      { key: 'what', label: 'Which medication and person?', placeholder: 'e.g. Olanzapine 10mg — [Name]', required: true },
-      { key: 'status', label: 'Was it administered, refused, or missed?', placeholder: 'e.g. Refused at 08:00, attempted again at 09:30...' },
-      { key: 'reason', label: 'Reason if refused/missed?', placeholder: 'e.g. Said they didn\'t want it, appeared drowsy...' },
-      { key: 'action', label: 'Action taken?', placeholder: 'e.g. GP informed by phone. Will attempt at lunchtime. MAR chart updated.' },
-    ],
-  },
-  {
-    id: 'finance_transaction', label: 'Financial Transaction', group: 'client', color: '#059669',
-    prompts: [
-      { key: 'client', label: 'Person and transaction details?', placeholder: 'e.g. [Name] — weekly spending money £30 withdrawn from Halifax', required: true },
-      { key: 'purpose', label: 'Purpose of transaction?', placeholder: 'e.g. Food shop, clothing, leisure activity, personal purchase...' },
-      { key: 'amount', label: 'Amount and balance?', placeholder: 'e.g. £30 withdrawn. Balance remaining: £145.23. Receipts obtained.' },
-      { key: 'witnessed', label: 'Witnessed by?', placeholder: 'e.g. Witnessed by Sarah Mitchell. Person signed transaction record...' },
-    ],
-  },
-
-  // ── STAFF / TEAM NOTES ────────────────────────────────────
-  {
-    id: 'supervision', label: 'Staff Supervision', group: 'staff', color: '#7c3aed',
-    prompts: [
-      { key: 'staff', label: 'Staff member supervised?', placeholder: 'e.g. Amy Rogers — Support Worker, Cottrell House', required: true },
-      { key: 'discussed', label: 'Topics discussed?', placeholder: 'e.g. Workload manageable. Discussed de-escalation training needs. Raised concerns about rota...' },
-      { key: 'development', label: 'Development and training needs?', placeholder: 'e.g. Refresher on medication administration. First aid renewal due June 2026...' },
-      { key: 'actions', label: 'Actions agreed?', placeholder: 'e.g. Book onto conflict management course. Shadow senior for medication round next week...' },
-      { key: 'next', label: 'Next supervision date?', placeholder: 'e.g. 4 weeks — 09/04/2026' },
-    ],
-  },
-  {
-    id: 'quality_meeting', label: 'Quality & Performance Meeting', group: 'meeting', color: '#0f766e',
-    prompts: [
-      { key: 'attendees', label: 'Who attended?', placeholder: 'e.g. House coordinator, manager, senior support workers...', required: true },
-      { key: 'flags', label: 'Flags raised this week?', placeholder: 'e.g. 1 red flag — fall on Tuesday. 3 amber flags — concerns, lateness, medication...' },
-      { key: 'house_updates', label: 'House updates?', placeholder: 'e.g. Cottrell: quiet week. Hazelbury: concern ongoing. Lingfield: CPN visit completed...' },
-      { key: 'actions', label: 'Actions agreed?', placeholder: 'e.g. GP referral for Person B by Friday. Training refresher booked for Amy. CCTV to be fixed...' },
-    ],
-  },
-  {
-    id: 'task_note', label: 'General Task Note', group: 'staff', color: '#f59e0b',
-    prompts: [
-      { key: 'task', label: 'What task was completed?', placeholder: 'e.g. Weekly food shop, maintenance request, cleaning, admin task...', required: true },
-      { key: 'details', label: 'Details?', placeholder: 'e.g. All items on menu plan purchased. Budget: £85.20. Receipts filed...' },
-      { key: 'followup', label: 'Any follow-up needed?', placeholder: 'e.g. Need to order special dietary items for Person C by Thursday...' },
+      { key: 'wellbeing', label: 'Staff wellbeing and performance?', placeholder: 'e.g. Expressed confidence in role, discussed recent training completion...' },
+      { key: 'concerns', label: 'Any challenges or development needs?', placeholder: 'e.g. Requested more shadow shifts for manual handling...' },
+      { key: 'goals', label: 'Agreed development goals?', placeholder: 'e.g. Complete Level 3 Diploma by year end...' },
     ],
   },
 ];
 
+const HOUSES = [
+  'Lingfield House', 'Church House', 'Laurel House', 'Station House',
+  'Canterbury', 'Glenfrome House', 'Woburn House', 'Hazelbury House',
+  'Courtney Lodge', 'Cottrell House',
+];
+
 const GROUPS = [
-  { id: 'client', label: 'People We Support', color: '#0f766e' },
-  { id: 'staff', label: 'Staff Information', color: '#7c3aed' },
-  { id: 'meeting', label: 'Team Briefings', color: '#1e40af' },
+  { id: 'client', label: 'Service User', color: '#1c4e4e' },
+  { id: 'staff', label: 'Personnel', color: '#6b5b9e' },
+  { id: 'meeting', label: 'Meetings', color: '#d9974e' },
 ] as const;
 
-// ============================================================
-// FLAG DETECTION
-// ============================================================
-const RED_KW = ['refused medication','medication refused','safeguarding','self-neglect','self neglect','self-harm','self harm','police','ambulance','hospital','a&e','assault','struck','hit','attacked','threatened','missing','absconded','fire','death','deceased','injury','fall','collapsed','seizure'];
-const AMBER_KW = ['hearing voices','talked to himself','talking to herself','escalated','escalation','agitated','aggressive','anxious','property damage','damaged','broke','complaint','complained','concern','concerns raised','not sleeping','refused food','refused to eat','medication discrepancy','late','lateness','did not attend','no show','soiling','infection control'];
-
-function detectFlags(text: string): { severity: 'red' | 'amber' | 'none'; flags: string[] } {
-  const lower = text.toLowerCase();
-  const redHits = RED_KW.filter(kw => lower.includes(kw));
-  if (redHits.length > 0) return { severity: 'red', flags: redHits };
-  const amberHits = AMBER_KW.filter(kw => lower.includes(kw));
-  if (amberHits.length > 0) return { severity: 'amber', flags: amberHits };
-  return { severity: 'none', flags: [] };
-}
-
-// ============================================================
-// SAVED NOTES
-// ============================================================
-interface SavedNote { id: string; type: string; house: string; client: string; text: string; date: string; }
-const NOTES_KEY = 'hazelcare-staff-notes';
-function loadNotes(): SavedNote[] { try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); } catch { return []; } }
-function saveNotes(n: SavedNote[]) { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }
-
-const HOUSES = ['Lingfield House','Church House','Laurel House','Station House','Canterbury','Glenfrome House','Woburn House','Hazelbury House','Courtney Lodge','Cottrell House'];
-
-// ============================================================
-// COMPONENT
-// ============================================================
 export function StaffNotePage() {
+  const [voiceLang, _setVoiceLangState] = useState(_voiceLang);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [selectedType, setSelectedType] = useState<NoteType>(NOTE_TYPES[0]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [freeText, setFreeText] = useState('');
-  const [mode, setMode] = useState<'guided' | 'free'>('guided');
+  const [showCategoryPanel, setShowCategoryPanel] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<NoteType['group']>('client');
+  const [search] = useState('');
   const [house, setHouse] = useState(HOUSES[0]);
   const [client, setClient] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [savedNotes, setSavedNotes] = useState<SavedNote[]>(loadNotes);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showCategoryPanel, setShowCategoryPanel] = useState(false);
+  const [mode, setMode] = useState<'guided' | 'free'>('guided');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [freeText, setFreeText] = useState('');
   const [enhancing, setEnhancing] = useState(false);
   const [enhancedNote, setEnhancedNote] = useState('');
-  const [enhanceError, setEnhanceError] = useState('');
-  const [search, setSearch] = useState('');
-  const [activeGroup, setActiveGroup] = useState<string>('client');
+  const [copied, setCopied] = useState(false);
+  const [savedNotes, setSavedNotes] = useState<{ id: string; text: string; date: string; type: string; house: string; client?: string }[]>(() => {
+    try { return JSON.parse(localStorage.getItem('hc-saved-notes') || '[]'); } catch { return []; }
+  });
+  const [showHistory, setShowHistory] = useState(false);
 
-  // ── QUICK FIX mode ────────────────────────────────────────────────
   const [quickRaw, setQuickRaw] = useState('');
   const [quickResult, setQuickResult] = useState('');
   const [quickLoading, setQuickLoading] = useState(false);
   const [quickCopied, setQuickCopied] = useState(false);
 
-  async function quickFix() {
-    if (!quickRaw.trim() || quickLoading) return;
-    setQuickResult('');
-    setQuickLoading(true);
+  const handleLangChange = (code: string) => { setVoiceLang(code); _setVoiceLangState(code); setShowLangPicker(false); };
+  const setAnswer = (key: string, val: string) => setAnswers(prev => ({ ...prev, [key]: val }));
+  const appendToAnswer = (key: string, val: string) => setAnswers(prev => ({ ...prev, [key]: (prev[key] || '') + ' ' + val }));
+  const appendToFreeText = (_: string, val: string) => setFreeText(prev => prev + ' ' + val);
+
+  const filteredTypes = NOTE_TYPES.filter(t => (t.group === activeGroup || !!search) && t.label.toLowerCase().includes(search.toLowerCase()));
+  const currentLang = VOICE_LANGUAGES.find(l => l.code === voiceLang) || VOICE_LANGUAGES[0];
+
+  const generatedNote = useMemo(() => {
+    if (mode === 'guided') {
+      return selectedType.prompts
+        .map(p => answers[p.key] ? `${p.label.replace('?', '')}: ${answers[p.key]}` : '')
+        .filter(Boolean)
+        .join('\n\n');
+    }
+    return freeText;
+  }, [mode, selectedType, answers, freeText]);
+
+  const wordCount = generatedNote.split(/\s+/).filter(Boolean).length;
+
+  const enhanceNote = async () => {
+    if (!generatedNote.trim()) return;
+    setEnhancing(true); setEnhancedNote('');
     try {
       const res = await fetch('/api/staff/enhance-note', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ text: quickRaw.trim(), noteType: '1:1 Support' }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: generatedNote, noteType: selectedType.label, clientName: client }),
       });
-      if (!res.ok || !res.body) throw new Error('Failed');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        text += decoder.decode(value, { stream: true });
-        setQuickResult(text);
-      }
-    } catch {
-      setQuickResult('Could not reach the AI. Make sure you are logged in.');
-    } finally {
-      setQuickLoading(false);
-    }
-  }
-
-  useEffect(() => { setAnswers({}); }, [selectedType.id]);
-
-  const filteredTypes = useMemo(() => {
-    const group = NOTE_TYPES.filter(t => t.group === activeGroup);
-    if (!search.trim()) return group;
-    return NOTE_TYPES.filter(t => t.label.toLowerCase().includes(search.toLowerCase()));
-  }, [activeGroup, search]);
-
-  function setAnswer(key: string, value: string) {
-    setAnswers(prev => ({ ...prev, [key]: value }));
-  }
-
-  const appendToAnswer = useCallback((key: string, transcript: string) => {
-    setAnswers(prev => {
-      const existing = prev[key] || '';
-      const separator = existing && !existing.endsWith(' ') ? ' ' : '';
-      return { ...prev, [key]: existing + separator + transcript };
-    });
-  }, []);
-
-  const appendToFreeText = useCallback((_key: string, transcript: string) => {
-    setFreeText(prev => {
-      const separator = prev && !prev.endsWith(' ') ? ' ' : '';
-      return prev + separator + transcript;
-    });
-  }, []);
-
-  function generateNote(): string {
-    if (mode === 'free') return freeText;
-    const now = new Date();
-    const parts: string[] = [];
-    parts.push(`${selectedType.label} — ${house}`);
-    if (client) parts.push(`Person: ${client}`);
-    parts.push(`Date: ${now.toLocaleDateString('en-GB')} at ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
-    parts.push('');
-    for (const prompt of selectedType.prompts) {
-      const answer = answers[prompt.key]?.trim();
-      if (!answer) continue;
-      let text = answer.charAt(0).toUpperCase() + answer.slice(1);
-      if (!text.endsWith('.') && !text.endsWith('!') && !text.endsWith('?')) text += '.';
-      parts.push(text);
-    }
-    if (parts.length <= 3) return '';
-    return parts.join('\n');
-  }
-
-  const generatedNote = generateNote();
-  const allText = mode === 'guided' ? Object.values(answers).join(' ') : freeText;
-  const flagResult = detectFlags(allText);
-  const wordCount = generatedNote.trim() ? generatedNote.trim().split(/\s+/).length : 0;
-
-  function saveNote() {
-    const noteToSave = enhancedNote || generatedNote;
-    if (!noteToSave) return;
-    const note: SavedNote = { id: uid(), type: selectedType.label, house, client, text: noteToSave, date: new Date().toLocaleDateString('en-GB') };
-    const updated = [note, ...savedNotes].slice(0, 100);
-    setSavedNotes(updated);
-    saveNotes(updated);
-    setAnswers({});
-    setFreeText('');
-    setClient('');
-    setEnhancedNote('');
-  }
-
-  async function enhanceNote() {
-    const source = generatedNote.trim();
-    if (!source || enhancing) return;
-    setEnhancing(true);
-    setEnhancedNote('');
-    setEnhanceError('');
-    try {
-      const res = await fetch('/api/staff/enhance-note', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: source, noteType: selectedType.label, clientName: client }),
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Enhancement failed');
-      const reader = res.body!.getReader();
+      if (!res.ok) throw new Error('Offline');
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No stream');
       const decoder = new TextDecoder();
       let result = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        result += decoder.decode(value, { stream: true });
+        result += decoder.decode(value);
         setEnhancedNote(result);
       }
-    } catch {
-      setEnhanceError('AI enhancement unavailable — note unchanged');
-    } finally {
-      setEnhancing(false);
-    }
-  }
+    } catch (e) { console.error(e); }
+    finally { setEnhancing(false); }
+  };
 
-  const [voiceLang, setVoiceLangState] = useState(_voiceLang);
-  const [showLangPicker, setShowLangPicker] = useState(false);
-  function handleLangChange(code: string) {
-    setVoiceLang(code);
-    setVoiceLangState(code);
-    setShowLangPicker(false);
-  }
-  const currentLang = VOICE_LANGUAGES.find(l => l.code === voiceLang) ?? VOICE_LANGUAGES[0];
+  const quickFix = async () => {
+    if (!quickRaw.trim()) return;
+    setQuickLoading(true); setQuickResult('');
+    try {
+      const res = await fetch('/api/staff/enhance-note', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: quickRaw, noteType: 'Quick Fix', clientName: 'N/A' }),
+      });
+      if (!res.ok) throw new Error('Offline');
+      const reader = res.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder();
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value);
+        setQuickResult(result);
+      }
+    } catch { setQuickResult('FAILED: Clinical engine offline.'); }
+    finally { setQuickLoading(false); }
+  };
+
+  const saveNote = () => {
+    const text = enhancedNote || generatedNote;
+    if (!text.trim()) return;
+    const newNote = { id: uid(), text, date: new Date().toLocaleString('en-GB'), type: selectedType.label, house, client };
+    const updated = [newNote, ...savedNotes].slice(0, 100);
+    setSavedNotes(updated);
+    localStorage.setItem('hc-saved-notes', JSON.stringify(updated));
+    setAnswers({}); setFreeText(''); setEnhancedNote('');
+  };
 
   return (
     <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
-
-      {/* ── QUICK FIX PANEL ─────────────────────────────────── */}
-      <div className="mb-8 rounded-2xl p-5" style={{background:'#13101e',backdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',WebkitBackdropFilter:'blur(48px) saturate(2.2) brightness(1.05)',border:'1px solid rgba(139,92,246,0.2)',boxShadow:'0 8px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(139,92,246,0.05),inset 0 1px 0 rgba(255,255,255,0.10)'}}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-1 h-5 rounded-full" style={{background:'#8b5cf6',boxShadow:'0 0 12px rgba(139,92,246,0.7)'}} />
-          <span className="text-[10px] font-black tracking-[0.25em] uppercase text-white">Quick Fix</span>
-          <span className="text-[10px] text-hc-muted opacity-50 uppercase tracking-wide">Paste any note → get Gold Standard instantly</span>
+      
+      {/* QUICK FIX HEADER */}
+      <div className="mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl">
+        <div className="bg-hc-teal px-8 py-4 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+              <Sparkles className="w-4 h-4 text-hc-bone" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-hc-bone">Intelligence Vector // Quick Standardise</span>
+           </div>
+           <span className="text-[9px] font-black text-hc-bone/40 uppercase tracking-widest">Forensic Polish Engine</span>
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-hc-border/20 p-2">
           {/* Input */}
-          <div className="flex flex-col gap-3">
-            <label className="text-[10px] font-black tracking-widest uppercase text-hc-muted">Original note (paste here)</label>
+          <div className="p-6 space-y-4">
             <textarea
               value={quickRaw}
               onChange={e => setQuickRaw(e.target.value)}
-              placeholder={"Paste the staff note here — any language, any format, good or bad.\n\nExamples:\n• \"Staff supported James with personal care. He refused at first.\"\n• \"Good morning handover completed.\"\n• Third-person notes, brief notes, notes in another language — all fine."}
-              className="w-full text-sm text-hc-muted leading-relaxed resize-none focus:outline-none scrollbar-thin"
-              style={{background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'12px',padding:'14px',minHeight:'160px',color:'#c8d4e0'}}
+              placeholder="Paste any note here Â· any format Â· good or bad... (e.g. James went to shops, he enjoyed it)"
+              className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none min-h-[160px] scrollbar-thin italic"
             />
             <button
-              type="button"
               onClick={quickFix}
               disabled={!quickRaw.trim() || quickLoading}
-              className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.01] active:scale-95 disabled:opacity-30 cursor-pointer"
-              style={{background:'linear-gradient(135deg,#7c3aed,#8b5cf6)',boxShadow:'0 4px 24px rgba(139,92,246,0.4)',color:'white'}}
+              className="w-full py-4 btn-tactical text-[11px] uppercase tracking-[0.2em] shadow-xl disabled:opacity-40 transition-all flex items-center justify-center gap-3"
             >
-              {quickLoading ? 'Generating Gold Standard…' : '✦ Generate Gold Standard'}
+              {quickLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Generate Gold Standard
             </button>
           </div>
           {/* Output */}
-          <div className="flex flex-col gap-3">
+          <div className="p-6 space-y-4 bg-hc-teal/[0.02]">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black tracking-widest uppercase text-hc-muted">Gold Standard rewrite</label>
-              {quickResult && !quickLoading && <span className="text-[10px] font-bold text-flag-green uppercase tracking-wide">Ready</span>}
+              <label className="text-[10px] font-black tracking-widest uppercase text-hc-muted">Standardised Output</label>
+              {quickResult && <span className="text-[10px] font-black text-hc-teal uppercase animate-pulse">Ready</span>}
             </div>
             <textarea
               value={quickResult}
-              onChange={e => setQuickResult(e.target.value)}
-              readOnly={quickLoading}
-              placeholder={quickLoading ? 'Writing your Gold Standard note…' : 'The rewritten first-person note will appear here as it streams.'}
-              className="flex-1 w-full text-sm leading-relaxed resize-none focus:outline-none scrollbar-thin"
-              style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'12px',padding:'14px',minHeight:'160px',color:quickLoading ? '#6b7d94' : '#e2eaf2'}}
+              readOnly
+              placeholder="Your polished clinical note will stream here..."
+              className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[160px] scrollbar-thin bg-transparent"
             />
             <button
-              type="button"
-              disabled={!quickResult.trim() || quickLoading}
-              onClick={() => { if (!quickResult.trim()) return; void navigator.clipboard.writeText(quickResult); setQuickCopied(true); setTimeout(() => setQuickCopied(false), 2500); }}
-              className="w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 hover:scale-[1.01] active:scale-95 disabled:opacity-30 cursor-pointer"
-              style={{background: quickCopied ? 'linear-gradient(135deg,#16a34a,#22c55e)' : 'linear-gradient(135deg,#0f766e,#14b8a6)',boxShadow: quickCopied ? '0 4px 24px rgba(34,197,94,0.4)' : '0 4px 24px rgba(20,184,166,0.35)',color:'white'}}
+              onClick={() => { navigator.clipboard.writeText(quickResult); setQuickCopied(true); setTimeout(() => setQuickCopied(false), 2000); }}
+              disabled={!quickResult.trim()}
+              className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl transition-all ${quickCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
             >
-              {quickCopied ? '✓ Copied to clipboard' : 'Copy rewritten note'}
+              {quickCopied ? 'COPIED TO CLIPBOARD' : 'COPY REWRITTEN NOTE'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── PAGE HEADER ───────────────────────────────────────── */}
-      <div className="mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white mb-1 tracking-tighter text-shimmer">Notes Assistant</h1>
-            <div className="flex items-center gap-3">
-              <span className="pill pill-teal text-xs font-black uppercase tracking-[0.08em] shadow-lg">Daily Notes Log</span>
-              <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
-                Guided prompts + voice dictation in any language
-              </p>
+      <div className="mb-10">
+        <h1 className="text-2xl md:text-3xl font-black text-hc-text mb-2 tracking-[0.1em] uppercase">Notes Assistant</h1>
+        <div className="flex items-center gap-3">
+          <span className="pill pill-teal text-[10px] font-black px-4 py-1">Operational Protocol</span>
+          <p className="text-hc-muted text-[11px] font-black uppercase tracking-widest">
+            Guided prompts + Voice dictation Â· Polished by Intelligence
+          </p>
+        </div>
+      </div>
+
+      {/* LANGUAGE BANNER */}
+      {speechSupported ? (
+        <button
+          onClick={() => setShowLangPicker(!showLangPicker)}
+          className="w-full mb-10 flex items-center justify-between hc-clay-raised p-6 hover:bg-hc-teal/5 transition-all group"
+        >
+          <div className="flex items-center gap-5">
+            <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-2xl shadow-xl">{currentLang.flag}</div>
+            <div className="text-left">
+              <div className="text-[10px] text-hc-muted font-black uppercase tracking-widest mb-1">Voice Language // Tap to switch</div>
+              <div className="text-base font-black text-hc-text uppercase tracking-tight">{currentLang.label}</div>
             </div>
           </div>
+          <ChevronRight className={`w-5 h-5 text-hc-muted transition-transform duration-500 ${showLangPicker ? 'rotate-90' : ''}`} />
+        </button>
+      ) : (
+        <div className="mb-10 hc-clay-inset p-6 text-[11px] font-black text-hc-muted uppercase tracking-widest text-center">Voice dictation requires Chrome or Edge browser.</div>
+      )}
+
+      {/* Flag grid dropdown */}
+      {showLangPicker && (
+        <div className="mb-10 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-3 animate-in zoom-in-95 duration-300">
+          {VOICE_LANGUAGES.map(l => (
+            <button key={l.code} onClick={() => handleLangChange(l.code)}
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-300 ${voiceLang === l.code ? 'hc-clay-inset text-hc-teal' : 'hc-clay-raised text-hc-muted hover:text-hc-text'}`}>
+              <span className="text-2xl">{l.flag}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{l.label.split(' ')[0]}</span>
+            </button>
+          ))}
         </div>
+      )}
 
-        {/* ── LANGUAGE BANNER ─────────────────────────────────── */}
-        {speechSupported ? (
-          <div className="relative animate-in slide-in-from-top-4 duration-700">
-            <button
-              type="button"
-              onClick={() => setShowLangPicker(v => !v)}
-              className="w-full flex items-center gap-3 md:gap-4 glass border-2 border-hc-teal/30 rounded-xl md:rounded-2xl px-4 py-3 hover:bg-hc-teal/5 transition-all group shadow-xl relative overflow-hidden active:scale-[0.99]"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl glass border border-white/10 flex items-center justify-center text-xl md:text-2xl shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-xl">
-                {currentLang.flag}
-              </div>
-              <div className="flex-1 text-left relative z-10">
-                <div className="text-xs text-hc-teal-light uppercase tracking-[0.08em] font-black mb-1">Voice Language — Tap to switch</div>
-                <div className="text-sm md:text-base font-black text-white tracking-tight group-hover:text-hc-teal-light transition-colors">{currentLang.label}</div>
-              </div>
-              <div className="text-hc-muted text-right hidden md:block relative z-10 pr-4">
-                <div className="text-[10px] font-black text-hc-teal-light uppercase tracking-widest mb-1">Multi-Language Support</div>
-                <div className="text-xs font-medium opacity-60 italic">Speak or dictate in any language — AI translates and polishes</div>
-              </div>
-              <div className={`w-8 h-8 rounded-xl glass border border-white/10 flex items-center justify-center shrink-0 transition-transform duration-500 ${showLangPicker ? 'rotate-180 bg-hc-teal/10 border-hc-teal/30' : 'group-hover:bg-white/5'}`}>
-                <svg className="w-4 h-4 text-hc-muted group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </button>
-
-            {/* Flag grid dropdown */}
-            {showLangPicker && (
-              <div className="absolute top-full left-0 right-0 mt-4 glass border border-white/10 rounded-[2rem] p-6 z-50 shadow-2xl animate-in zoom-in-95 duration-300 backdrop-blur-3xl">
-                <div className="section-header text-xs mb-6 ml-2 opacity-90 tracking-[0.08em]">Select Language</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                  {VOICE_LANGUAGES.map(l => (
-                    <button
-                      key={l.code}
-                      type="button"
-                      onClick={() => handleLangChange(l.code)}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-500 group/lang active:scale-90 ${
-                        voiceLang === l.code
-                          ? 'border-hc-teal bg-hc-teal/20 text-white shadow-lg shadow-hc-teal/10 scale-105'
-                          : 'border-white/5 glass-light text-hc-muted hover:border-hc-teal/40 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      <span className="text-2xl leading-none transition-transform group-hover/lang:scale-125 duration-500">{l.flag}</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">{l.label.split(' ')[0]}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-4 glass-light border border-white/10 rounded-[1.5rem] px-6 py-4 text-sm text-hc-muted shadow-xl">
-            <svg className="w-6 h-6 text-hc-teal-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span className="font-medium opacity-80 uppercase tracking-widest text-xs leading-relaxed">For voice-to-text in any language, please open this page in Chrome or Edge browser.</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
-        {/* Left — Input (3/5) */}
-        <div className="lg:col-span-3 space-y-6">
-
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+        <div className="lg:col-span-3 space-y-10">
+          
           {/* Note type selector */}
-          <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => setShowCategoryPanel((v) => !v)}
-              className="w-full flex items-center justify-between section-header text-xs mb-2 ml-1 opacity-90 tracking-[0.08em] hover:text-white transition-all"
-              title="Choose note category and prompt profile"
-            >
-              <span>Note Category</span>
-              <span className="text-hc-muted">{showCategoryPanel ? 'Hide' : 'Show'}</span>
-            </button>
-            <p className="text-xs text-hc-muted/80 mb-4">Selected: <span className="text-white font-semibold">{selectedType.label}</span></p>
-            {showCategoryPanel && (
-              <>
-
-            {/* Search + group tabs */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative group flex-1">
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search entry types..."
-                  className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl pl-12 pr-6 py-3.5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark"
-                />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity">
-                  <svg className="w-5 h-5 text-hc-teal-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
+          <div className="hc-clay-raised p-8">
+            <div className="flex items-center justify-between mb-6">
+               <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">1. Note Category Selection</span>
+               <button onClick={() => setShowCategoryPanel(!showCategoryPanel)} className="text-[9px] font-black text-hc-teal uppercase hover:underline">{showCategoryPanel ? 'Collapse' : 'Change'}</button>
+            </div>
+            
+            {!showCategoryPanel ? (
+              <div className="flex items-center gap-4">
+                 <div className="w-3 h-3 rounded-full bg-hc-teal shadow-[0_0_10px_#1c4e4e]" />
+                 <span className="text-lg font-black text-hc-text uppercase tracking-tight">{selectedType.label}</span>
               </div>
-              {!search && (
-                <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5">
+            ) : (
+              <div className="space-y-6">
+                <div className="flex gap-2 p-2 hc-clay-inset rounded-2xl overflow-x-auto scrollbar-none">
                   {GROUPS.map(g => (
                     <button key={g.id} onClick={() => setActiveGroup(g.id)}
-                      className={`text-[10px] px-5 py-2 rounded-xl font-black uppercase tracking-widest transition-all duration-500 active:scale-95 ${activeGroup === g.id ? 'shadow-lg bg-hc-teal/10 scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}
-                      style={activeGroup === g.id ? { color: g.color, background: `${g.color}15`, border: `1px solid ${g.color}30` } : {}}>
+                      className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeGroup === g.id ? 'bg-hc-teal text-hc-bone shadow-xl' : 'text-hc-muted hover:text-hc-text'}`}>
                       {g.label}
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Type buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-              {filteredTypes.map(type => (
-                <button key={type.id} onClick={() => { setSelectedType(type); setSearch(''); if (!search) setActiveGroup(type.group); }}
-                  className={`text-left px-4 py-3 rounded-xl border text-[11px] font-black uppercase tracking-tight transition-all duration-500 group/type relative overflow-hidden active:scale-95
-                    ${selectedType.id === type.id ? 'shadow-2xl scale-[1.03] z-10 border-hc-teal/40' : 'border-white/5 glass-light text-hc-muted hover:text-white hover:border-white/20'}`}
-                  style={selectedType.id === type.id ? { color: type.color, background: `${type.color}15` } : {}}>
-                  <div className="absolute top-0 right-0 w-12 h-12 rounded-full opacity-[0.03] blur-xl group-hover/type:opacity-[0.1] transition-opacity" style={{ background: type.color }} />
-                  <span className="relative z-10 group-hover/type:translate-x-1 transition-transform duration-500 block">{type.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Selected type indicator */}
-            <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ background: selectedType.color, boxShadow: `0 0 10px ${selectedType.color}` }} />
-              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em]">Selected: <span className="text-white ml-1">{selectedType.label}</span></span>
-            </div>
-              </>
-            )}
-          </div>
-
-          {/* Meta row */}
-          <div className="glass-light border border-white/5 rounded-[2rem] p-6 shadow-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
-                  {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-              <div className="group">
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Person</label>
-                <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
-              </div>
-              <div>
-                <label className="section-header text-[9px] mb-2 ml-1 block opacity-60 tracking-[0.2em]">Input Mode</label>
-                <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
-                  {(['guided', 'free'] as const).map(m => (
-                    <button key={m} onClick={() => setMode(m)} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2 rounded-lg transition-all duration-500 active:scale-95 ${mode === m ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-                      {m === 'guided' ? 'Guided' : 'Free Text'}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto scrollbar-thin pr-2">
+                  {filteredTypes.map(t => (
+                    <button key={t.id} onClick={() => { setSelectedType(t); setShowCategoryPanel(false); }}
+                      className={`text-left px-5 py-4 rounded-2xl transition-all ${selectedType.id === t.id ? 'hc-clay-inset text-hc-teal shadow-inner' : 'hc-clay-raised text-hc-text hover:bg-hc-teal/5'}`}>
+                      <div className="text-[11px] font-black uppercase tracking-tight">{t.label}</div>
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Guided prompts or free text */}
+          {/* Meta row */}
+          <div className="hc-clay-raised p-8">
+             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-8 block">2. Clinical Meta-Data</span>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Site / House</label>
+                   <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-5 py-4 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner bg-transparent">
+                      {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+                   </select>
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Service User</label>
+                   <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full name..." className="w-full hc-clay-inset px-5 py-4 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner placeholder:text-hc-muted/30" />
+                </div>
+             </div>
+             <div className="mt-8 flex gap-2 p-1 hc-clay-inset rounded-2xl">
+                {(['guided', 'free'] as const).map(m => (
+                  <button key={m} onClick={() => setMode(m)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-hc-teal text-hc-bone shadow-xl' : 'text-hc-muted hover:text-hc-text'}`}>
+                    {m === 'guided' ? 'Guided Interview' : 'Free Intelligence Stream'}
+                  </button>
+                ))}
+             </div>
+          </div>
+
+          {/* Input Fields */}
           {mode === 'guided' ? (
-            <div className="space-y-4">
-              {selectedType.prompts.map((prompt, i) => (
-                <div key={prompt.key} className="glass-light border border-white/5 rounded-[2rem] p-6 focus-within:border-hc-teal/30 transition-all card-glow group animate-in slide-in-from-left-4 active:scale-[0.99]" style={{ animationDelay: `${i * 100}ms` }}>
-                  <label className="flex items-center gap-3 text-[11px] font-black text-white uppercase tracking-wider mb-4 transition-transform group-focus-within:translate-x-1">
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg" style={{ background: `${selectedType.color}20`, color: selectedType.color, border: `1px solid ${selectedType.color}40` }}>{i + 1}</span>
-                    {prompt.label}
-                    {prompt.required && <span className="text-flag-red text-xs animate-pulse">*</span>}
+            <div className="space-y-8">
+              {selectedType.prompts.map((p, i) => (
+                <div key={p.key} className="hc-clay-raised p-8 animate-in slide-in-from-left-4 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+                  <label className="flex items-center gap-4 text-[11px] font-black text-hc-text uppercase tracking-widest mb-6">
+                    <span className="w-8 h-8 rounded-xl hc-clay-inset flex items-center justify-center text-[10px] font-black text-hc-teal shadow-inner">{i + 1}</span>
+                    {p.label}
                   </label>
                   <textarea
-                    value={answers[prompt.key] || ''}
-                    onChange={e => setAnswer(prompt.key, e.target.value)}
-                    placeholder={prompt.placeholder}
-                    className="w-full bg-hc-dark/60 border border-white/10 rounded-2xl p-5 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none leading-relaxed mb-4 font-medium"
-                    rows={2}
+                    value={answers[p.key] || ''}
+                    onChange={e => setAnswer(p.key, e.target.value)}
+                    placeholder={p.placeholder}
+                    className="w-full hc-clay-inset p-6 text-[13px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none mb-6 italic"
+                    rows={3}
                   />
-                  <MicButton fieldKey={prompt.key} onTranscript={appendToAnswer} />
+                  <MicButton fieldKey={p.key} onTranscript={appendToAnswer} />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="glass-light border border-white/5 rounded-[2.5rem] p-8 card-glow group">
-              <div className="flex items-center justify-between mb-6">
-                <label className="text-sm font-black text-white uppercase tracking-tighter group-focus-within:text-hc-teal-light transition-colors">Free Text Entry</label>
-                <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
+            <div className="hc-clay-raised p-8">
+              <div className="flex items-center justify-between mb-8">
+                 <span className="text-[11px] font-black text-hc-text uppercase tracking-widest">Clinical Free Stream</span>
+                 <MicButton fieldKey="freetext" onTranscript={appendToFreeText} />
               </div>
               <textarea
                 value={freeText}
                 onChange={e => setFreeText(e.target.value)}
-                placeholder={`Type or dictate in any language — ${ORG_CONFIG.name} will translate and polish your note into professional English...`}
-                className="w-full bg-hc-dark/60 border border-white/10 rounded-3xl p-8 text-base text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-y leading-loose font-medium italic min-h-[300px]"
+                placeholder="Type or dictate in any language... Intelligence will translate and polish..."
+                className="w-full hc-clay-inset p-8 text-[14px] text-hc-text font-black leading-loose resize-none focus:outline-none italic min-h-[400px]"
               />
-            </div>
-          )}
-
-          {/* Flag warning */}
-          {flagResult.severity !== 'none' && (
-            <div className={`flex items-start gap-6 p-8 rounded-[2rem] border-2 shadow-2xl animate-in shake duration-500
-              ${flagResult.severity === 'red' ? 'bg-flag-red/[0.03] border-flag-red/30 glow-red' : 'bg-flag-amber/[0.02] border-flag-amber/30 glow-amber'}`}>
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg
-                ${flagResult.severity === 'red' ? 'bg-flag-red/10 border border-flag-red/30 text-flag-red' : 'bg-flag-amber/10 border border-flag-amber/30 text-flag-amber'}`}>
-                <svg className={`w-8 h-8 ${flagResult.severity === 'red' ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-              </div>
-              <div>
-                <div className="text-xl font-black text-white tracking-tighter uppercase mb-1">{flagResult.severity === 'red' ? 'Red Flag Alert' : 'Amber Monitor Alert'}</div>
-                <p className="text-sm font-medium text-hc-muted mb-4 opacity-80 leading-relaxed">{flagResult.severity === 'red' ? 'This entry contains critical concerns requiring immediate manager escalation.' : 'Concerns detected — monitoring recommended for this person.'}</p>
-                <div className="flex flex-wrap gap-2">
-                  {flagResult.flags.map((f, i) => (
-                    <span key={i} className={`pill text-[9px] font-black uppercase tracking-widest px-3
-                      ${flagResult.severity === 'red' ? 'pill-red shadow-lg shadow-flag-red/20' : 'pill-amber shadow-lg shadow-flag-amber/20'}`}>{f}</span>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
         </div>
 
-        {/* Right — Preview (2/5) */}
+        {/* Right Preview */}
         <div className="lg:col-span-2">
-          <div className="sticky top-10 space-y-6">
-            <div className="glass border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl relative group/preview">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2 transition-opacity group-hover/preview:opacity-100" />
-              <div className="p-8 border-b border-white/5 bg-black/20 relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="transition-transform duration-500 group-hover/preview:translate-x-1">
-                    <h3 className="text-lg font-black text-white tracking-tighter uppercase text-shimmer">Preview</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                      <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words · ~{Math.max(1, Math.ceil(wordCount / 200))} min read</span>
-                    </div>
-                  </div>
-                  {flagResult.severity !== 'none' && (
-                    <span className={`pill text-[10px] font-black uppercase tracking-[0.2em] px-4 shadow-xl active:scale-95 cursor-default transition-all
-                      ${flagResult.severity === 'red' ? 'pill-red animate-pulse-soft' : 'pill-amber'}`}>
-                      {flagResult.severity}
-                    </span>
-                  )}
-                </div>
+          <div className="sticky top-10 space-y-8">
+            <div className="hc-clay-raised overflow-hidden shadow-2xl border border-hc-teal/10">
+              <div className="p-8 bg-hc-teal/[0.03] border-b border-hc-border/10">
+                 <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black text-hc-text uppercase tracking-tight">Clinical Preview</h3>
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{wordCount} Words Â· Forensic Grade</span>
+                 </div>
               </div>
 
-              <div className="p-8 min-h-[300px] relative z-10">
+              <div className="p-8 min-h-[350px]">
                 {enhancedNote ? (
                   <div className="animate-in slide-in-from-top-4 duration-500">
-                    <div className="flex items-center gap-3 mb-6">
-                      <span className="pill pill-teal text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 shadow-lg glow-teal animate-shimmer">✦ AI POLISHED</span>
-                      <button onClick={() => setEnhancedNote('')} className="text-[9px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] transition-all ml-auto">Reset</button>
-                    </div>
-                    <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap italic group-hover/preview:text-white transition-colors duration-700">"{enhancedNote}{enhancing && <span className="inline-block w-2 h-4 bg-hc-teal-light ml-1 animate-pulse align-middle shadow-[0_0_10px_#14b8a6]" />}"</pre>
+                    <span className="pill pill-teal text-[10px] font-black px-4 py-1.5 mb-6 shadow-lg inline-block animate-pulse">âœ¦ FORENSIC POLISHED</span>
+                    <pre className="text-[13px] text-hc-text font-black leading-relaxed whitespace-pre-wrap italic">"{enhancedNote}"</pre>
                   </div>
                 ) : enhancing ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="flex gap-1.5 mb-6">
-                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2.5 h-2.5 rounded-full bg-hc-teal animate-bounce shadow-lg" style={{ animationDelay: '300ms' }} />
-                    </div>
-                    <div className="text-sm font-black text-hc-teal-light uppercase tracking-[0.3em] animate-pulse">Enhancing note...</div>
-                    <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest mt-2 max-w-[200px]">Improving tone · Correcting grammar · Structuring content</p>
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <RefreshCw className="w-12 h-12 text-hc-teal animate-spin mb-6" />
+                    <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em]">Refining Clinical Logic...</div>
                   </div>
                 ) : generatedNote ? (
-                  <pre className="text-sm text-hc-text font-mono leading-loose whitespace-pre-wrap animate-in fade-in duration-1000 italic opacity-90 group-hover/preview:opacity-100 transition-opacity">"{generatedNote}"</pre>
+                  <pre className="text-[13px] text-hc-text/80 font-black leading-relaxed whitespace-pre-wrap italic animate-in fade-in duration-700">"{generatedNote}"</pre>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center group cursor-default">
-                    <div className="w-20 h-20 rounded-3xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700">
-                      <svg className="w-10 h-10 text-hc-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    </div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.3em] max-w-[200px] leading-relaxed text-hc-text opacity-90">Your note preview will appear here...</div>
-
+                  <div className="flex flex-col items-center justify-center py-24 text-center opacity-30">
+                    <FileText className="w-16 h-16 text-hc-muted mb-6" />
+                    <div className="text-[11px] font-black uppercase tracking-widest text-hc-text">Clinical preview will appear here...</div>
                   </div>
                 )}
-                {enhanceError && <div className="pill pill-red text-[9px] font-black px-4 py-2 mt-6 shadow-lg animate-in shake duration-500 uppercase tracking-widest">{enhanceError}</div>}
               </div>
 
-              {generatedNote && !enhancing && (
-                <div className="px-8 pb-6 animate-in slide-in-from-bottom-4 duration-500">
-                  <button onClick={enhanceNote}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl glass-light border border-hc-teal/30 hover:bg-hc-teal/10 hover:border-hc-teal/60 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl hover:scale-[1.02] active:scale-95 group/enhance">
-                    <svg className="w-5 h-5 group-hover/enhance:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                    ✦ AI Enhance Note
-                  </button>
-                </div>
-              )}
-
-              <div className="p-8 border-t border-white/5 bg-black/30 flex gap-4 relative z-10">
-                <button onClick={() => { const n = enhancedNote || generatedNote; if (n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(() => setCopied(false), 2000); } }} disabled={!generatedNote && !enhancedNote}
-                  className={`flex-1 flex items-center justify-center gap-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 disabled:opacity-20 disabled:grayscale shadow-2xl hover:scale-105 active:scale-95 ${copied ? 'bg-flag-green text-white shadow-flag-green/20' : 'btn-gradient text-white'}`}>
-                  {copied ? (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>COPIED</>) : (<><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>COPY TO CLIPBOARD</>)}
-                </button>
-                <button onClick={saveNote} disabled={!generatedNote && !enhancedNote} className="px-8 py-4 glass-light border border-white/10 text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] rounded-2xl hover:text-white hover:bg-white/5 active:scale-95 disabled:opacity-20 transition-all">SAVE ENTRY</button>
+              <div className="p-8 bg-black/[0.02] flex flex-col gap-4">
+                 {generatedNote && !enhancing && !enhancedNote && (
+                   <button onClick={enhanceNote} className="w-full py-4 btn-tactical text-[11px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-3">
+                      <Sparkles className="w-4 h-4" /> AI Enhance Note
+                   </button>
+                 )}
+                 <div className="flex gap-4">
+                   <button onClick={() => { const n = enhancedNote || generatedNote; if(n) { navigator.clipboard.writeText(n); setCopied(true); setTimeout(()=>setCopied(false),2000); } }} disabled={!generatedNote}
+                     className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl ${copied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>
+                     {copied ? 'COPIED' : 'COPY TO CLIPBOARD'}
+                   </button>
+                   <button onClick={saveNote} disabled={!generatedNote} className="px-8 py-4 hc-clay-inset text-[10px] font-black text-hc-muted hover:text-hc-text uppercase tracking-widest transition-all">SAVE ENTRY</button>
+                 </div>
               </div>
-            </div>
-
-            <div className="glass-light border border-hc-teal/20 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-default">
-              <div className="absolute top-0 left-0 w-1 h-full bg-hc-teal opacity-40 group-hover:opacity-100 transition-opacity" />
-              <div className="text-[10px] font-black text-hc-teal-light mb-2 uppercase tracking-[0.3em] transition-transform group-hover:translate-x-1 duration-500">Helpful Tip</div>
-              <p className="text-[11px] text-hc-muted font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-1">"Write or dictate your notes in any language — {ORG_CONFIG.name} will translate and polish them into professional English for your records."</p>
             </div>
 
             {savedNotes.length > 0 && (
-              <div className="px-2 animate-in slide-in-from-bottom-4 duration-700 delay-300">
-                <button onClick={() => setShowHistory(!showHistory)} className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal-light w-full transition-all text-left">
-                  <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  </span>
-                  HISTORY ({savedNotes.length})
+              <div className="space-y-6">
+                <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-3 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] hover:text-hc-teal transition-all">
+                  <ChevronRight className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-90' : ''}`} />
+                  Archive Trail ({savedNotes.length})
                 </button>
                 {showHistory && (
-                  <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-500">
-                    {savedNotes.slice(0, 20).map(note => (
-                      <div key={note.id} className="glass-light border border-white/5 rounded-2xl p-5 group/archive interactive-row card-glow relative overflow-hidden active:scale-[0.98] transition-all duration-500">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/[0.02] blur-2xl -translate-y-1/2 translate-x-1/2 group-hover/archive:bg-hc-teal/5 transition-colors" />
-                        <div className="flex items-start justify-between gap-4 relative z-10">
-                          <div className="min-w-0 transition-transform duration-500 group-hover/archive:translate-x-1">
-                            <div className="text-[11px] font-black text-white group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight truncate">{note.type}</div>
-                            <div className="text-[9px] font-bold text-hc-muted/60 uppercase tracking-widest mt-1">{note.house}{note.client ? ` · ${note.client}` : ''} · <span className="tabular-nums">{note.date}</span></div>
-                          </div>
-                          <button onClick={() => { navigator.clipboard.writeText(note.text); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-hc-teal-light opacity-0 group-hover/archive:opacity-100 transition-all shadow-lg active:scale-90">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                          </button>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2">
+                    {savedNotes.map(n => (
+                      <div key={n.id} className="hc-clay-raised p-5 space-y-3 group hover:bg-hc-teal/5 transition-all">
+                        <div className="flex justify-between items-center">
+                           <span className="text-[11px] font-black text-hc-text uppercase">{n.type}</span>
+                           <span className="text-[9px] font-black text-hc-muted tabular-nums">{n.date}</span>
                         </div>
-                        <p className="text-[11px] text-hc-text/70 line-clamp-2 mt-3 font-medium leading-relaxed italic group-hover/archive:text-hc-text transition-all duration-500 group-hover/archive:translate-x-1">"{note.text}"</p>
+                        <p className="text-[11px] text-hc-text/60 italic line-clamp-2">"{n.text}"</p>
                       </div>
                     ))}
                   </div>

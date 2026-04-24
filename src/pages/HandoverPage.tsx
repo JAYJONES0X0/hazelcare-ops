@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { uid } from '../lib/storage';
 import { ORG_CONFIG } from '../lib/config';
 import type { WeekSummary } from '../lib/types';
+import { ChevronRight } from 'lucide-react';
 
 interface HandoverItem {
   id: string;
@@ -33,11 +34,11 @@ const HOUSES = [
 ];
 
 const CATEGORIES: { id: HandoverItem['category']; label: string; color: string; icon: string }[] = [
-  { id: 'incident', label: 'Incident', color: '#ef4444', icon: 'M12 9v2m0 4h.01' },
-  { id: 'medication', label: 'Medication', color: '#14b8a6', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
-  { id: 'client_update', label: 'Person Update', color: '#3b82f6', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' },
-  { id: 'task', label: 'Outstanding Task', color: '#f59e0b', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { id: 'general', label: 'General', color: '#64748b', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
+  { id: 'incident', label: 'Incident', color: '#d94e4e', icon: 'M12 9v2m0 4h.01' },
+  { id: 'medication', label: 'Medication', color: '#1c4e4e', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z' },
+  { id: 'client_update', label: 'Person Update', color: '#4c7c7c', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' },
+  { id: 'task', label: 'Outstanding Task', color: '#d9974e', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { id: 'general', label: 'General', color: '#8a8b82', icon: 'M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z' },
 ];
 
 const STORAGE_KEY = 'hazelcare-handovers';
@@ -66,24 +67,18 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Automated population from weekData
   useEffect(() => {
     if (!weekData) return;
-
-    // 1. Red Flags
     const rfEntries = (weekData.allFlags?.red ?? []).filter(e => e.house === house);
-    const rfText = rfEntries.map(e => `• [${e.client}] ${e.entry}`).join('\n');
-
-    // 2. Clients of Concern (Amber flags + keywords)
+    const rfText = rfEntries.map(e => `â€¢ [${e.client}] ${e.entry}`).join('\n');
     const concernKeywords = ['concern', 'incident', 'escalation', 'red flag', 'safeguarding', 'behaviour', 'refusal'];
     const hData = weekData.houses[house];
     if (!hData) return;
 
     const concernEntries = hData.entries.filter(e => {
-      if (e.severity === 'red') return false; // already in red flags
+      if (e.severity === 'red') return false;
       if (e.severity === 'amber') return true;
-      const text = e.entry.toLowerCase();
-      return concernKeywords.some(k => text.includes(k));
+      return concernKeywords.some(k => e.entry.toLowerCase().includes(k));
     });
 
     const cocMap = new Map<string, string[]>();
@@ -94,56 +89,35 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
     });
 
     const cocText = Array.from(cocMap.entries())
-      .map(([client, logs]) => `• ${client}: ${logs.join('; ')}`)
+      .map(([client, logs]) => `â€¢ ${client}: ${logs.join('; ')}`)
       .join('\n');
 
-    // Only set if field is currently empty to avoid overwriting user edits
     if (rfText && !redFlags) setRedFlags(rfText);
     if (cocText && !clientsOfConcern) setClientsOfConcern(cocText);
   }, [weekData, house, redFlags, clientsOfConcern]);
 
   function addItem() {
     if (!newText.trim()) return;
-    setItems([...items, {
-      id: uid(),
-      house,
-      category: newCategory,
-      text: newText.trim(),
-      severity: newSeverity,
-      resolved: false,
-    }]);
-    setNewText('');
-    setNewSeverity('none');
+    setItems([...items, { id: uid(), house, category: newCategory, text: newText.trim(), severity: newSeverity, resolved: false }]);
+    setNewText(''); setNewSeverity('none');
   }
 
-  function removeItem(id: string) {
-    setItems(items.filter(i => i.id !== id));
-  }
-
-  function toggleResolved(id: string) {
-    setItems(items.map(i => i.id === id ? { ...i, resolved: !i.resolved } : i));
-  }
+  function removeItem(id: string) { setItems(items.filter(i => i.id !== id)); }
+  function toggleResolved(id: string) { setItems(items.map(i => i.id === id ? { ...i, resolved: !i.resolved } : i)); }
 
   function generateHandoverText(): string {
     const now = new Date();
-    let text = `SHIFT HANDOVER — ${house}\n`;
-    text += `Date: ${now.toLocaleDateString('en-GB')}\n`;
-    text += `Shift: ${shiftFrom} → ${shiftTo}\n`;
-    text += `Outgoing Staff: ${staffOut || '___'} | Incoming Staff: ${staffIn || '___'}\n`;
-    text += `${'─'.repeat(50)}\n\n`;
+    let text = `SHIFT HANDOVER Â· ${house.toUpperCase()}\n`;
+    text += `DATE: ${now.toLocaleDateString('en-GB')}\n`;
+    text += `SHIFT: ${shiftFrom.toUpperCase()} â†’ ${shiftTo.toUpperCase()}\n`;
+    text += `OUTGOING: ${staffOut || '___'} | INCOMING: ${staffIn || '___'}\n`;
+    text += `${'â”€'.repeat(50)}\n\n`;
 
-    if (redFlags.trim()) {
-      text += `CRITICAL RED FLAGS\n${redFlags.trim()}\n\n`;
-    }
-
-    if (clientsOfConcern.trim()) {
-      text += `CLIENTS OF CONCERN\n${clientsOfConcern.trim()}\n\n`;
-    }
+    if (redFlags.trim()) text += `CRITICAL RED FLAGS\n${redFlags.trim()}\n\n`;
+    if (clientsOfConcern.trim()) text += `CLIENTS OF CONCERN\n${clientsOfConcern.trim()}\n\n`;
 
     const grouped: Record<string, HandoverItem[]> = {};
-    for (const item of items) {
-      (grouped[item.category] ??= []).push(item);
-    }
+    for (const item of items) (grouped[item.category] ??= []).push(item);
 
     for (const cat of CATEGORIES) {
       const catItems = grouped[cat.id];
@@ -151,294 +125,181 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
       text += `${cat.label.toUpperCase()}\n`;
       for (const item of catItems) {
         const flag = item.severity === 'red' ? ' [RED FLAG]' : item.severity === 'amber' ? ' [AMBER ALERT]' : '';
-        const status = item.resolved ? ' ✓ Resolved' : '';
-        text += `  • ${item.text}${flag}${status}\n`;
+        const status = item.resolved ? ' Â· Resolved' : '';
+        text += `  â€¢ ${item.text}${flag}${status}\n`;
       }
       text += '\n';
     }
-
-    const unresolved = items.filter(i => !i.resolved);
-    if (unresolved.length > 0) {
-      text += `CARRY FORWARD (${unresolved.length} items)\n`;
-      for (const item of unresolved) {
-        text += `  → ${item.text}\n`;
-      }
-      text += '\n';
-    }
-
-    text += `${'─'.repeat(50)}\n`;
-    text += `${ORG_CONFIG.fullName} | Confidential`;
+    text += `${'â”€'.repeat(50)}\n${ORG_CONFIG.fullName} | CONFIDENTIAL`;
     return text;
   }
 
-  function copyToClipboard() {
-    navigator.clipboard.writeText(generateHandoverText());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
+  function copyToClipboard() { navigator.clipboard.writeText(generateHandoverText()); setCopied(true); setTimeout(() => setCopied(false), 2000); }
 
   function saveHandover() {
     const handover: Handover = {
-      id: uid(),
-      date: new Date().toLocaleDateString('en-GB'),
+      id: uid(), date: new Date().toLocaleDateString('en-GB'),
       shiftFrom, shiftTo, house, staffOut, staffIn,
-      items: [...items],
-      clientsOfConcern,
-      redFlags,
-      createdAt: new Date().toISOString(),
+      items: [...items], clientsOfConcern, redFlags, createdAt: new Date().toISOString(),
     };
     const updated = [handover, ...history].slice(0, 50);
-    setHistory(updated);
-    saveHandovers(updated);
-    setItems([]);
-    setStaffOut('');
-    setStaffIn('');
-    setClientsOfConcern('');
-    setRedFlags('');
+    setHistory(updated); saveHandovers(updated);
+    setItems([]); setStaffOut(''); setStaffIn(''); setClientsOfConcern(''); setRedFlags('');
   }
 
   return (
     <div className="p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700">
-      <div className="mb-6">
-        <h1 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight text-shimmer">Shift Handover Report</h1>
+      <div className="mb-10">
+        <h1 className="text-2xl md:text-3xl font-black text-hc-text mb-2 tracking-[0.1em] uppercase">Shift Handover Report</h1>
         <div className="flex items-center gap-3">
-          <span className="pill pill-blue text-xs uppercase tracking-[0.08em] font-black shadow-lg">Shift Continuity</span>
-          <p className="text-hc-muted text-sm font-semibold uppercase tracking-[0.08em] ml-1">
+          <span className="pill pill-teal text-[10px] font-black px-4 py-1">Shift Continuity</span>
+          <p className="text-hc-muted text-[11px] font-black uppercase tracking-widest">
             Preparing information for the next shift team
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
-        {/* Left — Input */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Meta */}
-          <div className="glass-light border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl backdrop-blur-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              <div className="group">
-                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">House</label>
-                <select value={house} onChange={e => setHouse(e.target.value)} className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark">
-                  {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Shift Transition</label>
-                <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5">
-                  {['Day → Night', 'Night → Day'].map(s => {
-                    const [from, to] = s.split(' → ');
-                    const active = shiftFrom === from;
-                    return (
-                      <button key={s} onClick={() => { setShiftFrom(from); setShiftTo(to); }} className={`flex-1 text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg transition-all duration-500 active:scale-95 ${active ? 'bg-hc-teal/20 text-hc-teal-light border border-hc-teal/20 shadow-lg scale-105 z-10' : 'text-hc-muted hover:text-white hover:bg-white/5'}`}>
-                        {s}
-                      </button>
-                    );
-                  })}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+        <div className="lg:col-span-3 space-y-10">
+          
+          <div className="hc-clay-raised p-8">
+             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-8 block">1. Operational Meta-Data</span>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Site / House</label>
+                   <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner bg-transparent">
+                      {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+                   </select>
                 </div>
-              </div>
-              <div className="group">
-                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Outgoing Staff</label>
-                <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
-              </div>
-              <div className="group">
-                <label className="section-header text-xs mb-2 ml-1 block opacity-90 tracking-[0.08em]">Incoming Staff</label>
-                <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Name" className="w-full bg-hc-dark/80 border border-white/10 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-wider text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark" />
-              </div>
-            </div>
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Transition</label>
+                   <div className="flex gap-2 p-1 hc-clay-inset rounded-xl">
+                      {['Day', 'Night'].map(s => (
+                        <button key={s} onClick={() => { setShiftFrom(s); setShiftTo(s === 'Day' ? 'Night' : 'Day'); }} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${shiftFrom === s ? 'bg-hc-teal text-hc-bone shadow-lg' : 'text-hc-muted hover:text-hc-text'}`}>{s}</button>
+                      ))}
+                   </div>
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Outgoing</label>
+                   <input value={staffOut} onChange={e => setStaffOut(e.target.value)} placeholder="Staff Name" className="w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner placeholder:text-hc-muted/30" />
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Incoming</label>
+                   <input value={staffIn} onChange={e => setStaffIn(e.target.value)} placeholder="Staff Name" className="w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner placeholder:text-hc-muted/30" />
+                </div>
+             </div>
           </div>
 
-          {/* Automated Intelligence Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-light border border-flag-red/30 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-flag-red/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <label className="section-header text-[10px] mb-4 block text-flag-red font-black tracking-[0.2em] uppercase">
-                <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-flag-red animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="hc-clay-raised p-8 border border-hc-red/20">
+               <label className="flex items-center gap-2 text-[10px] font-black text-hc-red uppercase tracking-[0.2em] mb-6">
+                  <div className="w-1.5 h-1.5 rounded-full bg-hc-red animate-pulse" />
                   Critical Red Flags
-                </span>
-              </label>
-              <textarea
-                value={redFlags}
-                onChange={e => setRedFlags(e.target.value)}
-                placeholder="Auto-populated from red flag alerts..."
-                className="w-full bg-hc-dark/40 border border-white/5 rounded-2xl p-4 text-[13px] text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-flag-red/50 shadow-inner transition-all resize-none font-medium min-h-[120px] scrollbar-thin"
-              />
-              <p className="mt-2 text-[9px] text-hc-muted uppercase tracking-wider font-bold opacity-60 italic">Scan of current week data for severe alerts</p>
+               </label>
+               <textarea value={redFlags} onChange={e => setRedFlags(e.target.value)} placeholder="Scan complete Â· No red flags detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
             </div>
 
-            <div className="glass-light border border-flag-amber/30 rounded-3xl p-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-flag-amber/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-              <label className="section-header text-[10px] mb-4 block text-flag-amber font-black tracking-[0.2em] uppercase">
-                <span className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-flag-amber" />
+            <div className="hc-clay-raised p-8 border border-hc-amber/20">
+               <label className="flex items-center gap-2 text-[10px] font-black text-hc-amber uppercase tracking-[0.2em] mb-6">
+                  <div className="w-1.5 h-1.5 rounded-full bg-hc-amber" />
                   Clients of Concern
-                </span>
-              </label>
-              <textarea
-                value={clientsOfConcern}
-                onChange={e => setClientsOfConcern(e.target.value)}
-                placeholder="Auto-populated from amber alerts and keywords..."
-                className="w-full bg-hc-dark/40 border border-white/5 rounded-2xl p-4 text-[13px] text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-flag-amber/50 shadow-inner transition-all resize-none font-medium min-h-[120px] scrollbar-thin"
-              />
-              <p className="mt-2 text-[9px] text-hc-muted uppercase tracking-wider font-bold opacity-60 italic">Keywords: incident, escalation, safeguarding, behavior</p>
+               </label>
+               <textarea value={clientsOfConcern} onChange={e => setClientsOfConcern(e.target.value)} placeholder="Scan complete Â· No concerns detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
             </div>
           </div>
 
-          {/* Add item */}
-          <div className="glass-light border border-hc-teal/20 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-hc-teal/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex flex-wrap gap-2.5 mb-8 relative z-10">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setNewCategory(cat.id)}
-                  className={`flex items-center gap-3 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500 active:scale-90 ${
-                    newCategory === cat.id
-                      ? 'shadow-xl bg-hc-teal/10 border-hc-teal/30 scale-110 z-10'
-                      : 'border-white/5 text-hc-muted hover:text-white hover:bg-white/5'
-                  }`}
-                  style={newCategory === cat.id ? { color: cat.color, borderColor: `${cat.color}40`, background: `${cat.color}15` } : {}}
-                >
-                  <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} /></svg>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
+          <div className="hc-clay-raised p-8">
+             <div className="flex flex-wrap gap-2 mb-8 hc-clay-inset p-2 rounded-2xl">
+                {CATEGORIES.map(cat => (
+                  <button key={cat.id} onClick={() => setNewCategory(cat.id)} className={`flex items-center gap-3 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${newCategory === cat.id ? 'bg-hc-teal text-hc-bone shadow-xl' : 'text-hc-muted hover:text-hc-text'}`}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} /></svg>
+                    {cat.label}
+                  </button>
+                ))}
+             </div>
 
-            <div className="flex flex-col md:flex-row gap-6 relative z-10">
-              <textarea
-                value={newText}
-                onChange={e => setNewText(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addItem(); } }}
-                placeholder="Enter handover details... (Enter to add)"
-                className="flex-1 bg-hc-dark/60 border border-white/10 rounded-3xl p-6 text-sm text-white placeholder:text-hc-muted/20 focus:outline-none focus:border-hc-teal/50 shadow-inner transition-all focus:bg-hc-dark resize-none scrollbar-thin font-medium italic"
-                rows={3}
-              />
-              <div className="flex flex-row md:flex-col justify-between gap-4 shrink-0">
-                <div className="flex md:flex-col gap-3 p-2 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
-                  {(['none', 'amber', 'red'] as const).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setNewSeverity(s)}
-                      className={`w-12 h-12 rounded-xl border-2 transition-all duration-500 shadow-xl flex items-center justify-center active:scale-75 ${
-                        newSeverity === s ? 'scale-110' : 'opacity-20 hover:opacity-100 grayscale hover:grayscale-0'
-                      }`}
-                      style={{
-                        borderColor: s === 'red' ? '#ef4444' : s === 'amber' ? '#f59e0b' : 'rgba(255,255,255,0.1)',
-                        background: s === 'red' ? 'rgba(239,68,68,0.2)' : s === 'amber' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
-                      }}
-                      title={s === 'none' ? 'No priority' : s.toUpperCase()}
-                    >
-                      <div className={`w-3.5 h-3.5 rounded-full ${s === 'red' ? 'bg-flag-red animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]' : s === 'amber' ? 'bg-flag-amber shadow-[0_0_15px_rgba(245,158,11,0.8)]' : 'bg-white/20'}`} />
+             <div className="flex flex-col md:flex-row gap-6">
+                <textarea value={newText} onChange={e => setNewText(e.target.value)} onKeyDown={e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addItem();} }} placeholder="Enter clinical handover detail... (Enter to add)" className="flex-1 hc-clay-inset p-6 text-[13px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none min-h-[120px] scrollbar-thin italic" />
+                <div className="flex flex-row md:flex-col gap-4">
+                   <div className="flex gap-2 p-2 hc-clay-inset rounded-xl">
+                      {(['none', 'amber', 'red'] as const).map(s => (
+                        <button key={s} onClick={() => setNewSeverity(s)} className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${newSeverity === s ? 'hc-clay-raised scale-110' : 'opacity-20 hover:opacity-100 grayscale'}`}>
+                           <div className={`w-3 h-3 rounded-full ${s==='red'?'bg-hc-red animate-pulse':s==='amber'?'bg-hc-amber':'bg-hc-muted'}`} />
+                        </button>
+                      ))}
+                   </div>
+                   <button onClick={addItem} disabled={!newText.trim()} className="flex-1 md:flex-none px-8 py-4 btn-tactical text-[10px] font-black uppercase tracking-widest shadow-xl">ADD ITEM</button>
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-4">
+             {items.map((item, i) => {
+               const cat = CATEGORIES.find(c => c.id === item.category);
+               return (
+                 <div key={item.id} className={`hc-clay-raised p-6 flex items-start gap-6 group animate-in slide-in-from-left-4 ${item.resolved ? 'opacity-40 grayscale' : ''}`} style={{animationDelay:`${i*50}ms`}}>
+                    <button onClick={() => toggleResolved(item.id)} className={`mt-1 w-6 h-6 rounded-lg hc-clay-inset flex items-center justify-center transition-all ${item.resolved ? 'bg-hc-teal' : 'hover:border-hc-teal/40'}`}>
+                       {item.resolved && <svg className="w-4 h-4 text-hc-bone" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                     </button>
-                  ))}
-                </div>
-                <button onClick={addItem} disabled={!newText.trim()} className="flex-1 md:flex-none px-10 py-5 btn-gradient text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-20 transition-all">
-                  ADD ITEM
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Items list */}
-          <div className="space-y-3">
-            {items.length > 0 && <div className="section-header text-[9px] mb-4 ml-2 opacity-60 tracking-[0.3em]">ACTIVE HANDOVER LOG — {items.length} ITEMS</div>}
-            {items.map((item, idx) => {
-              const cat = CATEGORIES.find(c => c.id === item.category);
-              const isRed = item.severity === 'red';
-              const isAmber = item.severity === 'amber';
-              return (
-                <div
-                  key={item.id}
-                  className={`glass-light border transition-all duration-500 rounded-2xl p-5 flex items-start gap-5 card-glow group interactive-row animate-in slide-in-from-left-4
-                    ${isRed ? 'border-flag-red/30 bg-flag-red/[0.02] glow-red' : isAmber ? 'border-flag-amber/25 bg-flag-amber/[0.01] glow-amber' : 'border-white/5'} ${item.resolved ? 'opacity-40 grayscale pointer-events-none' : ''}`}
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                >
-                  <button onClick={() => toggleResolved(item.id)} className={`mt-1.5 w-6 h-6 rounded-lg border-2 shrink-0 flex items-center justify-center transition-all duration-500 shadow-xl group-hover:scale-110 ${item.resolved ? 'bg-flag-green border-flag-green' : 'border-white/10 hover:border-hc-teal-light'}`}>
-                    {item.resolved && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap transition-transform duration-500 group-hover:translate-x-1">
-                      <span className="text-[10px] font-black uppercase tracking-widest transition-colors group-hover:text-hc-teal-light" style={{ color: cat?.color }}>{cat?.label}</span>
-                      {item.severity !== 'none' && (
-                        <span className={`pill text-[8px] font-black uppercase tracking-tighter px-2
-                          ${isRed ? 'pill-red animate-pulse-soft' : 'pill-amber'}`}>{item.severity} ALERT</span>
-                      )}
+                    <div className="flex-1 min-w-0">
+                       <div className="flex items-center gap-3 mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest" style={{color:cat?.color}}>{cat?.label}</span>
+                          {item.severity !== 'none' && <span className={`pill text-[8px] font-black px-2 ${item.severity==='red'?'pill-red':'pill-amber'}`}>{item.severity} ALERT</span>}
+                       </div>
+                       <div className={`text-[13px] text-hc-text font-black leading-relaxed ${item.resolved ? 'line-through' : ''}`}>{item.text}</div>
                     </div>
-                    <div className={`text-[14px] text-hc-text font-medium leading-relaxed transition-all duration-500 group-hover:translate-x-1 ${item.resolved ? 'line-through opacity-60' : ''}`}>{item.text}</div>
-                  </div>
-                  <button onClick={() => removeItem(item.id)} className="w-8 h-8 rounded-xl glass border border-white/5 flex items-center justify-center text-hc-muted hover:text-flag-red hover:border-flag-red/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              );
-            })}
-            
-            {items.length === 0 && (
-              <div className="text-center py-24 glass border border-white/5 rounded-[2.5rem] animate-in zoom-in duration-700">
-                <div className="text-5xl mb-6 opacity-20">📝</div>
-                <div className="text-lg font-extrabold text-white mb-2 uppercase tracking-tight">Handover List Empty</div>
-                <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">Add items above to build your shift handover report</div>
-              </div>
-            )}
+                    <button onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 text-hc-muted hover:text-hc-red transition-all">âœ•</button>
+                 </div>
+               );
+             })}
           </div>
         </div>
 
-        {/* Right — Preview */}
         <div className="lg:col-span-2">
-          <div className="sticky top-10 space-y-6">
-            <div className="glass border-2 border-hc-teal/30 rounded-[2.5rem] overflow-hidden shadow-2xl glow-teal animate-in slide-in-from-right-4 duration-700">
-              <div className="p-8 border-b border-white/10 bg-hc-teal/[0.02] flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-white uppercase tracking-tighter text-shimmer">Report Preview</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="w-1 h-1 rounded-full bg-hc-teal animate-pulse" />
-                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums">{items.length} Items · {items.filter(i => !i.resolved).length} Pending</span>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={copyToClipboard} className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 shadow-2xl hover:scale-105 active:scale-90 ${copied ? 'bg-flag-green text-white shadow-flag-green/30' : 'btn-gradient text-white'}`}>
-                    {copied ? 'COPIED' : 'COPY'}
-                  </button>
-                  <button onClick={saveHandover} disabled={items.length === 0} className="px-6 py-3.5 glass-light border border-white/10 text-[10px] font-black text-hc-muted hover:text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-500 hover:bg-white/5 active:scale-90 disabled:opacity-20 disabled:grayscale">
-                    LOG
-                  </button>
-                </div>
+           <div className="sticky top-10 space-y-10">
+              <div className="hc-clay-raised overflow-hidden shadow-2xl border border-hc-teal/10">
+                 <div className="p-8 bg-hc-teal/[0.03] border-b border-hc-border/10 flex items-center justify-between">
+                    <div>
+                       <h3 className="text-xl font-black text-hc-text uppercase tracking-tight">Handover Preview</h3>
+                       <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums mt-1 block">{items.length} Clinical Nodes Active</span>
+                    </div>
+                    <div className="flex gap-3">
+                       <button onClick={copyToClipboard} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl ${copied ? 'bg-hc-teal text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>{copied ? 'COPIED' : 'COPY'}</button>
+                       <button onClick={saveHandover} disabled={items.length === 0} className="px-6 py-3 hc-clay-inset text-[10px] font-black text-hc-muted hover:text-hc-text uppercase tracking-widest transition-all">LOG</button>
+                    </div>
+                 </div>
+                 <div className="p-8">
+                    <pre className="text-[12px] text-hc-text font-black leading-loose whitespace-pre-wrap italic max-h-[500px] overflow-y-auto scrollbar-thin">
+                       {items.length > 0 ? generateHandoverText() : '// Report stream awaiting intelligence...'}
+                    </pre>
+                 </div>
               </div>
-              <div className="p-8">
-                <pre className="text-[12px] text-hc-text/90 font-mono leading-loose whitespace-pre-wrap max-h-[600px] overflow-y-auto scrollbar-thin italic">
-                  {items.length > 0 ? generateHandoverText() : '// Your shift handover report will appear here...'}
-                </pre>
-              </div>
-            </div>
 
-            {/* History */}
-            {history.length > 0 && (
-              <div className="px-2 animate-in slide-in-from-bottom-4 duration-700 delay-300">
-                <button onClick={() => setShowHistory(!showHistory)} className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-teal-light w-full transition-all text-left">
-                  <span className={`w-6 h-6 rounded-lg glass border border-white/10 flex items-center justify-center transition-all duration-500 ${showHistory ? 'rotate-90 bg-hc-teal/10 border-hc-teal/30 text-hc-teal-light' : 'group-hover:bg-white/5'}`}>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  </span>
-                  HANDOVER HISTORY ({history.length})
-                </button>
-                {showHistory && (
-                  <div className="mt-6 space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2 animate-in slide-in-from-top-4 duration-700">
-                    {history.slice(0, 15).map((h) => (
-                      <div key={h.id} className="glass-light border border-white/5 rounded-2xl p-5 transition-all duration-500 hover:bg-white/[0.03] hover:border-hc-teal/20 group/archive cursor-default active:scale-[0.98]">
-                        <div className="flex items-center justify-between mb-2.5 transition-transform duration-500 group-hover/archive:translate-x-1">
-                          <span className="text-[12px] font-black text-white group-hover/archive:text-hc-teal-light transition-colors uppercase tracking-tight">{h.house}</span>
-                          <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] opacity-40 tabular-nums">{h.date}</span>
-                        </div>
-                        <div className="flex items-center gap-4 transition-transform duration-500 group-hover/archive:translate-x-1">
-                          <span className="pill pill-blue text-[8px] font-black py-0 px-2 shadow-sm">{h.shiftFrom} → {h.shiftTo}</span>
-                          <span className="text-[9px] font-black text-hc-muted/60 uppercase tracking-[0.3em] tabular-nums">{h.items.length} ITEMS</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+              {history.length > 0 && (
+                <div className="space-y-6">
+                   <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-3 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] hover:text-hc-teal transition-all">
+                      <ChevronRight className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-90' : ''}`} />
+                      Handover History ({history.length})
+                   </button>
+                   {showHistory && (
+                     <div className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin pr-2">
+                        {history.slice(0, 15).map(h => (
+                          <div key={h.id} className="hc-clay-raised p-5 space-y-3 hover:bg-hc-teal/5 transition-all cursor-default">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[11px] font-black text-hc-text uppercase">{h.house}</span>
+                                <span className="text-[9px] font-black text-hc-muted tabular-nums">{h.date}</span>
+                             </div>
+                             <div className="flex items-center gap-4">
+                                <span className="pill pill-teal text-[8px] font-black">{h.shiftFrom} âž” {h.shiftTo}</span>
+                                <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{h.items.length} NODES</span>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                   )}
+                </div>
+              )}
+           </div>
         </div>
       </div>
     </div>
