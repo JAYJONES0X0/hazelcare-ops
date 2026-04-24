@@ -149,16 +149,32 @@ function parseCSVRows(text: string): string[][] {
 }
 
 /**
- * Find a column index by checking if any alias is a substring of the
- * normalised header (spaces allowed). This is the key fix — the previous
- * version stripped spaces, so "Carers involved" became "carersinvolved"
- * and never matched "carer".
+ * Precision column finder.
+ * Priority: exact match → starts-with → whole-word substring.
+ * This prevents "entry" matching "Entry occurred" (date col) before "Diary entry".
  */
 function findCol(headers: string[], ...aliases: string[]): number {
-  return headers.findIndex(h => {
-    const norm = h.toLowerCase().trim();
-    return aliases.some(a => norm.includes(a.toLowerCase()));
-  });
+  const normed = headers.map(h => h.toLowerCase().trim());
+
+  // 1. Exact match
+  for (const a of aliases) {
+    const idx = normed.findIndex(n => n === a.toLowerCase());
+    if (idx >= 0) return idx;
+  }
+  // 2. Starts-with
+  for (const a of aliases) {
+    const al = a.toLowerCase();
+    const idx = normed.findIndex(n => n.startsWith(al));
+    if (idx >= 0) return idx;
+  }
+  // 3. Whole-word substring (alias must be a standalone word, not buried in another word)
+  for (const a of aliases) {
+    const al = a.toLowerCase();
+    const re = new RegExp(`\\b${al.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    const idx = normed.findIndex(n => re.test(n));
+    if (idx >= 0) return idx;
+  }
+  return -1;
 }
 
 function safeCell(row: string[], idx: number): string {
@@ -231,7 +247,9 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
 
     const date   = dateRaw || new Date().toLocaleDateString('en-GB');
     const carer  = carerRaw || 'Personnel Unassigned';
-    const client = clientRaw || 'Service User Unassigned';
+    // Guard: CarePlanner sometimes fills the client column with a house name
+    const isHouseName = !!normalizeHouse(clientRaw) && Object.keys(HOUSE_MAP).some(k => clientRaw.toLowerCase().trim() === k || clientRaw.toLowerCase().trim() === normalizeHouse(clientRaw).toLowerCase());
+    const client = (!clientRaw || isHouseName) ? 'Service User Unassigned' : clientRaw;
     const type   = typeRaw || 'Standard Entry';
     // If no explicit house column, try to extract from entry text or client name
     const house  = normalizeHouse(houseRaw) || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
