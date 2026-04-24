@@ -5,6 +5,7 @@ import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { loadWeekData } from '../lib/storage';
 import { parseUniversalText } from '../lib/universal-import';
+import { getAllEntries } from '../lib/entry-store';
 import { Sparkles, ChevronRight, Download } from 'lucide-react';
 import type { FullClient, CarePlanDomain } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
@@ -256,39 +257,68 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
     setTimeout(() => iframeRef.current?.contentWindow?.print(), 400);
   };
 
+  const [synthStatus, setSynthStatus] = useState('');
+
   const handleAutoFill = () => {
+    // Pull from persistent store (all historical data)
+    const persistedEntries = getAllEntries().filter(e =>
+      e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
+    );
+    // Also pull current week data as fallback
     const weekData = loadWeekData();
-    if (!weekData || !weekData.clientDiary[client.name]) {
-      alert(`No intelligence data found for ${client.name}. Ensure you have imported a diary CSV first.`);
+    const weekEntries = (weekData?.clientDiary?.[client.name] || []).map(e => ({ entry: e.entry }));
+    const allEntries = persistedEntries.length ? persistedEntries : weekEntries;
+
+    if (!allEntries.length) {
+      setSynthStatus(`No diary entries found for ${client.name}. Import a diary CSV first.`);
       return;
     }
 
-    if (!confirm(`Found ${weekData.clientDiary[client.name].length} entries for ${client.name}. Automatically map these to the 21 care domains?`)) return;
+    setSynthStatus(`Mapping ${allEntries.length} entries across 21 care domains...`);
+
+    const DOMAIN_MAP: { idx: number; keywords: string[] }[] = [
+      { idx: 0,  keywords: ['environment', 'safety', 'hazard', 'risk at home'] },
+      { idx: 1,  keywords: ['breathing', 'respiratory', 'nebuliser', 'inhaler', 'oxygen'] },
+      { idx: 2,  keywords: ['communication', 'speech', 'sign', 'makaton', 'sensory', 'hearing', 'visual'] },
+      { idx: 3,  keywords: ['social', 'friend', 'family', 'visit', 'community', 'relationship'] },
+      { idx: 4,  keywords: ['routine', 'schedule', 'life skill', 'daily task', 'independence'] },
+      { idx: 5,  keywords: ['food', 'eat', 'drink', 'fluid', 'meal', 'nutrition', 'diet', 'appetite'] },
+      { idx: 6,  keywords: ['toilet', 'continence', 'shower', 'wash', 'hygiene', 'personal care', 'catheter', 'pad'] },
+      { idx: 7,  keywords: ['home', 'bedroom', 'living', 'environment', 'adapt'] },
+      { idx: 8,  keywords: ['choice', 'right', 'decision', 'autonomy', 'inclus', 'advocate'] },
+      { idx: 9,  keywords: ['intimate', 'personal express', 'relationship', 'partner'] },
+      { idx: 10, keywords: ['finance', 'money', 'budget', 'shopping', 'bank'] },
+      { idx: 11, keywords: ['health', 'gp', 'nurse', 'appointm', 'medical', 'check-up'] },
+      { idx: 12, keywords: ['infection', 'virus', 'ppe', 'hand wash', 'covid', 'flu'] },
+      { idx: 13, keywords: ['medication', 'tablet', 'pill', 'dose', 'prescribed', 'pharmacy', 'mar'] },
+      { idx: 14, keywords: ['mood', 'mental', 'anxious', 'depress', 'emotion', 'wellbeing', 'stress'] },
+      { idx: 15, keywords: ['walk', 'mobility', 'hoist', 'wheelchair', 'exercise', 'physio', 'transfer'] },
+      { idx: 16, keywords: ['pain', 'discomfort', 'ache', 'sore', 'painkiller', 'analgesic'] },
+      { idx: 17, keywords: ['shower', 'bath', 'wash', 'shave', 'hair', 'groom', 'dress', 'personal care'] },
+      { idx: 18, keywords: ['skin', 'pressure', 'wound', 'blister', 'reddening', 'turning', 'grade'] },
+      { idx: 19, keywords: ['sleep', 'night', 'woke', 'insomnia', 'rest', 'bed'] },
+      { idx: 20, keywords: ['faith', 'religion', 'culture', 'belief', 'spiritual', 'church', 'mosque'] },
+    ];
 
     setClient(prev => {
       const cp = prev.carePlan || emptyCarePlan(today, reviewDate);
-      const domains = [...cp.domains];
-      const entries = weekData.clientDiary[client.name];
+      const domains = cp.domains.map(d => ({ ...d }));
 
-      // Intelligent Mapping Logic
-      entries.forEach(e => {
-        const text = e.entry.toLowerCase();
-        let domainIdx = -1;
-
-        if (text.includes('medication') || text.includes('tablet') || text.includes('prescribed')) domainIdx = 13;
-        else if (text.includes('finance') || text.includes('money') || text.includes('shopping')) domainIdx = 10;
-        else if (text.includes('mood') || text.includes('anxious') || text.includes('mental')) domainIdx = 14;
-        else if (text.includes('walking') || text.includes('mobility') || text.includes('hoist')) domainIdx = 15;
-        else if (text.includes('food') || text.includes('eat') || text.includes('drink') || text.includes('fluid')) domainIdx = 5;
-        else if (text.includes('shower') || text.includes('wash') || text.includes('shave')) domainIdx = 17;
-        else if (text.includes('sleep') || text.includes('night') || text.includes('woke')) domainIdx = 19;
-        
-        if (domainIdx !== -1) {
-          domains[domainIdx].enabled = true;
-          domains[domainIdx].identifiedNeed = (domains[domainIdx].identifiedNeed ? domains[domainIdx].identifiedNeed + '\n' : '') + e.entry;
+      allEntries.forEach(e => {
+        const text = (e.entry || '').toLowerCase();
+        for (const { idx, keywords } of DOMAIN_MAP) {
+          if (keywords.some(kw => text.includes(kw))) {
+            domains[idx].enabled = true;
+            if (domains[idx].identifiedNeed.length < 800) {
+              domains[idx].identifiedNeed = (domains[idx].identifiedNeed ? domains[idx].identifiedNeed + '\n' : '') + e.entry.slice(0, 200);
+            }
+            break;
+          }
         }
       });
 
+      const enabledCount = domains.filter(d => d.enabled).length;
+      setSynthStatus(`Mapped ${allEntries.length} entries → ${enabledCount} domains enabled. Review and refine each.`);
       const next = { ...prev, carePlan: { ...cp, domains } };
       persist(next);
       return next;
@@ -428,6 +458,11 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-12 scrollbar-thin bg-hc-bone">
           <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-6 duration-700 pb-32">
+            {!!synthStatus && (
+              <div className="mb-4 text-[11px] font-black uppercase tracking-widest rounded-2xl px-8 py-5 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal flex items-center gap-4 animate-in slide-in-from-top-4">
+                <Sparkles className="w-4 h-4 shrink-0" />{synthStatus}
+              </div>
+            )}
             {!!importStatus && (
               <div className={`mb-10 text-[11px] font-black uppercase tracking-widest rounded-2xl px-8 py-5 border flex items-center gap-4 animate-in slide-in-from-top-4 ${importStatus.includes('failed') ? 'bg-flag-red/10 border-flag-red/30 text-flag-red' : 'bg-hc-teal/10 border-hc-teal/30 text-hc-teal'}`}>
                 <div className={`w-2 h-2 rounded-full ${importStatus.includes('failed') ? 'bg-flag-red' : 'bg-hc-teal animate-pulse'}`} />

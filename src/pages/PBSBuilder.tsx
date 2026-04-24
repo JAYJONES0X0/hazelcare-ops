@@ -5,6 +5,7 @@ import { buildPBSHtml } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
+import { getAllEntries } from '../lib/entry-store';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
@@ -191,6 +192,83 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   const today = new Date().toLocaleDateString('en-GB');
   const pbs = client.pbs || emptyPBS(today);
 
+  const [synthStatus, setSynthStatus] = useState('');
+
+  const handleSynthesisePBS = () => {
+    const all = getAllEntries();
+    const clientEntries = all.filter(e =>
+      e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
+    );
+    if (!clientEntries.length) {
+      setSynthStatus('No diary entries found for this client. Import a diary CSV first.');
+      return;
+    }
+
+    setClient(prev => {
+      const today = new Date().toLocaleDateString('en-GB');
+      const nextPbs = { ...(prev.pbs || emptyPBS(today)) };
+
+      // About text — only if blank
+      if (!nextPbs.aboutText) {
+        const positiveEntries = clientEntries.filter(e =>
+          /enjoyed|happy|smile|laugh|participat|engaged|independ|achieved|positive/.test((e.entry || '').toLowerCase())
+        );
+        if (positiveEntries.length) {
+          nextPbs.aboutText = positiveEntries.slice(0, 2).map(e => e.entry).join(' ');
+        }
+      }
+
+      // Finds difficult — from incident/challenging entries
+      const challengingEntries = clientEntries.filter(e =>
+        /refus|agitat|distress|upset|shout|aggress|challeng|difficult|anxious|meltdown/.test((e.entry || '').toLowerCase())
+      );
+      if (challengingEntries.length) {
+        const existing = new Set(nextPbs.findsDifficult.filter(Boolean).map(s => s.toLowerCase()));
+        const themes = ['transitions and unexpected changes', 'sensory overload', 'unmet communication needs',
+          'crowded environments', 'changes to routine', 'waiting and uncertainty'];
+        challengingEntries.forEach(e => {
+          const text = e.entry.toLowerCase();
+          if (text.includes('wait') && !existing.has('waiting and uncertainty')) { existing.add('waiting and uncertainty'); themes.push('waiting and uncertainty'); }
+          if ((text.includes('noise') || text.includes('crowd')) && !existing.has('crowded environments')) existing.add('crowded environments');
+          if ((text.includes('routine') || text.includes('change')) && !existing.has('changes to routine')) existing.add('changes to routine');
+        });
+        const newDifficult = Array.from(existing).filter(t => !nextPbs.findsDifficult.map(s => s.toLowerCase()).includes(t));
+        nextPbs.findsDifficult = [...nextPbs.findsDifficult.filter(Boolean), ...newDifficult].slice(0, 7);
+      }
+
+      // Warning signs — from entries where escalation occurred
+      const incidentEntries = clientEntries.filter(e =>
+        (e.type === 'incident' || /incident|escalat|emergency|urgent/.test((e.entry || '').toLowerCase()))
+      );
+      if (incidentEntries.length && nextPbs.warningSignRows.every(r => !r.sign)) {
+        const newWarnings = [
+          { sign: 'Increased pacing or restlessness', staffAction: 'Offer a quiet space and calm 1:1 interaction.' },
+          { sign: 'Refusing to engage with normal routines', staffAction: 'Do not press. Offer alternatives and allow space.' },
+          { sign: 'Raised vocal tone or repetitive speech', staffAction: 'Lower own voice, reduce environmental stimulation.' },
+        ];
+        nextPbs.warningSignRows = newWarnings;
+      }
+
+      // What works — from positive entries
+      const positiveEntries = clientEntries.filter(e =>
+        /calm|settled|enjoy|happy|participat|help|support|positive|liked|prefer/.test((e.entry || '').toLowerCase())
+      );
+      if (positiveEntries.length && nextPbs.whatWorks.every(s => !s)) {
+        nextPbs.whatWorks = [
+          'Consistent 1:1 support from familiar staff',
+          'Person-centred communication at their pace',
+          'Clear explanations of what is happening and why',
+          'Choices offered before transitions',
+        ];
+      }
+
+      const next = { ...prev, pbs: nextPbs };
+      saveClient(next);
+      setSynthStatus(`Synthesised from ${clientEntries.length} entries (${challengingEntries.length} challenging, ${incidentEntries.length} incidents). Review each section.`);
+      return next;
+    });
+  };
+
   const importDataset = async (file: File) => {
     setImporting(true);
     setImportStatus('Reading dataset...');
@@ -279,7 +357,10 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         </div>
 
         <div className="flex items-center gap-3">
-          <button type="button" className="px-5 py-2.5 rounded-xl glass-light border border-hc-purple/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-purple-light hover:text-white hover:bg-hc-purple/10 flex items-center gap-2 transition-all shadow-md">
+          <button
+            type="button"
+            onClick={handleSynthesisePBS}
+            className="px-5 py-2.5 rounded-xl glass-light border border-hc-teal/30 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal-light hover:text-white hover:bg-hc-teal/10 flex items-center gap-2 transition-all shadow-md">
             <Sparkles className="w-4 h-4" /> Synthesise from Intelligence
           </button>
           <button
@@ -346,6 +427,11 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         {/* Section content */}
         <div className="flex-1 overflow-y-auto p-10 scrollbar-thin">
           <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+            {!!synthStatus && (
+              <div className="mb-4 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light flex items-center gap-2 animate-in slide-in-from-top-2">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />{synthStatus}
+              </div>
+            )}
             {!!importStatus && (
               <div className="mb-6 text-xs rounded-xl px-4 py-3 border border-hc-teal/30 bg-hc-teal/10 text-hc-teal-light">
                 {importStatus}

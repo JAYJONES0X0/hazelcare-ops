@@ -5,6 +5,7 @@ import { buildRiskHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
+import { getAllEntries } from '../lib/entry-store';
 import { Sparkles, ChevronRight, Download, Shield } from 'lucide-react';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
@@ -309,6 +310,80 @@ export function RiskBuilder({ clientId, onBack }: Props) {
   const today = new Date().toLocaleDateString('en-GB');
   const risk = client.risk || emptyRisk(today);
 
+  const [synthesising, setSynthesising] = useState(false);
+  const [synthStatus, setSynthStatus] = useState('');
+
+  const handleSynthesiseRisk = () => {
+    const all = getAllEntries();
+    const clientEntries = all.filter(e =>
+      e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
+    );
+    if (!clientEntries.length) {
+      setSynthStatus('No diary entries found for this client. Import a diary CSV first.');
+      return;
+    }
+    setSynthesising(true);
+    setSynthStatus(`Analysing ${clientEntries.length} entries...`);
+
+    const RISK_PATTERNS: { title: string; keywords: string[]; likelihood: number; impact: number }[] = [
+      { title: 'Falls & Physical Safety', keywords: ['fell', 'fall', 'slip', 'trip', 'floor', 'collapse'], likelihood: 3, impact: 3 },
+      { title: 'Challenging Behaviour', keywords: ['agitat', 'aggress', 'distress', 'shout', 'refus', 'upset', 'angry', 'lash', 'kick', 'punch', 'bite'], likelihood: 3, impact: 3 },
+      { title: 'Medication Management', keywords: ['medication', 'tablet', 'pill', 'dose', 'refused med', 'missed med', 'prn'], likelihood: 2, impact: 4 },
+      { title: 'Choking & Dysphagia', keywords: ['chok', 'swallow', 'cough', 'dysphagia', 'modified diet', 'purée'], likelihood: 2, impact: 5 },
+      { title: 'Seizure Risk', keywords: ['seizure', 'epilep', 'fit', 'convuls', 'postictal'], likelihood: 2, impact: 5 },
+      { title: 'Skin Integrity', keywords: ['skin', 'pressure', 'wound', 'sore', 'reddening', 'blister', 'grade'], likelihood: 2, impact: 3 },
+      { title: 'Mental Health & Emotional Wellbeing', keywords: ['mood', 'anxious', 'depress', 'mental', 'low mood', 'paranoi', 'hallucinat'], likelihood: 3, impact: 3 },
+      { title: 'Nutrition & Hydration', keywords: ['refus food', 'refus drink', 'not eaten', 'not drinking', 'weight loss', 'dehydrat'], likelihood: 2, impact: 4 },
+    ];
+
+    setClient(prev => {
+      const today = new Date().toLocaleDateString('en-GB');
+      const existingRisk = prev.risk || emptyRisk(today);
+      const existingTitles = new Set(existingRisk.risks.map(r => r.title.toLowerCase()));
+      const newItems: RiskItem[] = [];
+
+      RISK_PATTERNS.forEach(pat => {
+        if (existingTitles.has(pat.title.toLowerCase())) return;
+        const matched = clientEntries.filter(e =>
+          pat.keywords.some(kw => (e.entry || '').toLowerCase().includes(kw))
+        );
+        if (!matched.length) return;
+
+        const sampleEntries = matched.slice(0, 3).map(e => e.entry).join(' | ');
+        const item: RiskItem = {
+          ...emptyRisk_item(),
+          title: pat.title,
+          description: `Identified from ${matched.length} diary entries. Sample: ${sampleEntries.slice(0, 200)}`,
+          likelihood: pat.likelihood,
+          impact: pat.impact,
+          behaviours: matched.slice(0, 3).map(e => e.entry.slice(0, 120)),
+          triggers: ['See diary entries for context'],
+          earlyWarnings: ['Changes in presentation noted in diary'],
+          controls: ['Follow existing support plan protocols'],
+        };
+        newItems.push(item);
+      });
+
+      if (!newItems.length) {
+        setSynthStatus('No new risk patterns detected beyond what\'s already documented.');
+        setSynthesising(false);
+        return prev;
+      }
+
+      const next = {
+        ...prev,
+        risk: {
+          ...existingRisk,
+          risks: [...existingRisk.risks.filter(r => r.title), ...newItems],
+        },
+      };
+      saveClient(next);
+      setSynthStatus(`Added ${newItems.length} risk area(s) from ${clientEntries.length} diary entries. Review and refine each.`);
+      setSynthesising(false);
+      return next;
+    });
+  };
+
   const importRiskDataset = async (file: File) => {
     setImporting(true);
     setImportStatus('Reading dataset...');
@@ -381,8 +456,12 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         </div>
 
         <div className="flex items-center gap-4">
-          <button type="button" className="px-6 py-3.5 rounded-2xl hc-clay-raised border border-hc-teal/20 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal hover:brightness-90 flex items-center gap-3 transition-all shadow-xl">
-            <Sparkles className="w-4 h-4" /> Synthesise Intelligence
+          <button
+            type="button"
+            onClick={handleSynthesiseRisk}
+            disabled={synthesising}
+            className="px-6 py-3.5 rounded-2xl hc-clay-raised border border-hc-teal/20 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal hover:brightness-90 flex items-center gap-3 transition-all shadow-xl disabled:opacity-50">
+            <Sparkles className="w-4 h-4" /> {synthesising ? 'Analysing...' : 'Synthesise Intelligence'}
           </button>
           <button
             onClick={() => importFileRef.current?.click()}
@@ -423,6 +502,12 @@ export function RiskBuilder({ clientId, onBack }: Props) {
 
       <div className="flex-1 overflow-y-auto p-12 scrollbar-thin">
         <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-6 duration-700 pb-32">
+          {!!synthStatus && (
+            <div className={`mb-4 text-[11px] font-black uppercase tracking-widest rounded-2xl px-8 py-5 border flex items-center gap-4 animate-in slide-in-from-top-4 ${synthStatus.includes('No') ? 'bg-flag-amber/10 border-flag-amber/30 text-flag-amber' : 'bg-hc-teal/10 border-hc-teal/30 text-hc-teal'}`}>
+              <Sparkles className="w-4 h-4 shrink-0" />
+              {synthStatus}
+            </div>
+          )}
           {!!importStatus && (
             <div className={`mb-10 text-[11px] font-black uppercase tracking-widest rounded-2xl px-8 py-5 border flex items-center gap-4 animate-in slide-in-from-top-4 ${importStatus.includes('failed') ? 'bg-flag-red/10 border-flag-red/30 text-flag-red' : 'bg-hc-teal/10 border-hc-teal/30 text-hc-teal'}`}>
               <div className={`w-2 h-2 rounded-full ${importStatus.includes('failed') ? 'bg-flag-red' : 'bg-hc-teal animate-pulse'}`} />
