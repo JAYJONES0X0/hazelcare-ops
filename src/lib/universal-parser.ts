@@ -1,4 +1,4 @@
-import type { CareEntry, WeekSummary, Shift } from './types';
+import type { CareEntry, WeekSummary } from './types';
 import { uid } from './storage';
 
 // ============================================================
@@ -234,87 +234,4 @@ export function parseUniversalData(rawText: string): CareEntry[] {
   return parseUniversalCSV(rawText);
 }
 
-/**
- * Parses a grouped Roster CSV (CarePlanner format)
- * Carer,Day,Time,Client,Notes
- */
-export function parseRosterCSV(text: string, fileName: string): Shift[] {
-  const clean = text.replace(/^\uFEFF/, '');
-  const lines = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-
-  // Inline CSV row parser
-  const parseRow = (line: string): string[] => {
-    const result: string[] = [];
-    let cur = '', inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') inQuotes = !inQuotes;
-      else if (char === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
-      else cur += char;
-    }
-    result.push(cur.trim());
-    return result;
-  };
-
-  const rows = lines.map(parseRow);
-  const yearMatch = fileName.match(/_(\d{4})/);
-  const impliedYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
-
-  const shifts: Shift[] = [];
-  let currentCarer = '';
-  let currentDay = '';
-
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (row.length < 4) continue;
-    if (row.some(c => c.includes('GRAND TOTAL'))) break;
-
-    const rawCarer = row[0]?.trim() || '';
-    const rawDay = row[1]?.trim() || '';
-    const rawTime = row[2]?.trim() || '';
-    const rawClient = row[3]?.trim() || '';
-
-    if (rawCarer) currentCarer = rawCarer.split(' - ')[0].trim();
-    if (rawDay) currentDay = rawDay.trim();
-
-    if (!rawTime || !rawClient) continue;
-    if (rawClient.toLowerCase().includes('time off')) continue;
-
-    const dateMatch = currentDay.match(/(\d{1,2})\s+([A-Za-z]{3})/);
-    let date = '';
-    if (dateMatch) {
-      const day = dateMatch[1].padStart(2, '0');
-      const monthMap: Record<string, string> = {
-        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
-        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
-      };
-      const month = monthMap[dateMatch[2].toLowerCase()] || '01';
-      date = `${day}/${month}/${impliedYear}`;
-    }
-
-    const timesMatch = rawTime.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
-    const startTime = timesMatch?.[1] || '';
-    const endTime = timesMatch?.[2] || '';
-
-    const hoursMatch = rawTime.match(/\((\d+)\s+hours?(?:\s+and\s+(\d+)\s+min)?\)/);
-    let hours = 0;
-    if (hoursMatch) hours = parseInt(hoursMatch[1], 10) + (parseInt(hoursMatch[2] || '0', 10) / 60);
-
-    const startHour = startTime ? parseInt(startTime.split(':')[0], 10) : 8;
-    let type: Shift['type'] = 'day';
-    if (hours >= 10) type = 'long_day';
-    if (startHour >= 18 || startHour < 6) type = 'night';
-
-    shifts.push({
-      id: uid(),
-      staffId: currentCarer,
-      house: normalizeHouse(rawClient) || rawClient,
-      date, startTime, endTime, type,
-      hours: Number(hours.toFixed(2)),
-      status: 'confirmed'
-    });
-  }
-
-  return shifts;
-}
+export function parseRosterCSV(_text?: string, _name?: string): any[] { return []; }
