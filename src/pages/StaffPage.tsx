@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { StaffMember } from '../lib/types';
 import { uid, HAZELCARE_HOUSES, ROLES, staffStatus, daysUntil, STAFF_TEMPLATES, loadLegalDocument, saveLegalDocument, type LegalDocument } from '../lib/compliance-store';
 import { Users, Plus, Edit2, Shield, Search } from 'lucide-react';
 import { ORG_CONFIG } from '../lib/config';
+
+import { getAllEntriesAsync } from '../lib/entry-store';
+import { computeStaffMonitoring, defaultMondayWindow } from '../lib/staff-monitoring';
 
 interface Props {
   staff: StaffMember[];
@@ -209,6 +212,32 @@ export function StaffPage({ staff, onUpdate }: Props) {
   const [houseFilter, setHouseFilter] = useState('all');
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
   const [docDrawerMember, setDocDrawerMember] = useState<StaffMember | null>(null);
+  const [integrityScores, setIntegrityScores] = useState<Record<string, number>>({});
+
+  // Background Intelligence: Pull scores from the 13k database
+  useEffect(() => {
+    void getAllEntriesAsync().then(all => {
+      if (all.length === 0) return;
+      const def = defaultMondayWindow();
+      const summary = {
+        totalEntries: all.length,
+        houses: {} as any
+      };
+      // Build a house-grouped summary for the scoring engine
+      all.forEach(e => {
+        const h = e.house || 'UNASSIGNED';
+        if (!summary.houses[h]) summary.houses[h] = { name: h, entries: [] };
+        summary.houses[h].entries.push(e);
+      });
+
+      const analytics = computeStaffMonitoring(summary, { house: 'all', dateFrom: '', dateTo: '' });
+      const scoreMap: Record<string, number> = {};
+      analytics.staff.forEach(s => { scoreMap[s.carer] = s.qualityScore; });
+      setIntegrityScores(scoreMap);
+
+      // Auto-Discovery: If we find staff in the notes who aren't in the ledger, we should eventually suggest enrolling them
+    });
+  }, []);
 
   const houses = [...new Set(staff.map(s => s.house))].sort();
   if (houses.length === 0) houses.push(...HAZELCARE_HOUSES);
@@ -303,6 +332,12 @@ export function StaffPage({ staff, onUpdate }: Props) {
                             {member.status}
                          </div>
                       </div>
+
+                      {integrityScores[member.name] !== undefined && (
+                        <div className={`absolute -top-3 -right-3 h-8 px-4 rounded-full hc-clay-raised flex items-center justify-center text-[10px] font-black uppercase tracking-widest z-10 animate-in zoom-in duration-500 ${integrityScores[member.name] >= 70 ? 'text-flag-green bg-flag-green/10' : 'text-flag-red bg-flag-red/10 glow-red animate-pulse'}`}>
+                          {integrityScores[member.name]}% Integrity
+                        </div>
+                      )}
 
                       <div>
                          <div className="text-lg font-black text-hc-text tracking-tight mb-1">{member.name}</div>

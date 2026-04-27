@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
 import { useCollapseStore } from '../lib/collapse-store';
 import {
@@ -11,18 +11,46 @@ import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { getAllEntriesAsync } from '../lib/entry-store';
 
 interface Props {
   weekData: WeekSummary | null;
   onDataParsed: (data: WeekSummary) => void;
-  staff: StaffMember[];
 }
 
 export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
-
   const [importLoading, setImportLoading] = useState(false);
   const [importDragging, setImportDragging] = useState(false);
+  const [booting, setBooting] = useState(true);
+
+  // Automatically hydrate from main IndexedDB on mount
+  useEffect(() => {
+    let alive = true;
+    void getAllEntriesAsync().then(all => {
+      if (!alive) return;
+      if (all.length > 0) {
+        // Build a week-summary envelope from the IDB database
+        const entriesByHouse: Record<string, CareEntry[]> = {};
+        all.forEach(e => {
+          const h = e.house || 'UNASSIGNED';
+          if (!entriesByHouse[h]) entriesByHouse[h] = [];
+          entriesByHouse[h].push(e);
+        });
+        
+        const summary: WeekSummary = {
+          totalEntries: all.length,
+          houses: Object.entries(entriesByHouse).reduce((acc, [name, entries]) => {
+            acc[name] = { name, entries };
+            return acc;
+          }, {} as Record<string, { name: string; entries: CareEntry[] }>)
+        };
+        onDataParsed(summary);
+      }
+      setBooting(false);
+    });
+    return () => { alive = false; };
+  }, []);
 
   const handleImportFile = useCallback(async (file: File) => {
     setImportLoading(true);

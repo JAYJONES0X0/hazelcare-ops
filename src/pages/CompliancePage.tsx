@@ -4,6 +4,9 @@ import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import { ORG_CONFIG } from '../lib/config';
 import { Shield, Clock, ChevronRight, Search, FileCheck, UserPlus } from 'lucide-react';
 
+import { getAllEntriesAsync } from '../lib/entry-store';
+import { computeStaffMonitoring } from '../lib/staff-monitoring';
+
 interface Props {
   staff: StaffMember[];
   onUpdate: (staff: StaffMember[]) => void;
@@ -12,22 +15,56 @@ interface Props {
 export function CompliancePage({ staff }: Props) {
   const [search, setSearch] = useState('');
   const [houseFilter, setHouseFilter] = useState('all');
+  const [dbStaff, setDbStaff] = useState<any[]>([]);
+  const [booting, setBooting] = useState(true);
 
-  const filteredStaff = useMemo(() => {
-    return staff.filter(s => {
-      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
-      const matchHouse = houseFilter === 'all' || s.house === houseFilter;
-      return matchSearch && matchHouse;
+  useEffect(() => {
+    void getAllEntriesAsync().then(all => {
+      if (all.length === 0) { setBooting(false); return; }
+      
+      const summary = { totalEntries: all.length, houses: {} as any };
+      all.forEach(e => {
+        const h = e.house || 'UNASSIGNED';
+        if (!summary.houses[h]) summary.houses[h] = { name: h, entries: [] };
+        summary.houses[h].entries.push(e);
+      });
+
+      const analytics = computeStaffMonitoring(summary, { house: 'all', dateFrom: '', dateTo: '' });
+      
+      // Combine ledger staff with discovered staff
+      const discovered = analytics.staff.map(s => {
+        const ledgerMatch = staff.find(ls => ls.name === s.carer);
+        return {
+          id: s.carer,
+          name: s.carer,
+          house: s.categoryBreakdown[0]?.category || 'Unknown',
+          qualityScore: s.qualityScore,
+          entryCount: s.categoryBreakdown.reduce((sum, c) => sum + c.count, 0),
+          lastEntry: 'Active', // Ideally extract the latest date
+          status: ledgerMatch ? 'Registered' : 'Discovered'
+        };
+      });
+
+      setDbStaff(discovered);
+      setBooting(false);
     });
-  }, [staff, search, houseFilter]);
+  }, [staff]);
 
   const stats = useMemo(() => {
-    const total = staff.length;
-    const compliant = staff.filter(s => s.complianceStatus === 'compliant').length;
-    const pending = staff.filter(s => s.complianceStatus === 'pending').length;
-    const missing = staff.filter(s => s.complianceStatus === 'missing').length;
+    const total = dbStaff.length;
+    const compliant = dbStaff.filter(s => s.qualityScore >= 70).length;
+    const pending = dbStaff.filter(s => s.qualityScore < 70 && s.qualityScore >= 45).length;
+    const missing = dbStaff.filter(s => s.qualityScore < 45).length;
     return { total, compliant, pending, missing, rate: total ? Math.round((compliant / total) * 100) : 0 };
-  }, [staff]);
+  }, [dbStaff]);
+
+  const filteredStaff = useMemo(() => {
+    return dbStaff.filter(s => {
+      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
+      const matchHouse = houseFilter === 'all' || s.house.includes(houseFilter);
+      return matchSearch && matchHouse;
+    });
+  }, [dbStaff, search, houseFilter]);
 
   return (
     <div className="p-6 lg:p-10 max-w-[2560px] mx-auto animate-in fade-in duration-700">
@@ -91,56 +128,47 @@ export function CompliancePage({ staff }: Props) {
               <tr className="bg-black/5 border-b border-hc-muted/10">
                 <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Carer Identity</th>
                 <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Station</th>
-                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">DBS Status</th>
-                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Training</th>
-                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Supervision</th>
-                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Status</th>
+                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Documentation Role</th>
+                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Clinical Accuracy</th>
+                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Log Volume</th>
+                <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Operational Status</th>
                 <th className="px-8 py-6"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-hc-muted/5">
-              {filteredStaff.map((s) => {
-                const statusColor = s.complianceStatus === 'compliant' ? 'text-flag-green' : s.complianceStatus === 'pending' ? 'text-flag-amber' : 'text-flag-red';
-                return (
-                  <tr key={s.id} className="hover:bg-black/[0.02] transition-colors group">
-                    <td className="px-8 py-6">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center font-black text-hc-muted text-xs uppercase">{s.name.charAt(0)}</div>
-                          <div className="font-black text-sm text-hc-text tracking-tight uppercase">{s.name}</div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-widest">{s.house}</td>
-                    <td className="px-8 py-6">
-                       <div className="flex items-center gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full ${s.dbsChecked ? 'bg-flag-green' : 'bg-flag-red'}`} />
-                          <span className="text-[10px] font-black text-hc-text uppercase tracking-widest">{s.dbsChecked ? 'Verified' : 'Missing'}</span>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-black text-hc-text uppercase tracking-widest">{s.trainingCompletion}% Complete</span>
-                          <div className="h-1 w-24 rounded-full bg-black/10 overflow-hidden">
-                             <div className="h-full bg-hc-teal" style={{width: `${s.trainingCompletion}%`}} />
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <div className="flex items-center gap-2 text-hc-muted">
-                          <Clock className="w-3 h-3" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest italic">{s.lastSupervision || 'Not Logged'}</span>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <span className={`pill !bg-hc-bg border border-hc-muted/10 ${statusColor}`}>{s.complianceStatus}</span>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                       <button className="p-3 rounded-xl hc-clay-raised text-hc-muted hover:text-hc-teal transition-all active:scale-90">
-                          <ChevronRight className="w-4 h-4" />
-                       </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredStaff.map((s) => (
+                <tr key={s.id} className="hover:bg-black/[0.02] transition-colors group">
+                  <td className="px-8 py-6">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center font-black text-hc-muted text-xs uppercase">{s.name.charAt(0)}</div>
+                        <div className="font-black text-sm text-hc-text tracking-tight uppercase">{s.name}</div>
+                     </div>
+                  </td>
+                  <td className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-widest">{s.house}</td>
+                  <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">Support Personnel</td>
+                  <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1">
+                         <span className={`text-[10px] font-black uppercase tracking-widest ${s.qualityScore >= 70 ? 'text-flag-green' : s.qualityScore >= 45 ? 'text-flag-amber' : 'text-flag-red'}`}>
+                           {s.qualityScore}% Standard Adherence
+                         </span>
+                         <div className="h-1 w-24 rounded-full bg-black/10 overflow-hidden">
+                            <div className={`h-full ${s.qualityScore >= 70 ? 'bg-flag-green' : s.qualityScore >= 45 ? 'bg-flag-amber' : 'bg-flag-red'}`} style={{width: `${s.qualityScore}%`}} />
+                         </div>
+                      </div>
+                  </td>
+                  <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">{s.entryCount} Intelligence Points</td>
+                  <td className="px-8 py-6">
+                      <span className={`pill !bg-hc-bg border border-hc-muted/10 ${s.status === 'Registered' ? 'text-hc-teal' : 'text-hc-amber'}`}>
+                        {s.status}
+                      </span>
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                     <button className="p-3 rounded-xl hc-clay-raised text-hc-muted hover:text-hc-teal transition-all active:scale-90">
+                        <ChevronRight className="w-4 h-4" />
+                     </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           {filteredStaff.length === 0 && (

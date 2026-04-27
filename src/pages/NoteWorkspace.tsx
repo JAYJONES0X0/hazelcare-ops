@@ -31,6 +31,7 @@ export function NoteWorkspace() {
   const [clientSearch, setClientSearch] = useState('');
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [goldTemplate, setGoldTemplate] = useState('');
+  const [showGoldSuite, setShowGoldSuite] = useState(false);
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
@@ -50,9 +51,9 @@ export function NoteWorkspace() {
     return allClients.filter(c => c.toLowerCase().includes(clientSearch.toLowerCase()));
   }, [allClients, clientSearch]);
 
-  // Date-filtered entries for selected client
+  // Date-filtered entries for selected client (Sorted NEWEST first)
   const filtered = useMemo(() => {
-    return entries.filter(e => {
+    const raw = entries.filter(e => {
       if (selectedClient && !e.client?.toLowerCase().includes(selectedClient.toLowerCase())) return false;
       if (dateRange.from || dateRange.to) {
         const parts = e.date.split('/');
@@ -65,6 +66,15 @@ export function NoteWorkspace() {
         }
       }
       return true;
+    });
+
+    // Sort by date (DD/MM/YYYY) descending
+    return raw.sort((a, b) => {
+      const partsA = a.date.split('/');
+      const partsB = b.date.split('/');
+      const dateA = `${partsA[2]}-${partsA[1]}-${partsA[0]}`;
+      const dateB = `${partsB[2]}-${partsB[1]}-${partsB[0]}`;
+      return dateB.localeCompare(dateA);
     });
   }, [entries, selectedClient, dateRange]);
 
@@ -273,25 +283,50 @@ export function NoteWorkspace() {
         </div>
 
         {/* Date range + Gold Standard controls */}
-        <div className="px-8 py-4 border-b border-hc-border/20 flex flex-col gap-4 shrink-0">
+        <div className="px-8 py-4 border-b border-hc-border/20 flex flex-col gap-4 shrink-0 bg-hc-bg/50 backdrop-blur-md sticky top-0 z-30">
           <DateRangePicker range={dateRange} onChange={setDateRange} entryCount={filtered.length} compact />
 
-          <div className="flex items-start gap-4">
-            <div className="flex-1 relative">
-              <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-hc-teal" />
-              <textarea
-                value={goldTemplate}
-                onChange={e => setGoldTemplate(e.target.value)}
-                rows={2}
-                placeholder="Paste your gold standard note here — the AI will use this as the target rubric for all rewrites in this session..."
-                className="w-full hc-clay-inset pl-10 pr-4 py-3 text-[11px] font-black text-hc-text focus:outline-none resize-none placeholder:text-hc-muted/50 placeholder:font-medium placeholder:normal-case"
-              />
-            </div>
-            {goldTemplate && (
-              <button onClick={() => setGoldTemplate('')}
-                className="shrink-0 p-2.5 hc-clay-raised rounded-xl text-hc-muted hover:text-flag-red transition-colors mt-1">
-                <Trash2 className="w-4 h-4" />
-              </button>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => setShowGoldSuite(!showGoldSuite)}
+              className="flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2 text-[10px] font-black text-hc-teal uppercase tracking-widest group-hover:opacity-70 transition-opacity">
+                <Sparkles className="w-3 h-3" />
+                {showGoldSuite ? 'Hide Gold Standard Assistant' : 'Show Gold Standard Assistant'}
+              </div>
+              {!showGoldSuite && goldTemplate && (
+                <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest italic truncate max-w-[300px]">
+                  Rubric active: "{goldTemplate.slice(0, 40)}..."
+                </span>
+              )}
+            </button>
+            
+            {showGoldSuite && (
+              <div className="animate-in slide-in-from-top-2 duration-300 flex items-start gap-4">
+                <div className="flex-1 relative">
+                  <textarea
+                    value={goldTemplate}
+                    onChange={e => setGoldTemplate(e.target.value)}
+                    placeholder="Paste your gold standard note here — the AI will use this as the target rubric for all rewrites..."
+                    rows={3}
+                    className="w-full hc-clay-inset p-4 text-[13px] text-hc-text/90 italic focus:outline-none resize-none scrollbar-thin"
+                  />
+                  {!goldTemplate && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center p-4">
+                      <div className="flex items-center gap-3 opacity-20">
+                        <FileText className="w-5 h-5 text-hc-teal" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {goldTemplate && (
+                  <button onClick={() => setGoldTemplate('')}
+                    className="shrink-0 p-2.5 hc-clay-raised rounded-xl text-hc-muted hover:text-flag-red transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
