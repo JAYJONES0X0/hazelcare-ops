@@ -182,3 +182,56 @@ export function clearEntryStore(): void {
   try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
   void clearEntryStoreAsync();
 }
+/**
+ * Deletes entries matching specific criteria for granular governance.
+ */
+export async function deleteEntriesByFilterAsync(filter: { house?: string; beforeDate?: string; afterDate?: string }) {
+  const db = await initDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
+  const entries = await getAllEntriesAsync();
+  
+  let deletedCount = 0;
+  for (const e of entries) {
+    let match = true;
+    if (filter.house && e.house !== filter.house) match = false;
+    
+    if (match && (filter.beforeDate || filter.afterDate)) {
+      const ms = parseDateMs(e.date);
+      if (ms) {
+        if (filter.beforeDate) {
+          const bMs = parseDateMs(filter.beforeDate);
+          if (bMs && ms >= bMs) match = false;
+        }
+        if (filter.afterDate) {
+          const aMs = parseDateMs(filter.afterDate);
+          if (aMs && ms <= aMs) match = false;
+        }
+      }
+    }
+
+    if (match) {
+      await store.delete(e.id);
+      deletedCount++;
+    }
+  }
+  await tx.done;
+  return deletedCount;
+}
+
+/**
+ * Calculates storage volume per unit for the Governance heatmap.
+ */
+export async function getStorageAuditAsync() {
+  const all = await getAllEntriesAsync();
+  const stats: Record<string, { count: number; size: number }> = {};
+  
+  for (const e of all) {
+    const h = e.house || 'UNASSIGNED';
+    if (!stats[h]) stats[h] = { count: 0, size: 0 };
+    stats[h].count++;
+    stats[h].size += JSON.stringify(e).length; // Approximate byte size
+  }
+  
+  return stats;
+}

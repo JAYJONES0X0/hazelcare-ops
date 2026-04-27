@@ -121,12 +121,18 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   );
 }
 
+import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync } from '../lib/entry-store';
+import { Database, Trash2, Calendar, HardDrive, ShieldAlert } from 'lucide-react';
+
 function DataManagerProp({ clients, onClearEverything, onClearType }: {
   clients: FullClient[];
   onClearEverything: () => void;
   onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
 }) {
   const [realCount, setRealCount] = useState(0);
+  const [storageAudit, setStorageAudit] = useState<Record<string, { count: number; size: number }>>({});
+  const [governanceHouse, setGovernanceHouse] = useState('all');
+  const [purgeLoading, setPurgeLoading] = useState(false);
   const restoreRef = useRef<HTMLInputElement>(null);
   const actions = loadActions();
   const incidents = loadIncidents();
@@ -134,7 +140,20 @@ function DataManagerProp({ clients, onClearEverything, onClearType }: {
 
   useEffect(() => {
     void getAllEntriesAsync().then(all => setRealCount(all.length));
+    void getStorageAuditAsync().then(setStorageAudit);
   }, []);
+
+  async function handleSurgicalPurge() {
+    if (governanceHouse === 'all') return;
+    if (!confirm(`SURGICAL PURGE: Delete all intelligence for ${governanceHouse.toUpperCase()}? This action is forensic and irreversible.`)) return;
+    
+    setPurgeLoading(true);
+    await deleteEntriesByFilterAsync({ house: governanceHouse });
+    const all = await getAllEntriesAsync();
+    setRealCount(all.length);
+    setStorageAudit(await getStorageAuditAsync());
+    setPurgeLoading(false);
+  }
 
   function handleExportBackup() {
     const snapshot = exportOpsSnapshot();
@@ -204,7 +223,76 @@ function DataManagerProp({ clients, onClearEverything, onClearType }: {
         ))}
       </div>
 
-      <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-3">
+      <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-white/5 pt-10">
+         {/* Governance Heatmap */}
+         <div className="hc-clay-inset p-8 rounded-[2rem] space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+               <Database className="text-hc-teal" size={18} />
+               <h3 className="text-xs font-black text-hc-text uppercase tracking-widest">Intelligence Volume Map</h3>
+            </div>
+            <div className="space-y-4">
+               {Object.entries(storageAudit).length > 0 ? Object.entries(storageAudit).sort((a,b) => b[1].size - a[1].size).map(([house, stats]) => (
+                  <div key={house} className="flex items-center justify-between group">
+                     <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-hc-text uppercase tracking-tighter">{house}</span>
+                        <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">{stats.count.toLocaleString()} Intelligence Points</span>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-black text-hc-teal tabular-nums">{(stats.size / 1024).toFixed(1)} KB</span>
+                        <div className="h-1.5 w-16 bg-black/10 rounded-full overflow-hidden">
+                           <div className="h-full bg-hc-teal" style={{ width: `${Math.min(100, (stats.size / 500000) * 100)}%` }} />
+                        </div>
+                     </div>
+                  </div>
+               )) : (
+                 <div className="py-10 text-center text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40">Local Registry Empty</div>
+               )}
+            </div>
+         </div>
+
+         {/* Surgical Governance Bench */}
+         <div className="hc-clay-raised p-8 rounded-[2rem] space-y-6 border border-flag-red/10">
+            <div className="flex items-center gap-3">
+               <ShieldAlert className="text-flag-red" size={18} />
+               <h3 className="text-xs font-black text-flag-red uppercase tracking-widest">Surgical Governance</h3>
+            </div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
+               Target specific units for intelligence deletion. Used for forensic data retention and legal compliance sweeps.
+            </p>
+            <div className="space-y-4 pt-2">
+               <div className="flex flex-col gap-2">
+                  <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Target Selection</span>
+                  <select 
+                    value={governanceHouse}
+                    onChange={e => setGovernanceHouse(e.target.value)}
+                    className="hc-clay-inset px-4 py-3 text-[10px] font-black uppercase text-hc-text outline-none"
+                  >
+                     <option value="all">SELECT TARGET...</option>
+                     {Object.keys(storageAudit).map(h => <option key={h} value={h}>{h.toUpperCase()}</option>)}
+                  </select>
+               </div>
+               <button 
+                 onClick={handleSurgicalPurge}
+                 disabled={governanceHouse === 'all' || purgeLoading}
+                 className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[10px] uppercase tracking-widest shadow-xl
+                   ${governanceHouse === 'all' ? 'hc-clay-raised text-hc-muted opacity-40' : 'bg-flag-red text-hc-bone hover:bg-black active:scale-[0.98]'}`}
+               >
+                  <Trash2 size={14} /> {purgeLoading ? 'PURGING...' : `Surgical Purge: ${governanceHouse}`}
+               </button>
+            </div>
+         </div>
+      </div>
+
+      <div className="mt-8 pt-8 flex flex-wrap gap-4 border-t border-white/5 opacity-60">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-muted uppercase tracking-widest">
+           <HardDrive size={12} /> Local Storage Limit: 10MB
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-muted uppercase tracking-widest">
+           <Calendar size={12} /> Retention Policy: ACTIVE
+        </div>
+      </div>
+
+      <div className="mt-8 pt-8 border-t border-white/5 flex flex-wrap gap-3">
         <button
           onClick={handleExportBackup}
           className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 hc-clay-raised border border-hc-teal/30 text-hc-teal-light rounded-xl transition-all hover:bg-hc-teal/10"
