@@ -25,6 +25,10 @@ import { GlobalInjest } from './components/GlobalInjest';
 import { Upload } from 'lucide-react';
 
 import type { WeekSummary, Action, Incident, StaffMember, Page } from './lib/types';
+import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
+import { loadClients, type FullClient } from './lib/client-store';
+import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
+import { buildWeekSummary } from './lib/universal-parser';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };

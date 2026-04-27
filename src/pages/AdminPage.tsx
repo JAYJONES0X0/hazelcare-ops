@@ -11,7 +11,8 @@ import {
 import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
-import { Database, Trash2, Calendar, HardDrive, ShieldAlert } from 'lucide-react';
+import { reconcileRosterCsv } from '../lib/continuity-engine';
+import { Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle } from 'lucide-react';
 
 function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   const houseKeys = Object.keys(weekData.houses).sort();
@@ -31,7 +32,6 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
         dateTo: dateTo.trim() || undefined,
       };
       
-      // Filter the full dataset manually for the pack
       const entries = all.filter(e => {
         if (house !== 'all' && e.house !== house) return false;
         if (typeFilter && !JSON.stringify(e).toLowerCase().includes(typeFilter.toLowerCase())) return false;
@@ -76,6 +76,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
           {packing ? 'Packing...' : 'Download all 3 files'}
         </button>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <label className="flex flex-col gap-1.5 text-[10px] font-bold text-hc-muted uppercase tracking-wider">
           House
@@ -124,7 +125,81 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   );
 }
 
-function DataManagerProp({ clients, onClearEverything, onClearType }: {
+function RosterAccountabilityAudit() {
+  const [reconciling, setReconciling] = useState(false);
+  const [reconResults, setReconResults] = useState<{ shifts: number; gaps: number } | null>(null);
+
+  async function handleRosterReconcile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReconciling(true);
+    try {
+      const text = await file.text();
+      const entries = await getAllEntriesAsync();
+      const result = reconcileRosterCsv(text, entries, 2026);
+      
+      setReconResults({ shifts: result.rosterRowCount, gaps: result.gaps.length });
+
+      const blob = new Blob([result.csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Forensic-Accountability-Report-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Admin] Roster Recon Error:', err);
+    } finally {
+      setReconciling(false);
+    }
+  }
+
+  return (
+    <div className="hc-clay-raised p-8 rounded-[2.5rem] bg-flag-amber/[0.02] border border-flag-amber/10 flex flex-col gap-6 mb-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-flag-amber/10 flex items-center justify-center text-flag-amber">
+            <ClipboardCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-hc-text uppercase tracking-tight">Roster Accountability Audit</h3>
+            <p className="text-[10px] font-black text-hc-muted uppercase tracking-widest mt-1">Personnel gap reconstruction (ClientRoster.csv)</p>
+          </div>
+        </div>
+        <label className="btn-tactical !bg-flag-amber !text-black flex items-center gap-2 cursor-pointer transition-all active:scale-95 shadow-lg">
+          <Upload size={14} />
+          {reconciling ? 'RUNNING FORENSICS...' : 'UPLOAD ROSTER CSV'}
+          <input type="file" accept=".csv" onChange={handleRosterReconcile} className="hidden" />
+        </label>
+      </div>
+
+      {reconResults && (
+        <div className="hc-clay-inset p-5 rounded-2xl bg-flag-green/10 flex items-center justify-between animate-in zoom-in-95 duration-500">
+          <div className="flex items-center gap-3">
+            <CheckCircle size={16} className="text-flag-green" />
+            <div>
+              <div className="text-[10px] font-black text-hc-text uppercase tracking-widest">Audit Terminal Output</div>
+              <div className="text-[10px] text-hc-muted font-bold uppercase tracking-widest opacity-60">{reconResults.shifts} Shifts Reconciled</div>
+            </div>
+          </div>
+          <div className="text-right">
+             <div className="text-lg font-black text-flag-red tabular-nums">{reconResults.gaps}</div>
+             <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.2em]">Clinical Gaps Identified</div>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] leading-relaxed opacity-60 max-w-2xl">
+        Upload the official personnel roster to identify which staff members were present in the unit but failed to record clinical intelligence for specific service users. A forensic gap report will download automatically.
+      </p>
+    </div>
+  );
+}
+
+function DataManagerProp
+({ clients, onClearEverything, onClearType }: {
   clients: FullClient[];
   onClearEverything: () => void;
   onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
@@ -361,6 +436,8 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
       </div>
 
       {weekData && <CoordinatorExportCard weekData={weekData} />}
+
+      <RosterAccountabilityAudit />
       
       <DataManagerProp 
         clients={clients} 
