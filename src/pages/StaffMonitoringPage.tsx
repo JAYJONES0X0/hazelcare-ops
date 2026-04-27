@@ -40,12 +40,27 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
         
         const summary: any = {
           totalEntries: all.length,
-          dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {},
+          allFlags: { red: [], amber: [], green: [] },
+          dateFrom: '', dateTo: '', entryTypes: {}, housePerformance: {},
           houses: Object.entries(entriesByHouse).reduce((acc, [name, entries]) => {
             acc[name] = { 
-              name, entries, coordinator: '', incidents: [], safeguarding: [], medication: [], 
-              welfare: [], feedback: [], performance: { quality: 100, volume: 100, compliance: 100 }
+              name, 
+              entries, 
+              coordinator: '', 
+              incidents: [], 
+              safeguarding: [], 
+              medication: [], 
+              staffPerformance: [],
+              healthSafety: [],
+              handovers: [],
+              dailySupport: [],
+              flags: { red: 0, amber: 0, green: 0 }
             };
+            entries.forEach(e => {
+              if (e.severity === 'red') acc[name].flags.red++;
+              else if (e.severity === 'amber') acc[name].flags.amber++;
+              else if (e.severity === 'green') acc[name].flags.green++;
+            });
             return acc;
           }, {} as any)
         };

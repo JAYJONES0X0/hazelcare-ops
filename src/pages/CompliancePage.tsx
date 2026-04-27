@@ -33,8 +33,24 @@ export function CompliancePage({ staff }: Props) {
       };
       all.forEach(e => {
         const h = e.house || 'UNASSIGNED';
-        if (!summary.houses[h]) summary.houses[h] = { name: h, entries: [] };
+        if (!summary.houses[h]) {
+          summary.houses[h] = { 
+            name: h, 
+            entries: [],
+            incidents: [],
+            safeguarding: [],
+            medication: [],
+            staffPerformance: [],
+            healthSafety: [],
+            handovers: [],
+            dailySupport: [],
+            flags: { red: 0, amber: 0, green: 0 }
+          };
+        }
         summary.houses[h].entries.push(e);
+        if (e.severity === 'red') summary.houses[h].flags.red++;
+        if (e.severity === 'amber') summary.houses[h].flags.amber++;
+        if (e.severity === 'green') summary.houses[h].flags.green++;
       });
 
       const analytics = computeStaffMonitoring(summary, { house: 'all', dateFrom: '', dateTo: '' });
