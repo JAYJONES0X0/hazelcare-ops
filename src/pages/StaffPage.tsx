@@ -3,9 +3,8 @@ import type { StaffMember } from '../lib/types';
 import { uid, HAZELCARE_HOUSES, ROLES, staffStatus, daysUntil, STAFF_TEMPLATES, loadLegalDocument, saveLegalDocument, type LegalDocument } from '../lib/compliance-store';
 import { Users, Plus, Edit2, Shield, Search } from 'lucide-react';
 import { ORG_CONFIG } from '../lib/config';
-
 import { getAllEntriesAsync } from '../lib/entry-store';
-import { computeStaffMonitoring, defaultMondayWindow } from '../lib/staff-monitoring';
+import { computeStaffMonitoring } from '../lib/staff-monitoring';
 
 interface Props {
   staff: StaffMember[];

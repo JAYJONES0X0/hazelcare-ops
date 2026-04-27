@@ -16,6 +16,7 @@ export function CompliancePage({ staff }: Props) {
   const [search, setSearch] = useState('');
   const [houseFilter, setHouseFilter] = useState('all');
   const [dbStaff, setDbStaff] = useState<any[]>([]);
+  const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     void getAllEntriesAsync().then(all => {
