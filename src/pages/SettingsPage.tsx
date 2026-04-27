@@ -71,7 +71,7 @@ export function SettingsPage({ onSignOut, setPage }: Props) {
   }, []);
 
   const handlePinSubmit = () => {
-    if (pin === '0000') {
+    if (pin === '236693!') {
       setPinUnlocked(true);
       setPinError(false);
     } else {
@@ -110,15 +110,14 @@ export function SettingsPage({ onSignOut, setPage }: Props) {
                <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60 italic">Authorisation Required for System Core</p>
             </div>
 
-            <div className="w-full space-y-2">
                <div className={`p-4 rounded-2xl hc-clay-inset border transition-all duration-300 ${pinError ? 'border-flag-red bg-flag-red/5' : 'border-hc-border/10'}`}>
                   <input 
                     type="password"
                     value={pin}
-                    onChange={e => setPin(e.target.value.slice(0,4))}
+                    onChange={e => setPin(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handlePinSubmit()}
-                    placeholder="____"
-                    className="w-full bg-transparent text-center text-3xl font-black tracking-[0.8em] text-hc-text placeholder:text-hc-muted/20 outline-none"
+                    placeholder="ENTER KEY"
+                    className="w-full bg-transparent text-center text-2xl font-black tracking-[0.4em] text-hc-text placeholder:text-hc-muted/20 outline-none"
                     autoFocus
                   />
                </div>
