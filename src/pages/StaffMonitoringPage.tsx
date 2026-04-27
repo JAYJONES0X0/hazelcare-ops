@@ -271,7 +271,6 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
           )}
         </div>
       </div>
-    </div>
       {showJumpTop && (
         <button 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -281,3 +280,5 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
         </button>
       )}
     </div>
+  );
+}
