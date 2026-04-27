@@ -36,6 +36,7 @@ const navSections: NavSection[] = [
     items: [
       { id: 'briefing' as Page,      label: 'Strategy Briefing', icon: <LayoutDashboard size={16} /> },
       { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={16} /> },
+      { id: 'empire-matrix' as Page,   label: 'Empire Matrix',     icon: <TrendingUp size={16} /> },
       { id: 'upload',                label: 'Field Injest',      icon: <Upload size={16} /> },
       { id: 'communications' as Page,label: 'Comms Intercept',   icon: <MessageSquare size={16} /> },
     ],

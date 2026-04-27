@@ -20,6 +20,7 @@ import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
 import { NoteWorkspace } from './pages/NoteWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
+import { EmpireMatrix } from './pages/EmpireMatrix';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload } from 'lucide-react';
 
@@ -29,7 +30,7 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };
@@ -211,6 +212,7 @@ export default function App() {
               {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleDataParsed} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
+              {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} />}
             </div>
           </main>
         </div>
