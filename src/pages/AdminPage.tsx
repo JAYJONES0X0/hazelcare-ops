@@ -7,7 +7,6 @@ import {
   careEntriesToEvidenceCsv,
   buildCoordinatorReadme,
   buildCoordinatorEvidenceHtml,
-  filterEntriesForCoordinatorPack,
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync } from '../lib/entry-store';
