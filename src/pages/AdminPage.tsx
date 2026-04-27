@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
-import { clearClientData, clearStaffNotes, purgeSystemData, type FullClient } from '../lib/client-store';
 import { clearWeekData, clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
+import { clearClientData, clearStaffNotes, type FullClient } from '../lib/client-store';
 import {
   downloadText,
   careEntriesToEvidenceCsv,
@@ -329,8 +329,7 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
 
   const handleClearEverything = async () => {
     if (!confirm('TOTAL PURGE: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
-    await purgeSystemData(); // This now clears IndexedDB + LocalStorage
-    window.location.reload(); // Hard refresh to ensure everything is purged
+    await purgeSystemDataAsync();
   };
 
   const handleClearType = async (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => {

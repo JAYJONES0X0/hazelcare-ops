@@ -209,7 +209,7 @@ export default function App() {
               {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
               {page === 'agency' && <AgencyPortalPage />}
               {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleDataParsed} />}
-              {page === 'settings' && <SettingsPage onSignOut={handleSignOut} />}
+              {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
             </div>
           </main>

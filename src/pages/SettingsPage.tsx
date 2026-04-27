@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { Page } from '../App';
 import { ORG_CONFIG } from '../lib/config';
+import { purgeSystemDataAsync } from '../lib/governance-utils';
 
 interface Session {
   id: string;
@@ -310,10 +311,9 @@ export function SettingsPage({ onSignOut, setPage }: Props) {
                 <button 
                   onMouseDown={(e) => {
                     e.currentTarget.classList.add('scale-95', 'bg-black');
-                    const timer = setTimeout(() => {
+                    const timer = setTimeout(async () => {
                       if (confirm('NUCLEAR PURGE: This will wipe EVERYTHING on this hardware. Proceed?')) {
-                        localStorage.clear();
-                        window.location.reload();
+                        await purgeSystemDataAsync();
                       }
                     }, 2000);
                     (window as any)._burnTimer = timer;

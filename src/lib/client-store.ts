@@ -1,8 +1,4 @@
 // ============================================================
-// CLIENT STORE — localStorage persistence for all client data
-// ============================================================
-
-import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 
 export interface ClientBasic {
   id: string;
@@ -437,14 +433,6 @@ export function emptyClient(): FullClient {
     supportPlan: null,
     documents: [],
   };
-}
-
-export async function purgeSystemData() {
-  localStorage.removeItem('hc-clients-v2');
-  localStorage.removeItem('hazelcare-ops');
-  localStorage.removeItem('hazelcare-staff-notes');
-  await clearEntryStoreAsync();
-  window.location.reload();
 }
 
 export function clearClientData() {
