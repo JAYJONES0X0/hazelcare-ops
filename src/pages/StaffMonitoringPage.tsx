@@ -8,7 +8,7 @@ import {
   type MonitoringFilters,
 } from '../lib/staff-monitoring';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText } from 'lucide-react';
+import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, ArrowUp } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { getAllEntriesAsync } from '../lib/entry-store';
@@ -23,6 +23,19 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   const [importLoading, setImportLoading] = useState(false);
   const [importDragging, setImportDragging] = useState(false);
   const [booting, setBooting] = useState(true);
+  const [showJumpTop, setShowJumpTop] = useState(false);
+  
+  // AUTO-SNAP: Jump to top when date range changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [dateRange]);
+
+  // Scroll visibility for the arrow
+  useEffect(() => {
+    const handleScroll = () => setShowJumpTop(window.scrollY > 400);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Automatically hydrate from main IndexedDB on mount
   useEffect(() => {
@@ -259,5 +272,12 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
         </div>
       </div>
     </div>
-  );
-}
+      {showJumpTop && (
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-10 right-10 z-50 p-4 rounded-2xl hc-clay-raised text-hc-teal animate-in fade-in zoom-in duration-300 hover:scale-110 active:scale-95 transition-all shadow-2xl"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
+      )}
+    </div>

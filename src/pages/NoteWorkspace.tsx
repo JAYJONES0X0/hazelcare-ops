@@ -27,6 +27,13 @@ export function NoteWorkspace() {
     return () => { alive = false; };
   }, []);
 
+  // AUTO-SNAP: When filters change, jump to the start of the intelligence
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [selectedClient, dateRange]);
+
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState('');
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
@@ -284,8 +291,8 @@ export function NoteWorkspace() {
           </div>
         </div>
 
-        {/* Date range + Gold Standard controls */}
-        <div className="px-8 py-4 border-b border-hc-border/20 flex flex-col gap-4 shrink-0 bg-hc-bg/50 backdrop-blur-md sticky top-0 z-30">
+        {/* Date range + Gold Standard controls (Sticky Tactical Bar) */}
+        <div className="px-8 py-4 border-b border-hc-border/20 flex flex-col gap-4 shrink-0 bg-hc-bg/80 backdrop-blur-xl sticky top-0 z-40 shadow-sm">
           <DateRangePicker range={dateRange} onChange={setDateRange} entryCount={filtered.length} compact />
 
           <div className="flex flex-col gap-3">

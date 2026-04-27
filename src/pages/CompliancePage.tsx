@@ -94,6 +94,11 @@ export function CompliancePage({ staff }: Props) {
     });
   }, [dbStaff, search, houseFilter]);
 
+  // AUTO-SNAP: jump to top when filters or tabs change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [search, houseFilter, tab]);
+
   return (
     <div className="p-6 lg:p-10 max-w-[2560px] mx-auto animate-in fade-in duration-700">
       
