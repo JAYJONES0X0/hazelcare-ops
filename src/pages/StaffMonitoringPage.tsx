@@ -66,7 +66,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
       onDrop={e => { e.preventDefault(); setImportDragging(false); const f = e.dataTransfer.files[0]; if (f) void handleImportFile(f); }}
     >
       {importDragging && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-hc-bone/90 backdrop-blur-md border-[8px] border-dashed border-hc-teal/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-hc-bg/90 backdrop-blur-md border-[8px] border-dashed border-hc-teal/30">
           <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 hc-clay-raised border border-hc-teal/20 shadow-2xl">
             <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
             <div className="text-hc-text font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
@@ -79,7 +79,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
       <div className="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-hc-border pb-10">
         <div>
           <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase flex items-center gap-4">Force Protection</h1>
-          <p className="text-hc-text text-[11px] font-bold mt-3 max-w-2xl leading-relaxed uppercase tracking-wider">Clinical analysis of diary exports Â· Scored to protect registration.</p>
+          <p className="text-hc-text text-[11px] font-bold mt-3 max-w-2xl leading-relaxed uppercase tracking-wider">Clinical analysis of diary exports · Scored to protect registration.</p>
         </div>
         <div className="flex flex-wrap gap-4">
           <button onClick={() => allCollapsed(STAFF_IDS) ? expandAll(STAFF_IDS) : collapseAll(STAFF_IDS)} className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:text-hc-teal transition-all shadow-xl active:hc-clay-pressed">
@@ -88,7 +88,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
           <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
             className="flex items-center gap-3 px-8 py-3.5 rounded-2xl btn-tactical text-[11px] font-black cursor-pointer shadow-2xl">
             <RefreshCw className={`w-4 h-4 ${importLoading ? 'animate-spin' : ''}`} />
-            {importLoading ? 'Analysingâ€¦' : 'Sync daily CSV'}
+            {importLoading ? 'Analysing…' : 'Sync daily CSV'}
           </button>
         </div>
       </div>
@@ -97,7 +97,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
         {[
           { label: 'Intelligence Window', value: snapshot.windowLabel, icon: <Activity className="w-4 h-4" /> },
           { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), icon: <FileText className="w-4 h-4" /> },
-          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || 'â€”', icon: <RefreshCw className="w-4 h-4" /> },
+          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', icon: <RefreshCw className="w-4 h-4" /> },
           { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), icon: <History className="w-4 h-4" /> },
         ].map(({ label, value, icon }) => (
           <div key={label} className="hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]">
@@ -113,7 +113,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
           <section className="space-y-4">
             <div className="flex items-center gap-3 px-4 mb-6">
               <div className="w-2.5 h-2.5 rounded-full bg-flag-amber glow-amber" />
-              <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">Critical Review Â· {snapshot.staff.length}</h2>
+              <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">Critical Review · {snapshot.staff.length}</h2>
             </div>
             <div className="space-y-4">
               {snapshot.staff.map((s) => {
@@ -126,11 +126,11 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
                       <div className="flex items-center gap-8 min-w-0">
                          <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-text text-sm uppercase">{s.carer.charAt(0)}</div>        
                          <div>
-                            <div className="text-base font-black text-hc-text uppercase leading-none mb-2 group-hover:text-hub-teal transition-colors">{s.carer}</div>
+                            <div className="text-base font-black text-hc-text uppercase leading-none mb-2 group-hover:text-hc-teal transition-colors">{s.carer}</div>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               {s.categoryBreakdown.map(({ category, count }) => (
                                 <span key={category} className="pill pill-teal !bg-hc-bg border-hc-teal/20 text-[9px]">
-                                  {count}Ã— {category.replace('_', ' ')}
+                                  {count}× {category.replace('_', ' ')}
                                 </span>
                               ))}
                             </div>
@@ -163,7 +163,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
                          </div>
                          <div className="flex justify-end gap-4 border-t border-hc-border pt-6">
                             <button onClick={(e) => { e.stopPropagation(); setCoachStaff(s.carer); }}
-                              className="px-8 py-3.5 rounded-2xl btn-tactical shadow-2xl">Contextual Coaching Â· Summarise Â»</button>
+                              className="px-8 py-3.5 rounded-2xl btn-tactical shadow-2xl">Contextual Coaching · Summarise Â»</button>
                          </div>
                       </div>
                     )}

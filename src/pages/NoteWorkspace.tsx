@@ -30,8 +30,9 @@ export function NoteWorkspace() {
   // All unique clients from loaded entries
   const allClients = useMemo(() => {
     const names = new Set<string>();
+    const SKIP = new Set(['unknown', 'service user unassigned', 'personnel unassigned']);
     for (const e of entries) {
-      if (e.client && e.client.trim() && e.client.toLowerCase() !== 'unknown') names.add(e.client.trim());
+      if (e.client && e.client.trim() && !SKIP.has(e.client.toLowerCase().trim())) names.add(e.client.trim());
     }
     return Array.from(names).sort();
   }, [entries]);
@@ -130,7 +131,7 @@ export function NoteWorkspace() {
     <div className="h-[calc(100vh-4rem)] flex overflow-hidden animate-in fade-in duration-500">
 
       {/* ── Left: Client Switcher ─────────────────────────────── */}
-      <div className="w-72 shrink-0 border-r border-hc-border/20 flex flex-col bg-hc-bone overflow-hidden">
+      <div className="w-72 shrink-0 border-r border-hc-border/20 flex flex-col bg-hc-surface overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-hc-border/20">
           <div className="flex items-center justify-between mb-4">

@@ -26,6 +26,8 @@ import { Upload } from 'lucide-react';
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
 import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
+import { getAllEntriesAsync } from './lib/entry-store';
+import { buildWeekSummary } from './lib/universal-parser';
 
 export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
 
@@ -71,6 +73,16 @@ export default function App() {
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
   const [clients] = useState<FullClient[]>(() => loadClients());
+
+  useEffect(() => {
+    // ── MILITARY GRADE HYDRATION: Connect Offline Dashboards to Unlimited IndexedDB
+    getAllEntriesAsync().then(entries => {
+      if (entries && entries.length > 0) {
+        const generated = buildWeekSummary(entries);
+        setWeekData(generated);
+      }
+    }).catch(err => console.error('[Pipeline] Core Hydration Failure:', err));
+  }, []);
 
   const handleDataParsed = useCallback((data: WeekSummary) => {
     setWeekData(data);

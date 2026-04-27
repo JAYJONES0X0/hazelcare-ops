@@ -32,7 +32,7 @@ const navSections: NavSection[] = [
   {
     label: 'Mission Control',
     icon: <LayoutDashboard size={16} />,
-    color: 'text-hub-teal',
+    color: 'text-hc-teal',
     items: [
       { id: 'briefing' as Page,      label: 'Strategy Briefing', icon: <LayoutDashboard size={16} /> },
       { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={16} /> },
@@ -43,7 +43,7 @@ const navSections: NavSection[] = [
   {
     label: 'Clinical Intelligence',
     icon: <Activity size={16} />,
-    color: 'text-hub-indigo',
+    color: 'text-hc-teal-light',
     items: [
       { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
       { id: 'client-diary' as Page,    label: 'Diagnostic Feed',   icon: <BookOpen size={16} /> },
@@ -55,7 +55,7 @@ const navSections: NavSection[] = [
   {
     label: 'Personnel & Protection',
     icon: <ShieldCheck size={16} />,
-    color: 'text-hub-amber',
+    color: 'text-flag-amber',
     items: [
       { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={16} /> },
       { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={16} /> },
@@ -66,11 +66,11 @@ const navSections: NavSection[] = [
   {
     label: 'Operations & Audit',
     icon: <Zap size={16} />,
-    color: 'text-hub-red',
+    color: 'text-flag-red',
     items: [
       { id: 'actions',                 label: 'Command Vectors',   icon: <Zap size={16} /> },
       { id: 'incidents',               label: 'Incident Govt',     icon: <AlertTriangle size={16} /> },
-      { id: 'compliance',              label: 'Regulatory Audit',  icon: <ClipboardCheck size={16} /> },
+      { id: 'reports' as Page,         label: 'Regulatory Audit',  icon: <ClipboardCheck size={16} /> },
       { id: 'agency' as Page,          label: 'External Support',  icon: <Briefcase size={16} /> },
       { id: 'risk' as Page,            label: 'Risk Matrix',       icon: <Activity size={16} /> },
     ],
@@ -78,7 +78,7 @@ const navSections: NavSection[] = [
   {
     label: 'Sovereign System',
     icon: <Cog size={16} />,
-    color: 'text-hub-slate',
+    color: 'text-hc-muted',
     items: [
       { id: 'settings' as Page,   label: 'System Settings',   icon: <Settings2 size={16} /> },
       { id: 'admin' as Page,      label: 'Admin Matrix',      icon: <Shield size={16} /> },

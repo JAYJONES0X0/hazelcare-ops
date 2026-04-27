@@ -70,7 +70,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
   useEffect(() => {
     if (!weekData) return;
     const rfEntries = (weekData.allFlags?.red ?? []).filter(e => e.house === house);
-    const rfText = rfEntries.map(e => `â€¢ [${e.client}] ${e.entry}`).join('\n');
+    const rfText = rfEntries.map(e => `• [${e.client}] ${e.entry}`).join('\n');
     const concernKeywords = ['concern', 'incident', 'escalation', 'red flag', 'safeguarding', 'behaviour', 'refusal'];
     const hData = weekData.houses[house];
     if (!hData) return;
@@ -89,7 +89,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
     });
 
     const cocText = Array.from(cocMap.entries())
-      .map(([client, logs]) => `â€¢ ${client}: ${logs.join('; ')}`)
+      .map(([client, logs]) => `• ${client}: ${logs.join('; ')}`)
       .join('\n');
 
     if (rfText && !redFlags) setRedFlags(rfText);
@@ -107,11 +107,11 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
 
   function generateHandoverText(): string {
     const now = new Date();
-    let text = `SHIFT HANDOVER Â· ${house.toUpperCase()}\n`;
+    let text = `SHIFT HANDOVER · ${house.toUpperCase()}\n`;
     text += `DATE: ${now.toLocaleDateString('en-GB')}\n`;
-    text += `SHIFT: ${shiftFrom.toUpperCase()} â†’ ${shiftTo.toUpperCase()}\n`;
+    text += `SHIFT: ${shiftFrom.toUpperCase()} → ${shiftTo.toUpperCase()}\n`;
     text += `OUTGOING: ${staffOut || '___'} | INCOMING: ${staffIn || '___'}\n`;
-    text += `${'â”€'.repeat(50)}\n\n`;
+    text += `${'─'.repeat(50)}\n\n`;
 
     if (redFlags.trim()) text += `CRITICAL RED FLAGS\n${redFlags.trim()}\n\n`;
     if (clientsOfConcern.trim()) text += `CLIENTS OF CONCERN\n${clientsOfConcern.trim()}\n\n`;
@@ -125,12 +125,12 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
       text += `${cat.label.toUpperCase()}\n`;
       for (const item of catItems) {
         const flag = item.severity === 'red' ? ' [RED FLAG]' : item.severity === 'amber' ? ' [AMBER ALERT]' : '';
-        const status = item.resolved ? ' Â· Resolved' : '';
-        text += `  â€¢ ${item.text}${flag}${status}\n`;
+        const status = item.resolved ? ' · Resolved' : '';
+        text += `  • ${item.text}${flag}${status}\n`;
       }
       text += '\n';
     }
-    text += `${'â”€'.repeat(50)}\n${ORG_CONFIG.fullName} | CONFIDENTIAL`;
+    text += `${'─'.repeat(50)}\n${ORG_CONFIG.fullName} | CONFIDENTIAL`;
     return text;
   }
 
@@ -196,7 +196,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                   <div className="w-1.5 h-1.5 rounded-full bg-hc-red animate-pulse" />
                   Critical Red Flags
                </label>
-               <textarea value={redFlags} onChange={e => setRedFlags(e.target.value)} placeholder="Scan complete Â· No red flags detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
+               <textarea value={redFlags} onChange={e => setRedFlags(e.target.value)} placeholder="Scan complete · No red flags detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
             </div>
 
             <div className="hc-clay-raised p-8 border border-hc-amber/20">
@@ -204,7 +204,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                   <div className="w-1.5 h-1.5 rounded-full bg-hc-amber" />
                   Clients of Concern
                </label>
-               <textarea value={clientsOfConcern} onChange={e => setClientsOfConcern(e.target.value)} placeholder="Scan complete Â· No concerns detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
+               <textarea value={clientsOfConcern} onChange={e => setClientsOfConcern(e.target.value)} placeholder="Scan complete · No concerns detected..." className="w-full hc-clay-inset p-5 text-[12px] text-hc-text font-black leading-relaxed resize-none focus:outline-none min-h-[140px] scrollbar-thin italic placeholder:text-hc-muted/20" />
             </div>
           </div>
 

@@ -128,7 +128,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     <div className="animate-in fade-in duration-700">
 
       {/* ── DATE RANGE CONTROL BAR ─────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 bg-hc-bone/95 backdrop-blur-xl border-b border-hc-border/30 px-6 lg:px-12 py-4">
+      <div className="sticky top-0 z-30 bg-hc-bg/95 backdrop-blur-xl border-b border-hc-border/30 px-6 lg:px-12 py-4">
         <div className="max-w-[1800px] mx-auto flex flex-wrap items-center gap-4">
 
           {/* Store stats */}
@@ -225,6 +225,30 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           ))}
         </div>
 
+        {/* ── ENTRY TYPE VECTOR FEED ── */}
+        {data.entryTypes && Object.keys(data.entryTypes).length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">Signal Type Distribution</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {Object.entries(data.entryTypes)
+                .sort(([, a], [, b]) => b - a)
+                .map(([type, count]) => {
+                  const max = Math.max(...Object.values(data.entryTypes!));
+                  const pct = Math.round((count / max) * 100);
+                  return (
+                    <div key={type} className="hc-clay-raised flex-shrink-0 px-5 py-4 rounded-2xl flex flex-col gap-2 min-w-[130px]">
+                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest leading-tight truncate">{type}</div>
+                      <div className="text-xl font-black text-hc-text tabular-nums">{count.toLocaleString()}</div>
+                      <div className="w-full h-1 rounded-full bg-hc-surface-2 overflow-hidden">
+                        <div className="h-full rounded-full bg-hc-teal transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {/* ── AMBER FLAG SUMMARY STRIP ── */}
         {totalAmberFlags > 0 && (
           <div className="hc-clay-raised border border-flag-amber/20 p-4 rounded-xl flex items-center gap-4">
@@ -237,6 +261,84 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             </button>
           </div>
         )}
+
+        {/* ── 7-DAY PERSISTENCE MATRIX ── */}
+        {(() => {
+          // Collect all unique dates across all houses, sorted descending, last 7
+          const allEntries = Object.values(data.houses).flatMap(h => h.entries);
+          const dateSet = new Set(allEntries.map(e => e.date));
+          const sortedDates = Array.from(dateSet)
+            .sort((a, b) => {
+              // DD/MM/YYYY → compare as date
+              const [ad, am, ay] = a.split('/'); const [bd, bm, by] = b.split('/');
+              return new Date(`${by}-${bm}-${bd}`).getTime() - new Date(`${ay}-${am}-${ad}`).getTime();
+            })
+            .slice(-7);
+
+          if (sortedDates.length === 0) return null;
+
+          const maxCount = Math.max(1, ...houseStats.map(h =>
+            Math.max(1, ...sortedDates.map(d => h.entries.filter(e => e.date === d).length))
+          ));
+
+          return (
+            <div className="space-y-4">
+              <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">7-Day Persistence Matrix</h2>
+              <div className="hc-clay-raised p-6 rounded-[2.25rem] overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-[9px] font-black text-hc-muted uppercase tracking-widest pb-4 pr-4 w-32">Unit</th>
+                      {sortedDates.map(d => (
+                        <th key={d} className="text-center text-[9px] font-black text-hc-muted uppercase tracking-widest pb-4 px-2">
+                          {d.slice(0, 5)}
+                        </th>
+                      ))}
+                      <th className="text-right text-[9px] font-black text-hc-muted uppercase tracking-widest pb-4 pl-4">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {houseStats.map(h => (
+                      <tr key={h.name} className="group">
+                        <td className="pr-4 py-2">
+                          <span className="text-[11px] font-black text-hc-text uppercase tracking-tight group-hover:text-hc-teal transition-colors">{h.name}</span>
+                        </td>
+                        {sortedDates.map(d => {
+                          const cnt = h.entries.filter(e => e.date === d).length;
+                          const intensity = cnt === 0 ? 0 : Math.max(0.12, cnt / maxCount);
+                          return (
+                            <td key={d} className="px-2 py-2 text-center">
+                              <div
+                                className="mx-auto w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black transition-all"
+                                style={{
+                                  background: cnt === 0
+                                    ? 'var(--hc-surface-2)'
+                                    : intensity >= 1
+                                      ? 'var(--hc-bone)'
+                                      : `rgba(76, 124, 124, ${Math.max(0.25, intensity)})`,
+                                  color: cnt === 0
+                                    ? 'var(--hc-muted)'
+                                    : intensity >= 1
+                                      ? '#0d2d2d'
+                                      : 'var(--hc-bone)',
+                                }}
+                              >
+                                {cnt === 0 ? '·' : cnt}
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td className="pl-4 py-2 text-right">
+                          <span className="text-[11px] font-black text-hc-text tabular-nums">{h.entries.length}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── REGIONAL OPERATIONS MATRIX ── */}
         <div className="space-y-6">

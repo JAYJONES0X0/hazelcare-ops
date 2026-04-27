@@ -247,8 +247,10 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
 
     const date   = dateRaw || new Date().toLocaleDateString('en-GB');
     const carer  = carerRaw || 'Personnel Unassigned';
-    // Guard: CarePlanner sometimes fills the client column with a house name
-    const isHouseName = !!normalizeHouse(clientRaw) && Object.keys(HOUSE_MAP).some(k => clientRaw.toLowerCase().trim() === k || clientRaw.toLowerCase().trim() === normalizeHouse(clientRaw).toLowerCase());
+    // Guard: CarePlanner sometimes fills the client column with a house name.
+    // If normalizeHouse transforms the raw value, it matched a known house key.
+    const normalizedClient = normalizeHouse(clientRaw);
+    const isHouseName = !!clientRaw && normalizedClient !== clientRaw.trim();
     const client = (!clientRaw || isHouseName) ? 'Service User Unassigned' : clientRaw;
     const type   = typeRaw || 'Standard Entry';
     // If no explicit house column, try to extract from entry text or client name
