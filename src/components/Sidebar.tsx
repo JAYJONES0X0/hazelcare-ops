@@ -8,7 +8,7 @@ import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
   Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
   Database, Settings2, Sparkles, ChevronLeft, ChevronRight, Activity, HardDrive,
-  UserCheck, ShieldCheck, Cog
+  UserCheck, ShieldCheck, Cog, TrendingUp
 } from 'lucide-react';
 
 interface Props {
