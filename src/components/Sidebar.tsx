@@ -187,12 +187,16 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
                       <button
                         key={item.id}
                         onClick={() => setPage(item.id)}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group active:hc-clay-pressed
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group active:hc-clay-pressed relative
                           ${active
-                            ? 'hc-clay-raised ' + section.color + ' shadow-lg'
+                            ? 'hc-clay-pressed ' + section.color + ' shadow-inner shadow-black/20'
                             : 'text-hc-text/50 hover:text-hc-text hover:hc-clay-raised'
                           }`}
                       >
+                        {active && (
+                          <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-full animate-in fade-in duration-1000 ${section.color.replace('text-', 'bg-')}`} 
+                               style={{ boxShadow: `0 0 12px currentColor` }} />
+                        )}
                         <div className="flex items-center gap-3">
                           <span className={`${active ? section.color : 'opacity-40 group-hover:opacity-100'}`}>
                             {item.icon}

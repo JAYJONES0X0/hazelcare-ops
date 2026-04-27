@@ -11,8 +11,8 @@
   --color-hc-text:      var(--hc-text);
   --color-hc-muted:     var(--hc-muted);
   --color-hc-border:    var(--hc-border);
-  --color-hc-teal:       #1c4e4e;
-  --color-hc-teal-light: #4c7c7c;
+  --color-hc-teal:       var(--hc-teal-active);
+  --color-hc-teal-light: var(--hc-teal-glow);
   --color-flag-red:   #d94e4e;
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
@@ -30,6 +30,8 @@
   --hc-text:    #0d2d2d;
   --hc-muted:   #6b6653;
   --hc-border:  rgba(13, 45, 45, 0.06);
+  --hc-teal-active: #1c4e4e;
+  --hc-teal-glow:   #4c7c7c;
 
   --hc-shadow-dark:  rgba(13, 45, 45, 0.22);
   --hc-shadow-light: rgba(255, 255, 255, 0.98);
@@ -57,6 +59,8 @@
   --hc-text:    #f3efe0;
   --hc-muted:   #8a8b82;
   --hc-border:  rgba(243, 239, 224, 0.04);
+  --hc-teal-active: #40e0cf; /* Bright Electric Teal for Dark Mode */
+  --hc-teal-glow:   #2dd4bf;
 
   /* KEY: light component MUST be ≥0.10 or dark mode is completely flat */
   --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
