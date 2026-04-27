@@ -1,5 +1,5 @@
 import { uid } from './storage';
-import type { EscalationItem } from './staff-monitoring';
+import type { EscalationItem } from './types';
 
 /** Swallows QuotaExceededError silently — monitoring history is non-critical */
 function safeset(key: string, value: string): void {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { Page } from '../App';
+import type { Page } from '../lib/types';
 import type { Action, WeekSummary } from '../lib/types';
 
 import { ORG_CONFIG } from '../lib/config';

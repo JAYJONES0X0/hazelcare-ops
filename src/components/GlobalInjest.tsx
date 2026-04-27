@@ -5,7 +5,7 @@ import { extractFileText } from '../lib/universal-extractor';
 import { routeImport } from '../lib/import-router';
 import { loadWeekData } from '../lib/storage';
 import type { NormalizedImportEnvelope } from '../lib/import-intelligence';
-import type { Page } from '../App';
+import type { Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 
 interface Props {

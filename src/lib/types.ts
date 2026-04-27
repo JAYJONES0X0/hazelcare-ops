@@ -227,3 +227,21 @@ export interface AppState {
 }
 
 export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix';
+
+// Moved here from lib/staff-monitoring.ts to break circular dep with staff-monitoring-store.ts
+export type EscalationTier = 1 | 2 | 3;
+
+export interface EscalationItem {
+  id: string;
+  tier: EscalationTier;
+  house: string;
+  carer: string;
+  summary: string;
+  reasons: string[];
+  suggestedTool: 'notes' | 'handover' | 'actions' | 'incidents';
+  qualityScore: number;
+  entryCount: number;
+  shortEntryRatio: number;
+  avgEntryChars: number;
+  topGaps: string[];
+}

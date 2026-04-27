@@ -3,7 +3,7 @@ import { emptyClient, loadClients, resolveClientMatch, saveClient } from './clie
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
 import type { TemplateType } from './types';
 import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData, loadShifts, saveShifts } from './storage';
-import type { Page } from '../App';
+import type { Page } from './types';
 
 const TEMPLATE_CONTEXT_KEY = 'hc-template-import-context';
 

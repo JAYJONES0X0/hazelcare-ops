@@ -1,8 +1,8 @@
-import type { CareEntry, WeekSummary } from './types';
+import type { CareEntry, WeekSummary, EscalationTier, EscalationItem } from './types';
 import { scoreEntry, getTopGaps } from './entry-rubric';
 import { getRepeatTargets } from './staff-monitoring-store';
 
-export type EscalationTier = 1 | 2 | 3;
+export type { EscalationTier, EscalationItem } from './types';
 
 export interface MonitoringFilters {
   house: string | 'all';
