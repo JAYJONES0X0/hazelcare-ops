@@ -218,7 +218,6 @@ export function StaffPage({ staff, onUpdate }: Props) {
   useEffect(() => {
     void getAllEntriesAsync().then(all => {
       if (all.length === 0) return;
-      const def = defaultMondayWindow();
       const summary: any = {
         totalEntries: all.length,
         dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {},

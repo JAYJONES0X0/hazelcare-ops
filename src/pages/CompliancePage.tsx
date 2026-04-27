@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { StaffMember } from '../lib/types';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import { ORG_CONFIG } from '../lib/config';
-import { Shield, Clock, ChevronRight, Search, FileCheck, UserPlus } from 'lucide-react';
+import { Shield, ChevronRight, Search, FileCheck, UserPlus } from 'lucide-react';
 
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { computeStaffMonitoring } from '../lib/staff-monitoring';
@@ -16,7 +16,6 @@ export function CompliancePage({ staff }: Props) {
   const [search, setSearch] = useState('');
   const [houseFilter, setHouseFilter] = useState('all');
   const [dbStaff, setDbStaff] = useState<any[]>([]);
-  const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     void getAllEntriesAsync().then(all => {

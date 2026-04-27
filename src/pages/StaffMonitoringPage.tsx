@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry, StaffMember } from '../lib/types';
+import type { WeekSummary, CareEntry } from '../lib/types';
 import { useCollapseStore } from '../lib/collapse-store';
 import {
   computeStaffMonitoring,
@@ -20,9 +20,7 @@ interface Props {
 
 export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
-  const [importLoading, setImportLoading] = useState(false);
   const [importDragging, setImportDragging] = useState(false);
-  const [booting, setBooting] = useState(true);
 
   // Automatically hydrate from main IndexedDB on mount
   useEffect(() => {
