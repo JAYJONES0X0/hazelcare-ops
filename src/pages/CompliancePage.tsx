@@ -125,7 +125,15 @@ export function CompliancePage({ staff }: Props) {
       </div>
 
       {/* ── Personnel Compliance Matrix ── */}
-      <div className="hc-clay-raised overflow-hidden">
+      <div className="hc-clay-raised overflow-hidden relative">
+        {booting && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50 min-h-[400px]">
+             <div className="flex flex-col items-center">
+                <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
+                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Hydrating Personnel Intelligence</div>
+             </div>
+          </div>
+        )}
         <div className="overflow-x-auto scrollbar-thin">
           <table className="w-full text-left border-collapse">
             <thead>

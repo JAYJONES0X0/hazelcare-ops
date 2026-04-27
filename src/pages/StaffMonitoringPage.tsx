@@ -144,7 +144,16 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
         ))}
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-10">
+      <div className="flex flex-col xl:flex-row gap-10 relative">
+        {booting && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50 min-h-[600px]">
+             <div className="flex flex-col items-center">
+                <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
+                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Quantifying Clinical Matrix</div>
+                <div className="text-[10px] text-hc-muted uppercase mt-2 tracking-widest">Scanning 13,000+ Personnel Signals</div>
+             </div>
+          </div>
+        )}
         <div className="flex-1 flex flex-col gap-10">
           <section className="space-y-4">
             <div className="flex items-center gap-3 px-4 mb-6">
