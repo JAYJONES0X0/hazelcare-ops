@@ -74,10 +74,10 @@ export function SettingsPage({ onSignOut }: Props) {
 
   const [showPin, setShowPin] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
-  const [bounds, setBounds] = useState<{ count: number; first: string | null; last: string | null } | null>(null);
+  const [bounds, setBounds] = useState<{ count: number; from: string | null; to: string | null } | null>(null);
 
   useEffect(() => {
-    void getStoreBoundsAsync().then(b => setBounds(b));
+    void getStoreBoundsAsync().then(b => setBounds(b as any));
   }, []);
   const [sessions, setSessions] = useState<StoredSession[]>([]);
   const currentSessionId = sessionStorage.getItem('hc-session-id') || '';

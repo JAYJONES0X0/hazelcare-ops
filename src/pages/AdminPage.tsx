@@ -7,8 +7,6 @@ import {
   careEntriesToEvidenceCsv,
   buildCoordinatorReadme,
   buildCoordinatorEvidenceHtml,
-  buildCoordinatorPackMeta,
-  buildSnapshotForPack,
   filterEntriesForCoordinatorPack,
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
@@ -70,9 +68,10 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
         <button
           type="button"
           onClick={runCoordinatorPack}
-          className="shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide text-hc-text"
+          disabled={packing}
+          className={`shrink-0 px-5 py-3 rounded-xl btn-gradient text-[10px] font-black uppercase tracking-wide text-hc-text ${packing ? 'opacity-50' : ''}`}
         >
-          Download all 3 files
+          {packing ? 'Packing...' : 'Download all 3 files'}
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -123,8 +122,7 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   );
 }
 
-function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: {
-  weekData: WeekSummary | null;
+function DataManagerProp({ clients, onClearEverything, onClearType }: {
   clients: FullClient[];
   onClearEverything: () => void;
   onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
@@ -262,7 +260,6 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
       {weekData && <CoordinatorExportCard weekData={weekData} />}
       
       <DataManagerProp 
-        weekData={weekData} 
         clients={clients} 
         onClearEverything={handleClearEverything} 
         onClearType={handleClearType} 
