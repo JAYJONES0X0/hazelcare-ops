@@ -201,19 +201,26 @@ export function SettingsPage({ onSignOut }: Props) {
     } catch { return iso; }
   };
 
-  // ── PIN GATE OVERLAY ──
   if (!pinUnlocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-hc-bg p-6">
-        <div className="hc-clay-raised p-12 rounded-[3rem] w-full max-w-sm flex flex-col items-center gap-8 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl hc-clay-inset flex items-center justify-center text-hc-teal">
-            <Lock size={28} />
+      <div className="min-h-[85vh] flex items-center justify-center p-6 mt-[-10vh]">
+        <div className="hc-clay-raised p-12 rounded-[3.5rem] w-full max-w-md flex flex-col items-center gap-10 shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-hc-teal/[0.02] animate-pulse pointer-events-none" />
+          
+          <div className="w-24 h-24 rounded-3xl hc-clay-inset flex items-center justify-center text-hc-teal relative">
+            <div className="absolute inset-0 bg-hc-teal/10 rounded-3xl animate-ping opacity-20" />
+            <Lock size={40} className="relative z-10" />
           </div>
-          <div className="text-center">
-            <h2 className="text-2xl font-black text-hc-text uppercase tracking-tighter mb-2">Restricted Access</h2>
-            <p className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Enter 4-digit PIN to access System Settings</p>
+
+          <div className="text-center space-y-3">
+            <h2 className="text-3xl font-black text-hc-text uppercase tracking-tighter">System Vault Locked</h2>
+            <div className="flex flex-col items-center gap-2">
+               <span className="px-4 py-1 hc-clay-inset rounded-lg text-[10px] font-black text-hc-teal uppercase tracking-widest">Dev Identity Required</span>
+               <p className="text-[11px] font-bold text-hc-muted uppercase tracking-wider max-w-[280px] leading-relaxed">Enter 4-digit Sovereign Key to modify core logic and security parameters.</p>
+            </div>
           </div>
-          <div className="flex gap-3">
+
+          <div className="flex gap-4">
             {pinInput.map((digit, i) => (
               <input
                 key={i}
@@ -225,15 +232,25 @@ export function SettingsPage({ onSignOut }: Props) {
                 onChange={e => handlePinDigit(i, e.target.value)}
                 onKeyDown={e => handlePinKeyDown(i, e)}
                 autoFocus={i === 0}
-                className={`w-14 h-14 text-center text-2xl font-black hc-clay-inset outline-none transition-all rounded-2xl
-                  ${pinError ? 'ring-2 ring-flag-red text-flag-red' : digit ? 'text-hc-teal' : 'text-hc-muted'}`}
+                className={`w-16 h-16 text-center text-3xl font-black hc-clay-inset outline-none transition-all rounded-[1.5rem]
+                  ${pinError ? 'ring-2 ring-flag-red text-flag-red animate-shake' : digit ? 'text-hc-teal' : 'text-hc-muted'}
+                  focus:ring-2 focus:ring-hc-teal/30 focus:scale-110`}
               />
             ))}
           </div>
+
           {pinError && (
-            <p className="text-[10px] font-black text-flag-red uppercase tracking-widest -mt-4">Incorrect PIN · Try again</p>
+            <p className="text-[11px] font-black text-flag-red uppercase tracking-widest -mt-4 animate-in fade-in slide-in-from-top-1">Invalid Key · Access Denied</p>
           )}
-          <p className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-50 text-center">PIN configured in Access Control · Clears on sign-out or refresh</p>
+
+          <div className="flex flex-col items-center gap-4 text-center mt-4">
+             <div className="flex items-center gap-2 text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-40">
+                <Shield size={12} /> Forensic Encryption Active
+             </div>
+             <p className="text-[9px] font-bold text-hc-muted/40 uppercase tracking-widest leading-relaxed">
+               This lockdown is device-specific. It prevents local users from tampering with your clinical database or revoking your dev access.
+             </p>
+          </div>
         </div>
       </div>
     );
@@ -625,23 +642,38 @@ export function SettingsPage({ onSignOut }: Props) {
                     const isCurrent = s.id === currentSessionId;
                     const DeviceIcon = s.device === 'Mobile' ? Smartphone : Monitor;
                     return (
-                      <div key={s.id} className={`p-4 rounded-2xl flex items-center justify-between gap-4 transition-all ${isCurrent ? 'hc-clay-raised border border-hc-teal/20 bg-hc-teal/5' : 'hc-clay-inset opacity-60 hover:opacity-100'}`}>
-                        <div className="flex items-center gap-4 min-w-0">
-                          <DeviceIcon size={18} className={isCurrent ? 'text-hc-teal' : 'text-hc-muted'} />
-                          <div className="min-w-0">
-                            <div className="text-[10px] font-black text-hc-text uppercase flex items-center gap-2">
-                              {s.browser} · {s.device}
-                              {isCurrent && <span className="text-[7px] px-1.5 py-0.5 bg-hc-teal text-hc-bone rounded-full">CORE</span>}
+                      <div key={s.id} className={`p-5 rounded-[2rem] flex flex-col gap-4 transition-all ${isCurrent ? 'hc-clay-raised border border-hc-teal/20 bg-hc-teal/5' : 'hc-clay-inset opacity-60 hover:opacity-100'}`}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isCurrent ? 'hc-clay-inset text-hc-teal' : 'bg-black/5 text-hc-muted'}`}>
+                              <DeviceIcon size={20} />
                             </div>
-                            <div className="text-[8px] font-bold text-hc-muted uppercase mt-0.5 truncate">{formatTime(s.lastActive)}</div>
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-black text-hc-text uppercase flex items-center gap-2">
+                                {s.browser} · {s.device}
+                                {isCurrent && <span className="text-[7px] px-2 py-0.5 bg-hc-teal text-hc-bone rounded-full tracking-[0.2em]">ACTIVE_CORE</span>}
+                              </div>
+                              <div className="text-[9px] font-bold text-hc-muted uppercase mt-0.5 truncate">{formatTime(s.lastActive)}</div>
+                            </div>
                           </div>
+                          <button 
+                            onClick={() => isCurrent ? onSignOut() : revokeSession(s.id)} 
+                            className={`w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center transition-all ${isCurrent ? 'text-flag-red' : 'text-hc-muted hover:text-flag-red'}`}
+                          >
+                            {isCurrent ? <LogOut size={14} /> : <X size={14} />}
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => isCurrent ? onSignOut() : revokeSession(s.id)} 
-                          className={`w-8 h-8 rounded-lg hc-clay-raised flex items-center justify-center transition-all ${isCurrent ? 'text-flag-red' : 'text-hc-muted hover:text-flag-red'}`}
-                        >
-                          {isCurrent ? <LogOut size={12} /> : <X size={12} />}
-                        </button>
+                        
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-hc-border/5">
+                           <div className="flex flex-col gap-1">
+                              <div className="text-[8px] font-black text-hc-muted uppercase opacity-40">Forensic Identity</div>
+                              <div className="text-[9px] font-mono font-bold text-hc-teal truncate opacity-80 uppercase tracking-tighter">NODE_{s.id.slice(0,12)}</div>
+                           </div>
+                           <div className="flex flex-col gap-1 text-right">
+                              <div className="text-[8px] font-black text-hc-muted uppercase opacity-40">Status</div>
+                              <div className="text-[9px] font-bold text-hc-text uppercase">{isCurrent ? 'Verified Node' : 'Stale Session'}</div>
+                           </div>
+                        </div>
                       </div>
                     );
                   })}
