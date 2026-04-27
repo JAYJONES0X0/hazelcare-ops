@@ -110,6 +110,7 @@ export function SettingsPage({ onSignOut, setPage }: Props) {
                <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60 italic">Authorisation Required for System Core</p>
             </div>
 
+            <div className="w-full space-y-2">
                <div className={`p-4 rounded-2xl hc-clay-inset border transition-all duration-300 ${pinError ? 'border-flag-red bg-flag-red/5' : 'border-hc-border/10'}`}>
                   <input 
                     type="password"
