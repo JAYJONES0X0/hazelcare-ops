@@ -1,21 +1,31 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
-import { getAllEntries, appendEntries, getStoreBounds } from '../lib/entry-store';
+import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
   const [importInfo, setImportInfo] = useState('');
+  const [booting, setBooting] = useState(true);
 
-  // Load from persistent store on first render — no re-import needed if data exists
-  const [entries, setEntries] = useState<CareEntry[]>(() => {
-    const stored = getAllEntries();
-    return stored;
-  });
+  // Load from IndexedDB async on mount — no 5MB localStorage cap
+  const [entries, setEntries] = useState<CareEntry[]>([]);
+  const [storeBounds, setStoreBounds] = useState<{ from: string; to: string; count: number } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void getAllEntriesAsync().then(rows => {
+      if (!alive) return;
+      setEntries(rows);
+      setBooting(false);
+    });
+    void getStoreBoundsAsync().then(b => { if (alive) setStoreBounds(b); });
+    return () => { alive = false; };
+  }, []);
 
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState('');
@@ -25,9 +35,6 @@ export function NoteWorkspace() {
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
 
-  const storeBounds = getStoreBounds();
-
-  // All unique clients from loaded entries
   const allClients = useMemo(() => {
     const names = new Set<string>();
     const SKIP = new Set(['unknown', 'service user unassigned', 'personnel unassigned']);
@@ -82,9 +89,12 @@ export function NoteWorkspace() {
       } else if (envelope.weekSummary) {
         loaded = flattenWeekEntries(envelope.weekSummary);
       }
-      const added = appendEntries(loaded);
-      const all = getAllEntries();
+      // Write to IndexedDB (no cap) and then reload from IDB for real count
+      const added = await appendEntriesAsync(loaded);
+      const all = await getAllEntriesAsync();
       setEntries(all);
+      const bounds = await getStoreBoundsAsync();
+      setStoreBounds(bounds);
       setImportInfo(`${loaded.length} entries parsed · ${added} new · ${all.length} total in store · ${file.name}`);
     } catch (e) {
       setImportInfo(`Failed to parse: ${e instanceof Error ? e.message : 'Unknown error'}`);
@@ -177,7 +187,12 @@ export function NoteWorkspace() {
 
         {/* Client list */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          {!hasData ? (
+          {booting ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-hc-muted text-center animate-pulse">
+              <Sparkles className="w-10 h-10 text-hc-teal/40 mb-4 animate-spin-slow" />
+              <div className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Hydrating...</div>
+            </div>
+          ) : !hasData ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-hc-muted text-center">
               <FileText className="w-10 h-10 text-hc-muted mb-4" />
               <div className="text-[11px] font-black text-hc-muted uppercase tracking-widest">No data loaded</div>
@@ -282,8 +297,17 @@ export function NoteWorkspace() {
         </div>
 
         {/* Entry list */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6">
-          {!hasData && (
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative">
+          {booting && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50">
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
+                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Booting Intelligence Matrix</div>
+                <div className="text-[10px] text-hc-muted uppercase mt-2">Hydrating 13,000+ clinical records</div>
+              </div>
+            </div>
+          )}
+          {!booting && !hasData && (
             <div className="flex flex-col items-center justify-center h-full text-hc-muted text-center">
               <FileText className="w-16 h-16 text-hc-muted mb-6" />
               <div className="text-sm font-black text-hc-text uppercase tracking-[0.2em]">Import a diary export to begin</div>
