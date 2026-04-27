@@ -7,7 +7,7 @@ import {
   Layers, ShieldAlert, Clock
 } from 'lucide-react';
 import { ORG_CONFIG } from '../lib/config';
-import { getStoreBounds, clearEntryStore } from '../lib/entry-store';
+import { getStoreBoundsAsync, clearEntryStore } from '../lib/entry-store';
 
 interface StoredSession {
   id: string;
@@ -74,7 +74,11 @@ export function SettingsPage({ onSignOut }: Props) {
 
   const [showPin, setShowPin] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
-  const [bounds, setBounds] = useState(getStoreBounds());
+  const [bounds, setBounds] = useState<{ count: number; first: string | null; last: string | null } | null>(null);
+
+  useEffect(() => {
+    void getStoreBoundsAsync().then(b => setBounds(b));
+  }, []);
   const [sessions, setSessions] = useState<StoredSession[]>([]);
   const currentSessionId = sessionStorage.getItem('hc-session-id') || '';
 

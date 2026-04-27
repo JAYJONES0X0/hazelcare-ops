@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
 import { clearClientData, clearStaffNotes, purgeSystemData, type FullClient } from '../lib/client-store';
 import { clearWeekData, clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
@@ -12,30 +12,50 @@ import {
   filterEntriesForCoordinatorPack,
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
+import { getAllEntriesAsync } from '../lib/entry-store';
 
 function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   const houseKeys = Object.keys(weekData.houses).sort();
   const [house, setHouse] = useState<string>('all');
-  const [dateFrom, setDateFrom] = useState(weekData.dateFrom || '');
-  const [dateTo, setDateTo] = useState(weekData.dateTo || '');
+  const [dateFrom, setDateFrom] = useState(weekData?.dateFrom || '');
+  const [dateTo, setDateTo] = useState(weekData?.dateTo || '');
   const [typeFilter, setTypeFilter] = useState('');
+  const [packing, setPacking] = useState(false);
 
-  function runCoordinatorPack() {
-    const filters: MonitoringFilters = {
-      house: house as MonitoringFilters['house'],
-      dateFrom: dateFrom.trim() || undefined,
-      dateTo: dateTo.trim() || undefined,
-    };
-    const snapshot = buildSnapshotForPack(weekData, filters);
-    const entries = filterEntriesForCoordinatorPack(weekData, filters, typeFilter);
-    const meta = buildCoordinatorPackMeta(snapshot, 'upload-hub', {
-      typeFilter: typeFilter.trim() || undefined,
-      entryCount: entries.length,
-    });
-    const day = new Date().toISOString().slice(0, 10);
-    downloadText(`hazelcare-coordinator-evidence-${day}.csv`, careEntriesToEvidenceCsv(entries), 'text/csv;charset=utf-8');
-    downloadText(`hazelcare-coordinator-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
-    downloadText(`hazelcare-coordinator-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta), 'text/html;charset=utf-8');
+  async function runCoordinatorPack() {
+    setPacking(true);
+    try {
+      const all = await getAllEntriesAsync();
+      const filters: MonitoringFilters = {
+        house: house as MonitoringFilters['house'],
+        dateFrom: dateFrom.trim() || undefined,
+        dateTo: dateTo.trim() || undefined,
+      };
+      
+      // Filter the full dataset manually for the pack
+      const entries = all.filter(e => {
+        if (house !== 'all' && e.house !== house) return false;
+        if (typeFilter && !JSON.stringify(e).toLowerCase().includes(typeFilter.toLowerCase())) return false;
+        if (filters.dateFrom || filters.dateTo) {
+          const parts = e.date.split('/');
+          const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          const from = filters.dateFrom?.split('/').reverse().join('-');
+          const to = filters.dateTo?.split('/').reverse().join('-');
+          if (from && iso < from) return false;
+          if (to && iso > to) return false;
+        }
+        return true;
+      });
+
+      const day = new Date().toISOString().slice(0, 10);
+      const meta = { title: 'COORDINATOR EVIDENCE PACK', generated: new Date().toISOString(), filters, entryCount: entries.length };
+      
+      downloadText(`hazelcare-evidence-${day}.csv`, careEntriesToEvidenceCsv(entries), 'text/csv;charset=utf-8');
+      downloadText(`hazelcare-readme-${day}.txt`, buildCoordinatorReadme(meta as any), 'text/plain;charset=utf-8');
+      downloadText(`hazelcare-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta as any), 'text/html;charset=utf-8');
+    } finally {
+      setPacking(false);
+    }
   }
 
   return (
@@ -109,10 +129,15 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
   onClearEverything: () => void;
   onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
 }) {
+  const [realCount, setRealCount] = useState(0);
   const restoreRef = useRef<HTMLInputElement>(null);
   const actions = loadActions();
   const incidents = loadIncidents();
   const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
+
+  useEffect(() => {
+    void getAllEntriesAsync().then(all => setRealCount(all.length));
+  }, []);
 
   function handleExportBackup() {
     const snapshot = exportOpsSnapshot();
@@ -142,7 +167,7 @@ function DataManagerProp({ weekData, clients, onClearEverything, onClearType }: 
   }
 
   const datasets = [
-    { key: 'diary', label: 'Diary & Briefing', present: !!weekData, desc: weekData ? `${weekData.totalEntries} entries, ${weekData.dateFrom} – ${weekData.dateTo}` : 'Local registry empty' },
+    { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries safely stored` : 'Local registry empty' },
     { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
     { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
     { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },
