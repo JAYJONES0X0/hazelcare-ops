@@ -130,7 +130,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
 
   return (
     <div
-      className={`h-full flex flex-col p-4 bg-hc-bg z-30 shrink-0 transition-all duration-300 ease-in-out relative ${collapsed ? 'w-20' : 'w-72'}`}
+      className={`h-full flex flex-col p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative ${collapsed ? 'w-20' : 'w-72'}`}
     >
       {/* Collapse toggle */}
       <button
@@ -142,7 +142,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
       </button>
 
       {/* Brand Header */}
-      <div className={`hc-clay-raised mb-6 flex flex-col items-center transition-all duration-300 ${collapsed ? 'p-2 gap-0' : 'p-5 gap-3'}`}>
+      <div className={`hc-clay-raised mb-6 flex flex-col items-center transition-[padding,gap] duration-300 ${collapsed ? 'p-2 gap-0' : 'p-5 gap-3'}`}>
         <div className="w-10 h-10 rounded-2xl hc-clay-inset flex items-center justify-center shrink-0">
           <img src={ORG_CONFIG.logoIcon} alt="HC" className="w-6 h-6 opacity-80" />
         </div>

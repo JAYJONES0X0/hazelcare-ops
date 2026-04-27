@@ -179,13 +179,21 @@ export function CompliancePage({ staff }: Props) {
               </div>
               <div className="space-y-3">
                  {gaps.slice(0, 50).map(gap => (
-                   <div key={gap.id} className="hc-clay-raised p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:scale-[1.01] transition-transform">
+                   <div key={gap.id} className="hc-clay-raised p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:scale-[1.01] transition-transform relative overflow-hidden group">
+                      {/* Operational Tag */}
+                      <div className="absolute top-0 right-0 px-3 py-1 bg-hc-teal/10 border-b border-l border-hc-teal/20 text-[8px] font-black text-hc-teal uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                         Forensic Recon Active
+                      </div>
+                      
                       <div className="flex items-center gap-6">
                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${gap.severity === 'red' ? 'bg-flag-red/10 text-flag-red' : 'bg-flag-amber/10 text-flag-amber'}`}>
                             {gap.severity === 'red' ? <UserX size={24} /> : <History size={24} />}
                          </div>
                          <div>
-                            <div className="text-[13px] font-black text-hc-text uppercase tracking-tight">{gap.client}</div>
+                            <div className="flex items-center gap-2">
+                               <div className="text-[13px] font-black text-hc-text uppercase tracking-tight">{gap.client}</div>
+                               {gap.likelyCarers.length > 0 && <span className="text-[8px] font-black bg-hc-teal/20 text-hc-teal px-2 py-0.5 rounded-full uppercase">Inferred</span>}
+                            </div>
                             <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">Station: {gap.house} · {gap.date}</div>
                          </div>
                       </div>
