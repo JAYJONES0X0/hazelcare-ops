@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
-import { loadClients, saveClient, deleteClient, emptyClient, purgeSystemData, type ClientDocument } from '../lib/client-store';
+import { loadClients, saveClient, deleteClient, emptyClient, type ClientDocument, type FullClient } from '../lib/client-store';
+import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { analyzeIntel, analyzeIntelFallback } from '../lib/intelligence';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
-import type { FullClient } from '../lib/client-store';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X } from 'lucide-react';
 import { uid } from '../lib/storage';
 
@@ -741,7 +741,7 @@ export function ClientDocsPage() {
             </div>
           </div>
           <button
-            onClick={() => { if(confirm('Are you sure? This will delete every person and every document. This cannot be undone.')) purgeSystemData(); }}
+            onClick={async () => { if(confirm('Are you sure? This will delete every person and every document. This cannot be undone.')) await purgeSystemDataAsync(); }}
             className="px-10 py-4 bg-flag-red text-hc-bone rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-3 shadow-xl shadow-red-900/20 active:scale-95"
           >
             <Trash2 className="w-4 h-4" />
