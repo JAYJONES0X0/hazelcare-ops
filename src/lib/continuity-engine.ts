@@ -1,4 +1,4 @@
-import { CareEntry } from './types';
+import type { CareEntry } from './types';
 import { parseDateMs } from './entry-store';
 
 export interface ClinicalGap {
