@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Page } from '../App';
 import type { Action, WeekSummary } from '../lib/types';
@@ -114,6 +114,17 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
       return next;
     });
   };
+
+  // Auto-collapse sections: when page changes, expand only the owning section
+  useEffect(() => {
+    if (collapsed) return;
+    const ownerSection = navSections.find(s => s.items.some(i => i.id === page));
+    if (!ownerSection) return;
+    const next: Record<string, boolean> = {};
+    for (const s of navSections) next[s.label] = s.label === ownerSection.label;
+    try { localStorage.setItem('hc-sidebar-expanded', JSON.stringify(next)); } catch { /* ignore */ }
+    setExpandedSections(next);
+  }, [page, collapsed]);
 
   const openActionsCount = actions.filter(a => a.status !== 'completed').length;
 
