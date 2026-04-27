@@ -9,7 +9,7 @@ import {
   buildCoordinatorEvidenceHtml,
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
-import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync } from '../lib/entry-store';
+import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 import { Database, Trash2, Calendar, HardDrive, ShieldAlert } from 'lucide-react';
 
 function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
@@ -139,6 +139,12 @@ function DataManagerProp({ clients, onClearEverything, onClearType }: {
   useEffect(() => {
     void getAllEntriesAsync().then(all => setRealCount(all.length));
     void getStorageAuditAsync().then(setStorageAudit);
+    
+    // Wire up for global refresh after clear
+    (window as any).refreshDataManager = async (count: number) => {
+       setRealCount(count);
+       setStorageAudit(await getStorageAuditAsync());
+    };
   }, []);
 
   async function handleSurgicalPurge() {
@@ -321,18 +327,29 @@ function DataManagerProp({ clients, onClearEverything, onClearType }: {
 
 export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null, clients: FullClient[] }) {
 
-  const handleClearEverything = () => {
-    purgeSystemData();
-    window.location.reload();
+  const handleClearEverything = async () => {
+    if (!confirm('TOTAL PURGE: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
+    await purgeSystemData(); // This now clears IndexedDB + LocalStorage
+    window.location.reload(); // Hard refresh to ensure everything is purged
   };
 
-  const handleClearType = (type: any) => {
-    if (type === 'diary') clearWeekData();
-    else if (type === 'clients') clearClientData();
-    else if (type === 'actions') clearActions();
-    else if (type === 'incidents') clearIncidents();
-    else if (type === 'notes') clearStaffNotes();
-    window.location.reload();
+  const handleClearType = async (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => {
+    if (!confirm(`PURGE: Wipe all ${type.toUpperCase()} records?`)) return;
+    
+    if (type === 'diary') {
+      await clearEntryStoreAsync();
+    } else if (type === 'clients') {
+      clearClientData();
+    } else if (type === 'notes') {
+      clearStaffNotes();
+    } else if (type === 'actions') {
+      clearActions();
+    } else if (type === 'incidents') {
+      clearIncidents();
+    }
+    
+    // Refresh the local component state to show 0
+    void getAllEntriesAsync().then(all => (window as any).refreshDataManager?.(all.length));
   };
 
   return (
