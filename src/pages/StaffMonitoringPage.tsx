@@ -38,12 +38,16 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
           entriesByHouse[h].push(e);
         });
         
-        const summary: WeekSummary = {
+        const summary: any = {
           totalEntries: all.length,
+          dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {},
           houses: Object.entries(entriesByHouse).reduce((acc, [name, entries]) => {
-            acc[name] = { name, entries };
+            acc[name] = { 
+              name, entries, coordinator: '', incidents: [], safeguarding: [], medication: [], 
+              welfare: [], feedback: [], performance: { quality: 100, volume: 100, compliance: 100 }
+            };
             return acc;
-          }, {} as Record<string, { name: string; entries: CareEntry[] }>)
+          }, {} as any)
         };
         onDataParsed(summary);
       }

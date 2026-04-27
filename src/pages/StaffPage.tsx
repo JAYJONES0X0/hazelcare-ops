@@ -219,8 +219,9 @@ export function StaffPage({ staff, onUpdate }: Props) {
     void getAllEntriesAsync().then(all => {
       if (all.length === 0) return;
       const def = defaultMondayWindow();
-      const summary = {
+      const summary: any = {
         totalEntries: all.length,
+        dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {},
         houses: {} as any
       };
       // Build a house-grouped summary for the scoring engine

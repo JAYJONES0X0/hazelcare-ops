@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { StaffMember } from '../lib/types';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import { ORG_CONFIG } from '../lib/config';
@@ -22,7 +22,11 @@ export function CompliancePage({ staff }: Props) {
     void getAllEntriesAsync().then(all => {
       if (all.length === 0) { setBooting(false); return; }
       
-      const summary = { totalEntries: all.length, houses: {} as any };
+      const summary: any = { 
+        totalEntries: all.length,
+        dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {}, 
+        houses: {} as any 
+      };
       all.forEach(e => {
         const h = e.house || 'UNASSIGNED';
         if (!summary.houses[h]) summary.houses[h] = { name: h, entries: [] };
