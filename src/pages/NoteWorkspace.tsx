@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, ArrowUp } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import type { CareEntry } from '../lib/types';
@@ -32,6 +32,8 @@ export function NoteWorkspace() {
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [goldTemplate, setGoldTemplate] = useState('');
   const [showGoldSuite, setShowGoldSuite] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [showJumpTop, setShowJumpTop] = useState(false);
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
@@ -332,7 +334,22 @@ export function NoteWorkspace() {
         </div>
 
         {/* Entry list */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative">
+        <div 
+          ref={listRef}
+          onScroll={(e) => {
+            const top = (e.target as HTMLElement).scrollTop;
+            setShowJumpTop(top > 400);
+          }}
+          className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative scroll-smooth"
+        >
+          {showJumpTop && (
+            <button 
+              onClick={() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="fixed bottom-10 right-10 z-50 p-4 rounded-2xl hc-clay-raised text-hc-teal animate-in fade-in zoom-in duration-300 hover:scale-110 active:scale-95 transition-all shadow-2xl"
+            >
+              <ArrowUp className="w-5 h-5" />
+            </button>
+          )}
           {booting && (
             <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50">
               <div className="flex flex-col items-center">
