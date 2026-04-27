@@ -24,13 +24,7 @@ import { EmpireMatrix } from './pages/EmpireMatrix';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload } from 'lucide-react';
 
-import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
-import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
-import { loadClients, type FullClient } from './lib/client-store';
-import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
-import { buildWeekSummary } from './lib/universal-parser';
-
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix';
+import type { WeekSummary, Action, Incident, StaffMember, Page } from './lib/types';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };

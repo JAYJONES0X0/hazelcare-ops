@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import type { WeekSummary } from '../lib/types';
-import type { Page } from '../App';
+import type { WeekSummary, Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 import { 
   FileText, 

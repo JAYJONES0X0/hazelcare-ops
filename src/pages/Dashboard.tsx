@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
-import type { WeekSummary, Action, Incident } from '../lib/types';
-import type { Page } from '../App';
+import { useState, useEffect, useMemo } from 'react';
+import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw, Users, FileText, Clock } from 'lucide-react';
+import type { WeekSummary, Action, Incident, Page } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { useCollapseStore } from '../lib/collapse-store';
+import { detectClinicalGaps } from '../lib/continuity-engine';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -28,6 +28,26 @@ const PRESETS = [
   { label: '90 Days',  days: 90 },
   { label: 'All Time', days: -1 },
 ];
+
+function Section({ title, count, children, collapsed, onToggle }: { id: string; title: string; count?: number; children: React.ReactNode; collapsed: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <button onClick={onToggle} className="flex items-center justify-between px-2 group">
+        <div className="flex items-center gap-6">
+          <div className="w-1 h-6 bg-hc-teal rounded-full" />
+          <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
+        </div>
+        <div className="flex items-center gap-8">
+          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-surface-2 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
+          <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
+             <ChevronRight size={16} className="rotate-90" />
+          </div>
+        </div>
+      </button>
+      {!collapsed && <div className="animate-in fade-in slide-in-from-top-4 duration-500">{children}</div>}
+    </div>
+  );
+}
 
 export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   // ── Date range state ──────────────────────────────────────────────────────
@@ -100,7 +120,35 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     setDateFrom(from.toISOString().slice(0, 10));
   }
 
-  // Active data = filtered or fallback to passed-in weekData
+  // ── Optimized Metric Aggregation ───────────────────────────────────────────
+  const { houseStats, metrics } = useMemo(() => {
+    const d = filteredData || weekData;
+    if (!d) return { houseStats: [], metrics: { totalEntries: 0, activeStaff: 0, pendingActions: 0, activeIncidents: 0, totalRedFlags: 0, totalAmberFlags: 0, uniqueClients: 0, gaps: 0, criticalGaps: 0 } };
+
+    const allEntries = Object.values(d.houses).flatMap(h => h.entries);
+    const gaps = detectClinicalGaps(allEntries);
+
+    const stats = Object.entries(d.houses).map(([name, houseData]) => {
+      const red = houseData.entries.filter(e => e.severity === 'red').length;
+       return { name, entries: houseData.entries, red };
+    }).sort((a, b) => b.red - a.red || b.entries.length - a.entries.length);
+
+    const m = {
+      totalEntries: d.totalEntries || 0,
+      activeStaff: new Set(Object.values(d.houses).flatMap(h => h.entries.map(e => e.carer))).size,
+      pendingActions: actions.filter(a => a.status !== 'completed').length,
+      activeIncidents: incidents.filter(i => i.stage !== 'closed').length,
+      totalRedFlags: d.allFlags?.red.length || 0,
+      totalAmberFlags: d.allFlags?.amber.length || 0,
+      uniqueClients: new Set(Object.values(d.houses).flatMap(h => h.entries.map(e => e.client))).size,
+      gaps: gaps.length,
+      criticalGaps: gaps.filter(g => g.severity === 'red').length
+    };
+
+    return { houseStats: stats, metrics: m };
+  }, [filteredData, weekData, actions, incidents]);
+
+  // Active data reference
   const data = filteredData || weekData;
 
   // ── Empty state ──────────────────────────────────────────────────────────
@@ -118,19 +166,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       </div>
     );
   }
-
-  const houseStats = Object.entries(data.houses).map(([name, houseData]) => {
-    const red = houseData.entries.filter(e => e.severity === 'red').length;
-    return { name, entries: houseData.entries, red };
-  }).sort((a, b) => b.red - a.red || b.entries.length - a.entries.length);
-
-  const totalEntries     = data.totalEntries || 0;
-  const activeStaff      = new Set(Object.values(data.houses).flatMap(h => h.entries.map(e => e.carer))).size;
-  const pendingActions   = actions.filter(a => a.status !== 'completed').length;
-  const activeIncidents  = incidents.filter(i => i.stage !== 'closed').length;
-  const totalRedFlags    = data.allFlags?.red.length || 0;
-  const totalAmberFlags  = data.allFlags?.amber.length || 0;
-  const uniqueClients    = new Set(Object.values(data.houses).flatMap(h => h.entries.map(e => e.client))).size;
 
   const dateLabel = dateFrom || dateTo
     ? `${dateFrom ? formatDisplayDate(dateFrom) : '…'} → ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
@@ -225,12 +260,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         {/* ── KPI PODS ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { label: 'Intelligence Records', val: totalEntries.toLocaleString(), sub: 'In Window',         color: 'text-hc-text'    },
-            { label: 'Service Users',         val: uniqueClients,                sub: 'Active Clients',    color: 'text-hc-text'    },
-            { label: 'Personnel Active',      val: activeStaff,                  sub: 'Field Strength',    color: 'text-hc-text'    },
-            { label: 'Critical Escalations',  val: totalRedFlags,                sub: 'Immediate Action',  color: 'text-flag-red'   },
-            { label: 'Open Command Tasks',    val: pendingActions,               sub: 'Pipeline',          color: 'text-flag-amber' },
-            { label: 'Active Incidents',      val: activeIncidents,              sub: 'Force Protection',  color: 'text-flag-red'   },
+            { label: 'Intelligence Records', val: metrics.totalEntries.toLocaleString(), sub: 'In Window',         color: 'text-hc-text'    },
+            { label: 'Service Users',         val: metrics.uniqueClients,                sub: 'Active Clients',    color: 'text-hc-text'    },
+            { label: 'Personnel Active',      val: metrics.activeStaff,                  sub: 'Field Strength',    color: 'text-hc-text'    },
+            { label: 'Clinical Gaps',         val: metrics.gaps,                         sub: metrics.criticalGaps > 0 ? `${metrics.criticalGaps} Deep Silence` : 'Continuity Intact', color: metrics.gaps > 0 ? 'text-flag-amber' : 'text-hc-muted' },
+            { label: 'Critical Escalations',  val: metrics.totalRedFlags,                sub: 'Immediate Action',  color: 'text-flag-red'   },
+            { label: 'Active Incidents',      val: metrics.activeIncidents,              sub: 'Force Protection',  color: 'text-flag-red'   },
           ].map(s => (
             <div key={s.label} className="hc-clay-raised p-6 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-all">
               <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest leading-tight">{s.label}</div>
@@ -265,11 +300,11 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         )}
 
         {/* ── AMBER FLAG SUMMARY STRIP ── */}
-        {totalAmberFlags > 0 && (
+        {metrics.totalAmberFlags > 0 && (
           <div className="hc-clay-raised border border-flag-amber/20 p-4 rounded-xl flex items-center gap-4">
             <AlertTriangle size={16} className="text-flag-amber flex-shrink-0" />
             <span className="text-[11px] font-black text-hc-text uppercase tracking-widest">
-              {totalAmberFlags} amber alert{totalAmberFlags !== 1 ? 's' : ''} require review in selected window
+              {metrics.totalAmberFlags} amber alert{metrics.totalAmberFlags !== 1 ? 's' : ''} require review in selected window
             </span>
             <button onClick={() => setPage('client-diary', { severity: 'amber' })} className="ml-auto text-[10px] font-black text-flag-amber uppercase tracking-widest hover:underline">
               Review →
@@ -431,22 +466,3 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   );
 }
 
-function Section({ title, count, children, collapsed, onToggle }: { id: string; title: string; count?: number; children: React.ReactNode; collapsed: boolean; onToggle: () => void }) {
-  return (
-    <div className="flex flex-col gap-6">
-      <button onClick={onToggle} className="flex items-center justify-between px-2 group">
-        <div className="flex items-center gap-6">
-          <div className="w-1 h-6 bg-hc-teal rounded-full" />
-          <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
-        </div>
-        <div className="flex items-center gap-8">
-          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-surface-2 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
-          <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
-             <ChevronRight size={16} />
-          </div>
-        </div>
-      </button>
-      {!collapsed && <div className="animate-in fade-in slide-in-from-top-4 duration-500">{children}</div>}
-    </div>
-  );
-}

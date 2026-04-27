@@ -3,8 +3,7 @@ import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar
 import JSZip from 'jszip';
 import { loadClients } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
-import type { WeekSummary } from '../lib/types';
-import type { Page } from '../App';
+import type { WeekSummary, Page } from '../lib/types';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
 import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
@@ -90,8 +89,7 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
   let combined = '';
   const rows: ZipGuidanceRow[] = [];
   const readErrors: string[] = [];
-  for (let i = 0; i < supported.length; i++) {
-    const entry = supported[i];
+  const results = await Promise.all(supported.map(async (entry, i) => {
     const displayName = entry.name.split('/').pop() || entry.name;
     try {
       const ext = entry.name.split('.').pop()?.toLowerCase();
@@ -104,28 +102,38 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
         text = await entry.async('text');
       }
       if (text.trim()) {
-        combined += `\n\n--- FILE: ${displayName} ---\n${text}`;
         const envelope = buildEnvelopeFromRaw(displayName, text);
-        rows.push({
-          id: `${entry.name}-${i}`,
-          fileName: displayName,
-          detectedType: envelope.source.detectedType,
-          parserProfile: envelope.source.parserProfile,
-          confidence: envelope.source.confidence,
-          suggestedTargets: envelope.suggestedTargets,
-          suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
-          envelope,
-          selectedTarget: envelope.suggestedTargets[0] || 'skip',
-          clientMode: 'global',
-          selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
-          include: true,
-        });
-      } else readErrors.push(`${displayName}: empty`);
-    } catch {
-      readErrors.push(`${displayName}: failed`);
+        return {
+          text: `\n\n--- FILE: ${displayName} ---\n${text}`,
+          row: {
+            id: `${entry.name}-${uid()}`,
+            fileName: displayName,
+            detectedType: envelope.source.detectedType,
+            parserProfile: envelope.source.parserProfile,
+            confidence: envelope.source.confidence,
+            suggestedTargets: envelope.suggestedTargets,
+            suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
+            envelope,
+            selectedTarget: envelope.suggestedTargets[0] || 'skip',
+            clientMode: 'global' as ClientMode,
+            selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
+            include: true,
+          }
+        };
+      }
+    } catch (e) {
+      return { error: `${displayName}: failed` };
     }
-    if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
-  }
+    return null;
+  }));
+
+  results.filter(r => r && !r.error).forEach(r => {
+    combined += r!.text;
+    rows.push(r!.row);
+  });
+  results.filter(r => r && r.error).forEach(r => readErrors.push(r!.error));
+
+  if (onProgress) onProgress(100);
   return { combined, rows, readErrors };
 }
 

@@ -55,7 +55,12 @@ export function ActionsPage({ actions, onUpdate }: Props) {
     const order: ActionStatus[] = ['open', 'in_progress', 'completed'];
     const idx = order.indexOf(action.status);
     const next = order[(idx + 1) % order.length];
-    onUpdate(actions.map(a => a.id === action.id ? { ...a, status: next, completedAt: next === 'completed' ? new Date().toLocaleDateString('en-GB') : undefined } : a));
+    onUpdate(actions.map(a => a.id === action.id ? { 
+      ...a, 
+      status: next, 
+      completedAt: next === 'completed' ? new Date().toLocaleDateString('en-GB') : undefined,
+      completedBy: next === 'completed' ? 'Current User' : undefined // To be tied to Auth
+    } : a));
   }
 
   function deleteAction(id: string) {
@@ -232,7 +237,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
               className={`rounded-2xl overflow-hidden transition-all duration-300 group animate-in slide-in-from-left-4
                 ${action.status === 'completed' ? 'opacity-40 grayscale hover:opacity-70' : ''}
                 ${isCritical
-                  ? 'border border-flag-red/30 bg-flag-red/5 shadow-[4px_4px_12px_rgba(217,78,78,0.08),-4px_-4px_12px_#ffffff]'
+                  ? `border-2 border-flag-red/50 bg-flag-red/5 shadow-[0_0_20px_rgba(217,78,78,0.15)] ${action.status !== 'completed' ? 'animate-pulse-subtle' : ''}`
                   : 'hc-clay-raised'
                 }`}
               style={{ animationDelay: `${idx * 30}ms` }}
@@ -251,8 +256,8 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                 >
                   {action.status === 'completed' ? (
                     <svg className="w-3 h-3 text-hc-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  ) : action.status === 'in_progress' ? (
-                    <div className="w-1.5 h-1.5 rounded-full bg-hc-amber animate-pulse" />
+                  ) : (action.status === 'in_progress' || isCritical) ? (
+                    <div className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-flag-red animate-ping' : 'bg-hc-amber animate-pulse'}`} />
                   ) : null}
                 </button>
 

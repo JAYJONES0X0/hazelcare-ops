@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, ArrowUp } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, ArrowUp, RefreshCw, AlertTriangle } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
+import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
 import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
@@ -44,6 +45,7 @@ export function NoteWorkspace() {
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
+  const [displayCount, setDisplayCount] = useState(30);
 
   const allClients = useMemo(() => {
     const names = new Set<string>();
@@ -60,32 +62,44 @@ export function NoteWorkspace() {
     return allClients.filter(c => c.toLowerCase().includes(clientSearch.toLowerCase()));
   }, [allClients, clientSearch]);
 
-  // Date-filtered entries for selected client (Sorted NEWEST first)
-  const filtered = useMemo(() => {
+  // Filtered entries + Continuity Gaps
+  const { visibleItems, stats } = useMemo(() => {
     const raw = entries.filter(e => {
       if (selectedClient && !e.client?.toLowerCase().includes(selectedClient.toLowerCase())) return false;
       if (dateRange.from || dateRange.to) {
-        const parts = e.date.split('/');
-        if (parts.length === 3) {
-          const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
-          const from = dateRange.from ? dateRange.from.split('/').reverse().join('-') : null;
-          const to = dateRange.to ? dateRange.to.split('/').reverse().join('-') : null;
-          if (from && iso < from) return false;
-          if (to && iso > to) return false;
-        }
+        const dparts = e.date.split('/');
+        if (dparts.length !== 3) return false;
+        const iso = `${dparts[2]}-${dparts[1].padStart(2, '0')}-${dparts[0].padStart(2, '0')}`;
+        const from = dateRange.from ? dateRange.from.split('/').reverse().map(s => s.padStart(2, '0')).join('-') : null;
+        const to = dateRange.to ? dateRange.to.split('/').reverse().map(s => s.padStart(2, '0')).join('-') : null;
+        if (from && iso < from) return false;
+        if (to && iso > to) return false;
       }
       return true;
     });
 
-    // Sort by date (DD/MM/YYYY) descending
-    return raw.sort((a, b) => {
-      const partsA = a.date.split('/');
-      const partsB = b.date.split('/');
-      const dateA = `${partsA[2]}-${partsA[1]}-${partsA[0]}`;
-      const dateB = `${partsB[2]}-${partsB[1]}-${partsB[0]}`;
-      return dateB.localeCompare(dateA);
+    const gaps = detectClinicalGaps(raw);
+    const combined = [
+      ...raw.map(e => ({ ...e, type: 'entry' as const })),
+      ...gaps.map(g => ({ ...g, type: 'gap' as const, entry: '', carer: 'SYSTEM_AUDIT' }))
+    ];
+
+    const sorted = combined.sort((a, b) => {
+      const pa = a.date.split('/'); const pb = b.date.split('/');
+      const da = `${pa[2]}-${pa[1].padStart(2, '0')}-${pa[0].padStart(2, '0')}`;
+      const db = `${pb[2]}-${pb[1].padStart(2, '0')}-${pb[0].padStart(2, '0')}`;
+      if (db !== da) return db.localeCompare(da);
+      return (b.type === 'gap' ? 1 : 0) - (a.type === 'gap' ? 1 : 0);
     });
+
+    return { 
+      visibleItems: sorted,
+      stats: { entries: raw.length, gaps: gaps.length, criticalGaps: gaps.filter(g => g.severity === 'red').length }
+    };
   }, [entries, selectedClient, dateRange]);
+
+  // Reset display count on filter change
+  useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
 
   // Entry count per client (for sidebar badges)
   const clientEntryCounts = useMemo(() => {
@@ -387,7 +401,64 @@ export function NoteWorkspace() {
             </div>
           )}
 
-          {filtered.map((e, i) => {
+          <div className="flex items-center gap-6 mb-8 px-4">
+             <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Clinical Density:</span>
+                <span className="text-[11px] font-black text-hc-text tabular-nums">{stats.entries} Records</span>
+             </div>
+             <div className="h-4 w-px bg-hc-border/30" />
+             <div className="flex items-center gap-2">
+                <span className={`text-[11px] font-black uppercase tracking-widest ${stats.gaps > 0 ? 'text-flag-amber' : 'text-hc-muted'}`}>
+                  Continuity Gaps: {stats.gaps}
+                </span>
+                {stats.criticalGaps > 0 && (
+                  <span className="btn-clay !bg-flag-red/10 !text-flag-red text-[9px] px-2 py-0.5 rounded-lg animate-pulse">
+                    {stats.criticalGaps} DEEP SILENCE
+                  </span>
+                )}
+             </div>
+          </div>
+
+          {visibleItems.slice(0, displayCount).map((item, i) => {
+            if (item.type === 'gap') {
+              const g = item as ClinicalGap;
+              return (
+                <div key={g.id} className="hc-clay-inset border border-flag-amber/20 bg-flag-amber/[0.03] p-6 rounded-[2rem] flex items-center justify-between group animate-in slide-in-from-left-4">
+                  <div className="flex items-center gap-8">
+                    <div className="w-12 h-12 rounded-2xl bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-center">
+                       <AlertTriangle className={`w-5 h-5 ${g.severity === 'red' ? 'text-flag-red animate-pulse' : 'text-flag-amber'}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="text-[11px] font-black text-flag-amber uppercase tracking-widest">Forensic Gap Detected</span>
+                        <span className="text-flag-amber/30">/</span>
+                        <span className="text-[12px] font-black text-hc-text tabular-nums">{g.date}</span>
+                      </div>
+                      <p className="text-[11px] font-medium text-hc-muted uppercase tracking-wider">
+                        {g.severity === 'red' 
+                          ? 'Zero clinical evidence found for this entire site window.' 
+                          : `No diary entries for ${g.client} on this date.`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {g.likelyCarers.length > 0 && (
+                      <div className="text-right">
+                        <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] block mb-1">Personnel on Shift</span>
+                        <div className="flex gap-1 justify-end">
+                          {g.likelyCarers.slice(0, 3).map(c => (
+                            <span key={c} className="text-[9px] font-bold bg-hc-border/20 px-2 py-0.5 rounded-lg">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <ChevronRight className="text-flag-amber/20 group-hover:text-flag-amber transition-colors" />
+                  </div>
+                </div>
+              );
+            }
+
+            const e = item as CareEntry;
             const key = e.id || `${e.date}-${e.carer}-${i}`;
             const rewrite = rewriteMap[key];
             const isLoading = loadingMap[key];
@@ -454,6 +525,18 @@ export function NoteWorkspace() {
               </div>
             );
           })}
+
+          {filtered.length > displayCount && (
+            <div className="flex justify-center pt-8 pb-12">
+              <button 
+                onClick={() => setDisplayCount(prev => prev + 30)}
+                className="btn-clay px-12 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl group flex items-center gap-3"
+              >
+                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                Load Clinical History
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

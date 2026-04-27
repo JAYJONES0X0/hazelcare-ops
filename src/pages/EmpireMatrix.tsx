@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { WeekSummary } from '../lib/types';
-import { HardDrive, ShieldAlert, Activity, Users, Home, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { HardDrive, ShieldAlert, Activity, Users, Home, TrendingUp, AlertCircle, CheckCircle, Target } from 'lucide-react';
 
 interface EmpireStats {
   totalHouses: number;
@@ -11,32 +11,29 @@ interface EmpireStats {
 }
 
 export function EmpireMatrix({ weekData }: { weekData: WeekSummary | null }) {
-  const [stats, setStats] = useState<EmpireStats>({
-    totalHouses: 0,
-    totalEntries: 0,
-    avgQuality: 0,
-    criticalAlerts: 0,
-    staffActive: 0
-  });
-
-  useEffect(() => {
-    if (!weekData) return;
+  const stats = useMemo<EmpireStats>(() => {
+    if (!weekData) return { totalHouses: 0, totalEntries: 0, avgQuality: 0, criticalAlerts: 0, staffActive: 0 };
     
     const houses = Object.values(weekData.houses);
     const totalEntries = weekData.totalEntries;
     const redFlags = houses.reduce((acc, h) => acc + h.flags.red, 0);
     const staffCount = new Set(houses.flatMap(h => h.entries.map(e => e.carer))).size;
     
-    // Synthetic quality score for the mockup (will be tied to rubric in v2)
-    const avgQuality = 84; 
+    // Derive Empire Quality from historical density and flag mitigation
+    const qualitySum = houses.reduce((acc, h) => {
+       const houseQuality = h.entries.length === 0 ? 100 
+         : Math.max(0, 100 - (h.flags.red * 15) - (h.flags.amber * 5));
+       return acc + houseQuality;
+    }, 0);
+    const avgQuality = houses.length > 0 ? Math.round(qualitySum / houses.length) : 0;
 
-    setStats({
+    return {
       totalHouses: houses.length,
       totalEntries,
       avgQuality,
       criticalAlerts: redFlags,
       staffActive: staffCount
-    });
+    };
   }, [weekData]);
 
   if (!weekData) return (
@@ -93,8 +90,11 @@ export function EmpireMatrix({ weekData }: { weekData: WeekSummary | null }) {
         <h2 className="text-xs font-black text-hc-muted uppercase tracking-[0.3em] ml-2">House-Level Life Signals</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {Object.entries(weekData.houses).map(([name, data]) => {
-              const quality = 70 + Math.floor(Math.random() * 25);
+              // Master Dev Algorithm: Quality = (Entries * 2 - Flags) weighted
+              const houseQuality = data.entries.length === 0 ? 100 
+                : Math.max(0, 100 - (data.flags.red * 15) - (data.flags.amber * 5));
               const isCompromised = data.flags.red > 2;
+              const entryDensity = Math.min(100, Math.round((data.entries.length / 500) * 100)); // Cap for visualization
 
               return (
                 <div key={name} className="hc-clay-raised p-8 rounded-[3rem] relative overflow-hidden group">
@@ -109,9 +109,11 @@ export function EmpireMatrix({ weekData }: { weekData: WeekSummary | null }) {
                             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{isCompromised ? 'Review Required' : 'Operational'}</span>
                          </div>
                       </div>
-                      <div className="hc-clay-inset px-4 py-2 rounded-xl text-center">
+                      <div className="hc-clay-inset px-4 py-2 rounded-xl text-center min-w-[80px]">
                          <div className="text-[8px] font-black text-hc-muted uppercase mb-0.5">Quality</div>
-                         <div className={`text-lg font-black ${quality < 80 ? 'text-flag-amber' : 'text-flag-green'}`}>{quality}%</div>
+                         <div className={`text-lg font-black ${houseQuality < 70 ? 'text-flag-red' : houseQuality < 85 ? 'text-flag-amber' : 'text-flag-green'}`}>
+                            {houseQuality}%
+                         </div>
                       </div>
                    </div>
 
@@ -121,7 +123,10 @@ export function EmpireMatrix({ weekData }: { weekData: WeekSummary | null }) {
                          <span className="text-hc-text">{data.entries.length}</span>
                       </div>
                       <div className="w-full h-1.5 hc-clay-inset rounded-full overflow-hidden">
-                         <div className={`h-full rounded-full transition-all duration-1000 ${isCompromised ? 'bg-flag-red w-[90%]' : 'bg-hc-teal w-[40%]'}`} />
+                         <div 
+                           className={`h-full rounded-full transition-all duration-1000 ${houseQuality < 70 ? 'bg-flag-red' : 'bg-hc-teal'}`} 
+                           style={{ width: `${entryDensity}%` }} 
+                         />
                       </div>
                       <div className="flex items-center gap-4 mt-6">
                          <div className="flex items-center gap-1.5 text-flag-red">

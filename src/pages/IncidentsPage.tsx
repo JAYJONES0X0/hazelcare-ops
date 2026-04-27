@@ -8,11 +8,11 @@ interface Props {
 }
 
 const STAGES: { id: IncidentStage; label: string; color: string }[] = [
-  { id: 'logged', label: 'LOGGED_INBOUND', color: '#3b82f6' },
-  { id: 'investigating', label: 'INVESTIGATION_ACTIVE', color: '#f59e0b' },
-  { id: 'resolved', label: 'RESOLVED_INTERNAL', color: '#22c55e' },
-  { id: 'reported', label: 'STATUTORY_EXTERNAL', color: '#8b5cf6' },
-  { id: 'closed', label: 'STATION_CLOSED', color: '#64748b' },
+  { id: 'logged', label: '1: INGESTED / LOGGED', color: '#3b82f6' },
+  { id: 'investigating', label: '2: CLINICAL INVESTIGATION', color: '#f59e0b' },
+  { id: 'resolved', label: '3: INTERNAL RESOLUTION', color: '#22c55e' },
+  { id: 'reported', label: '4: STATUTORY REPORTING', color: '#8b5cf6' },
+  { id: 'closed', label: '5: FORENSIC ARCHIVE', color: '#64748b' },
 ];
 
 export function IncidentsPage({ incidents, onUpdate }: Props) {
@@ -37,10 +37,15 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
   const { isCollapsed: isStageCollapsed, toggle: toggleStage } = useCollapseStore('incidents-stages');
 
-  const byStage = STAGES.map(stage => ({
-    ...stage,
-    items: incidents.filter(i => i.stage === stage.id),
-  }));
+  // High-Performance Indexed Grouping
+  const byStage = useMemo(() => {
+    const groups: Record<IncidentStage, Incident[]> = { logged: [], investigating: [], resolved: [], reported: [], closed: [] };
+    incidents.forEach(i => { groups[i.stage]?.push(i); });
+    return STAGES.map(stage => ({
+      ...stage,
+      items: groups[stage.id] || [],
+    }));
+  }, [incidents]);
 
   const totalActive = incidents.filter(i => i.stage !== 'closed').length;
   const totalRed = incidents.filter(i => i.severity === 'red').length;
@@ -144,6 +149,12 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                               <span className="text-hc-border">//</span>
                               <span>{incident.client}</span>
                             </>
+                          )}
+                          {incident.flags.some(f => f.toLowerCase().includes('med')) && (
+                            <span className="ml-auto flex items-center gap-1.5 text-flag-red animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-flag-red" />
+                              MED_ALERT
+                            </span>
                           )}
                         </div>
                       </div>

@@ -10,6 +10,7 @@ import {
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
+import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { Database, Trash2, Calendar, HardDrive, ShieldAlert } from 'lucide-react';
 
 function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
@@ -36,9 +37,10 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
         if (typeFilter && !JSON.stringify(e).toLowerCase().includes(typeFilter.toLowerCase())) return false;
         if (filters.dateFrom || filters.dateTo) {
           const parts = e.date.split('/');
-          const iso = `${parts[2]}-${parts[1]}-${parts[0]}`;
-          const from = filters.dateFrom?.split('/').reverse().join('-');
-          const to = filters.dateTo?.split('/').reverse().join('-');
+          if (parts.length < 3) return false;
+          const iso = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          const from = filters.dateFrom?.split('/').reverse().map(s => s.padStart(2, '0')).join('-');
+          const to = filters.dateTo?.split('/').reverse().map(s => s.padStart(2, '0')).join('-');
           if (from && iso < from) return false;
           if (to && iso > to) return false;
         }
@@ -288,8 +290,8 @@ function DataManagerProp({ clients, onClearEverything, onClearType }: {
       </div>
 
       <div className="mt-8 pt-8 flex flex-wrap gap-4 border-t border-white/5 opacity-60">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-muted uppercase tracking-widest">
-           <HardDrive size={12} /> Local Storage Limit: 10MB
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-teal uppercase tracking-widest">
+           <HardDrive size={12} /> Registry: INDEXED-DB HIGH-CAPACITY (GIGABYTES)
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-muted uppercase tracking-widest">
            <Calendar size={12} /> Retention Policy: ACTIVE

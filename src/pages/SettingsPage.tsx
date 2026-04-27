@@ -3,7 +3,7 @@ import {
   ShieldCheck, Lock, Smartphone, Monitor, LogOut, X, ShieldAlert, 
   MapPin, Fingerprint, Activity, Clock, Shield, Database, Trash2
 } from 'lucide-react';
-import type { Page } from '../App';
+import type { Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 

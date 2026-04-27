@@ -1,7 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry } from '../lib/types';
-import { loadClients } from '../lib/client-store';
-import type { Page } from '../App';
+import type { WeekSummary, CareEntry, Page } from '../lib/types';
 
 // ── PDF import types ──────────────────────────────────────────────────────────
 interface PdfDiaryEntry {

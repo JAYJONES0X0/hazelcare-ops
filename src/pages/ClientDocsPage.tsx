@@ -11,8 +11,9 @@ import { CarePlanBuilder } from './CarePlanBuilder';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X } from 'lucide-react';
 import { uid } from '../lib/storage';
 
-// Set up pdfjs worker for Vite
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+// Localized Sovereign PDF Worker (Vite-optimised)
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'import';
 
@@ -33,7 +34,8 @@ export function ClientDocsPage() {
   const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const docUploadRef = useRef<HTMLInputElement>(null);
+  const [docUploadRef, setDocUploadRef] = useState<HTMLInputElement | null>(null);
+  const [sessionIntel, setSessionIntel] = useState<any>(null);
 
   const refresh = () => setClients(loadClients());
 
@@ -168,7 +170,7 @@ export function ClientDocsPage() {
           nhs: result.client.nhs || 'Not detected',
           domainsDetected,
         });
-        (window as any)._lastIntel = result;
+        setSessionIntel(result);
       } catch (err: any) {
         setImportResult(['AI Intelligence failed: ' + err.message, 'Switching to pattern-match fallback...']);
         runLegacyPreview();
@@ -190,11 +192,11 @@ export function ClientDocsPage() {
       nhs: result.client.nhs || 'Not detected',
       domainsDetected,
     });
-    (window as any)._lastIntel = result;
+    setSessionIntel(result);
   };
 
   const handleImport = () => {
-    const result = (window as any)._lastIntel;
+    const result = sessionIntel;
     if (!result) return;
 
     if (importTarget) {
@@ -225,7 +227,7 @@ export function ClientDocsPage() {
       setImportPreview(null);
       setSubView('list');
     }
-    (window as any)._lastIntel = null;
+    setSessionIntel(null);
   };
 
   const printDoc = (client: FullClient, type: 'pbs' | 'risk' | 'careplan' | 'easyread') => {

@@ -186,7 +186,7 @@ export function clearEntryStore(): void {
  * Deletes entries matching specific criteria for granular governance.
  */
 export async function deleteEntriesByFilterAsync(filter: { house?: string; beforeDate?: string; afterDate?: string }) {
-  const db = await initDB();
+  const db = await openDB();
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
   const entries = await getAllEntriesAsync();
@@ -211,11 +211,10 @@ export async function deleteEntriesByFilterAsync(filter: { house?: string; befor
     }
 
     if (match) {
-      await store.delete(e.id);
+      store.delete(e.id); // Standard IDBStore delete
       deletedCount++;
     }
   }
-  await tx.done;
   return deletedCount;
 }
 

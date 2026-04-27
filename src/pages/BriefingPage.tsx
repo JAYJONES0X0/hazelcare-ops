@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import type { WeekSummary, Action } from '../lib/types';
-import type { Page } from '../App';
+import type { WeekSummary, Action, Page } from '../lib/types';
 import { detectTrends } from '../lib/trends';
 import { useCollapseStore } from '../lib/collapse-store';
 import { Activity, ChevronRight, TrendingUp, AlertTriangle } from 'lucide-react';

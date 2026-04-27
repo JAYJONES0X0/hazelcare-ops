@@ -11,7 +11,8 @@ import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, ArrowUp } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
-import { getAllEntriesAsync } from '../lib/entry-store';
+import { getAllEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
+import { buildWeekSummary } from '../lib/universal-parser';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -41,44 +42,8 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   useEffect(() => {
     let alive = true;
     void getAllEntriesAsync().then(all => {
-      if (!alive) return;
-      if (all.length > 0) {
-        // Build a week-summary envelope from the IDB database
-        const entriesByHouse: Record<string, CareEntry[]> = {};
-        all.forEach(e => {
-          const h = e.house || 'UNASSIGNED';
-          if (!entriesByHouse[h]) entriesByHouse[h] = [];
-          entriesByHouse[h].push(e);
-        });
-        
-        const summary: any = {
-          totalEntries: all.length,
-          allFlags: { red: [], amber: [], green: [] },
-          dateFrom: '', dateTo: '', entryTypes: {}, housePerformance: {},
-          houses: Object.entries(entriesByHouse).reduce((acc, [name, entries]) => {
-            acc[name] = { 
-              name, 
-              entries, 
-              coordinator: '', 
-              incidents: [], 
-              safeguarding: [], 
-              medication: [], 
-              staffPerformance: [],
-              healthSafety: [],
-              handovers: [],
-              dailySupport: [],
-              flags: { red: 0, amber: 0, green: 0 }
-            };
-            entries.forEach(e => {
-              if (e.severity === 'red') acc[name].flags.red++;
-              else if (e.severity === 'amber') acc[name].flags.amber++;
-              else if (e.severity === 'green') acc[name].flags.green++;
-            });
-            return acc;
-          }, {} as any)
-        };
-        onDataParsed(summary);
-      }
+      if (!alive && all.length === 0) return;
+      onDataParsed(buildWeekSummary(all));
       setBooting(false);
     });
     return () => { alive = false; };
