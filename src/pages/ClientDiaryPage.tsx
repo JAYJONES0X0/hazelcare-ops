@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import type { WeekSummary, CareEntry } from '../lib/types';
 import { loadClients } from '../lib/client-store';
 import type { Page } from '../App';
@@ -91,6 +91,7 @@ async function parseDiaryPdf(file: File): Promise<PdfDiaryEntry[]> {
 interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
+  pageCtx?: { client?: string; house?: string; severity?: string };
   onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
 
@@ -155,11 +156,21 @@ function ClientStats({ entries }: { entries: CareEntry[] }) {
   );
 }
 
-export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
+export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: Props) {
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
+  const [houseFilter, setHouseFilter] = useState('');
+
+  // Context Router Receiver
+  useEffect(() => {
+    if (pageCtx) {
+      if (pageCtx.client) setSelectedClient(pageCtx.client);
+      if (pageCtx.house) setHouseFilter(pageCtx.house);
+      if (pageCtx.severity) setSeverityFilter(pageCtx.severity);
+    }
+  }, [pageCtx]);
 
   // PDF import state
   const [pdfEntries, setPdfEntries] = useState<PdfDiaryEntry[]>([]);
@@ -225,7 +236,14 @@ export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
 
   const allClients = useMemo(() =>
     Object.keys(mergedDiary)
-      .filter(name => name && !['Maintenance', 'Station', 'On Call'].includes(name))
+      .filter(name => {
+        if (!name || ['Maintenance', 'Station', 'On Call'].includes(name)) return false;
+        if (houseFilter) {
+          const ce = mergedDiary[name];
+          if (!ce.some(e => e.house?.toLowerCase() === houseFilter.toLowerCase())) return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
         const ra = (mergedDiary[a] || []).filter(e => e.severity === 'red').length;
         const rb = (mergedDiary[b] || []).filter(e => e.severity === 'red').length;
@@ -254,13 +272,14 @@ export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
   const selectedEntries = useMemo(() => {
     if (!selectedClient) return [];
     let entries = mergedDiary[selectedClient] || [];
+    if (houseFilter) entries = entries.filter(e => e.house?.toLowerCase() === houseFilter.toLowerCase());
     if (typeFilter) entries = entries.filter(e => e.type === typeFilter);
     if (severityFilter) {
       if (severityFilter === 'none') entries = entries.filter(e => e.severity === 'none');
       else entries = entries.filter(e => e.severity === severityFilter);
     }
     return [...entries].sort((a, b) => b.date.localeCompare(a.date));
-  }, [selectedClient, mergedDiary, typeFilter, severityFilter]);
+  }, [selectedClient, mergedDiary, houseFilter, typeFilter, severityFilter]);
 
   // PDF drop zone — shown when no weekData AND no PDF entries yet
   const showDropZone = !weekData && pdfEntries.length === 0;
@@ -451,12 +470,18 @@ export function ClientDiaryPage({ weekData, setPage, onQuickAction }: Props) {
                   <option value="amber">🟡 Amber Alerts</option>
                   <option value="none">No Flags</option>
                 </select>
+                {houseFilter && (
+                  <div className="flex items-center gap-2 bg-hc-teal/20 border border-hc-teal/50 rounded-xl px-4 py-2 text-[11px] font-black uppercase text-hc-teal">
+                    <span>🏠 {houseFilter}</span>
+                    <button onClick={() => setHouseFilter('')} className="ml-2 hover:text-white">&times;</button>
+                  </div>
+                )}
               </div>
               
               <div className="h-6 w-px bg-white/10 mx-2 hidden md:block" />
               
-              {(typeFilter || severityFilter) && (
-                <button onClick={() => { setTypeFilter(''); setSeverityFilter(''); }}
+              {(typeFilter || severityFilter || houseFilter) && (
+                <button onClick={() => { setTypeFilter(''); setSeverityFilter(''); setHouseFilter(''); }}
                   className="text-[11px] font-black uppercase tracking-[0.3em] text-hc-muted hover:text-hc-text transition-colors underline decoration-white/10 underline-offset-8">
                   Clear Filter
                 </button>

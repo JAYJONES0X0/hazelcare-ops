@@ -8,7 +8,7 @@ import { Activity, ChevronRight, TrendingUp, AlertTriangle } from 'lucide-react'
 interface Props {
   weekData: WeekSummary | null;
   actions: Action[];
-  setPage: (p: Page) => void;
+  setPage: (p: Page, ctx?: any) => void;
 }
 
 export function BriefingPage({ weekData, actions, setPage }: Props) {
@@ -117,7 +117,7 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
               </thead>
               <tbody>
                 {priorityClients.map(c => (
-                  <tr key={c.name} onClick={() => setPage('client-diary')} className="group cursor-pointer">
+                  <tr key={c.name} onClick={() => setPage('client-diary', { client: c.name })} className="group cursor-pointer">
                     <td className="px-6 py-5 bg-hc-surface-2 rounded-l-2xl text-xs font-black text-hc-text uppercase tracking-widest group-hover:bg-hc-surface transition-colors">{c.name}</td>
                     <td className="px-6 py-5 bg-hc-surface-2 text-[11px] font-black text-hc-muted uppercase tracking-widest text-center group-hover:bg-hc-surface transition-colors">{c.house}</td>
                     <td className="px-6 py-5 bg-hc-surface-2 group-hover:bg-hc-surface transition-colors">

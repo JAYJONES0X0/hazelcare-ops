@@ -60,7 +60,7 @@ const navSections: NavSection[] = [
       { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={16} /> },
       { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={16} /> },
       { id: 'compliance',              label: 'Personnel Audit',   icon: <UserCheck size={16} /> },
-      { id: 'notes' as Page,           label: 'Staff Supervision', icon: <FileText size={16} /> },
+      { id: 'notes' as Page,           label: 'Dictation & Core Notes', icon: <FileText size={16} /> },
     ],
   },
   {

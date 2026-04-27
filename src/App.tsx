@@ -24,9 +24,9 @@ import { GlobalInjest } from './components/GlobalInjest';
 import { Upload } from 'lucide-react';
 
 import type { WeekSummary, Action, Incident, StaffMember } from './lib/types';
-import { loadWeekData, saveWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
+import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
-import { getAllEntriesAsync } from './lib/entry-store';
+import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 
 export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin';
@@ -52,7 +52,15 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [sessionLoaded, setSessionLoaded] = useState(false);
-  const [page, setPage] = useState<Page>('briefing');
+  const [pageId, setPageId] = useState<Page>('briefing');
+  const [pageCtx, setPageCtx] = useState<any>(null);
+
+  const setPage = useCallback((p: Page, ctx?: any) => {
+    setPageId(p);
+    setPageCtx(ctx || null);
+  }, []);
+
+  const page = pageId;
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
@@ -84,9 +92,16 @@ export default function App() {
     }).catch(err => console.error('[Pipeline] Core Hydration Failure:', err));
   }, []);
 
-  const handleDataParsed = useCallback((data: WeekSummary) => {
-    setWeekData(data);
-    saveWeekData(data);
+  const handleDataParsed = useCallback(async (data: WeekSummary) => {
+    const newEntries = Object.values(data.houses).flatMap(h => h.entries);
+    if (newEntries.length > 0) {
+      await appendEntriesAsync(newEntries);
+      const fullHistory = await getAllEntriesAsync();
+      const generated = buildWeekSummary(fullHistory);
+      setWeekData(generated);
+    } else {
+      setWeekData(data);
+    }
     setPage('dashboard');
   }, []);
 
@@ -191,7 +206,7 @@ export default function App() {
               {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
               {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
               {page === 'client-docs' && <ClientDocsPage />}
-              {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} onQuickAction={() => {}} />}
+              {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
               {page === 'agency' && <AgencyPortalPage />}
               {page === 'staff-monitoring' && <StaffMonitoringPage staff={staff} weekData={weekData} onDataParsed={handleDataParsed} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} />}

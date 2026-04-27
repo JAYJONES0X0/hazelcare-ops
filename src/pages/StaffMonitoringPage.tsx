@@ -10,6 +10,7 @@ import {
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
+import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -47,12 +48,11 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   }, [onDataParsed, weekData]);
 
   const [house] = useState<string>('all');
-  const [dateFrom] = useState(def.dateFrom);
-  const [dateTo] = useState(def.dateTo);
+  const [dateRange, setDateRange] = useState<DateRange>({ from: def.dateFrom, to: def.dateTo });
 
   const { isCollapsed, toggle, expandAll, collapseAll, allCollapsed } = useCollapseStore('staff-monitoring-cards');
 
-  const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom, dateTo }), [house, dateFrom, dateTo]);
+  const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom: dateRange.from || '', dateTo: dateRange.to || '' }), [house, dateRange]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
 
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
@@ -91,6 +91,10 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
             {importLoading ? 'Analysing…' : 'Sync daily CSV'}
           </button>
         </div>
+      </div>
+
+      <div className="mb-6 z-20 relative">
+        <DateRangePicker range={dateRange} onChange={setDateRange} compact />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12">

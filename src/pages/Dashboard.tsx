@@ -4,6 +4,7 @@ import type { WeekSummary, Action, Incident } from '../lib/types';
 import type { Page } from '../App';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
+import { useCollapseStore } from '../lib/collapse-store';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -36,6 +37,17 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const [filteredData, setFilteredData] = useState<WeekSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [totalInStore, setTotalInStore] = useState(0);
+
+  const {
+    collapseAll: collapseAllSections,
+    expandAll: expandAllSections,
+    allCollapsed: allSectionsCollapsed,
+    isCollapsed: isSectionCollapsed,
+    toggle: toggleSection,
+  } = useCollapseStore('sitrep-sections');
+  
+  const SECTION_IDS = ['7-day', 'regional', 'shortcuts'];
+  const allCollapsed = allSectionsCollapsed(SECTION_IDS);
 
   // Load store bounds on mount
   useEffect(() => {
@@ -202,6 +214,9 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             <h1 className="text-5xl font-black text-hc-text tracking-tighter uppercase leading-none">Sitrep Center</h1>
           </div>
           <div className="flex gap-4">
+            <button onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)} className="hc-clay-raised px-6 py-3 text-[11px] font-black text-hc-text hover:text-hc-teal transition-all rounded-xl uppercase tracking-widest">
+              {allCollapsed ? 'Expand Matrix' : 'Collapse Matrix'}
+            </button>
             <button onClick={() => setPage('briefing')} className="px-6 py-3 hc-clay-raised text-[11px] font-black uppercase text-hc-text hover:text-hc-teal transition-all rounded-xl">Mission Briefing</button>
             <button onClick={() => setPage('staff-monitoring')} className="px-6 py-3 bg-hc-teal text-hc-bone text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:scale-105 transition-all">Staff Monitoring</button>
           </div>
@@ -256,7 +271,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             <span className="text-[11px] font-black text-hc-text uppercase tracking-widest">
               {totalAmberFlags} amber alert{totalAmberFlags !== 1 ? 's' : ''} require review in selected window
             </span>
-            <button onClick={() => setPage('client-diary')} className="ml-auto text-[10px] font-black text-flag-amber uppercase tracking-widest hover:underline">
+            <button onClick={() => setPage('client-diary', { severity: 'amber' })} className="ml-auto text-[10px] font-black text-flag-amber uppercase tracking-widest hover:underline">
               Review →
             </button>
           </div>
@@ -282,8 +297,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           ));
 
           return (
-            <div className="space-y-4">
-              <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">7-Day Persistence Matrix</h2>
+            <Section id="7-day" title="7-Day Persistence Matrix" collapsed={isSectionCollapsed('7-day')} onToggle={() => toggleSection('7-day')}>
               <div className="hc-clay-raised p-6 rounded-[2.25rem] overflow-x-auto">
                 <table className="w-full min-w-[600px]">
                   <thead>
@@ -314,13 +328,13 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                                   background: cnt === 0
                                     ? 'var(--hc-surface-2)'
                                     : intensity >= 1
-                                      ? 'var(--hc-bone)'
+                                      ? '#f3efe0'
                                       : `rgba(76, 124, 124, ${Math.max(0.25, intensity)})`,
                                   color: cnt === 0
                                     ? 'var(--hc-muted)'
                                     : intensity >= 1
                                       ? '#0d2d2d'
-                                      : 'var(--hc-bone)',
+                                      : '#f3efe0',
                                 }}
                               >
                                 {cnt === 0 ? '·' : cnt}
@@ -336,16 +350,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Section>
           );
         })()}
 
         {/* ── REGIONAL OPERATIONS MATRIX ── */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-[12px] font-black text-hc-muted uppercase tracking-[0.4em]">Regional Operations Matrix</h2>
-            <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">{houseStats.length} Units Active</span>
-          </div>
+        <Section id="regional" title="Regional Operations Matrix" count={houseStats.length} collapsed={isSectionCollapsed('regional')} onToggle={() => toggleSection('regional')}>
 
           {houseStats.length === 0 ? (
             <div className="hc-clay-raised rounded-2xl p-12 text-center">
@@ -384,11 +394,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               ))}
             </div>
           )}
-        </div>
+        </Section>
 
         {/* ── COMMAND VECTOR SHORTCUTS ── */}
-        <div className="flex flex-col gap-6 pb-20">
-          <h2 className="text-[12px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">Command Vector Shortcuts</h2>
+        <Section id="shortcuts" title="Command Vector Shortcuts" collapsed={isSectionCollapsed('shortcuts')} onToggle={() => toggleSection('shortcuts')}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {[
               { label: 'Force Protection',    desc: 'Readiness & Diagnostic', icon: <Activity />,      id: 'staff-monitoring' },
@@ -415,9 +424,29 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               </div>
             ))}
           </div>
-        </div>
+        </Section>
 
       </div>
+    </div>
+  );
+}
+
+function Section({ title, count, children, collapsed, onToggle }: { id: string; title: string; count?: number; children: React.ReactNode; collapsed: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <button onClick={onToggle} className="flex items-center justify-between px-2 group">
+        <div className="flex items-center gap-6">
+          <div className="w-1 h-6 bg-hc-teal rounded-full" />
+          <h2 className="text-[12px] font-black text-hc-text uppercase tracking-[0.4em]">{title}</h2>
+        </div>
+        <div className="flex items-center gap-8">
+          {count != null && <div className="text-[11px] font-black text-hc-muted tabular-nums tracking-widest bg-hc-surface-2 px-3 py-1 rounded-lg">{String(count).padStart(3, '0')}</div>}
+          <div className={`hc-clay-raised !w-10 !h-10 flex items-center justify-center text-hc-muted transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}>
+             <ChevronRight size={16} />
+          </div>
+        </div>
+      </button>
+      {!collapsed && <div className="animate-in fade-in slide-in-from-top-4 duration-500">{children}</div>}
     </div>
   );
 }
