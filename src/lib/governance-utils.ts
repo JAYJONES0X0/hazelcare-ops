@@ -9,9 +9,11 @@ import { clearEntryStoreAsync } from './entry-store';
  */
 export async function purgeSystemDataAsync() {
   localStorage.removeItem('hc-clients-v2');
-  localStorage.removeItem('hazelcare-ops');
+  localStorage.removeItem('hc-week-data-v2');
+  localStorage.removeItem('hc-entry-store-v3');
   localStorage.removeItem('hazelcare-staff-notes');
   localStorage.removeItem('hc-registered-sessions');
+  localStorage.removeItem('hazelcare-ops'); // Legacy key cleanup
   
   // Clear the SQL-grade intelligence database
   await clearEntryStoreAsync();
