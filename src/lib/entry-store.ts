@@ -31,9 +31,9 @@ export function parseDateMs(s: string): number {
   if (parts.length >= 3) {
     if (parts[0].length === 4) return new Date(s).getTime();
     const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10) - 1;
+    const monthIdx = parseInt(parts[1], 10) - 1;
     const y = parseInt(parts[2], 10);
-    if (d > 0 && m >= 0 && y > 2000) return new Date(y, m, d).getTime();
+    if (d > 0 && monthIdx >= 0 && y > 2000) return new Date(y, monthIdx, d).getTime();
   }
   const ts = new Date(s).getTime();
   return isNaN(ts) ? 0 : ts;

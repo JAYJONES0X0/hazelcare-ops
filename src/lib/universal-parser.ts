@@ -98,9 +98,9 @@ function parseDateMs(s: string): number {
   if (parts.length >= 3) {
     if (parts[0].length === 4) return new Date(s).getTime();
     const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10) - 1;
+    const monthIdx = parseInt(parts[1], 10) - 1;
     const y = parseInt(parts[2], 10);
-    return new Date(y, m, d).getTime();
+    return new Date(y, monthIdx, d).getTime();
   }
   return new Date(s).getTime() || 0;
 }

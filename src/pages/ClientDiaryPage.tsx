@@ -105,9 +105,9 @@ function typeColor(type: string) {
 
 function ClientStats({ entries }: { entries: CareEntry[] }) {
   const byType = useMemo(() => {
-    const m: Record<string, number> = {};
-    entries.forEach(e => { m[e.type] = (m[e.type] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+    const typeMatrix: Record<string, number> = {};
+    entries.forEach(e => { typeMatrix[e.type] = (typeMatrix[e.type] || 0) + 1; });
+    return Object.entries(typeMatrix).sort((a, b) => b[1] - a[1]);
   }, [entries]);
 
   const red = entries.filter(e => e.severity === 'red').length;

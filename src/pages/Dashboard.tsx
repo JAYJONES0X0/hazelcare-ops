@@ -133,7 +133,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
        return { name, entries: houseData.entries, red };
     }).sort((a, b) => b.red - a.red || b.entries.length - a.entries.length);
 
-    const m = {
+    const computedMetrics = {
       totalEntries: d.totalEntries || 0,
       activeStaff: new Set(Object.values(d.houses).flatMap(h => h.entries.map(e => e.carer))).size,
       pendingActions: actions.filter(a => a.status !== 'completed').length,
@@ -145,7 +145,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       criticalGaps: gaps.filter(g => g.severity === 'red').length
     };
 
-    return { houseStats: stats, metrics: m };
+    return { houseStats: stats, metrics: computedMetrics };
   }, [filteredData, weekData, actions, incidents]);
 
   // Active data reference

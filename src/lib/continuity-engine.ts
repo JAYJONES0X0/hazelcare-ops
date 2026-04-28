@@ -124,8 +124,8 @@ const MONTH_INDEX: Record<string, number> = {
 function cleanClientName(raw: string): string {
   // "Mr Aaron Preece - 1331 hours and 6 minutes" -> "Mr Aaron Preece"
   if (!raw) return '';
-  const m = raw.match(/^(.+?)\s+-\s+\d+\s+hours?/i);
-  return (m ? m[1] : raw).trim();
+  const match = raw.match(/^(.+?)\s+-\s+\d+\s+hours?/i);
+  return (match ? match[1] : raw).trim();
 }
 
 function cleanCarerName(raw: string): string {
@@ -134,9 +134,9 @@ function cleanCarerName(raw: string): string {
 
 function parseDayCellToIso(dayCell: string, year: number): string | null {
   // "Sun 1 Mar" or "Mon 12 Apr"
-  const m = dayCell.match(/(\d{1,2})\s+([A-Za-z]{3,})/);
-  if (!m) return null;
-  const day = parseInt(m[1], 10);
+  const match = dayCell.match(/(\d{1,2})\s+([A-Za-z]{3,})/);
+  if (!match) return null;
+  const day = parseInt(match[1], 10);
   const month = MONTH_INDEX[m[2].slice(0, 3).toLowerCase()];
   if (Number.isNaN(day) || month === undefined) return null;
   const dt = new Date(Date.UTC(year, month, day));

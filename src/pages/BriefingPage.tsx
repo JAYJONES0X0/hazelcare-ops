@@ -16,16 +16,16 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
 
   const priorityClients = useMemo(() => {
     if (!weekData) return [];
-    const m: Record<string, { name: string; house: string; red: number; amber: number; latest: string }> = {};
+    const matrix: Record<string, { name: string; house: string; red: number; amber: number; latest: string }> = {};
     for (const house of Object.values(weekData.houses)) {
       for (const e of house.entries) {
         const k = e.client || 'Unknown';
-        if (!m[k]) m[k] = { name: k, house: house.name, red: 0, amber: 0, latest: '' };
-        if (e.severity === 'red') { m[k].red++; m[k].latest = e.entry.slice(0, 100); }
-        if (e.severity === 'amber') { m[k].amber++; if (!m[k].latest) m[k].latest = e.entry.slice(0, 100); }
+        if (!matrix[k]) matrix[k] = { name: k, house: house.name, red: 0, amber: 0, latest: '' };
+        if (e.severity === 'red') { matrix[k].red++; matrix[k].latest = e.entry.slice(0, 100); }
+        if (e.severity === 'amber') { matrix[k].amber++; if (!matrix[k].latest) matrix[k].latest = e.entry.slice(0, 100); }
       }
     }
-    return Object.values(m).filter(c => c.red > 0 || c.amber > 0)
+    return Object.values(matrix).filter(c => c.red > 0 || c.amber > 0)
       .sort((a, b) => (b.red * 10 + b.amber) - (a.red * 10 + a.amber)).slice(0, 6);
   }, [weekData]);
 
