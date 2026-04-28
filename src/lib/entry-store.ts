@@ -184,18 +184,17 @@ export function clearEntryStore(): void {
 }
 /**
  * Deletes entries matching specific criteria for granular governance.
+ * Wipes both IndexedDB and the LocalStorage shim atomically.
  */
 export async function deleteEntriesByFilterAsync(filter: { house?: string; beforeDate?: string; afterDate?: string }) {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
-  const store = tx.objectStore(STORE_NAME);
+  // Load all entries first (separate read transaction)
   const entries = await getAllEntriesAsync();
-  
-  let deletedCount = 0;
+
+  const toDelete: string[] = [];
   for (const e of entries) {
     let match = true;
     if (filter.house && e.house !== filter.house) match = false;
-    
+
     if (match && (filter.beforeDate || filter.afterDate)) {
       const ms = parseDateMs(e.date);
       if (ms) {
@@ -209,13 +208,32 @@ export async function deleteEntriesByFilterAsync(filter: { house?: string; befor
         }
       }
     }
-
-    if (match) {
-      store.delete(e.id); // Standard IDBStore delete
-      deletedCount++;
-    }
+    if (match) toDelete.push(e.id);
   }
-  return deletedCount;
+
+  if (!toDelete.length) return 0;
+
+  // Delete from IndexedDB — await transaction completion
+  const db = await openDB();
+  await new Promise<void>((res, rej) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    for (const id of toDelete) store.delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+
+  // Scrub the LocalStorage shim to match
+  try {
+    const surviving = entries.filter(e => !toDelete.includes(e.id));
+    if (surviving.length > 0) {
+      localStorage.setItem(LS_KEY, JSON.stringify(surviving));
+    } else {
+      localStorage.removeItem(LS_KEY);
+    }
+  } catch { /* ignore LS errors */ }
+
+  return toDelete.length;
 }
 
 /**
