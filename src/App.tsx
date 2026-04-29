@@ -91,7 +91,7 @@ export default function App() {
     }).catch(err => console.error('[Pipeline] Core Hydration Failure:', err));
   }, []);
 
-  const handleDataParsed = useCallback(async (data: WeekSummary) => {
+  const handleWeekDataUpdate = useCallback(async (data: WeekSummary) => {
     const newEntries = Object.values(data.houses).flatMap(h => h.entries);
     if (newEntries.length > 0) {
       await appendEntriesAsync(newEntries);
@@ -101,8 +101,12 @@ export default function App() {
     } else {
       setWeekData(data);
     }
-    setPage('dashboard');
   }, []);
+
+  const handleDataParsed = useCallback(async (data: WeekSummary) => {
+    await handleWeekDataUpdate(data);
+    setPage('dashboard');
+  }, [handleWeekDataUpdate]);
 
   const handleGlobalDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -207,7 +211,7 @@ export default function App() {
               {page === 'client-docs' && <ClientDocsPage />}
               {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
               {page === 'agency' && <AgencyPortalPage />}
-              {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleDataParsed} />}
+              {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
               {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} />}
