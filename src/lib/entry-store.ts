@@ -114,6 +114,33 @@ export async function upsertEntryAsync(entry: CareEntry): Promise<void> {
   }
 }
 
+export async function deleteEntriesByIdsAsync(ids: string[]): Promise<number> {
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+  if (!uniqueIds.length) return 0;
+  try {
+    const db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      for (const id of uniqueIds) store.delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+
+    try {
+      const existing = getAllEntries();
+      const surviving = existing.filter((entry) => !uniqueIds.includes(entry.id));
+      if (surviving.length) localStorage.setItem(LS_KEY, JSON.stringify(surviving));
+      else localStorage.removeItem(LS_KEY);
+    } catch { /* ignore LS shim errors */ }
+
+    return uniqueIds.length;
+  } catch (err) {
+    console.error('[EntryStore] deleteEntriesByIdsAsync failed:', err);
+    return 0;
+  }
+}
+
 export async function getStoreBoundsAsync(): Promise<{ from: string; to: string; count: number } | null> {
   const all = await getAllEntriesAsync();
   if (!all.length) return null;

@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine, ChevronRight } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine, ChevronRight, Paperclip } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
 import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
-import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync } from '../lib/entry-store';
+import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync, deleteEntriesByIdsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { loadClients, saveClient, emptyClient, type FullClient } from '../lib/client-store';
 import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, type CoveragePlan } from '../lib/coverage-plan';
@@ -113,6 +113,7 @@ export function NoteWorkspace() {
   const [ghostSavedMap, setGhostSavedMap] = useState<Record<string, boolean>>({});
   const [ghostContextMap, setGhostContextMap] = useState<Record<string, string>>({});
   const [replaceLoadingMap, setReplaceLoadingMap] = useState<Record<string, boolean>>({});
+  const [linkedEntryIds, setLinkedEntryIds] = useState<Record<string, boolean>>({});
   const [expectedNotesPerDay, setExpectedNotesPerDay] = useState(3);
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
@@ -178,6 +179,28 @@ export function NoteWorkspace() {
   }, [entries, selectedClient, dateRange]);
 
   const filtered = visibleItems;
+
+  const sameDayGroups = useMemo(() => {
+    const buckets = new Map<string, CareEntry[]>();
+    for (const item of visibleItems) {
+      if ((item as any).type !== 'entry') continue;
+      const entry = item as CareEntry;
+      const groupKey = `${entry.client.trim().toLowerCase()}|${entry.date}`;
+      if (!buckets.has(groupKey)) buckets.set(groupKey, []);
+      buckets.get(groupKey)!.push(entry);
+    }
+
+    const info = new Map<string, { position: number; total: number; entries: CareEntry[] }>();
+    for (const groupEntries of buckets.values()) {
+      groupEntries
+        .slice()
+        .sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.id.localeCompare(b.id))
+        .forEach((entry, index, sorted) => {
+          info.set(entry.id, { position: index + 1, total: sorted.length, entries: sorted });
+        });
+    }
+    return info;
+  }, [visibleItems]);
 
   const reviewCoverage = useMemo(() => {
     if (
@@ -448,6 +471,41 @@ export function NoteWorkspace() {
     }
   };
 
+  const toggleLinkedEntry = (entryId: string) => {
+    setLinkedEntryIds(prev => {
+      const next = { ...prev };
+      if (next[entryId]) delete next[entryId];
+      else next[entryId] = true;
+      return next;
+    });
+  };
+
+  const buildMergedText = (groupEntries: CareEntry[], linkedIds: string[]) => groupEntries
+    .filter(entry => linkedIds.includes(entry.id))
+    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.id.localeCompare(b.id))
+    .map((entry, index) => [
+      `[Linked note ${index + 1} of ${linkedIds.length}]`,
+      `Date: ${entry.date}`,
+      entry.time ? `Time: ${entry.time}` : '',
+      `Staff: ${entry.carer}`,
+      `Type: ${entry.type}`,
+      '',
+      entry.entry,
+    ].filter(Boolean).join('\n'))
+    .join('\n\n---\n\n');
+
+  const runLinkedRewrite = async (anchorKey: string, anchor: CareEntry, groupEntries: CareEntry[]) => {
+    const linkedIds = groupEntries.map(entry => entry.id).filter(id => linkedEntryIds[id]);
+    if (linkedIds.length < 2) return;
+    const mergedText = buildMergedText(groupEntries, linkedIds);
+    await runRewrite(
+      anchorKey,
+      mergedText,
+      anchor.client,
+      `Merge these ${linkedIds.length} same-day source notes into one complete shift note. Remove duplication, keep all clinically relevant facts, preserve chronological order, and return one cohesive final note.`
+    );
+  };
+
   const saveGhostAsEntry = async (ghostId: string, date: string, client: string, carer: string, text: string) => {
     if (!text.trim()) return;
     const newEntry: CareEntry = {
@@ -477,6 +535,38 @@ export function NoteWorkspace() {
       const updated: CareEntry = { ...original, entry: rewritten.trim() };
       await upsertEntryAsync(updated);
       setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+    } finally {
+      setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: false }));
+    }
+  };
+
+  const mergeReplaceAndRemoveLinked = async (entryKey: string, original: CareEntry, groupEntries: CareEntry[], rewritten: string) => {
+    if (!rewritten.trim()) return;
+    const linkedIds = groupEntries.map(entry => entry.id).filter(id => linkedEntryIds[id]);
+    if (linkedIds.length < 2) return;
+    const removeIds = linkedIds.filter(id => id !== original.id);
+    setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: true }));
+    try {
+      const linkedCarers = groupEntries
+        .filter(entry => linkedIds.includes(entry.id))
+        .map(entry => entry.carer)
+        .filter(Boolean);
+      const updated: CareEntry = {
+        ...original,
+        type: original.type || 'Daily Support',
+        carer: [...new Set(linkedCarers)].join(' / ') || original.carer,
+        entry: rewritten.trim(),
+        category: original.category || 'daily_support',
+      };
+      await upsertEntryAsync(updated);
+      await deleteEntriesByIdsAsync(removeIds);
+      const all = await getAllEntriesAsync();
+      setEntries(all);
+      setLinkedEntryIds(prev => {
+        const next = { ...prev };
+        for (const id of linkedIds) delete next[id];
+        return next;
+      });
     } finally {
       setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: false }));
     }
@@ -1082,16 +1172,37 @@ export function NoteWorkspace() {
             const isLoading = loadingMap[key];
             const isCopied = copiedMap[key];
             const isReplacing = replaceLoadingMap[key];
+            const sameDay = sameDayGroups.get(e.id);
+            const linkedSameDayCount = sameDay?.entries.filter(entry => linkedEntryIds[entry.id]).length || 0;
+            const isLinked = Boolean(linkedEntryIds[e.id]);
             return (
               <div key={key} className="hc-clay-raised group">
                 <div className="px-6 py-4 border-b border-hc-border/20 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="hc-clay-inset px-3 py-1.5 rounded-xl text-[11px] font-black text-hc-teal tabular-nums">{e.date}</span>
+                    {sameDay && sameDay.total > 1 && (
+                      <span className="hc-clay-inset px-2.5 py-1 rounded-xl text-[10px] font-black text-flag-amber tabular-nums">
+                        {sameDay.position} of {sameDay.total}
+                      </span>
+                    )}
                     <span className="text-[11px] font-black text-hc-muted uppercase tracking-wide">{e.carer}</span>
                     <span className="text-hc-muted/30 font-black">→</span>
                     <span className="text-[11px] font-black text-hc-text uppercase tracking-wide">{e.client}</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {sameDay && sameDay.total > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleLinkedEntry(e.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          isLinked ? 'bg-hc-teal text-hc-bone shadow-md' : 'hc-clay-inset text-hc-muted hover:text-hc-teal'
+                        }`}
+                        title={isLinked ? 'Unlink this source note' : 'Link this source note for same-day merge'}
+                      >
+                        <Paperclip className="w-3.5 h-3.5" />
+                        {isLinked ? 'Linked' : 'Link'}
+                      </button>
+                    )}
                     {e.category && (
                       <span className="pill pill-teal text-[11px] font-black px-2.5 py-1">
                         {e.category.replace(/_/g, ' ')}
@@ -1101,6 +1212,38 @@ export function NoteWorkspace() {
                     {e.severity === 'amber' && <span className="pill pill-amber text-[11px] font-black px-2.5 py-1">AMBER</span>}
                   </div>
                 </div>
+
+                {sameDay && sameDay.total > 1 && (
+                  <div className="px-6 py-3 border-b border-hc-border/10 bg-hc-teal/[0.025] flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-hc-muted uppercase tracking-widest">
+                      <Paperclip className="w-3.5 h-3.5 text-hc-teal" />
+                      Same-day set: {sameDay.total} notes for {e.client} on {e.date}
+                      {linkedSameDayCount > 0 && <span className="text-hc-teal">· {linkedSameDayCount} selected</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sameDay.entries.map((entry, entryIndex) => (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => toggleLinkedEntry(entry.id)}
+                          className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                            linkedEntryIds[entry.id] ? 'bg-hc-teal text-hc-bone' : 'hc-clay-inset text-hc-muted hover:text-hc-text'
+                          }`}
+                        >
+                          {entryIndex + 1} · {entry.time || 'no time'} · {entry.carer.split(' ')[0] || 'staff'}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        disabled={linkedSameDayCount < 2 || isLoading}
+                        onClick={() => void runLinkedRewrite(key, e, sameDay.entries)}
+                        className="px-4 py-1.5 rounded-xl btn-tactical text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
+                      >
+                        Merge Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-hc-border/20">
                   <div className="p-6 space-y-3">
@@ -1161,6 +1304,16 @@ export function NoteWorkspace() {
                               <CheckCircle className={`w-3.5 h-3.5 ${isReplacing ? 'animate-pulse' : ''}`} />
                               {isReplacing ? 'Replacing...' : 'Replace Original'}
                             </button>
+                            {sameDay && linkedSameDayCount > 1 && (
+                              <button
+                                onClick={() => void mergeReplaceAndRemoveLinked(key, e, sameDay.entries, rewrite)}
+                                disabled={isReplacing}
+                                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-flag-amber/10 text-flag-amber border border-flag-amber/20 hover:bg-flag-amber/20 transition-all disabled:opacity-50"
+                              >
+                                <Paperclip className={`w-3.5 h-3.5 ${isReplacing ? 'animate-pulse' : ''}`} />
+                                Merge + Remove Linked
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
