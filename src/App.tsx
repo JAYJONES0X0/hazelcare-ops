@@ -221,7 +221,7 @@ export default function App() {
               {page === 'client-docs' && <ClientDocsPage />}
               {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
               {page === 'agency' && <AgencyPortalPage />}
-              {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} />}
+              {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
               {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} />}

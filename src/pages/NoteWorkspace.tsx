@@ -8,6 +8,7 @@ import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { loadClients, saveClient, emptyClient, type FullClient } from '../lib/client-store';
+import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, type CoveragePlan } from '../lib/coverage-plan';
 
 const INTERNAL_TEMPLATES = [
   {
@@ -92,6 +93,16 @@ export function NoteWorkspace() {
     return () => { alive = false; };
   }, []);
 
+  useEffect(() => {
+    const plan = loadCoveragePlan();
+    if (!plan) return;
+    setCoveragePlan(plan);
+    setSelectedClient(plan.client);
+    setClientSearch(plan.client);
+    setDateRange({ from: plan.dateFrom, to: plan.dateTo });
+    setExpectedNotesPerDay(plan.windows.length || 1);
+  }, []);
+
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
@@ -100,10 +111,12 @@ export function NoteWorkspace() {
   const [ghostLoadingMap, setGhostLoadingMap] = useState<Record<string, boolean>>({});
   const [ghostCopiedMap, setGhostCopiedMap] = useState<Record<string, boolean>>({});
   const [ghostSavedMap, setGhostSavedMap] = useState<Record<string, boolean>>({});
+  const [ghostContextMap, setGhostContextMap] = useState<Record<string, string>>({});
   const [replaceLoadingMap, setReplaceLoadingMap] = useState<Record<string, boolean>>({});
   const [expectedNotesPerDay, setExpectedNotesPerDay] = useState(3);
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
+  const [coveragePlan, setCoveragePlan] = useState<CoveragePlan | null>(() => loadCoveragePlan());
 
   // Reload client profile whenever selection changes
   useEffect(() => {
@@ -167,6 +180,15 @@ export function NoteWorkspace() {
   const filtered = visibleItems;
 
   const reviewCoverage = useMemo(() => {
+    if (
+      coveragePlan
+      && selectedClient
+      && coveragePlan.client.trim().toLowerCase() === selectedClient.trim().toLowerCase()
+      && coveragePlan.dateFrom === dateRange.from
+      && coveragePlan.dateTo === dateRange.to
+    ) {
+      return computeCoverageSummary(entries, coveragePlan);
+    }
     if (!selectedClient || !dateRange.from || !dateRange.to) return null;
     const toIso = (d: string) => {
       const p = d.split('/');
@@ -214,11 +236,29 @@ export function NoteWorkspace() {
       totalActual,
       totalMissing: Math.max(0, totalExpected - totalActual),
       coveragePct: totalExpected > 0 ? Math.round((totalActual / totalExpected) * 100) : 100,
+      dailyHours: 0,
+      totalHours: 0,
     };
-  }, [entries, selectedClient, dateRange, expectedNotesPerDay]);
+  }, [entries, selectedClient, dateRange, expectedNotesPerDay, coveragePlan]);
 
   // Reset display count on filter change
   useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
+
+  useEffect(() => {
+    if (!coveragePlan || !reviewCoverage) return;
+    setGhostContextMap(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const day of reviewCoverage.missingDays) {
+        const key = `audit-${day.date}`;
+        if (!next[key]) {
+          next[key] = buildShiftContext(coveragePlan, day.date);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [coveragePlan, reviewCoverage]);
 
   // Entry count per client (for sidebar badges)
   const clientEntryCounts = useMemo(() => {
@@ -374,6 +414,8 @@ export function NoteWorkspace() {
       }
     }
 
+    const shiftContext = ghostContextMap[gapId]?.trim() || '';
+
     setGhostLoadingMap(prev => ({ ...prev, [gapId]: true }));
     try {
       const res = await fetch('/api/staff/ghost-write', {
@@ -386,6 +428,7 @@ export function NoteWorkspace() {
           nextNote: nextEntry ? `[${nextEntry.date} — ${nextEntry.carer}]: ${nextEntry.entry}` : '',
           referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
           clinicalContext: parts.join('\n\n'),
+          shiftContext // Added to AI prompt context
         })
       });
       const reader = res.body?.getReader();
@@ -863,15 +906,30 @@ export function NoteWorkspace() {
                     min={1}
                     max={8}
                     value={expectedNotesPerDay}
+                    disabled={Boolean(coveragePlan)}
                     onChange={(e) => setExpectedNotesPerDay(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
-                    className="w-16 hc-clay-inset rounded-lg px-2 py-1 text-[11px] font-black text-hc-text focus:outline-none"
+                    className="w-16 hc-clay-inset rounded-lg px-2 py-1 text-[11px] font-black text-hc-text focus:outline-none disabled:opacity-60"
                   />
                 </div>
               </div>
+              {coveragePlan && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {coveragePlan.windows.map((w) => (
+                    <span key={w.id} className="pill pill-teal text-[9px]">
+                      {w.start}-{w.end} · {w.hours}h
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-6 mb-4">
                 <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
                   {reviewCoverage.totalActual}/{reviewCoverage.totalExpected} notes · {reviewCoverage.coveragePct}% coverage
                 </span>
+                {reviewCoverage.totalHours > 0 && (
+                  <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
+                    {reviewCoverage.totalHours} planned 1:1 hours
+                  </span>
+                )}
                 <span className={`text-[10px] font-black uppercase tracking-widest ${reviewCoverage.totalMissing > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
                   Missing: {reviewCoverage.totalMissing}
                 </span>
@@ -884,13 +942,21 @@ export function NoteWorkspace() {
                       <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
                         {day.actual}/{day.expected} present · {day.missing} missing
                       </div>
-                      <button
-                        onClick={() => void runGhostWrite(`audit-${day.date}`, day.date, selectedClient || '')}
-                        disabled={ghostLoadingMap[`audit-${day.date}`]}
-                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-flag-amber/10 text-flag-amber border border-flag-amber/20 disabled:opacity-50"
-                      >
-                        {ghostLoadingMap[`audit-${day.date}`] ? 'Writing...' : 'Create Missing Note'}
-                      </button>
+                      <div className="flex-1 flex items-center gap-3">
+                        <input 
+                          placeholder="Optional shift context (e.g. 10am-12pm 1:1)..."
+                          value={ghostContextMap[`audit-${day.date}`] || ''}
+                          onChange={(e) => setGhostContextMap(prev => ({ ...prev, [`audit-${day.date}`]: e.target.value }))}
+                          className="flex-1 hc-clay-inset bg-hc-surface/50 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text outline-none placeholder:text-hc-muted/50"
+                        />
+                        <button
+                          onClick={() => void runGhostWrite(`audit-${day.date}`, day.date, selectedClient || '')}
+                          disabled={ghostLoadingMap[`audit-${day.date}`]}
+                          className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20 disabled:opacity-50 shadow-sm hover:bg-hc-teal/20 transition-all"
+                        >
+                          {ghostLoadingMap[`audit-${day.date}`] ? 'Writing...' : 'Create Note'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -925,7 +991,7 @@ export function NoteWorkspace() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       {g.likelyCarers.length > 0 && (
                         <div className="text-right">
                           <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] block mb-1">Personnel on Shift</span>
@@ -937,14 +1003,22 @@ export function NoteWorkspace() {
                         </div>
                       )}
                       {gapClient && (
-                        <button
-                          onClick={() => void runGhostWrite(g.id, g.date, gapClient)}
-                          disabled={ghostLoading}
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-flag-amber/10 hover:bg-flag-amber/20 text-flag-amber border border-flag-amber/20 disabled:opacity-50 shrink-0"
-                        >
-                          <PenLine className={`w-3.5 h-3.5 ${ghostLoading ? 'animate-pulse' : ''}`} />
-                          {ghostLoading ? 'Writing...' : ghostResult ? 'Rewrite' : 'Create Note'}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <input
+                            placeholder="Optional shift context..."
+                            value={ghostContextMap[g.id] || ''}
+                            onChange={(e) => setGhostContextMap(prev => ({ ...prev, [g.id]: e.target.value }))}
+                            className="w-56 hc-clay-inset bg-hc-surface/50 rounded-xl px-3 py-2 text-[11px] font-black text-hc-text outline-none placeholder:text-hc-muted/50"
+                          />
+                          <button
+                            onClick={() => void runGhostWrite(g.id, g.date, gapClient)}
+                            disabled={ghostLoading}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-flag-amber/10 hover:bg-flag-amber/20 text-flag-amber border border-flag-amber/20 disabled:opacity-50 shrink-0"
+                          >
+                            <PenLine className={`w-3.5 h-3.5 ${ghostLoading ? 'animate-pulse' : ''}`} />
+                            {ghostLoading ? 'Writing...' : ghostResult ? 'Rewrite' : 'Create Note'}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

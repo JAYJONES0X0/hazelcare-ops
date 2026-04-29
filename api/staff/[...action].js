@@ -109,7 +109,8 @@ RULES:
 5. CONTEXT KNOWLEDGE: If [ESSENTIAL CONTEXT] is provided (absorbed PDFs, PBS, care plan, risk assessments), use it as your professional knowledge base. Apply it the way an experienced worker uses their knowledge — to describe events with proper professional language, to notice and name relevant behaviours, to reference support strategies in passing ("In line with his PBS..."), and to write with genuine insight into the person's needs.
 6. PRESERVE WHITESPACE: Mirror the exact line breaks, blank lines, and headers of the template.
 7. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" — instead write "he appeared settled" or "I found him in good spirits."
-8. Output ONLY the finished note. No preamble, no explanation.`;
+8. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
+9. Output ONLY the finished note. No preamble, no explanation.`;
 
 function isRateLimited(key, max, windowMs) {
   const now = Date.now();
@@ -556,6 +557,7 @@ async function handleEnhanceNote(req, res) {
     refineInstructions
       ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.'
       : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT]. Do NOT use any facts from the template itself.',
+    'You must complete every template heading/time block. Return the full finished note, not a partial section.',
     '',
     '[RAW DATA TO PROCESS — THIS IS WHAT HAPPENED ON SHIFT]:',
     text.trim(),
@@ -565,7 +567,7 @@ async function handleEnhanceNote(req, res) {
     { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const opts = { stream: true, max_tokens: 2000, temperature: 0.25 };
+  const opts = { stream: true, max_tokens: 4200, temperature: 0.2 };
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
@@ -642,7 +644,7 @@ async function handleGhostWrite(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext } = req.body || {};
+  const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext, shiftContext } = req.body || {};
   if (!date || !clientName) return res.status(400).send('date and clientName required');
 
   const CTX_MAX = 60_000;
@@ -653,6 +655,7 @@ async function handleGhostWrite(req, res) {
   const safeTemplate = referenceTemplate ? referenceTemplate.slice(0, TPL_MAX) : '';
   const safePrev = prevNote ? prevNote.slice(0, NOTE_MAX) : '';
   const safeNext = nextNote ? nextNote.slice(0, NOTE_MAX) : '';
+  const safeShiftCtx = shiftContext ? shiftContext.slice(0, 2000) : '';
 
   // Work out day of week from DD/MM/YYYY
   let dayLabel = '';
@@ -668,6 +671,8 @@ async function handleGhostWrite(req, res) {
     `CLIENT: ${clientName}`,
     `DATE: ${date}${dayLabel ? ` (${dayLabel})` : ''}`,
     '',
+    safeShiftCtx ? `[SPECIFIC SHIFT CONTEXT — follow these shift-specific details exactly]:\n${safeShiftCtx}` : '',
+    '',
     safePrev ? `[PREVIOUS SHIFT NOTE — evidence of what preceded this day]:\n${safePrev}` : '[PREVIOUS SHIFT NOTE]: Not available',
     '',
     safeNext ? `[NEXT SHIFT NOTE — evidence of what followed this day]:\n${safeNext}` : '[NEXT SHIFT NOTE]: Not available',
@@ -676,7 +681,7 @@ async function handleGhostWrite(req, res) {
     '',
     safeTemplate ? `[NOTE STRUCTURE TO FOLLOW — use these headings and sections exactly]:\n${safeTemplate}` : '',
     '',
-    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and clinical knowledge to reconstruct the support provided. Write as the support worker on shift.`,
+    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and clinical knowledge, and any shift context provided to reconstruct the support provided. Write as the support worker on shift.`,
     `QUALITY BAR: Include clear specifics for each section (what happened, intervention, client response, end status). Avoid vague one-line summaries.`,
   ].filter(l => l !== undefined).join('\n');
 

@@ -1,6 +1,7 @@
 import type { CareEntry, WeekSummary, EscalationTier, EscalationItem } from './types';
 import { scoreEntry, getTopGaps } from './entry-rubric';
 import { getRepeatTargets } from './staff-monitoring-store';
+import { computeCoverageSummary, isDailySupportEntry, type CoveragePlan, type CoverageSummary } from './coverage-plan';
 
 export type { EscalationTier, EscalationItem } from './types';
 
@@ -8,6 +9,8 @@ export interface MonitoringFilters {
   house: string | 'all';
   dateFrom?: string;
   dateTo?: string;
+  client?: string;
+  coveragePlan?: CoveragePlan | null;
 }
 
 export interface StaffScorecard {
@@ -73,6 +76,7 @@ export interface StaffMonitoringSnapshot {
   houses: HouseHealth[];
   escalations: EscalationItem[];
   dataFreshness: { lastEntryDate?: string; entryCount: number; staleHours?: number };
+  coverage: CoverageSummary | null;
 }
 
 const SHORT_LEN = 90;
@@ -136,6 +140,10 @@ export function filterEntries(entries: CareEntry[], filters: MonitoringFilters):
       return true;
     });
   }
+  if (filters.client?.trim()) {
+    const clientName = filters.client.trim().toLowerCase();
+    out = out.filter((e) => (e.client || '').trim().toLowerCase() === clientName);
+  }
   return out;
 }
 
@@ -183,11 +191,13 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       houses: [],
       escalations: [],
       dataFreshness: { entryCount: 0, staleHours: undefined },
+      coverage: null,
     };
   }
 
   const all = flattenWeekEntries(week);
   const filtered = filterEntries(all, filters);
+  const coverage = computeCoverageSummary(all, filters.coveragePlan || null);
 
   const byCarer = new Map<string, CareEntry[]>();
   for (const e of filtered) {
@@ -235,7 +245,7 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
 
     // Per-category sub-scores
     const handoverEntries = scoreableList.filter((e) => e.category === 'handover');
-    const dailyEntries = scoreableList.filter((e) => e.category === 'daily_support');
+    const dailyEntries = scoreableList.filter(isDailySupportEntry);
     const handoverScore = handoverEntries.length
       ? Math.round(handoverEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / handoverEntries.length)
       : null;
@@ -247,7 +257,12 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
         .map((e) => (e.date || '').trim())
         .filter(Boolean)
     ).size;
-    const expectedDailySupportEntries = activeDays * DEFAULT_EXPECTED_DAILY_SUPPORT_NOTES;
+    const expectedPerActiveDay = filters.coveragePlan?.client
+      && filters.client
+      && filters.coveragePlan.client.trim().toLowerCase() === filters.client.trim().toLowerCase()
+      ? filters.coveragePlan.windows.length
+      : DEFAULT_EXPECTED_DAILY_SUPPORT_NOTES;
+    const expectedDailySupportEntries = activeDays * expectedPerActiveDay;
     const actualDailySupportEntries = dailyEntries.length;
     const missingDailySupportEntries = Math.max(0, expectedDailySupportEntries - actualDailySupportEntries);
     const dailySupportCoveragePct = expectedDailySupportEntries > 0
@@ -423,6 +438,7 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       entryCount: filtered.length,
       staleHours: staleHours !== undefined ? Math.round(staleHours * 10) / 10 : undefined,
     },
+    coverage,
   };
 }
 

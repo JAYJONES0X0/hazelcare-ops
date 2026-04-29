@@ -97,6 +97,7 @@ interface ProtocolStack {
   desc: string;
   icon: any;
   structure: string[];
+  directive: string;
 }
 
 const INTELLIGENCE_STACKS: ProtocolStack[] = [
@@ -105,21 +106,24 @@ const INTELLIGENCE_STACKS: ProtocolStack[] = [
     name: 'Day Shift 1:1 Narrative', 
     desc: 'Temporal blocks with Active Accountability (I supported...)',
     icon: <Clock size={14} />,
-    structure: ['Morning Routine', '1:1 Engagement (AM)', 'Midday Nutrition', '1:1 Engagement (PM)', 'Evening Outcome']
+    structure: ['Morning Routine', '1:1 Engagement (AM)', 'Midday Nutrition', '1:1 Engagement (PM)', 'Evening Outcome'],
+    directive: 'Prioritise chronological flow, first-person accountability, clear intervention-response-outcome detail per block, and handover-ready end status.'
   },
   { 
     id: 'incident_forensic', 
     name: 'Forensic Incident Stack', 
     desc: 'ABC pattern with immediate de-escalation evidence',
     icon: <ShieldCheck size={14} />,
-    structure: ['Antecedent (Trigger)', 'Behaviour (Description)', 'Consequence (Action)', 'Post-Incident Welfare']
+    structure: ['Antecedent (Trigger)', 'Behaviour (Description)', 'Consequence (Action)', 'Post-Incident Welfare'],
+    directive: 'Use forensic precision: specific trigger, exact behaviour observed, immediate de-escalation steps, safety/risk controls, and welfare follow-up.'
   },
   { 
     id: 'medication_refusal', 
     name: 'Medication Refusal Protocol', 
     desc: 'Mental capacity assessment & risk mitigation evidence',
     icon: <Zap size={14} />,
-    structure: ['Medication Details', 'Reason for Refusal', 'Capacity Prompting', 'Risk Communication', 'MDT Notification']
+    structure: ['Medication Details', 'Reason for Refusal', 'Capacity Prompting', 'Risk Communication', 'MDT Notification'],
+    directive: 'Document refusal with capacity-sensitive language, exact prompts offered, risk explained, patient response, and who was informed (MDT/family/on-call).'
   }
 ];
 
@@ -159,7 +163,16 @@ export function StaffNotePage() {
     try {
       const res = await fetch('/api/staff/enhance-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ text: freeText, noteType: activeStack ? activeStack.name : 'Clinical Entry', clientName: client, useStack: !!activeStack }),
+        body: JSON.stringify({
+          text: freeText,
+          noteType: activeStack ? activeStack.name : 'Clinical Entry',
+          clientName: client,
+          useStack: !!activeStack,
+          stackId: activeStack?.id,
+          stackDirective: activeStack?.directive || '',
+          referenceTemplate: activeStack ? activeStack.structure.map(s => `${s.toUpperCase()}:\n`).join('\n') : '',
+          refineInstructions: activeStack ? `PROTOCOL DIRECTIVE: ${activeStack.directive}` : '',
+        }),
       });
       if (!res.ok) throw new Error('Offline');
       const reader = res.body?.getReader();

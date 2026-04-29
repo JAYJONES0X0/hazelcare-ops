@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry } from '../lib/types';
+import type { WeekSummary, CareEntry, Page } from '../lib/types';
 import { useCollapseStore } from '../lib/collapse-store';
 import {
   computeStaffMonitoring,
@@ -14,19 +14,35 @@ import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { getAllEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
+import {
+  DEFAULT_SUPPORT_WINDOWS,
+  computeCoverageSummary,
+  formatSupportWindows,
+  loadCoveragePlan,
+  parseSupportWindows,
+  saveCoveragePlan,
+  type CoveragePlan,
+} from '../lib/coverage-plan';
 
 interface Props {
   weekData: WeekSummary | null;
   onDataParsed: (data: WeekSummary) => void;
+  setPage?: (p: Page, ctx?: any) => void;
 }
 
-export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
+export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) {
   const def = useMemo(() => defaultMondayWindow(), []);
   const [importLoading, setImportLoading] = useState(false);
   const [importDragging, setImportDragging] = useState(false);
   const [booting, setBooting] = useState(true);
   const [house] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<DateRange>({ from: def.dateFrom, to: def.dateTo });
+  const savedPlan = useMemo(() => loadCoveragePlan(), []);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: savedPlan?.dateFrom || def.dateFrom,
+    to: savedPlan?.dateTo || def.dateTo,
+  });
+  const [selectedClient, setSelectedClient] = useState(savedPlan?.client || '');
+  const [windowText, setWindowText] = useState(formatSupportWindows(savedPlan?.windows || DEFAULT_SUPPORT_WINDOWS));
 
   // Automatically hydrate from main IndexedDB on mount
   useEffect(() => {
@@ -64,8 +80,29 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
 
   const { isCollapsed, toggle, expandAll, collapseAll, allCollapsed } = useCollapseStore('staff-monitoring-cards');
 
-  const filters: MonitoringFilters = useMemo(() => ({ house, dateFrom: dateRange.from || '', dateTo: dateRange.to || '' }), [house, dateRange]);
+  const allClients = useMemo(() => {
+    const names = new Set<string>();
+    for (const entry of weekData ? flattenWeekEntries(weekData) : []) {
+      if (entry.client?.trim()) names.add(entry.client.trim());
+    }
+    return [...names].sort();
+  }, [weekData]);
+
+  const supportWindows = useMemo(() => parseSupportWindows(windowText), [windowText]);
+  const coveragePlan = useMemo<CoveragePlan | null>(() => {
+    if (!selectedClient || !dateRange.from || !dateRange.to) return null;
+    return { client: selectedClient, dateFrom: dateRange.from, dateTo: dateRange.to, windows: supportWindows };
+  }, [selectedClient, dateRange, supportWindows]);
+
+  const filters: MonitoringFilters = useMemo(() => ({
+    house,
+    dateFrom: dateRange.from || '',
+    dateTo: dateRange.to || '',
+    client: selectedClient || undefined,
+    coveragePlan,
+  }), [house, dateRange, selectedClient, coveragePlan]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
+  const coverage = snapshot.coverage || computeCoverageSummary(weekData ? flattenWeekEntries(weekData) : [], coveragePlan);
 
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
   const [coachCopied, setCoachCopied] = useState(false);
@@ -108,6 +145,17 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
     return lines.join('\n');
   }
 
+  const commitCoveragePlan = () => {
+    if (!coveragePlan) return;
+    saveCoveragePlan(coveragePlan);
+  };
+
+  const openCoverageWorkspace = () => {
+    if (!coveragePlan) return;
+    saveCoveragePlan(coveragePlan);
+    setPage?.('note-workspace', { coveragePlan });
+  };
+
   return (
     <div className="p-6 lg:p-10 w-full max-w-[2560px] mx-auto animate-in fade-in duration-500"
       onDragOver={e => { e.preventDefault(); setImportDragging(true); }}
@@ -144,6 +192,76 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
 
       <div className="mb-6 z-20 relative">
         <DateRangePicker range={dateRange} onChange={setDateRange} compact />
+      </div>
+
+      <div className="mb-8 hc-clay-raised border border-hc-teal/20 rounded-2xl p-5">
+        <div className="flex flex-col xl:flex-row gap-4 xl:items-end">
+          <div className="flex-1 min-w-[220px]">
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.25em] mb-2">Client Coverage Target</div>
+            <select
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              className="w-full hc-clay-inset rounded-xl px-4 py-3 text-[11px] font-black text-hc-text bg-hc-surface focus:outline-none"
+            >
+              <option value="">All clients</option>
+              {allClients.map((client) => (
+                <option key={client} value={client}>{client}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-[2] min-w-[280px]">
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.25em] mb-2">Expected 1:1 Windows</div>
+            <input
+              value={windowText}
+              onChange={(e) => setWindowText(e.target.value)}
+              placeholder="10am-12, 2pm-3pm, 5pm-7pm"
+              className="w-full hc-clay-inset rounded-xl px-4 py-3 text-[11px] font-black text-hc-text bg-hc-surface focus:outline-none placeholder:text-hc-muted/50"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={commitCoveragePlan}
+              disabled={!coveragePlan}
+              className="px-5 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40"
+            >
+              Save Target
+            </button>
+            <button
+              type="button"
+              onClick={openCoverageWorkspace}
+              disabled={!coveragePlan || !setPage}
+              className="px-5 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+            >
+              Work Missing Notes
+            </button>
+          </div>
+        </div>
+        {coverage && (
+          <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label: 'Expected', value: String(coverage.totalExpected) },
+              { label: 'Found', value: String(coverage.totalActual) },
+              { label: 'Missing', value: String(coverage.totalMissing) },
+              { label: 'Coverage', value: `${coverage.coveragePct}%` },
+              { label: '1:1 Hours', value: `${coverage.totalHours}h` },
+            ].map((item) => (
+              <div key={item.label} className="hc-clay-inset rounded-xl px-4 py-3">
+                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1">{item.label}</div>
+                <div className={`text-lg font-black tabular-nums ${item.label === 'Missing' && coverage.totalMissing > 0 ? 'text-flag-amber' : 'text-hc-text'}`}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {coverage && coverage.missingDays.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {coverage.missingDays.slice(0, 14).map((day) => (
+              <span key={day.date} className="pill pill-amber text-[9px]">
+                {day.date} · {day.actual}/{day.expected}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12">
