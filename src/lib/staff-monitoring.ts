@@ -33,7 +33,7 @@ export interface StaffScorecard {
   expectedDailySupportEntries: number;                             // target entries in selected window
   actualDailySupportEntries: number;                               // observed daily_support entries
   missingDailySupportEntries: number;                              // expected - actual
-  dailySupportCoveragePct: number;                                 // observed/expected
+  dailySupportCoveragePct: number | null;                          // observed/expected, null when N/A
   // Repeat coaching targets
   isRepeatTarget: boolean;
   repeatGaps: string[];
@@ -243,7 +243,7 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       ? Math.round(dailyEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / dailyEntries.length)
       : null;
     const activeDays = new Set(
-      dailyEntries
+      scoreableList
         .map((e) => (e.date || '').trim())
         .filter(Boolean)
     ).size;
@@ -252,7 +252,7 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     const missingDailySupportEntries = Math.max(0, expectedDailySupportEntries - actualDailySupportEntries);
     const dailySupportCoveragePct = expectedDailySupportEntries > 0
       ? Math.round((actualDailySupportEntries / expectedDailySupportEntries) * 100)
-      : 100;
+      : null;
 
     // Module breakdown — average across scoreable entries only
     const moduleMap = new Map<string, { total: number; count: number; missing: string[] }>();
@@ -308,10 +308,10 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
         }
       }
     }
-    if (expectedDailySupportEntries > 0 && dailySupportCoveragePct < 60) {
+    if (expectedDailySupportEntries > 0 && dailySupportCoveragePct !== null && dailySupportCoveragePct < 60) {
       if (tier === null || tier < 2) tier = 2;
       reasons.push(`Daily support coverage below expected standard (${actualDailySupportEntries}/${expectedDailySupportEntries} notes).`);
-    } else if (expectedDailySupportEntries > 0 && dailySupportCoveragePct < 80) {
+    } else if (expectedDailySupportEntries > 0 && dailySupportCoveragePct !== null && dailySupportCoveragePct < 80) {
       if (tier === null || tier < 1) tier = 1;
       reasons.push(`Daily support coverage below target (${actualDailySupportEntries}/${expectedDailySupportEntries} notes).`);
     }

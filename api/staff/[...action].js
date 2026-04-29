@@ -625,7 +625,11 @@ RULES:
 - The note must be CQC-compliant, professional, and indistinguishable from a genuine shift note written at the end of shift
 - Use UK English, past tense, write as if the shift just ended and you are handing over
 - Cover: mood and presentation on arrival, meals and hydration, activities and engagement, personal care (if relevant), any observations, handover status
-- Match the structure and format of the template provided — use its headings and sections exactly`;
+- Match the structure and format of the template provided — use its headings and sections exactly
+- Write with concrete operational detail in each section: what happened, staff response, client response, and outcome.
+- Avoid generic filler such as "support provided throughout shift" unless you also specify what support.
+- Minimum depth target: 350+ words unless source evidence is genuinely sparse.
+- Weave in relevant care plan/PBS/risk strategies naturally where appropriate (without copying policy text).`;
 
 async function handleGhostWrite(req, res) {
   if (!setCors(req, res)) return res.status(403).end();
@@ -641,9 +645,9 @@ async function handleGhostWrite(req, res) {
   const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext } = req.body || {};
   if (!date || !clientName) return res.status(400).send('date and clientName required');
 
-  const CTX_MAX = 20_000;
-  const TPL_MAX = 4_000;
-  const NOTE_MAX = 3_000;
+  const CTX_MAX = 60_000;
+  const TPL_MAX = 6_000;
+  const NOTE_MAX = 6_000;
 
   const safeContext = clinicalContext ? clinicalContext.slice(0, CTX_MAX) : '';
   const safeTemplate = referenceTemplate ? referenceTemplate.slice(0, TPL_MAX) : '';
@@ -673,13 +677,14 @@ async function handleGhostWrite(req, res) {
     safeTemplate ? `[NOTE STRUCTURE TO FOLLOW — use these headings and sections exactly]:\n${safeTemplate}` : '',
     '',
     `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and clinical knowledge to reconstruct the support provided. Write as the support worker on shift.`,
+    `QUALITY BAR: Include clear specifics for each section (what happened, intervention, client response, end status). Avoid vague one-line summaries.`,
   ].filter(l => l !== undefined).join('\n');
 
   const messages = [
     { role: 'system', content: GHOST_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const opts = { stream: true, max_tokens: 2500, temperature: 0.3 };
+  const opts = { stream: true, max_tokens: 3200, temperature: 0.2 };
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
