@@ -113,6 +113,7 @@ export function NoteWorkspace() {
   const [ghostSavedMap, setGhostSavedMap] = useState<Record<string, boolean>>({});
   const [ghostContextMap, setGhostContextMap] = useState<Record<string, string>>({});
   const [replaceLoadingMap, setReplaceLoadingMap] = useState<Record<string, boolean>>({});
+  const [mergeActionLoadingMap, setMergeActionLoadingMap] = useState<Record<string, boolean>>({});
   const [linkedEntryIds, setLinkedEntryIds] = useState<Record<string, boolean>>({});
   const [expectedNotesPerDay, setExpectedNotesPerDay] = useState(3);
   const [displayCount, setDisplayCount] = useState(30);
@@ -404,6 +405,18 @@ export function NoteWorkspace() {
     }
   };
 
+  const isGhostFailure = (text: string) => {
+    const normalized = text.toLowerCase();
+    return (
+      normalized.startsWith('ghost write failed')
+      || normalized.startsWith('generation failed')
+      || normalized.startsWith('ai models are at capacity')
+      || normalized.includes('unauthorized')
+      || normalized.includes('request failed')
+      || normalized.includes('session not configured')
+    );
+  };
+
   const runGhostWrite = async (gapId: string, date: string, client: string) => {
     // Find closest note before and after the gap date for this client
     const toIso = (d: string) => {
@@ -440,6 +453,7 @@ export function NoteWorkspace() {
     const shiftContext = ghostContextMap[gapId]?.trim() || '';
 
     setGhostLoadingMap(prev => ({ ...prev, [gapId]: true }));
+    setGhostMap(prev => ({ ...prev, [gapId]: '' }));
     try {
       const res = await fetch('/api/staff/ghost-write', {
         method: 'POST',
@@ -454,6 +468,18 @@ export function NoteWorkspace() {
           shiftContext // Added to AI prompt context
         })
       });
+      if (!res.ok) {
+        let message = '';
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const body = await res.json().catch(() => null);
+          message = body?.error || body?.message || '';
+        }
+        if (!message) {
+          message = await res.text().catch(() => '');
+        }
+        throw new Error(message || `Request failed (${res.status})`);
+      }
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No stream');
       const decoder = new TextDecoder();
@@ -478,6 +504,96 @@ export function NoteWorkspace() {
       else next[entryId] = true;
       return next;
     });
+  };
+
+  const parseTimeToMinutes = (raw?: string) => {
+    if (!raw) return null;
+    const match = raw.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (Number.isNaN(hour) || Number.isNaN(minute) || hour > 23 || minute > 59) return null;
+    return (hour * 60) + minute;
+  };
+
+  const tokenize = (text: string) => text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(token => token.length > 2);
+
+  const textSimilarity = (a: string, b: string) => {
+    const setA = new Set(tokenize(a));
+    const setB = new Set(tokenize(b));
+    if (!setA.size || !setB.size) return 0;
+    let intersection = 0;
+    for (const token of setA) {
+      if (setB.has(token)) intersection += 1;
+    }
+    const union = new Set([...setA, ...setB]).size;
+    return union ? intersection / union : 0;
+  };
+
+  const scoreEntryQuality = (entry: CareEntry) => {
+    const lengthScore = Math.min(80, (entry.entry?.length || 0) / 20);
+    const hasStructure = /(handover|medication|presentation|risk|outcome|nutrition|support)/i.test(entry.entry || '');
+    const hasTime = /\b\d{1,2}[:.]\d{2}\b/.test(entry.entry || '') || Boolean(entry.time);
+    const hasParagraphs = (entry.entry || '').split(/\n+/).length > 3;
+    return lengthScore + (hasStructure ? 12 : 0) + (hasTime ? 8 : 0) + (hasParagraphs ? 6 : 0);
+  };
+
+  const getSuggestedLinkedIds = (groupEntries: CareEntry[]) => {
+    if (groupEntries.length < 2) return [];
+    const selected = new Set<string>();
+    for (let i = 0; i < groupEntries.length; i += 1) {
+      for (let j = i + 1; j < groupEntries.length; j += 1) {
+        const first = groupEntries[i];
+        const second = groupEntries[j];
+        const similarity = textSimilarity(first.entry || '', second.entry || '');
+        const firstMinutes = parseTimeToMinutes(first.time);
+        const secondMinutes = parseTimeToMinutes(second.time);
+        const closeInTime = firstMinutes !== null && secondMinutes !== null
+          ? Math.abs(firstMinutes - secondMinutes) <= 210
+          : false;
+        if (similarity >= 0.38 || (similarity >= 0.22 && closeInTime)) {
+          selected.add(first.id);
+          selected.add(second.id);
+        }
+      }
+    }
+    return [...selected];
+  };
+
+  const useSuggestedLinks = (groupEntries: CareEntry[]) => {
+    const suggested = getSuggestedLinkedIds(groupEntries);
+    if (suggested.length < 2) return;
+    setLinkedEntryIds(prev => {
+      const next = { ...prev };
+      for (const entry of groupEntries) delete next[entry.id];
+      for (const id of suggested) next[id] = true;
+      return next;
+    });
+  };
+
+  const keepBestAndRemoveOthers = async (entryKey: string, groupEntries: CareEntry[]) => {
+    if (groupEntries.length < 2) return;
+    setMergeActionLoadingMap(prev => ({ ...prev, [entryKey]: true }));
+    try {
+      const best = groupEntries
+        .slice()
+        .sort((a, b) => scoreEntryQuality(b) - scoreEntryQuality(a))[0];
+      const removeIds = groupEntries.filter(entry => entry.id !== best.id).map(entry => entry.id);
+      await deleteEntriesByIdsAsync(removeIds);
+      const all = await getAllEntriesAsync();
+      setEntries(all);
+      setLinkedEntryIds(prev => {
+        const next = { ...prev };
+        for (const entry of groupEntries) delete next[entry.id];
+        return next;
+      });
+    } finally {
+      setMergeActionLoadingMap(prev => ({ ...prev, [entryKey]: false }));
+    }
   };
 
   const buildMergedText = (groupEntries: CareEntry[], linkedIds: string[]) => groupEntries
@@ -1027,26 +1143,76 @@ export function NoteWorkspace() {
               {reviewCoverage.missingDays.length > 0 && (
                 <div className="space-y-2">
                   {reviewCoverage.missingDays.slice(0, 10).map((day) => (
-                    <div key={day.date} className="hc-clay-inset rounded-xl px-4 py-3 flex items-center justify-between gap-4">
-                      <div className="text-[11px] font-black text-hc-text tabular-nums">{day.date}</div>
-                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
-                        {day.actual}/{day.expected} present · {day.missing} missing
+                    <div key={day.date} className="space-y-2">
+                      <div className="hc-clay-inset rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+                        <div className="text-[11px] font-black text-hc-text tabular-nums">{day.date}</div>
+                        <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
+                          {day.actual}/{day.expected} present · {day.missing} missing
+                        </div>
+                        <div className="flex-1 flex items-center gap-3">
+                          <input
+                            placeholder="Optional shift context (e.g. 10am-12pm 1:1)..."
+                            value={ghostContextMap[`audit-${day.date}`] || ''}
+                            onChange={(e) => setGhostContextMap(prev => ({ ...prev, [`audit-${day.date}`]: e.target.value }))}
+                            className="flex-1 hc-clay-inset bg-hc-surface/50 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text outline-none placeholder:text-hc-muted/50"
+                          />
+                          <button
+                            onClick={() => void runGhostWrite(`audit-${day.date}`, day.date, selectedClient || '')}
+                            disabled={ghostLoadingMap[`audit-${day.date}`]}
+                            className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20 disabled:opacity-50 shadow-sm hover:bg-hc-teal/20 transition-all"
+                          >
+                            {ghostLoadingMap[`audit-${day.date}`] ? 'Writing...' : 'Create Note'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 flex items-center gap-3">
-                        <input 
-                          placeholder="Optional shift context (e.g. 10am-12pm 1:1)..."
-                          value={ghostContextMap[`audit-${day.date}`] || ''}
-                          onChange={(e) => setGhostContextMap(prev => ({ ...prev, [`audit-${day.date}`]: e.target.value }))}
-                          className="flex-1 hc-clay-inset bg-hc-surface/50 rounded-xl px-4 py-2 text-[11px] font-black text-hc-text outline-none placeholder:text-hc-muted/50"
-                        />
-                        <button
-                          onClick={() => void runGhostWrite(`audit-${day.date}`, day.date, selectedClient || '')}
-                          disabled={ghostLoadingMap[`audit-${day.date}`]}
-                          className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20 disabled:opacity-50 shadow-sm hover:bg-hc-teal/20 transition-all"
-                        >
-                          {ghostLoadingMap[`audit-${day.date}`] ? 'Writing...' : 'Create Note'}
-                        </button>
-                      </div>
+                      {(ghostLoadingMap[`audit-${day.date}`] || ghostMap[`audit-${day.date}`]) && (
+                        <div className="hc-clay-raised rounded-xl border border-hc-teal/15 p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-[10px] font-black text-hc-teal uppercase tracking-widest">
+                              Ghost Written — {day.date} · {selectedClient}
+                            </span>
+                            {ghostMap[`audit-${day.date}`] && !isGhostFailure(ghostMap[`audit-${day.date}`]) && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const key = `audit-${day.date}`;
+                                    const text = ghostMap[key] || '';
+                                    void navigator.clipboard.writeText(text);
+                                    setGhostCopiedMap(prev => ({ ...prev, [key]: true }));
+                                    setTimeout(() => setGhostCopiedMap(prev => ({ ...prev, [key]: false })), 2000);
+                                  }}
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostCopiedMap[`audit-${day.date}`] ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                                >
+                                  {ghostCopiedMap[`audit-${day.date}`] ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                  {ghostCopiedMap[`audit-${day.date}`] ? 'Copied' : 'Copy'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void saveGhostAsEntry(`audit-${day.date}`, day.date, selectedClient || '', '', ghostMap[`audit-${day.date}`] || '')}
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostSavedMap[`audit-${day.date}`] ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                                >
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                  {ghostSavedMap[`audit-${day.date}`] ? 'Saved' : 'Save Entry'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {ghostLoadingMap[`audit-${day.date}`] && !ghostMap[`audit-${day.date}`] ? (
+                            <div className="flex items-center gap-3 text-hc-muted animate-pulse">
+                              <Sparkles className="w-4 h-4 text-hc-teal animate-spin" />
+                              <span className="text-[11px] font-black uppercase tracking-widest">Reconstructing shift from clinical evidence...</span>
+                            </div>
+                          ) : isGhostFailure(ghostMap[`audit-${day.date}`] || '') ? (
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
+                              <AlertTriangle className="w-4 h-4 text-flag-amber shrink-0" />
+                              <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide">{ghostMap[`audit-${day.date}`]}</p>
+                            </div>
+                          ) : (
+                            <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{ghostMap[`audit-${day.date}`]}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1122,7 +1288,7 @@ export function NoteWorkspace() {
                             Ghost Written — {g.date} · {gapClient}
                           </span>
                         </div>
-                        {ghostResult && !ghostResult.startsWith('Ghost write failed') && (
+                        {ghostResult && !isGhostFailure(ghostResult) && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
@@ -1151,7 +1317,7 @@ export function NoteWorkspace() {
                             <Sparkles className="w-4 h-4 text-hc-teal animate-spin" />
                             <span className="text-[11px] font-black uppercase tracking-widest">Reconstructing shift from clinical evidence...</span>
                           </div>
-                        ) : ghostResult?.startsWith('Ghost write failed') || ghostResult?.startsWith('AI models') ? (
+                        ) : isGhostFailure(ghostResult || '') ? (
                           <div className="flex items-center gap-3 p-4 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
                             <AlertTriangle className="w-4 h-4 text-flag-amber shrink-0" />
                             <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide">{ghostResult}</p>
@@ -1175,6 +1341,12 @@ export function NoteWorkspace() {
             const sameDay = sameDayGroups.get(e.id);
             const linkedSameDayCount = sameDay?.entries.filter(entry => linkedEntryIds[entry.id]).length || 0;
             const isLinked = Boolean(linkedEntryIds[e.id]);
+            const suggestedLinkedIds = sameDay ? getSuggestedLinkedIds(sameDay.entries) : [];
+            const hasSuggested = suggestedLinkedIds.length > 1;
+            const isMergeActionLoading = mergeActionLoadingMap[key];
+            const bestId = sameDay
+              ? sameDay.entries.slice().sort((a, b) => scoreEntryQuality(b) - scoreEntryQuality(a))[0]?.id
+              : null;
             return (
               <div key={key} className="hc-clay-raised group">
                 <div className="px-6 py-4 border-b border-hc-border/20 flex items-center justify-between">
@@ -1230,9 +1402,17 @@ export function NoteWorkspace() {
                             linkedEntryIds[entry.id] ? 'bg-hc-teal text-hc-bone' : 'hc-clay-inset text-hc-muted hover:text-hc-text'
                           }`}
                         >
-                          {entryIndex + 1} · {entry.time || 'no time'} · {entry.carer.split(' ')[0] || 'staff'}
+                          {entryIndex + 1} · {entry.time || 'no time'} · {entry.carer.split(' ')[0] || 'staff'}{entry.id === bestId ? ' · best' : ''}
                         </button>
                       ))}
+                      <button
+                        type="button"
+                        disabled={!hasSuggested || isLoading}
+                        onClick={() => useSuggestedLinks(sameDay.entries)}
+                        className="px-4 py-1.5 rounded-xl hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text disabled:opacity-40"
+                      >
+                        Use Suggested
+                      </button>
                       <button
                         type="button"
                         disabled={linkedSameDayCount < 2 || isLoading}
@@ -1240,6 +1420,14 @@ export function NoteWorkspace() {
                         className="px-4 py-1.5 rounded-xl btn-tactical text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
                       >
                         Merge Selected
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isMergeActionLoading}
+                        onClick={() => void keepBestAndRemoveOthers(key, sameDay.entries)}
+                        className="px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-flag-amber/10 text-flag-amber border border-flag-amber/20 hover:bg-flag-amber/20 disabled:opacity-40"
+                      >
+                        {isMergeActionLoading ? 'Keeping...' : 'Keep Best'}
                       </button>
                     </div>
                   </div>
