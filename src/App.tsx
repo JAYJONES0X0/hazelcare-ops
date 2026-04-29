@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Component, type ReactNode, type ErrorInfo } from 'react';
+import { useState, useEffect, useCallback, Component, useRef, type ReactNode, type ErrorInfo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { UploadPage } from './pages/UploadPage';
@@ -22,42 +22,52 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { EmpireMatrix } from './pages/EmpireMatrix';
 import { GlobalInjest } from './components/GlobalInjest';
-import { Upload } from 'lucide-react';
+import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
 
 import type { WeekSummary, Action, Incident, StaffMember, Page } from './lib/types';
 import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
-  state = { error: null };
-  static getDerivedStateFromError(e: Error) { return { error: e?.message || String(e) }; }
-  componentDidCatch(e: Error, info: ErrorInfo) { console.error('[ErrorBoundary]', e, info); }
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-hc-bg gap-4 text-hc-text font-black">
-          <div className="text-flag-red text-lg uppercase tracking-tighter">App Cluster Failure</div>
-          <pre className="text-hc-muted text-[10px] bg-black/40 p-6 rounded-3xl max-w-2xl overflow-auto border border-white/5 font-mono">{this.state.error}</pre>
-          <button onClick={() => this.setState({ error: null })} className="hc-clay-raised px-8 py-3 rounded-xl text-xs uppercase tracking-widest">Reset Core</button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [sessionLoaded, setSessionLoaded] = useState(false);
-  const [pageId, setPageId] = useState<Page>('briefing');
+  const [pageId, setPageId] = useState<Page>(() => (localStorage.getItem('hc_current_page') as Page) || 'briefing');
   const [pageCtx, setPageCtx] = useState<any>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
   const setPage = useCallback((p: Page, ctx?: any) => {
     setPageId(p);
     setPageCtx(ctx || null);
+    localStorage.setItem('hc_current_page', p);
   }, []);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [pageId]);
+
+  const scrollToTop = () => {
+    const clinicalList = document.getElementById('clinical-workspace-list');
+    if (clinicalList) {
+      clinicalList.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToBottom = () => {
+    const clinicalList = document.getElementById('clinical-workspace-list');
+    if (clinicalList) {
+      clinicalList.scrollTo({ top: clinicalList.scrollHeight, behavior: 'smooth' });
+    } else if (mainRef.current) {
+      mainRef.current.scrollTo({ top: mainRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  };
 
   const page = pageId;
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
@@ -192,7 +202,7 @@ export default function App() {
         <div className="flex h-screen overflow-hidden">
           <Sidebar page={page} setPage={setPage} weekData={weekData} actions={actions} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />
 
-          <main className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
+          <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full min-h-screen">
               {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} setPage={setPage} />}
               {page === 'dashboard' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
@@ -215,6 +225,24 @@ export default function App() {
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
               {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} />}
+            </div>
+
+            {/* Floating Navigation Hub */}
+            <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-3">
+              <button 
+                onClick={scrollToTop}
+                title="Scroll to Top"
+                className="p-4 hc-clay-raised rounded-2xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-2xl bg-hc-surface/80 backdrop-blur-md"
+              >
+                <ArrowUp className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+              <button 
+                onClick={scrollToBottom}
+                title="Scroll to Bottom"
+                className="p-4 hc-clay-raised rounded-2xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-2xl bg-hc-surface/80 backdrop-blur-md"
+              >
+                <ArrowDown className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+              </button>
             </div>
           </main>
         </div>

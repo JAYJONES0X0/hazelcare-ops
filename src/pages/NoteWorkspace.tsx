@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, ArrowUp, RefreshCw, AlertTriangle } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, RefreshCw, AlertTriangle, Shield } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
@@ -7,6 +7,58 @@ import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { loadClients, saveClient, type FullClient } from '../lib/client-store';
+
+const INTERNAL_TEMPLATES = [
+  {
+    id: 'narrative-v2',
+    name: 'Organic Narrative (Forensic)',
+    content: `Atmosphere & Shift Commencement:
+[Describe the initial environment and the client's first presentation of the day.]
+
+Engagement & Individual Progress:
+[Detail the specific 1:1 support delivered, focusing on the quality of engagement, any goals worked on, and the client's response to staff prompts.]
+
+Clinical Presentation & Wellbeing:
+[Provide a synthesis of the client's mood, physical health indicators, and general mental wellbeing throughout the period.]
+
+Summary of Outcome:
+[Reflect on the day's successes or challenges and confirm the state in which the client was handed over.]`
+  },
+  {
+    id: 'audit-forensic',
+    name: 'Forensic Timeline (Humanized)',
+    content: `08:00 - 10:00 (The Morning Period)
+[Provide a narrative of the morning routine, breakfast, and initial settling.]
+
+10:00 - 14:00 (Active Engagement)
+[Detail community access, social interactions, or focused 1:1 sessions. Focus on client choice and autonomy.]
+
+14:00 - 17:00 (The Afternoon/Evening Period)
+[Capture the wind-down or late afternoon activities, including meal prep and welfare checks.]
+
+Safety & Significant Observations:
+[Detail any specific incidents, risks managed, or deviations from the care plan with a focus on staff response.]
+
+Handover & End of Day Presentation:
+[Briefly state the final wellbeing check and handover status.]`
+  },
+  {
+    id: 'behavioral-complex',
+    name: 'Behavioral Reasoning',
+    content: `Presentation & Baseline:
+[Synthesis of the client's state before any identified events.]
+
+The Support Context:
+[Describe any triggers or environmental factors that required staff intervention. Explain the "why" behind the behaviors.]
+
+Staff Response & De-escalation:
+[Narrative of how staff supported the client, including verbal and non-verbal techniques used.]
+
+Post-Event Resolution:
+[The client's recovery process and current wellbeing status.]`
+  }
+];
 
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
@@ -21,6 +73,12 @@ export function NoteWorkspace() {
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [goldTemplate, setGoldTemplate] = useState('');
   const [showGoldSuite, setShowGoldSuite] = useState(false);
+  const [userTemplates, setUserTemplates] = useState<{name: string, content: string}[]>(() => {
+    const saved = localStorage.getItem('hc_user_templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,13 +92,6 @@ export function NoteWorkspace() {
     return () => { alive = false; };
   }, []);
 
-  // AUTO-SNAP: When filters change, jump to the start of the intelligence
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTo({ top: 0, behavior: 'auto' });
-    }
-  }, [selectedClient, dateRange]);
-  const [showJumpTop, setShowJumpTop] = useState(false);
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
@@ -138,23 +189,67 @@ export function NoteWorkspace() {
     }
   }, []);
 
+  const handleClinicalDocUpload = async (file: File) => {
+    if (!selectedClient) return;
+    setImportLoading(true);
+    setImportInfo(`Absorbing context for ${selectedClient}...`);
+    try {
+      const text = await extractFileText(file);
+      const clients = loadClients();
+      const profile = clients.find(c => c.name === selectedClient);
+      if (profile) {
+        profile.clinicalBriefing = (profile.clinicalBriefing ? profile.clinicalBriefing + '\n\n' : '') + text;
+        saveClient(profile);
+        setImportInfo(`Intelligence Synchronised for ${selectedClient}`);
+      }
+    } catch (e) {
+      setImportInfo(`Absorption failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const runRewrite = async (entryKey: string, text: string, clientName: string, refineInstructions?: string) => {
+    const clients = loadClients();
+    const profile = clients.find(c => c.name.toLowerCase().trim() === clientName.toLowerCase().trim());
+    let intelContext = '';
+
+    if (profile) {
+      const parts = [];
+      if (profile.clinicalBriefing) parts.push(`[ABSORBED KNOWLEDGE]:\n${profile.clinicalBriefing}`);
+      if (profile.diagnoses.length) parts.push(`DIAGNOSES: ${profile.diagnoses.join(', ')}`);
+      if (profile.carePlan) {
+        const active = profile.carePlan.domains.filter(d => d.enabled).map(d => `[${d.title}]: ${d.howToAchieve}`);
+        if (active.length) parts.push(`CARE PLAN STRATEGIES:\n${active.join('\n')}`);
+      }
+      if (profile.pbs) {
+        parts.push(`SUPPORT STRATEGIES (PBS): ${profile.pbs.routineStrategies.filter(Boolean).join('; ')}`);
+        parts.push(`DE-ESCALATION (What works): ${profile.pbs.whatWorks.filter(Boolean).join('; ')}`);
+      }
+      if (profile.risk) {
+        const topRisks = profile.risk.risks.map(r => `[Risk: ${r.title}]: ${r.controls.join('; ')}`);
+        parts.push(`RISK MITIGATION:\n${topRisks.join('\n')}`);
+      }
+      intelContext = parts.join('\n\n');
+    }
+
     setLoadingMap(prev => ({ ...prev, [entryKey]: true }));
     try {
-      const res = await fetch('/api/staff/enhance-note', {
+      const groqRes = await fetch('/api/staff/enhance-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text, 
-          noteType: '1:1 Support', 
-          clientName, 
-          referenceTemplate: goldTemplate,
+        body: JSON.stringify({
+          text,
+          noteType: 'Shift Note',
+          clientName,
+          referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
           refineInstructions,
-          previousOutput: rewriteMap[entryKey]
-        }),
+          previousOutput: rewriteMap[entryKey],
+          clinicalContext: intelContext
+        })
       });
-      if (!res.ok) throw new Error('Rewrite engine offline');
-      const reader = res.body?.getReader();
+
+      const reader = groqRes.body?.getReader();
       if (!reader) throw new Error('No stream');
       const decoder = new TextDecoder();
       let result = '';
@@ -164,12 +259,11 @@ export function NoteWorkspace() {
         result += decoder.decode(value);
         setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
       }
-      // Clear refine input after success if it was a refinement
       if (refineInstructions) {
         setRefineInputs(prev => ({ ...prev, [entryKey]: '' }));
       }
     } catch (e) {
-      setRewriteMap(prev => ({ ...prev, [entryKey]: `ERR: ${e instanceof Error ? e.message : 'Unknown'}` }));
+      setRewriteMap(prev => ({ ...prev, [entryKey]: `Intelligence Failure: ${e instanceof Error ? e.message : 'Unknown Connection Error'}` }));
     } finally {
       setLoadingMap(prev => ({ ...prev, [entryKey]: false }));
     }
@@ -179,6 +273,21 @@ export function NoteWorkspace() {
     void navigator.clipboard.writeText(text);
     setCopiedMap(prev => ({ ...prev, [key]: true }));
     setTimeout(() => setCopiedMap(prev => ({ ...prev, [key]: false })), 2000);
+  };
+
+  const saveCustomTemplate = () => {
+    if (!goldTemplate || !newTemplateName) return;
+    const updated = [...userTemplates, { name: newTemplateName, content: goldTemplate }];
+    setUserTemplates(updated);
+    localStorage.setItem('hc_user_templates', JSON.stringify(updated));
+    setNewTemplateName('');
+    setShowTemplateMenu(false);
+  };
+
+  const deleteUserTemplate = (index: number) => {
+    const updated = userTemplates.filter((_, i) => i !== index);
+    setUserTemplates(updated);
+    localStorage.setItem('hc_user_templates', JSON.stringify(updated));
   };
 
   const hasData = entries.length > 0;
@@ -258,30 +367,63 @@ export function NoteWorkspace() {
                 <span className="text-[11px] font-black text-hc-muted tabular-nums">{entries.length}</span>
               </button>
               {visibleClients.map(client => (
-                <button
-                  key={client}
-                  onClick={() => setSelectedClient(client)}
-                  className={`w-full text-left px-5 py-3 flex items-center justify-between border-b border-hc-border/10 transition-all group ${
-                    selectedClient === client
-                      ? 'bg-hc-teal/10 border-l-2 border-l-hc-teal'
-                      : 'hover:bg-hc-border/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${
-                      selectedClient === client ? 'bg-hc-teal text-hc-bone' : 'bg-hc-border/30 text-hc-muted group-hover:bg-hc-teal/20 group-hover:text-hc-teal'
-                    }`}>
-                      {client[0].toUpperCase()}
+                <div key={client} className="flex flex-col border-b border-hc-border/10">
+                  <button
+                    onClick={() => setSelectedClient(client)}
+                    className={`w-full text-left px-5 py-3 flex items-center justify-between transition-all group ${
+                      selectedClient === client
+                        ? 'bg-hc-teal/10 border-l-2 border-l-hc-teal'
+                        : 'hover:bg-hc-border/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${
+                        selectedClient === client ? 'bg-hc-teal text-hc-bone' : 'bg-hc-border/30 text-hc-muted group-hover:bg-hc-teal/20 group-hover:text-hc-teal'
+                      }`}>
+                        {client[0].toUpperCase()}
+                      </div>
+                      <span className={`text-[11px] font-black truncate ${selectedClient === client ? 'text-hc-teal' : 'text-hc-text'}`}>
+                        {client}
+                      </span>
                     </div>
-                    <span className={`text-[11px] font-black truncate ${selectedClient === client ? 'text-hc-teal' : 'text-hc-text'}`}>
-                      {client}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[11px] font-black text-hc-muted tabular-nums">{clientEntryCounts[client] || 0}</span>
-                    <ChevronRight className={`w-3 h-3 text-hc-muted/40 transition-transform ${selectedClient === client ? 'rotate-90' : ''}`} />
-                  </div>
-                </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-[11px] font-black text-hc-muted tabular-nums">{clientEntryCounts[client] || 0}</span>
+                      <ChevronRight className={`w-3 h-3 text-hc-muted/40 transition-transform ${selectedClient === client ? 'rotate-90' : ''}`} />
+                    </div>
+                  </button>
+
+                  {/* INTELLIGENCE VAULT: Active when client selected */}
+                  {selectedClient === client && (
+                    <div className="px-5 pb-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                      <div className="p-3 bg-hc-teal/5 rounded-xl border border-hc-teal/20 space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-3 h-3 text-hc-teal" />
+                          <span className="text-[9px] font-black text-hc-teal uppercase tracking-widest">Intelligence Vault</span>
+                        </div>
+                        
+                        <p className="text-[9px] text-hc-muted leading-tight font-bold uppercase tracking-wider italic">
+                          Attach PBS, Risk Assessments or Care Plans to sharpen generation.
+                        </p>
+
+                        <button 
+                          onClick={() => document.getElementById('intel-doc-upload')?.click()}
+                          className="w-full py-1.5 bg-hc-teal/10 hover:bg-hc-teal/20 text-hc-teal text-[9px] font-black uppercase tracking-widest rounded-lg border border-hc-teal/10 transition-all"
+                        >
+                          + Add Context Doc
+                        </button>
+                        <input 
+                          type="file" 
+                          id="intel-doc-upload" 
+                          className="hidden" 
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleClinicalDocUpload(f);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </>
           )}
@@ -327,10 +469,20 @@ export function NoteWorkspace() {
               onClick={() => setShowGoldSuite(!showGoldSuite)}
               className="flex items-center justify-between group"
             >
-              <div className="flex items-center gap-2 text-[10px] font-black text-hc-teal uppercase tracking-widest group-hover:opacity-70 transition-opacity">
-                <Sparkles className="w-3 h-3" />
-                {showGoldSuite ? 'Hide Gold Standard Assistant' : 'Show Gold Standard Assistant'}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-[10px] font-black text-hc-teal uppercase tracking-widest group-hover:opacity-70 transition-opacity">
+                  <Sparkles className="w-3 h-3" />
+                  {showGoldSuite ? 'Hide Gold Standard Assistant' : 'Show Gold Standard Assistant'}
+                </div>
+                
+                {selectedClient && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-flag-green/10 rounded-lg animate-in fade-in duration-500">
+                    <div className="w-2 h-2 rounded-full bg-flag-green glow-green" />
+                    <span className="text-[9px] font-black text-flag-green uppercase tracking-widest">Context Active</span>
+                  </div>
+                )}
               </div>
+
               {!showGoldSuite && goldTemplate && (
                 <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest italic truncate max-w-[300px]">
                   Rubric active: "{goldTemplate.slice(0, 40)}..."
@@ -339,29 +491,104 @@ export function NoteWorkspace() {
             </button>
             
             {showGoldSuite && (
-              <div className="animate-in slide-in-from-top-2 duration-300 flex items-start gap-4">
-                <div className="flex-1 relative">
-                  <textarea
-                    value={goldTemplate}
-                    onChange={e => setGoldTemplate(e.target.value)}
-                    placeholder="Paste your gold standard note here — the AI will use this as the target rubric for all rewrites..."
-                    rows={3}
-                    className="w-full hc-clay-inset p-4 text-[13px] text-hc-text/90 italic focus:outline-none resize-none scrollbar-thin"
-                  />
-                  {!goldTemplate && (
-                    <div className="absolute inset-0 pointer-events-none flex items-center p-4">
-                      <div className="flex items-center gap-3 opacity-20">
-                        <FileText className="w-5 h-5 text-hc-teal" />
+              <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 flex flex-col gap-3">
+                    <div className="relative">
+                      <textarea
+                        value={goldTemplate}
+                        onChange={e => setGoldTemplate(e.target.value)}
+                        placeholder="Paste or select a template below..."
+                        rows={6}
+                        className="w-full hc-clay-inset p-5 text-[13px] text-hc-text/90 italic focus:outline-none resize-none scrollbar-thin rounded-2xl"
+                      />
+                      
+                      {/* Template Selector Dropdown */}
+                      <div className="absolute right-3 top-3 z-50">
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest transition-all ${showTemplateMenu ? 'text-hc-teal scale-95' : 'text-hc-muted hover:text-hc-teal'}`}
+                          >
+                            Templates
+                            <ChevronRight className={`w-3 h-3 transition-transform duration-300 ${showTemplateMenu ? 'rotate-180' : 'rotate-90'}`} />
+                          </button>
+
+                          {showTemplateMenu && (
+                            <div className="absolute right-0 mt-2 w-72 hc-clay-raised bg-hc-surface/95 backdrop-blur-xl rounded-2xl border border-hc-border/20 shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                              <div className="space-y-4 max-h-[400px] overflow-y-auto scrollbar-none">
+                                {/* System Templates */}
+                                <div>
+                                  <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] px-2">Templates</span>
+                                  <div className="mt-2 space-y-1">
+                                    {INTERNAL_TEMPLATES.map(t => (
+                                      <button 
+                                        key={t.id}
+                                        onClick={() => { setGoldTemplate(t.content); setShowTemplateMenu(false); }}
+                                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-hc-teal/10 text-[11px] font-bold text-hc-text transition-colors flex items-center justify-between group"
+                                      >
+                                        {t.name}
+                                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* User Templates */}
+                                {userTemplates.length > 0 && (
+                                  <div>
+                                    <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] px-2">Your Rubrics</span>
+                                    <div className="mt-2 space-y-1">
+                                      {userTemplates.map((t, i) => (
+                                        <div key={i} className="flex items-center gap-1 group">
+                                          <button 
+                                            onClick={() => { setGoldTemplate(t.content); setShowTemplateMenu(false); }}
+                                            className="flex-1 text-left px-3 py-2.5 rounded-xl hover:bg-hc-teal/10 text-[11px] font-bold text-hc-text transition-colors truncate"
+                                          >
+                                            {t.name}
+                                          </button>
+                                          <button onClick={() => deleteUserTemplate(i)} className="p-2 text-hc-muted hover:text-flag-red opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Save New Section */}
+                                <div className="pt-3 border-t border-hc-border/20">
+                                  <div className="flex gap-2">
+                                    <input 
+                                      value={newTemplateName}
+                                      onChange={e => setNewTemplateName(e.target.value)}
+                                      placeholder="Name current rubric..."
+                                      className="flex-1 bg-hc-border/10 rounded-lg px-3 py-1.5 text-[10px] font-bold text-hc-text focus:outline-none"
+                                    />
+                                    <button 
+                                      onClick={saveCustomTemplate}
+                                      disabled={!newTemplateName || !goldTemplate}
+                                      className="hc-clay-raised p-1.5 rounded-lg text-hc-teal disabled:opacity-30"
+                                    >
+                                      <CheckCircle className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  
+                  {goldTemplate && (
+                    <button onClick={() => setGoldTemplate('')}
+                      className="shrink-0 p-3 hc-clay-raised rounded-2xl text-hc-muted hover:text-flag-red transition-all">
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   )}
                 </div>
-                {goldTemplate && (
-                  <button onClick={() => setGoldTemplate('')}
-                    className="shrink-0 p-2.5 hc-clay-raised rounded-xl text-hc-muted hover:text-flag-red transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -370,20 +597,9 @@ export function NoteWorkspace() {
         {/* Entry list */}
         <div 
           ref={listRef}
-          onScroll={(e) => {
-            const top = (e.target as HTMLElement).scrollTop;
-            setShowJumpTop(top > 400);
-          }}
+          id="clinical-workspace-list"
           className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative scroll-smooth"
         >
-          {showJumpTop && (
-            <button 
-              onClick={() => listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="fixed bottom-10 right-10 z-50 p-4 rounded-2xl hc-clay-raised text-hc-teal animate-in fade-in zoom-in duration-300 hover:scale-110 active:scale-95 transition-all shadow-2xl"
-            >
-              <ArrowUp className="w-5 h-5" />
-            </button>
-          )}
           {booting && (
             <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50">
               <div className="flex flex-col items-center">
@@ -416,7 +632,7 @@ export function NoteWorkspace() {
 
           <div className="flex items-center gap-6 mb-8 px-4">
              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Clinical Density:</span>
+                <span className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Entry Density:</span>
                 <span className="text-[11px] font-black text-hc-text tabular-nums">{stats.entries} Records</span>
              </div>
              <div className="h-4 w-px bg-hc-border/30" />
@@ -507,7 +723,7 @@ export function NoteWorkspace() {
                     {rewrite ? (
                       <div className="animate-in fade-in duration-500 flex flex-col h-full">
                         <div className="flex-1">
-                          <p className="text-[12px] font-medium text-hc-text leading-relaxed italic">{rewrite}</p>
+                          <p className="text-[12px] font-medium text-hc-text leading-relaxed italic whitespace-pre-wrap">{rewrite}</p>
                         </div>
                         
                         <div className="mt-6 space-y-4">
@@ -516,8 +732,8 @@ export function NoteWorkspace() {
                             <input 
                               value={refineInputs[key] || ''}
                               onChange={e => setRefineInputs(prev => ({ ...prev, [key]: e.target.value }))}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter' && refineInputs[key]?.trim() && !isLoading) {
+                              onKeyDown={evt => {
+                                if (evt.key === 'Enter' && refineInputs[key]?.trim() && !isLoading) {
                                   void runRewrite(key, e.entry, e.client, refineInputs[key]);
                                 }
                               }}
@@ -535,7 +751,7 @@ export function NoteWorkspace() {
                             <button 
                               onClick={() => void runRewrite(key, e.entry, e.client, refineInputs[key])}
                               disabled={isLoading}
-                              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
+                              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
                             >
                               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                               {refineInputs[key] ? 'Refine' : 'Regenerate'}
@@ -568,7 +784,7 @@ export function NoteWorkspace() {
                 className="btn-clay px-12 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl group flex items-center gap-3"
               >
                 <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                Load Clinical History
+                Load More
               </button>
             </div>
           )}

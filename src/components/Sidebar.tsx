@@ -42,14 +42,14 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Clinical Intelligence',
+    label: 'Intelligence Core',
     icon: <Activity size={16} />,
     color: 'text-hc-teal-light',
     items: [
       { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
-      { id: 'client-diary' as Page,    label: 'Diagnostic Feed',   icon: <BookOpen size={16} /> },
-      { id: 'client-docs' as Page,     label: 'Clinical Records',  icon: <HardDrive size={16} /> },
-      { id: 'handover' as Page,        label: 'Clinical Handover', icon: <FileText size={16} /> },
+      { id: 'client-diary' as Page,    label: 'Live Feed',         icon: <BookOpen size={16} /> },
+      { id: 'client-docs' as Page,     label: 'Sovereign Vault',   icon: <HardDrive size={16} /> },
+      { id: 'handover' as Page,        label: 'Shift Handovers',   icon: <FileText size={16} /> },
       { id: 'templates',               label: 'Builder Templates', icon: <Database size={16} /> },
     ],
   },
@@ -94,7 +94,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('hc-sidebar-expanded');
-    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Clinical Intelligence': true };
+    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Intelligence Core': true };
   });
 
   const toggleSidebar = () => setCollapsed(c => {
@@ -116,7 +116,6 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
     });
   };
 
-  // Auto-collapse sections: when page changes, expand only the owning section
   useEffect(() => {
     if (collapsed) return;
     const ownerSection = navSections.find(s => s.items.some(i => i.id === page));
@@ -133,7 +132,6 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
     <div
       className={`h-full flex flex-col p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative ${collapsed ? 'w-20' : 'w-72'}`}
     >
-      {/* Collapse toggle */}
       <button
         onClick={toggleSidebar}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -142,7 +140,6 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
-      {/* Brand Header */}
       <div className={`hc-clay-raised mb-6 flex flex-col items-center transition-[padding,gap] duration-300 ${collapsed ? 'p-2 gap-0' : 'p-5 gap-3'}`}>
         <div className="w-10 h-10 rounded-2xl hc-clay-inset flex items-center justify-center shrink-0">
           <img src={ORG_CONFIG.logoIcon} alt="HC" className="w-6 h-6 opacity-80" />
@@ -157,7 +154,6 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
         )}
       </div>
 
-      {/* Nav List */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 scrollbar-none">
         {navSections.map((section) => {
           const isExpanded = expandedSections[section.label];
@@ -219,7 +215,6 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
         })}
       </div>
 
-      {/* Footer Controls */}
       <div className="mt-auto pt-6 space-y-4">
         <div className={`hc-clay-raised space-y-4 transition-all duration-300 ${collapsed ? 'p-2' : 'p-4'}`}>
           {!collapsed && (

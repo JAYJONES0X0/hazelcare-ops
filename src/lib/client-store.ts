@@ -182,6 +182,7 @@ export interface FullClient extends ClientBasic {
   carePlan: CarePlanData | null;
   supportPlan: SupportPlanData | null;
   documents: ClientDocument[];
+  clinicalBriefing?: string;
 }
 
 // ─── STORAGE ───────────────────────────────────────────────────────────────────

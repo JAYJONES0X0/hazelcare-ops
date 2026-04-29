@@ -97,17 +97,14 @@ RULES:
 5. Identify GAPS where the source document is vague (e.g., "The source mentions medication but does not specify the dosage").
 6. Output valid JSON only. No preamble.`;
 
-const ENHANCE_SYSTEM_PROMPT = `You are an experienced Senior Support Worker in a UK supported living service. 
-Your job is to rewrite care notes so they are professional, first-person ("I supported..."), and clear, without sounding like a robot.
-
-IMPORTANT RULES:
-1. Use UK ENGLISH only (e.g., summarise, recognise, behaviour, colour).
-2. DO NOT sound like an AI or a medical textbook. Avoid words like "clinical indicators," "presentation," or "manifested."
-3. Sound like a real person who knows the client well. Use natural phrases like "a bit unsettled," "giving him space," "we had a chat about," "he wasn't up for it today."
-4. STRUCTURAL FIDELITY: If the REFERENCE STYLE / TEMPLATE provided has a specific structure (e.g., time blocks like '12:00 - 14:00', specific headers, or bullet points), you MUST mirror that exact structure. Bucket the raw information into the corresponding time slots or headers from the template.
-5. If a client is upset, document the "why" and your response naturally.
-6. Focus on the Outcome: What was the result of your support?
-7. Output ONLY the rewritten note. No preamble, no headers.`;
+const ENHANCE_SYSTEM_PROMPT = `1. Use UK ENGLISH only (e.g., summarise, recognise, behaviour).
+2. COGNITIVE SYNTHESIS: Do not just copy-paste raw data. Synthesise the [RAW DATA TO PROCESS] into a professional narrative.
+3. TEMPLATE IS A SKELETON ONLY: The [MANDATORY LAYOUT / TEMPLATE] provided contains EXAMPLE text. You MUST ignore the meaning and facts of that example text entirely. It is "noise". Do NOT include names, locations, or actions from the template in your output unless they are also in the [RAW DATA TO PROCESS].
+4. CLINICAL CONTEXT (STAFF KNOWLEDGE): You will be provided with [ESSENTIAL CLINICAL CONTEXT] (PBS, Risks, Care Plan). You MUST use this knowledge to inform your tone and descriptions. For example, if the PBS says "Client communicates best with non-verbal cues," describe their non-verbal engagement. If the Risk Assessment mentions "High risk of falls," mention how you supported their mobility safely.
+5. DATA DOMINANCE: The [RAW DATA TO PROCESS] is your ONLY source of truth for the shift's events. The [ESSENTIAL CLINICAL CONTEXT] is your guide on HOW to describe those events professionally.
+6. PRESERVE WHITESPACE: Replicate the headers, line breaks, and indentation of the template EXACTLY.
+7. ORGANIC NARRATIVE: Within the required structure, write with warmth and professional empathy.
+8. Output ONLY the note. No preamble.`;
 
 function isRateLimited(key, max, windowMs) {
   const now = Date.now();
@@ -337,6 +334,53 @@ async function handleStaffSacStatus(req, res) {
   return res.json({ ok });
 }
 
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-70b-versatile',
+  'llama-3.1-8b-instant'
+];
+
+async function callGroqWithFallback(messages, options = {}) {
+  let lastError = null;
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: options.temperature || 0.1,
+          stream: options.stream || false,
+          max_tokens: options.max_tokens || 4096,
+          response_format: options.response_format
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err.error?.message || '';
+        const code = err.error?.code || '';
+        
+        // Skip this model for ANY non-auth error (rate limits, decommissioning, server issues)
+        if (res.status !== 401) {
+          console.warn(`[Groq Router] Model ${model} failed (${code}). Falling back...`);
+          continue; 
+        }
+        throw new Error(JSON.stringify(err));
+      }
+      return res;
+    } catch (e) {
+      lastError = e;
+      console.error(`[Groq Router] Exception with model ${model}:`, e.message);
+    }
+  }
+  throw lastError || new Error('Sovereign Intelligence Stack saturated. Please try again.');
+}
+
 async function handleAnalyzeIntel(req, res) {
   if (!setCors(req, res)) return res.status(403).end();
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -352,27 +396,10 @@ async function handleAnalyzeIntel(req, res) {
   if (!text) return res.status(400).json({ message: 'No text provided' });
 
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: INTEL_SYSTEM_PROMPT },
-          { role: 'user', content: `Analyze this raw clinical text and map it to the CQC structure:\n\n${text}` },
-        ],
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
-      }),
-    });
-
-    if (!groqRes.ok) {
-      const err = await groqRes.text();
-      throw new Error(`Groq error: ${err}`);
-    }
+    const groqRes = await callGroqWithFallback([
+      { role: 'system', content: INTEL_SYSTEM_PROMPT },
+      { role: 'user', content: `Analyze this raw clinical text and map it to the CQC structure:\n\n${text}` },
+    ], { response_format: { type: 'json_object' } });
 
     const data = await groqRes.json();
     const result = JSON.parse(data.choices[0].message.content);
@@ -394,54 +421,45 @@ async function handleEnhanceNote(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput } = req.body || {};
+  const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput, clinicalContext } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
   const userPrompt = [
     noteType ? `Note type: ${noteType}` : '',
     clientName ? `Client/subject: ${clientName}` : '',
-    referenceTemplate ? `\nREFERENCE STYLE / TEMPLATE (MANDATORY STRUCTURE):\n${referenceTemplate}\n` : '',
-    previousOutput ? `\nPREVIOUS OUTPUT:\n${previousOutput}\n` : '',
-    refineInstructions ? `\nUSER CORRECTION / REFINEMENT (PRIORITIZE THIS):\n${refineInstructions}\n` : '',
+    clinicalContext ? `\n[ESSENTIAL CLINICAL CONTEXT - STAFF KNOWLEDGE]:\n${clinicalContext}\n` : '',
+    referenceTemplate ? `\n[MANDATORY LAYOUT / TEMPLATE - USE STRUCTURE ONLY, IGNORE ITS CONTENT]:\n${referenceTemplate}\n` : '',
+    previousOutput ? `\n[PREVIOUS DRAFT]:\n${previousOutput}\n` : '',
+    refineInstructions ? `\n[REFINEMENT INSTRUCTION - PRIORITIZE]:\n${refineInstructions}\n` : '',
     '',
-    refineInstructions ? 'Based on the correction above, rewrite the note:' : 'Convert this to a professional care note following the template structure:',
+    'TASK:',
+    refineInstructions 
+      ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.' 
+      : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT / TEMPLATE]. Do NOT use facts from the template itself.',
     '',
+    '[RAW DATA TO PROCESS - SOVEREIGN SOURCE OF TRUTH]:',
     text.trim(),
   ].filter((l) => l !== '').join('\n');
 
-  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      stream: true,
-      max_tokens: 1200,
-      temperature: 0.25,
-    }),
-  });
-
-  if (!groqRes.ok) {
-    const err = await groqRes.text();
-    return res.status(502).send(`Groq error: ${err}`);
-  }
-
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache');
-
-  const reader = groqRes.body?.getReader();
-  if (!reader) return res.status(502).send('No response body');
-
-  const decoder = new TextDecoder();
-  let buffer = '';
   try {
+    const groqRes = await callGroqWithFallback([
+      { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ], { 
+      stream: true, 
+      max_tokens: 1200, 
+      temperature: 0.25 
+    });
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+
+    const reader = groqRes.body?.getReader();
+    if (!reader) return res.status(502).send('No response body');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -460,6 +478,8 @@ async function handleEnhanceNote(req, res) {
         } catch { /* skip */ }
       }
     }
+  } catch (e) {
+    res.status(502).write(`Intelligence Stack Failure: ${e.message}`);
   } finally {
     res.end();
   }
