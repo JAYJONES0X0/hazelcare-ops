@@ -367,7 +367,8 @@ async function callGemini(messages, options = {}) {
   const action = options.stream ? 'streamGenerateContent?alt=sse' : 'generateContent';
 
   for (const model of geminiModels) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}&key=${key}`;
+    const sep = action.includes('?') ? '&' : '?';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}${sep}key=${key}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
