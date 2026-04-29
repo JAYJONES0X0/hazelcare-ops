@@ -362,8 +362,8 @@ async function callGemini(messages, options = {}) {
     ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
   };
 
-  // Try models in order — 1.5-flash is the most reliably available free model
-  const geminiModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+  // Empire key supports 2.5-flash — use it first
+  const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-001'];
   const action = options.stream ? 'streamGenerateContent?alt=sse' : 'generateContent';
 
   for (const model of geminiModels) {
