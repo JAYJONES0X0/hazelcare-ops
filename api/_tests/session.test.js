@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mintHcSession } from './_lib/hc-session.js';
-import { signStaffSacCookie } from './_lib/staff-sac-cookie.js';
+import { mintHcSession } from '../_lib/hc-session.js';
+import { signStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 
 function createReq(cookieHeader = '') {
   return {
@@ -36,10 +36,11 @@ describe('/api/session scope flags', () => {
   });
 
   it('returns authed + staffScoped when both cookies are present', async () => {
-    const { default: handler } = await import('./session.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const session = mintHcSession(process.env.AUTH_SESSION_SECRET, 1);
     const staff = signStaffSacCookie('notes', process.env.STAFF_LINK_SECRET);
     const req = createReq(`hc_session=${session.value}; hc_staff_sac=${staff.value}`);
+    req.url = '/api/auth/session';
     const res = createRes();
 
     await handler(req, res);
@@ -49,8 +50,9 @@ describe('/api/session scope flags', () => {
   });
 
   it('returns no scope when no cookies are provided', async () => {
-    const { default: handler } = await import('./session.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const req = createReq();
+    req.url = '/api/auth/session';
     const res = createRes();
 
     await handler(req, res);

@@ -42,8 +42,9 @@ describe('/api/login identifier-first flow', () => {
   });
 
   it('recognizes known email in probe mode', async () => {
-    const { default: handler } = await import('./login.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const req = createReq({ email: 'ops@hazelcare.co.uk', probe: true });
+    req.url = '/api/auth/login';
     const res = createRes();
 
     await handler(req, res);
@@ -53,8 +54,9 @@ describe('/api/login identifier-first flow', () => {
   });
 
   it('rejects unknown email in probe mode with contact-admin path', async () => {
-    const { default: handler } = await import('./login.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const req = createReq({ email: 'unknown@hazelcare.co.uk', probe: true });
+    req.url = '/api/auth/login';
     const res = createRes();
 
     await handler(req, res);
@@ -65,8 +67,9 @@ describe('/api/login identifier-first flow', () => {
 
   it('rejects all probes when AUTH_LOGIN_EMAIL is not configured (fail closed)', async () => {
     delete process.env.AUTH_LOGIN_EMAIL;
-    const { default: handler } = await import('./login.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const req = createReq({ email: 'ops@hazelcare.co.uk', probe: true });
+    req.url = '/api/auth/login';
     const res = createRes();
 
     await handler(req, res);
@@ -78,16 +81,19 @@ describe('/api/login identifier-first flow', () => {
 
   it('allows either of two comma-separated emails', async () => {
     process.env.AUTH_LOGIN_EMAIL = 'ops@hazelcare.co.uk,jane@hazelcare.co.uk';
-    const { default: handler } = await import('./login.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const res = createRes();
-    await handler(createReq({ email: 'jane@hazelcare.co.uk', probe: true }), res);
+    const req = createReq({ email: 'jane@hazelcare.co.uk', probe: true });
+    req.url = '/api/auth/login';
+    await handler(req, res);
     expect(res.statusCode).toBe(200);
     expect(res.jsonBody).toEqual({ ok: true, recognized: true });
   });
 
   it('signs in with known email + valid password', async () => {
-    const { default: handler } = await import('./login.js');
+    const { default: handler } = await import('../auth/[...action].js');
     const req = createReq({ email: 'ops@hazelcare.co.uk', password: 'TopSecret!123' });
+    req.url = '/api/auth/login';
     const res = createRes();
 
     await handler(req, res);

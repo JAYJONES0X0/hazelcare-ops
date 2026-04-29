@@ -5,7 +5,7 @@ import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
 import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
-import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
+import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { loadClients, saveClient, emptyClient, type FullClient } from '../lib/client-store';
 
@@ -99,6 +99,9 @@ export function NoteWorkspace() {
   const [ghostMap, setGhostMap] = useState<Record<string, string>>({});
   const [ghostLoadingMap, setGhostLoadingMap] = useState<Record<string, boolean>>({});
   const [ghostCopiedMap, setGhostCopiedMap] = useState<Record<string, boolean>>({});
+  const [ghostSavedMap, setGhostSavedMap] = useState<Record<string, boolean>>({});
+  const [replaceLoadingMap, setReplaceLoadingMap] = useState<Record<string, boolean>>({});
+  const [expectedNotesPerDay, setExpectedNotesPerDay] = useState(3);
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
 
@@ -162,6 +165,57 @@ export function NoteWorkspace() {
   }, [entries, selectedClient, dateRange]);
 
   const filtered = visibleItems;
+
+  const reviewCoverage = useMemo(() => {
+    if (!selectedClient || !dateRange.from || !dateRange.to) return null;
+    const toIso = (d: string) => {
+      const p = d.split('/');
+      return p.length === 3 ? `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}` : '';
+    };
+    const fromIso = toIso(dateRange.from);
+    const toIsoDate = toIso(dateRange.to);
+    if (!fromIso || !toIsoDate || fromIso > toIsoDate) return null;
+
+    const byDay = new Map<string, number>();
+    for (const e of entries) {
+      if (e.client?.toLowerCase().trim() !== selectedClient.toLowerCase().trim()) continue;
+      const dayIso = toIso(e.date);
+      if (!dayIso || dayIso < fromIso || dayIso > toIsoDate) continue;
+      if (!e.entry?.trim()) continue;
+      byDay.set(dayIso, (byDay.get(dayIso) || 0) + 1);
+    }
+
+    const days: { date: string; expected: number; actual: number; missing: number }[] = [];
+    const cursor = new Date(fromIso);
+    const end = new Date(toIsoDate);
+    while (cursor <= end) {
+      const y = cursor.getFullYear();
+      const m = String(cursor.getMonth() + 1).padStart(2, '0');
+      const d = String(cursor.getDate()).padStart(2, '0');
+      const iso = `${y}-${m}-${d}`;
+      const actual = byDay.get(iso) || 0;
+      const expected = expectedNotesPerDay;
+      days.push({
+        date: `${d}/${m}/${y}`,
+        expected,
+        actual,
+        missing: Math.max(0, expected - actual),
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const missingDays = days.filter(day => day.missing > 0);
+    const totalExpected = days.reduce((sum, day) => sum + day.expected, 0);
+    const totalActual = days.reduce((sum, day) => sum + day.actual, 0);
+    return {
+      days,
+      missingDays,
+      totalExpected,
+      totalActual,
+      totalMissing: Math.max(0, totalExpected - totalActual),
+      coveragePct: totalExpected > 0 ? Math.round((totalActual / totalExpected) * 100) : 100,
+    };
+  }, [entries, selectedClient, dateRange, expectedNotesPerDay]);
 
   // Reset display count on filter change
   useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
@@ -348,6 +402,40 @@ export function NoteWorkspace() {
       setGhostMap(prev => ({ ...prev, [gapId]: `Ghost write failed: ${e instanceof Error ? e.message : 'Unknown error'}` }));
     } finally {
       setGhostLoadingMap(prev => ({ ...prev, [gapId]: false }));
+    }
+  };
+
+  const saveGhostAsEntry = async (ghostId: string, date: string, client: string, carer: string, text: string) => {
+    if (!text.trim()) return;
+    const newEntry: CareEntry = {
+      id: `ghost-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date,
+      house: entries.find(e => e.client?.toLowerCase().trim() === client.toLowerCase().trim())?.house || 'UNKNOWN',
+      type: 'Daily Support',
+      carer: carer || 'AI Assisted',
+      client,
+      entry: text.trim(),
+      severity: 'green',
+      flags: [],
+      category: 'daily_support',
+    };
+    const added = await appendEntriesAsync([newEntry]);
+    if (!added) return;
+    const all = await getAllEntriesAsync();
+    setEntries(all);
+    setGhostSavedMap(prev => ({ ...prev, [ghostId]: true }));
+    setTimeout(() => setGhostSavedMap(prev => ({ ...prev, [ghostId]: false })), 2000);
+  };
+
+  const replaceEntryWithRewrite = async (entryKey: string, original: CareEntry, rewritten: string) => {
+    if (!rewritten.trim()) return;
+    setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: true }));
+    try {
+      const updated: CareEntry = { ...original, entry: rewritten.trim() };
+      await upsertEntryAsync(updated);
+      setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+    } finally {
+      setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: false }));
     }
   };
 
@@ -759,6 +847,57 @@ export function NoteWorkspace() {
              </div>
           </div>
 
+          {reviewCoverage && (
+            <div className="hc-clay-raised border border-hc-teal/20 rounded-[2rem] p-5 mb-8">
+              <div className="flex flex-wrap items-center gap-4 justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-hc-teal" />
+                  <span className="text-[11px] font-black text-hc-text uppercase tracking-widest">
+                    Coverage Audit · {selectedClient}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Expected notes/day</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={8}
+                    value={expectedNotesPerDay}
+                    onChange={(e) => setExpectedNotesPerDay(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
+                    className="w-16 hc-clay-inset rounded-lg px-2 py-1 text-[11px] font-black text-hc-text focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-6 mb-4">
+                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
+                  {reviewCoverage.totalActual}/{reviewCoverage.totalExpected} notes · {reviewCoverage.coveragePct}% coverage
+                </span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${reviewCoverage.totalMissing > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
+                  Missing: {reviewCoverage.totalMissing}
+                </span>
+              </div>
+              {reviewCoverage.missingDays.length > 0 && (
+                <div className="space-y-2">
+                  {reviewCoverage.missingDays.slice(0, 10).map((day) => (
+                    <div key={day.date} className="hc-clay-inset rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+                      <div className="text-[11px] font-black text-hc-text tabular-nums">{day.date}</div>
+                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
+                        {day.actual}/{day.expected} present · {day.missing} missing
+                      </div>
+                      <button
+                        onClick={() => void runGhostWrite(`audit-${day.date}`, day.date, selectedClient || '')}
+                        disabled={ghostLoadingMap[`audit-${day.date}`]}
+                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-flag-amber/10 text-flag-amber border border-flag-amber/20 disabled:opacity-50"
+                      >
+                        {ghostLoadingMap[`audit-${day.date}`] ? 'Writing...' : 'Create Missing Note'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {visibleItems.slice(0, displayCount).map((item, i) => {
             if (item.type === 'gap') {
               const g = item as ClinicalGap;
@@ -820,17 +959,26 @@ export function NoteWorkspace() {
                           </span>
                         </div>
                         {ghostResult && !ghostResult.startsWith('Ghost write failed') && (
-                          <button
-                            onClick={() => {
-                              void navigator.clipboard.writeText(ghostResult);
-                              setGhostCopiedMap(prev => ({ ...prev, [g.id]: true }));
-                              setTimeout(() => setGhostCopiedMap(prev => ({ ...prev, [g.id]: false })), 2000);
-                            }}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
-                          >
-                            {ghostCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                            {ghostCopied ? 'Copied' : 'Copy'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                void navigator.clipboard.writeText(ghostResult);
+                                setGhostCopiedMap(prev => ({ ...prev, [g.id]: true }));
+                                setTimeout(() => setGhostCopiedMap(prev => ({ ...prev, [g.id]: false })), 2000);
+                              }}
+                              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                            >
+                              {ghostCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              {ghostCopied ? 'Copied' : 'Copy'}
+                            </button>
+                            <button
+                              onClick={() => void saveGhostAsEntry(g.id, g.date, gapClient, g.likelyCarers[0] || '', ghostResult)}
+                              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostSavedMap[g.id] ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              {ghostSavedMap[g.id] ? 'Saved' : 'Save Entry'}
+                            </button>
+                          </div>
                         )}
                       </div>
                       <div className="p-6">
@@ -859,6 +1007,7 @@ export function NoteWorkspace() {
             const rewrite = rewriteMap[key];
             const isLoading = loadingMap[key];
             const isCopied = copiedMap[key];
+            const isReplacing = replaceLoadingMap[key];
             return (
               <div key={key} className="hc-clay-raised group">
                 <div className="px-6 py-4 border-b border-hc-border/20 flex items-center justify-between">
@@ -916,7 +1065,7 @@ export function NoteWorkspace() {
                             />
                           </div>
 
-                          <div className="flex gap-3">
+                          <div className="flex gap-3 flex-wrap">
                             <button onClick={() => copyToClipboard(key, rewrite)}
                               className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>
                               {isCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -929,6 +1078,14 @@ export function NoteWorkspace() {
                             >
                               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                               {refineInputs[key] ? 'Refine' : 'Regenerate'}
+                            </button>
+                            <button
+                              onClick={() => void replaceEntryWithRewrite(key, e, rewrite)}
+                              disabled={isReplacing}
+                              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
+                            >
+                              <CheckCircle className={`w-3.5 h-3.5 ${isReplacing ? 'animate-pulse' : ''}`} />
+                              {isReplacing ? 'Replacing...' : 'Replace Original'}
                             </button>
                           </div>
                         </div>

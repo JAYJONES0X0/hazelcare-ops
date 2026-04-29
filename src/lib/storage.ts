@@ -64,29 +64,14 @@ function save(state: Partial<AppState>) {
 }
 
 export function loadWeekData(): WeekSummary | null {
-  if (sessionWeekData) return sessionWeekData;
-  try {
-    const raw = localStorage.getItem(WEEK_DATA_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as WeekSummary;
-      // Discard any data that's missing required fields — it's stale
-      if (!parsed.allFlags) {
-        localStorage.removeItem(WEEK_DATA_KEY);
-        return null;
-      }
-      sessionWeekData = parsed;
-    }
-  } catch { /* ignore */ }
   return sessionWeekData;
 }
 
 export function saveWeekData(data: WeekSummary | null) {
   sessionWeekData = data;
-  if (data) {
-    try { localStorage.setItem(WEEK_DATA_KEY, JSON.stringify(data)); } catch { /* quota error — ignore */ }
-  } else {
-    try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
-  }
+  // Keep weekData in session memory only.
+  // Persisting this in localStorage previously caused stale restores and large payload churn.
+  try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
 }
 
 function entryFingerprint(entry: CareEntry): string {

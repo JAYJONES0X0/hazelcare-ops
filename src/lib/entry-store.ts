@@ -100,6 +100,20 @@ export async function appendEntriesAsync(incoming: CareEntry[]): Promise<number>
   }
 }
 
+export async function upsertEntryAsync(entry: CareEntry): Promise<void> {
+  try {
+    const db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(entry);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.error('[EntryStore] upsertEntryAsync failed:', err);
+  }
+}
+
 export async function getStoreBoundsAsync(): Promise<{ from: string; to: string; count: number } | null> {
   const all = await getAllEntriesAsync();
   if (!all.length) return null;

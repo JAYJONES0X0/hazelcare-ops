@@ -84,6 +84,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
       `CLINICAL COACHING NOTE — ${r.carer.toUpperCase()}`,
       `Generated: ${new Date().toLocaleDateString('en-GB')} | Quality Score: ${r.qualityScore}% (${scoreColor})`,
       `Entries reviewed: ${r.scoreableCount} | Avg length: ${r.avgEntryChars} chars | Short entries: ${Math.round(r.shortEntryRatio * 100)}%`,
+      `Daily support coverage: ${r.actualDailySupportEntries}/${r.expectedDailySupportEntries} (${r.dailySupportCoveragePct}%)`,
       '',
       'KEY DEVELOPMENT AREAS:',
       ...weakest.map(m => `  • ${m.name} — ${m.score}%${m.missing.length ? '\n    Missing: ' + m.missing.slice(0, 3).join(', ') : ''}`),
@@ -197,7 +198,13 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
                             </div>
                          </div>
                       </div>
-                      <div className="flex items-center gap-10">
+                     <div className="flex items-center gap-10">
+                         <div className="flex flex-col items-end gap-1">
+                            <span className={`text-[10px] font-black tabular-nums ${s.dailySupportCoveragePct >= 90 ? 'text-flag-green' : s.dailySupportCoveragePct >= 70 ? 'text-flag-amber' : 'text-flag-red'}`}>
+                              Coverage {s.actualDailySupportEntries}/{s.expectedDailySupportEntries}
+                            </span>
+                            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{s.dailySupportCoveragePct}%</span>
+                         </div>
                          <div className="flex flex-col items-end gap-1">
                             <span className={`text-[11px] font-black tabular-nums ${scoreColor}`}>{s.qualityScore}%</span>
                             <div className="h-1 w-24 rounded-full bg-black/10 overflow-hidden"><div className={`h-full ${scoreColor.replace('text-', 'bg-')}`} style={{width: `${s.qualityScore}%`}} /></div>
@@ -259,11 +266,14 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
                       {coachRecord.qualityScore}%
                     </div>
                   </div>
-                  <div className="text-right text-[10px] font-black text-hc-muted uppercase space-y-1">
-                    <div>{coachRecord.scoreableCount} entries scored</div>
-                    <div>{coachRecord.avgEntryChars} avg chars</div>
-                    <div className={coachRecord.shortEntryRatio > 0.3 ? 'text-flag-red' : ''}>{Math.round(coachRecord.shortEntryRatio * 100)}% short entries</div>
-                  </div>
+                    <div className="text-right text-[10px] font-black text-hc-muted uppercase space-y-1">
+                      <div>{coachRecord.scoreableCount} entries scored</div>
+                      <div>{coachRecord.avgEntryChars} avg chars</div>
+                      <div className={coachRecord.shortEntryRatio > 0.3 ? 'text-flag-red' : ''}>{Math.round(coachRecord.shortEntryRatio * 100)}% short entries</div>
+                      <div className={coachRecord.dailySupportCoveragePct < 80 ? 'text-flag-red' : ''}>
+                        Coverage {coachRecord.actualDailySupportEntries}/{coachRecord.expectedDailySupportEntries}
+                      </div>
+                    </div>
                 </div>
 
                 {/* Repeat target warning */}

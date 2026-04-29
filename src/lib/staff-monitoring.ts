@@ -30,6 +30,10 @@ export interface StaffScorecard {
   entryScores: { id: string; score: number; category: string }[]; // per-entry scores
   categoryBreakdown: { category: string; count: number }[];       // entry counts by category
   scoreableCount: number;                                          // entries that were actually scored
+  expectedDailySupportEntries: number;                             // target entries in selected window
+  actualDailySupportEntries: number;                               // observed daily_support entries
+  missingDailySupportEntries: number;                              // expected - actual
+  dailySupportCoveragePct: number;                                 // observed/expected
   // Repeat coaching targets
   isRepeatTarget: boolean;
   repeatGaps: string[];
@@ -73,6 +77,7 @@ export interface StaffMonitoringSnapshot {
 
 const SHORT_LEN = 90;
 const VERY_SHORT = 40;
+const DEFAULT_EXPECTED_DAILY_SUPPORT_NOTES = 3;
 
 function parseDateMs(s: string | undefined): number | null {
   if (!s?.trim()) return null;
@@ -237,6 +242,17 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     const dailySupportScore = dailyEntries.length
       ? Math.round(dailyEntries.reduce((s, e) => s + scoreEntry(e).total, 0) / dailyEntries.length)
       : null;
+    const activeDays = new Set(
+      dailyEntries
+        .map((e) => (e.date || '').trim())
+        .filter(Boolean)
+    ).size;
+    const expectedDailySupportEntries = activeDays * DEFAULT_EXPECTED_DAILY_SUPPORT_NOTES;
+    const actualDailySupportEntries = dailyEntries.length;
+    const missingDailySupportEntries = Math.max(0, expectedDailySupportEntries - actualDailySupportEntries);
+    const dailySupportCoveragePct = expectedDailySupportEntries > 0
+      ? Math.round((actualDailySupportEntries / expectedDailySupportEntries) * 100)
+      : 100;
 
     // Module breakdown — average across scoreable entries only
     const moduleMap = new Map<string, { total: number; count: number; missing: string[] }>();
@@ -292,6 +308,13 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
         }
       }
     }
+    if (expectedDailySupportEntries > 0 && dailySupportCoveragePct < 60) {
+      if (tier === null || tier < 2) tier = 2;
+      reasons.push(`Daily support coverage below expected standard (${actualDailySupportEntries}/${expectedDailySupportEntries} notes).`);
+    } else if (expectedDailySupportEntries > 0 && dailySupportCoveragePct < 80) {
+      if (tier === null || tier < 1) tier = 1;
+      reasons.push(`Daily support coverage below target (${actualDailySupportEntries}/${expectedDailySupportEntries} notes).`);
+    }
 
     // Augment reasons with rubric gaps
     const allReasons = [
@@ -318,6 +341,10 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       entryScores,
       categoryBreakdown,
       scoreableCount: scoreableList.length,
+      expectedDailySupportEntries,
+      actualDailySupportEntries,
+      missingDailySupportEntries,
+      dailySupportCoveragePct,
       isRepeatTarget: (repeatByCarerMap.get(carer)?.length ?? 0) > 0,
       repeatGaps: repeatByCarerMap.get(carer) ?? [],
     });
