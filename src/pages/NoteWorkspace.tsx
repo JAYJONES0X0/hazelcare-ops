@@ -767,7 +767,14 @@ export function NoteWorkspace() {
                     {rewrite ? (
                       <div className="animate-in fade-in duration-500 flex flex-col h-full">
                         <div className="flex-1">
-                          <p className="text-[12px] font-medium text-hc-text leading-relaxed italic whitespace-pre-wrap">{rewrite}</p>
+                          {rewrite.startsWith('AI models are at capacity') || rewrite.startsWith('Generation failed') ? (
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
+                              <AlertTriangle className="w-4 h-4 text-flag-amber shrink-0" />
+                              <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide leading-relaxed">{rewrite}</p>
+                            </div>
+                          ) : (
+                            <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{rewrite}</p>
+                          )}
                         </div>
                         
                         <div className="mt-6 space-y-4">

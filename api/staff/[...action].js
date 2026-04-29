@@ -430,20 +430,37 @@ async function handleEnhanceNote(req, res) {
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
+  // Smart context truncation — Groq models have ~128K token windows.
+  // We budget: 500 system + 6000 context + 2000 template + 4000 note + 2000 output = ~14500 tokens safe.
+  // 1 token ≈ 4 chars, so 6000 tokens ≈ 24000 chars for context.
+  const CTX_MAX = 20_000;
+  const TPL_MAX = 4_000;
+  const PREV_MAX = 4_000;
+
+  const safeContext = clinicalContext
+    ? clinicalContext.slice(0, CTX_MAX) + (clinicalContext.length > CTX_MAX ? '\n[...context truncated to fit model window...]' : '')
+    : '';
+  const safeTemplate = referenceTemplate
+    ? referenceTemplate.slice(0, TPL_MAX)
+    : '';
+  const safePrev = previousOutput
+    ? previousOutput.slice(0, PREV_MAX)
+    : '';
+
   const userPrompt = [
     noteType ? `Note type: ${noteType}` : '',
     clientName ? `Client/subject: ${clientName}` : '',
-    clinicalContext ? `\n[ESSENTIAL CLINICAL CONTEXT - STAFF KNOWLEDGE]:\n${clinicalContext}\n` : '',
-    referenceTemplate ? `\n[MANDATORY LAYOUT / TEMPLATE - USE STRUCTURE ONLY, IGNORE ITS CONTENT]:\n${referenceTemplate}\n` : '',
-    previousOutput ? `\n[PREVIOUS DRAFT]:\n${previousOutput}\n` : '',
-    refineInstructions ? `\n[REFINEMENT INSTRUCTION - PRIORITIZE]:\n${refineInstructions}\n` : '',
+    safeContext ? `\n[ESSENTIAL CONTEXT — READ THIS AS YOUR STAFF KNOWLEDGE BEFORE WRITING]:\n${safeContext}\n` : '',
+    safeTemplate ? `\n[MANDATORY LAYOUT — USE STRUCTURE ONLY, IGNORE ITS CONTENT]:\n${safeTemplate}\n` : '',
+    safePrev ? `\n[PREVIOUS DRAFT]:\n${safePrev}\n` : '',
+    refineInstructions ? `\n[REFINEMENT INSTRUCTION — PRIORITISE THIS]:\n${refineInstructions}\n` : '',
     '',
     'TASK:',
-    refineInstructions 
-      ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.' 
-      : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT / TEMPLATE]. Do NOT use facts from the template itself.',
+    refineInstructions
+      ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.'
+      : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT]. Do NOT use any facts from the template itself.',
     '',
-    '[RAW DATA TO PROCESS - SOVEREIGN SOURCE OF TRUTH]:',
+    '[RAW DATA TO PROCESS — THIS IS WHAT HAPPENED ON SHIFT]:',
     text.trim(),
   ].filter((l) => l !== '').join('\n');
 
@@ -451,10 +468,10 @@ async function handleEnhanceNote(req, res) {
     const groqRes = await callGroqWithFallback([
       { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
-    ], { 
-      stream: true, 
-      max_tokens: 1200, 
-      temperature: 0.25 
+    ], {
+      stream: true,
+      max_tokens: 2000,
+      temperature: 0.25
     });
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -484,7 +501,11 @@ async function handleEnhanceNote(req, res) {
       }
     }
   } catch (e) {
-    res.status(502).write(`Intelligence Stack Failure: ${e.message}`);
+    const msg = e?.message || '';
+    const friendly = msg.includes('saturated') || msg.includes('rate') || msg.includes('limit')
+      ? 'AI models are at capacity — wait 30 seconds and try again.'
+      : `Generation failed: ${msg}`;
+    res.status(502).write(friendly);
   } finally {
     res.end();
   }
