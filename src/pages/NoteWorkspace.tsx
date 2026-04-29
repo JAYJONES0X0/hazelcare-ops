@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, ChevronRight, Users, Calendar, RefreshCw, AlertTriangle, Shield } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
@@ -96,6 +96,9 @@ export function NoteWorkspace() {
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
   const [refineInputs, setRefineInputs] = useState<Record<string, string>>({});
+  const [ghostMap, setGhostMap] = useState<Record<string, string>>({});
+  const [ghostLoadingMap, setGhostLoadingMap] = useState<Record<string, boolean>>({});
+  const [ghostCopiedMap, setGhostCopiedMap] = useState<Record<string, boolean>>({});
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
 
@@ -281,6 +284,70 @@ export function NoteWorkspace() {
       setRewriteMap(prev => ({ ...prev, [entryKey]: `Intelligence Failure: ${e instanceof Error ? e.message : 'Unknown Connection Error'}` }));
     } finally {
       setLoadingMap(prev => ({ ...prev, [entryKey]: false }));
+    }
+  };
+
+  const runGhostWrite = async (gapId: string, date: string, client: string) => {
+    // Find closest note before and after the gap date for this client
+    const toIso = (d: string) => {
+      const p = d.split('/');
+      return p.length === 3 ? `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}` : '';
+    };
+    const gapIso = toIso(date);
+    const clientEntries = entries
+      .filter(e => e.client?.toLowerCase().trim() === client.toLowerCase().trim() && e.entry?.trim())
+      .sort((a, b) => toIso(a.date).localeCompare(toIso(b.date)));
+
+    const prevEntry = [...clientEntries].reverse().find(e => toIso(e.date) < gapIso);
+    const nextEntry = clientEntries.find(e => toIso(e.date) > gapIso);
+
+    const clients = loadClients();
+    const profile = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
+    const parts: string[] = [];
+    if (profile) {
+      if (profile.clinicalBriefing) parts.push(`[ABSORBED KNOWLEDGE]:\n${profile.clinicalBriefing}`);
+      if (profile.diagnoses.length) parts.push(`DIAGNOSES: ${profile.diagnoses.join(', ')}`);
+      if (profile.carePlan) {
+        const active = profile.carePlan.domains.filter(d => d.enabled).map(d => `[${d.title}]: ${d.howToAchieve}`);
+        if (active.length) parts.push(`CARE PLAN STRATEGIES:\n${active.join('\n')}`);
+      }
+      if (profile.pbs) {
+        parts.push(`DAILY ROUTINES: ${profile.pbs.routineStrategies.filter(Boolean).join('; ')}`);
+        parts.push(`WHAT WORKS: ${profile.pbs.whatWorks.filter(Boolean).join('; ')}`);
+      }
+      if (profile.risk?.risks?.length) {
+        parts.push(`KEY RISKS: ${profile.risk.risks.map(r => `${r.title} — ${r.controls.slice(0,2).join('; ')}`).join(' | ')}`);
+      }
+    }
+
+    setGhostLoadingMap(prev => ({ ...prev, [gapId]: true }));
+    try {
+      const res = await fetch('/api/staff/ghost-write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          clientName: client,
+          prevNote: prevEntry ? `[${prevEntry.date} — ${prevEntry.carer}]: ${prevEntry.entry}` : '',
+          nextNote: nextEntry ? `[${nextEntry.date} — ${nextEntry.carer}]: ${nextEntry.entry}` : '',
+          referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
+          clinicalContext: parts.join('\n\n'),
+        })
+      });
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No stream');
+      const decoder = new TextDecoder();
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value);
+        setGhostMap(prev => ({ ...prev, [gapId]: result }));
+      }
+    } catch (e) {
+      setGhostMap(prev => ({ ...prev, [gapId]: `Ghost write failed: ${e instanceof Error ? e.message : 'Unknown error'}` }));
+    } finally {
+      setGhostLoadingMap(prev => ({ ...prev, [gapId]: false }));
     }
   };
 
@@ -695,38 +762,94 @@ export function NoteWorkspace() {
           {visibleItems.slice(0, displayCount).map((item, i) => {
             if (item.type === 'gap') {
               const g = item as ClinicalGap;
+              const ghostResult = ghostMap[g.id];
+              const ghostLoading = ghostLoadingMap[g.id];
+              const ghostCopied = ghostCopiedMap[g.id];
+              const gapClient = g.client || selectedClient || '';
               return (
-                <div key={g.id} className="hc-clay-inset border border-flag-amber/20 bg-flag-amber/[0.03] p-6 rounded-[2rem] flex items-center justify-between group animate-in slide-in-from-left-4">
-                  <div className="flex items-center gap-8">
-                    <div className="w-12 h-12 rounded-2xl bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-center">
-                       <AlertTriangle className={`w-5 h-5 ${g.severity === 'red' ? 'text-flag-red animate-pulse' : 'text-flag-amber'}`} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-[11px] font-black text-flag-amber uppercase tracking-widest">Forensic Gap Detected</span>
-                        <span className="text-flag-amber/30">/</span>
-                        <span className="text-[12px] font-black text-hc-text tabular-nums">{g.date}</span>
+                <div key={g.id} className="space-y-3 animate-in slide-in-from-left-4">
+                  <div className="hc-clay-inset border border-flag-amber/20 bg-flag-amber/[0.03] p-6 rounded-[2rem] flex items-center justify-between group">
+                    <div className="flex items-center gap-8">
+                      <div className="w-12 h-12 rounded-2xl bg-flag-amber/10 border border-flag-amber/30 flex items-center justify-center shrink-0">
+                        <AlertTriangle className={`w-5 h-5 ${g.severity === 'red' ? 'text-flag-red animate-pulse' : 'text-flag-amber'}`} />
                       </div>
-                      <p className="text-[11px] font-medium text-hc-muted uppercase tracking-wider">
-                        {g.severity === 'red' 
-                          ? 'Zero clinical evidence found for this entire site window.' 
-                          : `No diary entries for ${g.client} on this date.`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {g.likelyCarers.length > 0 && (
-                      <div className="text-right">
-                        <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] block mb-1">Personnel on Shift</span>
-                        <div className="flex gap-1 justify-end">
-                          {g.likelyCarers.slice(0, 3).map(c => (
-                            <span key={c} className="text-[9px] font-bold bg-hc-border/20 px-2 py-0.5 rounded-lg">{c}</span>
-                          ))}
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-[11px] font-black text-flag-amber uppercase tracking-widest">Forensic Gap Detected</span>
+                          <span className="text-flag-amber/30">/</span>
+                          <span className="text-[12px] font-black text-hc-text tabular-nums">{g.date}</span>
                         </div>
+                        <p className="text-[11px] font-medium text-hc-muted uppercase tracking-wider">
+                          {g.severity === 'red'
+                            ? 'Zero clinical evidence found for this entire site window.'
+                            : `No diary entries for ${gapClient || g.client} on this date.`}
+                        </p>
                       </div>
-                    )}
-                    <ChevronRight className="text-flag-amber/20 group-hover:text-flag-amber transition-colors" />
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {g.likelyCarers.length > 0 && (
+                        <div className="text-right">
+                          <span className="text-[9px] font-black text-hc-muted uppercase tracking-[0.2em] block mb-1">Personnel on Shift</span>
+                          <div className="flex gap-1 justify-end">
+                            {g.likelyCarers.slice(0, 3).map(c => (
+                              <span key={c} className="text-[9px] font-bold bg-hc-border/20 px-2 py-0.5 rounded-lg">{c}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {gapClient && (
+                        <button
+                          onClick={() => void runGhostWrite(g.id, g.date, gapClient)}
+                          disabled={ghostLoading}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-flag-amber/10 hover:bg-flag-amber/20 text-flag-amber border border-flag-amber/20 disabled:opacity-50 shrink-0"
+                        >
+                          <PenLine className={`w-3.5 h-3.5 ${ghostLoading ? 'animate-pulse' : ''}`} />
+                          {ghostLoading ? 'Writing...' : ghostResult ? 'Rewrite' : 'Create Note'}
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {(ghostLoading || ghostResult) && (
+                    <div className="hc-clay-raised border border-hc-teal/20 rounded-[2rem] overflow-hidden animate-in slide-in-from-top-2 duration-300">
+                      <div className="px-6 py-3 border-b border-hc-border/20 flex items-center justify-between bg-hc-teal/[0.03]">
+                        <div className="flex items-center gap-2">
+                          <PenLine className="w-3.5 h-3.5 text-hc-teal" />
+                          <span className="text-[10px] font-black text-hc-teal uppercase tracking-widest">
+                            Ghost Written — {g.date} · {gapClient}
+                          </span>
+                        </div>
+                        {ghostResult && !ghostResult.startsWith('Ghost write failed') && (
+                          <button
+                            onClick={() => {
+                              void navigator.clipboard.writeText(ghostResult);
+                              setGhostCopiedMap(prev => ({ ...prev, [g.id]: true }));
+                              setTimeout(() => setGhostCopiedMap(prev => ({ ...prev, [g.id]: false })), 2000);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${ghostCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                          >
+                            {ghostCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                            {ghostCopied ? 'Copied' : 'Copy'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="p-6">
+                        {ghostLoading && !ghostResult ? (
+                          <div className="flex items-center gap-3 text-hc-muted animate-pulse">
+                            <Sparkles className="w-4 h-4 text-hc-teal animate-spin" />
+                            <span className="text-[11px] font-black uppercase tracking-widest">Reconstructing shift from clinical evidence...</span>
+                          </div>
+                        ) : ghostResult?.startsWith('Ghost write failed') || ghostResult?.startsWith('AI models') ? (
+                          <div className="flex items-center gap-3 p-4 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
+                            <AlertTriangle className="w-4 h-4 text-flag-amber shrink-0" />
+                            <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide">{ghostResult}</p>
+                          </div>
+                        ) : (
+                          <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{ghostResult}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -737,7 +860,7 @@ export function NoteWorkspace() {
             const isLoading = loadingMap[key];
             const isCopied = copiedMap[key];
             return (
-              <div key={key} className="hc-clay-raised overflow-hidden group">
+              <div key={key} className="hc-clay-raised group">
                 <div className="px-6 py-4 border-b border-hc-border/20 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="hc-clay-inset px-3 py-1.5 rounded-xl text-[11px] font-black text-hc-teal tabular-nums">{e.date}</span>
@@ -765,7 +888,7 @@ export function NoteWorkspace() {
                   <div className="p-6 space-y-3 bg-hc-teal/[0.02]">
                     <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Refined Output</div>
                     {rewrite ? (
-                      <div className="animate-in fade-in duration-500 flex flex-col h-full">
+                      <div className="animate-in fade-in duration-500 flex flex-col">
                         <div className="flex-1">
                           {rewrite.startsWith('AI models are at capacity') || rewrite.startsWith('Generation failed') ? (
                             <div className="flex items-center gap-3 p-4 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
@@ -811,14 +934,14 @@ export function NoteWorkspace() {
                         </div>
                       </div>
                     ) : (
-                      <div className="h-full flex flex-col items-start justify-center gap-4 py-4 text-hc-muted group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-start justify-center gap-4 py-4 text-hc-muted group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => void runRewrite(key, e.entry, e.client)}
-                          disabled={isLoading || !goldTemplate}
+                          disabled={isLoading}
                           className="flex items-center gap-2 px-6 py-3 rounded-xl btn-tactical text-[11px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Sparkles className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                          {isLoading ? 'Refining...' : goldTemplate ? 'Refine Entry' : 'Add Gold Standard above first'}
+                          {isLoading ? 'Refining...' : 'Refine Entry'}
                         </button>
                       </div>
                     )}

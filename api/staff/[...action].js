@@ -206,6 +206,7 @@ export default async function handler(req, res) {
     case 'staff-sac-status': return handleStaffSacStatus(req, res);
     case 'analyze-intel': return handleAnalyzeIntel(req, res);
     case 'enhance-note': return handleEnhanceNote(req, res);
+    case 'ghost-write': return handleGhostWrite(req, res);
     case 'upload-document': return handleUploadDocument(req, res);
     default: return res.status(404).json({ error: 'Unknown staff action' });
   }
@@ -597,6 +598,118 @@ async function handleEnhanceNote(req, res) {
             chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
           } else {
             // OpenAI-compatible (Groq, OpenRouter)
+            chunk = parsed.choices?.[0]?.delta?.content || '';
+          }
+          if (chunk) res.write(chunk);
+        } catch { /* skip malformed chunks */ }
+      }
+    }
+  } catch (e) {
+    const msg = e?.message || '';
+    const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
+      ? 'AI models are at capacity — wait 30 seconds and try again.'
+      : `Generation failed: ${msg}`;
+    res.write(friendly);
+  } finally {
+    res.end();
+  }
+}
+
+const GHOST_SYSTEM_PROMPT = `You are a senior support worker with 30 years of frontline and management experience in UK supported living. You are writing a shift note for a client you know well.
+
+RULES:
+- Write entirely in first-person as the support worker who was on shift
+- Never mention that notes were missing, that this is a reconstruction, or that you are AI
+- Do NOT invent clinical incidents, medication events, falls, or appointments unless evidenced in the context provided
+- Base the note on the client's known routines, clinical profile, and notes from surrounding dates — reconstruct a typical day for this person
+- The note must be CQC-compliant, professional, and indistinguishable from a genuine shift note written at the end of shift
+- Use UK English, past tense, write as if the shift just ended and you are handing over
+- Cover: mood and presentation on arrival, meals and hydration, activities and engagement, personal care (if relevant), any observations, handover status
+- Match the structure and format of the template provided — use its headings and sections exactly`;
+
+async function handleGhostWrite(req, res) {
+  if (!setCors(req, res)) return res.status(403).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+
+  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
+  const cookies = parseCookies(req);
+  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext } = req.body || {};
+  if (!date || !clientName) return res.status(400).send('date and clientName required');
+
+  const CTX_MAX = 20_000;
+  const TPL_MAX = 4_000;
+  const NOTE_MAX = 3_000;
+
+  const safeContext = clinicalContext ? clinicalContext.slice(0, CTX_MAX) : '';
+  const safeTemplate = referenceTemplate ? referenceTemplate.slice(0, TPL_MAX) : '';
+  const safePrev = prevNote ? prevNote.slice(0, NOTE_MAX) : '';
+  const safeNext = nextNote ? nextNote.slice(0, NOTE_MAX) : '';
+
+  // Work out day of week from DD/MM/YYYY
+  let dayLabel = '';
+  try {
+    const parts = date.split('/');
+    if (parts.length === 3) {
+      const d = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
+      dayLabel = d.toLocaleDateString('en-GB', { weekday: 'long' });
+    }
+  } catch { /* ignore */ }
+
+  const userPrompt = [
+    `CLIENT: ${clientName}`,
+    `DATE: ${date}${dayLabel ? ` (${dayLabel})` : ''}`,
+    '',
+    safePrev ? `[PREVIOUS SHIFT NOTE — evidence of what preceded this day]:\n${safePrev}` : '[PREVIOUS SHIFT NOTE]: Not available',
+    '',
+    safeNext ? `[NEXT SHIFT NOTE — evidence of what followed this day]:\n${safeNext}` : '[NEXT SHIFT NOTE]: Not available',
+    '',
+    safeContext ? `[CLINICAL PROFILE & KNOWLEDGE BASE]:\n${safeContext}` : '',
+    '',
+    safeTemplate ? `[NOTE STRUCTURE TO FOLLOW — use these headings and sections exactly]:\n${safeTemplate}` : '',
+    '',
+    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and clinical knowledge to reconstruct the support provided. Write as the support worker on shift.`,
+  ].filter(l => l !== undefined).join('\n');
+
+  const messages = [
+    { role: 'system', content: GHOST_SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+  const opts = { stream: true, max_tokens: 2500, temperature: 0.3 };
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  try {
+    const { res: aiRes, provider } = await callEmpireStack(messages, opts);
+    const reader = aiRes.body?.getReader();
+    if (!reader) return res.status(502).end('No response body');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          let chunk = '';
+          if (provider === 'gemini') {
+            chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          } else {
             chunk = parsed.choices?.[0]?.delta?.content || '';
           }
           if (chunk) res.write(chunk);

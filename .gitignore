@@ -46,3 +46,5 @@ Thumbs.db
 # Local scratch / accidental uploads (do not commit)
 tmp_onedrive_extract/
 OneDrive*.zip
+
+.env*.local
