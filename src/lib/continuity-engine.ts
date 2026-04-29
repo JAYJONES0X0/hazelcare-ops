@@ -137,7 +137,7 @@ function parseDayCellToIso(dayCell: string, year: number): string | null {
   const match = dayCell.match(/(\d{1,2})\s+([A-Za-z]{3,})/);
   if (!match) return null;
   const day = parseInt(match[1], 10);
-  const month = MONTH_INDEX[m[2].slice(0, 3).toLowerCase()];
+  const month = MONTH_INDEX[match[2].slice(0, 3).toLowerCase()];
   if (Number.isNaN(day) || month === undefined) return null;
   const dt = new Date(Date.UTC(year, month, day));
   return dt.toISOString().slice(0, 10); // YYYY-MM-DD

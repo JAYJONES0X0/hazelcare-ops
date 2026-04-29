@@ -124,16 +124,16 @@ export function scoreEntry(entry: CareEntry): EntryScore {
   }
 
   // Calculate total score
-  const total = Math.round(modules.reduce((sum, m) => sum + m.score, 0) / Math.max(1, modules.length));
+  const total = Math.round(modules.reduce((sum, mod) => sum + mod.score, 0) / Math.max(1, modules.length));
   return { total, modules };
 }
 
 export function getTopGaps(entries: CareEntry[]): string[] {
   const gaps = new Map<string, number>();
-  for (const e of entries) {
-    const s = scoreEntry(e);
-    for (const m of s.modules) {
-      for (const f of m.missing) gaps.set(f, (gaps.get(f) || 0) + 1);
+  for (const entry of entries) {
+    const score = scoreEntry(entry);
+    for (const mod of score.modules) {
+      for (const gap of mod.missing) gaps.set(gap, (gaps.get(gap) || 0) + 1);
     }
   }
   return [...gaps.entries()]

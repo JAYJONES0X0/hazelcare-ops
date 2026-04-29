@@ -316,7 +316,7 @@ export function recordModuleScores(
     id: uid(),
     at: now,
     carer: s.carer,
-    modules: s.moduleBreakdown.map((m) => ({ name: m.name, score: m.score })),
+    modules: s.moduleBreakdown.map((mod) => ({ name: mod.name, score: mod.score })),
     overallScore: s.qualityScore,
   }));
   if (newRecords.length === 0) return;
@@ -356,7 +356,7 @@ export function detectGrowthAlerts(
 
     for (const mod of s.moduleBreakdown) {
       const pastScores = pastRecords
-        .map((r) => r.modules.find((m) => m.name === mod.name)?.score)
+        .map((record) => record.modules.find((mResult) => mResult.name === mod.name)?.score)
         .filter((v): v is number => v !== undefined);
 
       if (pastScores.length === 0) continue;

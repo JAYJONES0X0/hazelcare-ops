@@ -44,6 +44,7 @@ export function NoteWorkspace() {
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
+  const [refineInputs, setRefineInputs] = useState<Record<string, string>>({});
   const [displayCount, setDisplayCount] = useState(30);
 
   const allClients = useMemo(() => {
@@ -137,13 +138,20 @@ export function NoteWorkspace() {
     }
   }, []);
 
-  const runRewrite = async (entryKey: string, text: string, clientName: string) => {
+  const runRewrite = async (entryKey: string, text: string, clientName: string, refineInstructions?: string) => {
     setLoadingMap(prev => ({ ...prev, [entryKey]: true }));
     try {
       const res = await fetch('/api/staff/enhance-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, noteType: '1:1 Support', clientName, referenceTemplate: goldTemplate }),
+        body: JSON.stringify({ 
+          text, 
+          noteType: '1:1 Support', 
+          clientName, 
+          referenceTemplate: goldTemplate,
+          refineInstructions,
+          previousOutput: rewriteMap[entryKey]
+        }),
       });
       if (!res.ok) throw new Error('Rewrite engine offline');
       const reader = res.body?.getReader();
@@ -155,6 +163,10 @@ export function NoteWorkspace() {
         if (done) break;
         result += decoder.decode(value);
         setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
+      }
+      // Clear refine input after success if it was a refinement
+      if (refineInstructions) {
+        setRefineInputs(prev => ({ ...prev, [entryKey]: '' }));
       }
     } catch (e) {
       setRewriteMap(prev => ({ ...prev, [entryKey]: `ERR: ${e instanceof Error ? e.message : 'Unknown'}` }));
@@ -493,20 +505,42 @@ export function NoteWorkspace() {
                   <div className="p-6 space-y-3 bg-hc-teal/[0.02]">
                     <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Refined Output</div>
                     {rewrite ? (
-                      <div className="animate-in fade-in duration-500">
-                        <p className="text-[12px] font-medium text-hc-text leading-relaxed italic">{rewrite}</p>
-                        <div className="mt-6 flex gap-3">
-                          <button onClick={() => copyToClipboard(key, rewrite)}
-                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>
-                            {isCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                            {isCopied ? 'Copied' : 'Copy to Clipboard'}
-                          </button>
-                          <button onClick={() => void runRewrite(key, e.entry, e.client)}
-                            disabled={isLoading}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Regenerate
-                          </button>
+                      <div className="animate-in fade-in duration-500 flex flex-col h-full">
+                        <div className="flex-1">
+                          <p className="text-[12px] font-medium text-hc-text leading-relaxed italic">{rewrite}</p>
+                        </div>
+                        
+                        <div className="mt-6 space-y-4">
+                          <div className="relative group/refine">
+                            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-hc-teal/40 group-focus-within/refine:text-hc-teal transition-colors" />
+                            <input 
+                              value={refineInputs[key] || ''}
+                              onChange={e => setRefineInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && refineInputs[key]?.trim() && !isLoading) {
+                                  void runRewrite(key, e.entry, e.client, refineInputs[key]);
+                                }
+                              }}
+                              placeholder="Precise refinement (e.g. 'Add gaming detail', 'Make it shorter')..."
+                              className="w-full hc-clay-inset bg-hc-teal/[0.03] pl-9 pr-4 py-2.5 rounded-xl text-[11px] font-black text-hc-text focus:outline-none placeholder:text-hc-muted/40 transition-all border border-transparent focus:border-hc-teal/20"
+                            />
+                          </div>
+
+                          <div className="flex gap-3">
+                            <button onClick={() => copyToClipboard(key, rewrite)}
+                              className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>
+                              {isCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              {isCopied ? 'Copied' : 'Copy'}
+                            </button>
+                            <button 
+                              onClick={() => void runRewrite(key, e.entry, e.client, refineInputs[key])}
+                              disabled={isLoading}
+                              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                              {refineInputs[key] ? 'Refine' : 'Regenerate'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ) : (

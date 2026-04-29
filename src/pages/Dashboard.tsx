@@ -16,8 +16,8 @@ interface Props {
 
 function formatDisplayDate(iso: string): string {
   if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
+  const [year, month, day] = iso.split('-');
+  return `${day}/${month}/${year}`;
 }
 
 // Quick preset buttons

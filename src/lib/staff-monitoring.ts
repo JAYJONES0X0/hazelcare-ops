@@ -111,17 +111,17 @@ export function flattenWeekEntries(week: WeekSummary): CareEntry[] {
   return [...map.values()];
 }
 
-export function filterEntries(entries: CareEntry[], f: MonitoringFilters): CareEntry[] {
+export function filterEntries(entries: CareEntry[], filters: MonitoringFilters): CareEntry[] {
   let out = entries;
-  if (f.house && f.house !== 'all') {
-    const h = f.house.trim().toLowerCase();
+  if (filters.house && filters.house !== 'all') {
+    const houseName = filters.house.trim().toLowerCase();
     out = out.filter((e) => {
       const hn = e.house?.trim().toLowerCase() || '';
-      return hn.includes(h) || h.includes(hn);
+      return hn.includes(houseName) || houseName.includes(hn);
     });
   }
-  const fromMs = f.dateFrom ? parseDateMs(f.dateFrom) : null;
-  const toMs = f.dateTo ? parseDateMs(f.dateTo) : null;
+  const fromMs = filters.dateFrom ? parseDateMs(filters.dateFrom) : null;
+  const toMs = filters.dateTo ? parseDateMs(filters.dateTo) : null;
   if (fromMs !== null || toMs !== null) {
     out = out.filter((e) => {
       const t = parseDateMs(e.date);
@@ -240,14 +240,14 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
 
     // Module breakdown — average across scoreable entries only
     const moduleMap = new Map<string, { total: number; count: number; missing: string[] }>();
-    for (const e of scoreableList) {
-      const result = scoreEntry(e);
-      for (const m of result.modules) {
-        if (!moduleMap.has(m.name)) moduleMap.set(m.name, { total: 0, count: 0, missing: [] });
-        const bucket = moduleMap.get(m.name)!;
-        bucket.total += m.score;
+    for (const entry of scoreableList) {
+      const result = scoreEntry(entry);
+      for (const mod of result.modules) {
+        if (!moduleMap.has(mod.name)) moduleMap.set(mod.name, { total: 0, count: 0, missing: [] });
+        const bucket = moduleMap.get(mod.name)!;
+        bucket.total += mod.score;
         bucket.count += 1;
-        for (const gap of m.missing) {
+        for (const gap of mod.missing) {
           if (!bucket.missing.includes(gap)) bucket.missing.push(gap);
         }
       }

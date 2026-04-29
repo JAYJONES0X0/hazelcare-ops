@@ -116,8 +116,8 @@ function dedupeEntries(entries: CareEntry[]): CareEntry[] {
 function parseDDMMYYYY(s: string): number {
   const parts = s.split('/');
   if (parts.length === 3) {
-    const [d, m, y] = parts.map(Number);
-    const t = new Date(y, m - 1, d).getTime();
+    const [day, month, year] = parts.map(Number);
+    const t = new Date(year, month - 1, day).getTime();
     if (!Number.isNaN(t)) return t;
   }
   return Date.parse(s);

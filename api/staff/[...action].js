@@ -103,10 +103,11 @@ Your job is to rewrite care notes so they are professional, first-person ("I sup
 IMPORTANT RULES:
 1. Use UK ENGLISH only (e.g., summarise, recognise, behaviour, colour).
 2. DO NOT sound like an AI or a medical textbook. Avoid words like "clinical indicators," "presentation," or "manifested."
-3. Sound like a real person who knowing the client well. Use natural phrases like "a bit unsettled," "giving him space," "we had a chat about," "he wasn't up for it today."
-4. If a client is upset, document the "why" and your response naturally.
-5. Focus on the Outcome: What was the result of your support?
-6. Output ONLY the rewritten note. No preamble, no headers.`;
+3. Sound like a real person who knows the client well. Use natural phrases like "a bit unsettled," "giving him space," "we had a chat about," "he wasn't up for it today."
+4. STRUCTURAL FIDELITY: If the REFERENCE STYLE / TEMPLATE provided has a specific structure (e.g., time blocks like '12:00 - 14:00', specific headers, or bullet points), you MUST mirror that exact structure. Bucket the raw information into the corresponding time slots or headers from the template.
+5. If a client is upset, document the "why" and your response naturally.
+6. Focus on the Outcome: What was the result of your support?
+7. Output ONLY the rewritten note. No preamble, no headers.`;
 
 function isRateLimited(key, max, windowMs) {
   const now = Date.now();
@@ -393,16 +394,18 @@ async function handleEnhanceNote(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { text, noteType, clientName, referenceTemplate } = req.body || {};
+  const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
   const userPrompt = [
     noteType ? `Note type: ${noteType}` : '',
     clientName ? `Client/subject: ${clientName}` : '',
-    referenceTemplate ? `\nREFERENCE STYLE / TEMPLATE (Use this as your standard for quality and structure):\n${referenceTemplate}\n` : '',
+    referenceTemplate ? `\nREFERENCE STYLE / TEMPLATE (MANDATORY STRUCTURE):\n${referenceTemplate}\n` : '',
+    previousOutput ? `\nPREVIOUS OUTPUT:\n${previousOutput}\n` : '',
+    refineInstructions ? `\nUSER CORRECTION / REFINEMENT (PRIORITIZE THIS):\n${refineInstructions}\n` : '',
     '',
-    'Convert this to a professional care note:',
+    refineInstructions ? 'Based on the correction above, rewrite the note:' : 'Convert this to a professional care note following the template structure:',
     '',
     text.trim(),
   ].filter((l) => l !== '').join('\n');
