@@ -246,15 +246,27 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawEntry)) continue;
 
     const date   = dateRaw || new Date().toLocaleDateString('en-GB');
-    const carer  = carerRaw || 'Personnel Unassigned';
+
+    // CarePlanner mobile app writes "All carers in region: HOUSE , All carers in region: ORG"
+    // Strip this to get the house name; mark carer as region-level (not individually attributed)
+    const isRegionEntry = /all carers in region/i.test(carerRaw);
+    let carer: string;
+    let regionHouse = '';
+    if (isRegionEntry) {
+      const houseMatch = carerRaw.match(/all carers in region:\s*([^,]+)/i);
+      regionHouse = houseMatch ? normalizeHouse(houseMatch[1].trim()) : '';
+      carer = 'Region Entry';
+    } else {
+      carer = carerRaw.trim() || 'Personnel Unassigned';
+    }
+
     // Guard: CarePlanner sometimes fills the client column with a house name.
-    // If normalizeHouse transforms the raw value, it matched a known house key.
     const normalizedClient = normalizeHouse(clientRaw);
     const isHouseName = !!clientRaw && normalizedClient !== clientRaw.trim();
-    const client = (!clientRaw || isHouseName) ? 'Service User Unassigned' : clientRaw;
+    const client = (!clientRaw || isHouseName) ? 'Service User Unassigned' : clientRaw.trim();
     const type   = typeRaw || 'Standard Entry';
-    // If no explicit house column, try to extract from entry text or client name
-    const house  = normalizeHouse(houseRaw) || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
+    // House priority: explicit column → region entry extraction → entry text → client field → UNASSIGNED
+    const house  = normalizeHouse(houseRaw) || regionHouse || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
 
     // Validate date is parseable
     const ms = parseDateMs(date);

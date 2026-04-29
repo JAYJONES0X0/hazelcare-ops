@@ -10,7 +10,7 @@ export function CommunicationsPage() {
   const [rawText, setRawText] = useState('');
   const [intel, setIntel] = useState<InterceptedIntel[]>(() => {
     try {
-      const saved = sessionStorage.getItem('hc-intercept-cache');
+      const saved = localStorage.getItem('hc-intercept-cache');
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -21,7 +21,7 @@ export function CommunicationsPage() {
 
   // SESSION PERSISTENCE ANCHOR
   useEffect(() => {
-    sessionStorage.setItem('hc-intercept-cache', JSON.stringify(intel));
+    localStorage.setItem('hc-intercept-cache', JSON.stringify(intel));
   }, [intel]);
 
 
@@ -256,14 +256,25 @@ export function CommunicationsPage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={handleIntercept}
-            disabled={!rawText.trim()}
-            className="w-full py-4 btn-tactical text-xs font-black uppercase tracking-[0.3em] rounded-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-20"
-          >
-            <Zap className="w-4 h-4 fill-current" />
-            SYNTHESIZE_VECTORS
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleIntercept}
+              disabled={!rawText.trim()}
+              className="flex-1 py-4 btn-tactical text-xs font-black uppercase tracking-[0.3em] rounded-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-20"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              SYNTHESIZE
+            </button>
+            {intel.length > 0 && (
+              <button
+                onClick={() => setIntel([])}
+                title="Clear all intel"
+                className="px-4 py-4 hc-clay-raised border border-hc-border rounded-lg text-hc-muted hover:text-flag-red transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Right: Intelligence Matrix */}
