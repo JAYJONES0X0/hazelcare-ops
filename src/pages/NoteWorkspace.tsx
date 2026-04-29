@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine, ChevronRight } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
