@@ -346,7 +346,6 @@ async function callGemini(messages, options = {}) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY not set');
 
-  // Convert OpenAI message format → Gemini format
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs = messages.filter(m => m.role !== 'system');
   const contents = userMsgs.map(m => ({
@@ -363,21 +362,23 @@ async function callGemini(messages, options = {}) {
     ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
   };
 
-  const model = 'gemini-2.0-flash';
-  const streamSuffix = options.stream ? ':streamGenerateContent?alt=sse' : ':generateContent';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}${streamSuffix}&key=${key}`;
+  // Try models in order — 1.5-flash is the most reliably available free model
+  const geminiModels = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+  const action = options.stream ? 'streamGenerateContent?alt=sse' : 'generateContent';
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  for (const model of geminiModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}&key=${key}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
+    if (res.ok) return { res, provider: 'gemini' };
     const err = await res.json().catch(() => ({}));
-    throw new Error(`Gemini ${res.status}: ${err?.error?.message || 'unknown'}`);
+    console.warn(`[Gemini] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
   }
-  return { res, provider: 'gemini' };
+  throw new Error('All Gemini models failed');
 }
 
 async function callOpenRouter(messages, options = {}) {
