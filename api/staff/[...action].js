@@ -339,51 +339,127 @@ async function handleStaffSacStatus(req, res) {
   return res.json({ ok });
 }
 
-const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',
-  'llama-3.1-70b-versatile',
-  'llama-3.1-8b-instant'
-];
+// ── Empire AI Router ────────────────────────────────────────────────────────
+// Priority: Gemini FREE (1M tokens/day, 1M ctx) → OpenRouter free → Groq
 
-async function callGroqWithFallback(messages, options = {}) {
-  let lastError = null;
-  for (const model of GROQ_MODELS) {
+async function callGemini(messages, options = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY not set');
+
+  // Convert OpenAI message format → Gemini format
+  const systemMsg = messages.find(m => m.role === 'system');
+  const userMsgs = messages.filter(m => m.role !== 'system');
+  const contents = userMsgs.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const body = {
+    contents,
+    generationConfig: {
+      temperature: options.temperature ?? 0.25,
+      maxOutputTokens: options.max_tokens ?? 2000,
+    },
+    ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
+  };
+
+  const model = 'gemini-2.0-flash';
+  const streamSuffix = options.stream ? ':streamGenerateContent?alt=sse' : ':generateContent';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}${streamSuffix}&key=${key}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Gemini ${res.status}: ${err?.error?.message || 'unknown'}`);
+  }
+  return { res, provider: 'gemini' };
+}
+
+async function callOpenRouter(messages, options = {}) {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error('OPENROUTER_API_KEY not set');
+
+  // Free models on OpenRouter
+  const models = [
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'google/gemini-2.0-flash-exp:free',
+  ];
+
+  for (const model of models) {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://hazelcare-ops.vercel.app',
+        'X-Title': 'Hazel Care Ops',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: options.temperature ?? 0.25,
+        max_tokens: options.max_tokens ?? 2000,
+        stream: options.stream || false,
+      }),
+    });
+
+    if (res.ok) return { res, provider: 'openrouter', model };
+    const err = await res.json().catch(() => ({}));
+    console.warn(`[OpenRouter] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
+  }
+  throw new Error('All OpenRouter models failed');
+}
+
+async function callGroq(messages, options = {}) {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error('GROQ_API_KEY not set');
+
+  const models = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'];
+  for (const model of models) {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model, messages,
+        temperature: options.temperature ?? 0.25,
+        stream: options.stream || false,
+        max_tokens: options.max_tokens ?? 2000,
+        response_format: options.response_format,
+      }),
+    });
+    if (res.ok) return { res, provider: 'groq', model };
+    if (res.status === 401) throw new Error('Groq auth failed');
+    const err = await res.json().catch(() => ({}));
+    console.warn(`[Groq] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
+  }
+  throw new Error('All Groq models rate limited');
+}
+
+async function callEmpireStack(messages, options = {}) {
+  const providers = [
+    () => callGemini(messages, options),
+    () => callOpenRouter(messages, options),
+    () => callGroq(messages, options),
+  ];
+
+  let lastError;
+  for (const attempt of providers) {
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: options.temperature || 0.1,
-          stream: options.stream || false,
-          max_tokens: options.max_tokens || 4096,
-          response_format: options.response_format
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        const msg = err.error?.message || '';
-        const code = err.error?.code || '';
-        
-        // Skip this model for ANY non-auth error (rate limits, decommissioning, server issues)
-        if (res.status !== 401) {
-          console.warn(`[Groq Router] Model ${model} failed (${code}). Falling back...`);
-          continue; 
-        }
-        throw new Error(JSON.stringify(err));
-      }
-      return res;
+      const result = await attempt();
+      console.log(`[Empire Router] Using: ${result.provider}`);
+      return result;
     } catch (e) {
       lastError = e;
-      console.error(`[Groq Router] Exception with model ${model}:`, e.message);
+      console.warn(`[Empire Router] Provider failed: ${e.message}`);
     }
   }
-  throw lastError || new Error('Sovereign Intelligence Stack saturated. Please try again.');
+  throw lastError || new Error('All AI providers unavailable. Please try again in a moment.');
 }
 
 async function handleAnalyzeIntel(req, res) {
@@ -401,16 +477,34 @@ async function handleAnalyzeIntel(req, res) {
   if (!text) return res.status(400).json({ message: 'No text provided' });
 
   try {
-    const groqRes = await callGroqWithFallback([
+    const messages = [
       { role: 'system', content: INTEL_SYSTEM_PROMPT },
-      { role: 'user', content: `Analyze this raw clinical text and map it to the CQC structure:\n\n${text}` },
-    ], { response_format: { type: 'json_object' } });
+      { role: 'user', content: `Analyse this raw text and map it to the CQC structure:\n\n${text}` },
+    ];
 
-    const data = await groqRes.json();
-    const result = JSON.parse(data.choices[0].message.content);
+    // For JSON analysis, use non-streaming — try Groq first (supports json_object), then OpenRouter, then Gemini
+    let rawContent;
+    try {
+      const { res: groqRes } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false });
+      const data = await groqRes.json();
+      rawContent = data.choices[0].message.content;
+    } catch {
+      const { res: orRes, provider } = await callOpenRouter(messages, { stream: false }).catch(() => callGemini(messages, { stream: false }));
+      if (provider === 'gemini') {
+        const data = await orRes.json();
+        rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      } else {
+        const data = await orRes.json();
+        rawContent = data.choices[0].message.content;
+      }
+    }
+
+    // Extract JSON even if model wraps it in markdown
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const result = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Intelligence Analysis Error:', error);
+    console.error('Intel Analysis Error:', error);
     res.status(500).json({ message: error.message || 'Internal server error' });
   }
 }
@@ -464,30 +558,30 @@ async function handleEnhanceNote(req, res) {
     text.trim(),
   ].filter((l) => l !== '').join('\n');
 
+  const messages = [
+    { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+  const opts = { stream: true, max_tokens: 2000, temperature: 0.25 };
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+
   try {
-    const groqRes = await callGroqWithFallback([
-      { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ], {
-      stream: true,
-      max_tokens: 2000,
-      temperature: 0.25
-    });
-
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache');
-
-    const reader = groqRes.body?.getReader();
-    if (!reader) return res.status(502).send('No response body');
+    const { res: aiRes, provider } = await callEmpireStack(messages, opts);
+    const reader = aiRes.body?.getReader();
+    if (!reader) return res.status(502).end('No response body');
 
     const decoder = new TextDecoder();
     let buffer = '';
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
+
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith('data: ')) continue;
@@ -495,17 +589,24 @@ async function handleEnhanceNote(req, res) {
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
-          const chunk = parsed.choices?.[0]?.delta?.content;
+          let chunk = '';
+          if (provider === 'gemini') {
+            // Gemini SSE: candidates[0].content.parts[0].text
+            chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          } else {
+            // OpenAI-compatible (Groq, OpenRouter)
+            chunk = parsed.choices?.[0]?.delta?.content || '';
+          }
           if (chunk) res.write(chunk);
-        } catch { /* skip */ }
+        } catch { /* skip malformed chunks */ }
       }
     }
   } catch (e) {
     const msg = e?.message || '';
-    const friendly = msg.includes('saturated') || msg.includes('rate') || msg.includes('limit')
+    const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
       ? 'AI models are at capacity — wait 30 seconds and try again.'
       : `Generation failed: ${msg}`;
-    res.status(502).write(friendly);
+    res.write(friendly);
   } finally {
     res.end();
   }
