@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck } from 'lucide-react';
+import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2 } from 'lucide-react';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -37,6 +37,15 @@ const speechSupported = !!SpeechRecognitionAPI;
 
 export const VOICE_LANGUAGES = [
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
+  { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  { code: 'fr-FR', label: 'French', flag: '🇫🇷' },
+  { code: 'es-ES', label: 'Spanish', flag: '🇪🇸' },
+  { code: 'de-DE', label: 'German', flag: '🇩🇪' },
+  { code: 'it-IT', label: 'Italian', flag: '🇮🇹' },
+  { code: 'pt-PT', label: 'Portuguese', flag: '🇵🇹' },
+  { code: 'pl-PL', label: 'Polish', flag: '🇵🇱' },
+  { code: 'ro-RO', label: 'Romanian', flag: '🇷🇴' },
+  { code: 'ar-SA', label: 'Arabic', flag: '🇸🇦' },
 ];
 
 let _voiceLang = 'en-GB';
@@ -124,6 +133,16 @@ export function StaffNotePage() {
   
   const [activeStack, setActiveStack] = useState<ProtocolStack | null>(null);
   const [showStackPicker, setShowStackPicker] = useState(false);
+  const [voiceLang, setVoiceLangState] = useState('en-GB');
+  const [sharing, setSharing] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [shareCode, setShareCode] = useState('');
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const setVoiceLangUi = (lang: string) => {
+    setVoiceLangState(lang);
+    setVoiceLang(lang);
+  };
 
   const loadStack = (stack: ProtocolStack) => {
     setActiveStack(stack);
@@ -155,6 +174,27 @@ export function StaffNotePage() {
       }
     } catch { /* ui handled */ }
     finally { setEnhancing(false); }
+  };
+
+  const issueStaffLink = async () => {
+    setSharing(true);
+    try {
+      const res = await fetch('/api/staff/issue-staff-link', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toolId: 'notes' }),
+      });
+      if (!res.ok) throw new Error('Failed to issue secure link');
+      const data = await res.json();
+      setShareLink(data.link || '');
+      setShareCode(data.code || '');
+    } catch {
+      setShareLink('');
+      setShareCode('');
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -206,9 +246,21 @@ export function StaffNotePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-hc-border/20 p-2">
           <div className="p-8 space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Intelligence Input Stream</label>
-              <MicButton fieldKey="freetext" onTranscript={(_, t) => setFreeText(prev => prev + ' ' + t)} />
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 hc-clay-inset px-3 py-2 rounded-xl">
+                  <Globe2 className="w-3.5 h-3.5 text-hc-teal" />
+                  <select
+                    value={voiceLang}
+                    onChange={(e) => setVoiceLangUi(e.target.value)}
+                    className="bg-transparent text-[10px] font-black uppercase tracking-widest text-hc-text outline-none"
+                  >
+                    {VOICE_LANGUAGES.map(v => <option key={v.code} value={v.code}>{v.flag} {v.label}</option>)}
+                  </select>
+                </div>
+                <MicButton fieldKey="freetext" onTranscript={(_, t) => setFreeText(prev => prev + ' ' + t)} />
+              </div>
             </div>
             <textarea
               value={freeText}
@@ -266,6 +318,40 @@ export function StaffNotePage() {
             <span className="text-[10px] font-black text-hc-muted uppercase opacity-60 mb-1">Volume</span>
             <span className="text-xl font-black text-hc-teal tabular-nums">{wordCount} WDS</span>
          </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-6">
+        <div className="flex flex-wrap items-center gap-4 justify-between">
+          <div>
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Staff Share Link</div>
+            <div className="text-[11px] font-bold text-hc-text">Secure one-time access for remote dictation</div>
+          </div>
+          <button
+            onClick={() => void issueStaffLink()}
+            disabled={sharing}
+            className="px-5 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+          >
+            <Link2 className={`w-3.5 h-3.5 ${sharing ? 'animate-pulse' : ''}`} />
+            {sharing ? 'Generating...' : 'Generate Staff Link'}
+          </button>
+        </div>
+        {shareLink && (
+          <div className="mt-4 p-4 hc-clay-inset rounded-2xl">
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || '—'}</div>
+            <div className="text-[11px] font-bold text-hc-text break-all mb-3">{shareLink}</div>
+            <button
+              onClick={() => {
+                void navigator.clipboard.writeText(shareLink);
+                setCopiedShare(true);
+                setTimeout(() => setCopiedShare(false), 2000);
+              }}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${copiedShare ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+            >
+              {copiedShare ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedShare ? 'Copied' : 'Copy Link'}
+            </button>
+          </div>
+        )}
       </div>
 
     </div>
