@@ -16,6 +16,12 @@ export function NoteWorkspace() {
   // Load from IndexedDB async on mount — no 5MB localStorage cap
   const [entries, setEntries] = useState<CareEntry[]>([]);
   const [storeBounds, setStoreBounds] = useState<{ from: string; to: string; count: number } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
+  const [goldTemplate, setGoldTemplate] = useState('');
+  const [showGoldSuite, setShowGoldSuite] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -34,13 +40,6 @@ export function NoteWorkspace() {
       listRef.current.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [selectedClient, dateRange]);
-
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
-  const [clientSearch, setClientSearch] = useState('');
-  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
-  const [goldTemplate, setGoldTemplate] = useState('');
-  const [showGoldSuite, setShowGoldSuite] = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
   const [showJumpTop, setShowJumpTop] = useState(false);
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});

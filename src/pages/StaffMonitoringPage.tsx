@@ -25,7 +25,9 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
   const [importDragging, setImportDragging] = useState(false);
   const [booting, setBooting] = useState(true);
   const [showJumpTop, setShowJumpTop] = useState(false);
-  
+  const [house] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<DateRange>({ from: def.dateFrom, to: def.dateTo });
+
   // AUTO-SNAP: Jump to top when date range changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -71,9 +73,6 @@ export function StaffMonitoringPage({ weekData, onDataParsed }: Props) {
     } catch (e) { console.error(e); }
     finally { setImportLoading(false); }
   }, [onDataParsed, weekData]);
-
-  const [house] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<DateRange>({ from: def.dateFrom, to: def.dateTo });
 
   const { isCollapsed, toggle, expandAll, collapseAll, allCollapsed } = useCollapseStore('staff-monitoring-cards');
 
