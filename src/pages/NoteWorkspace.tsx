@@ -7,7 +7,7 @@ import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
-import { loadClients, saveClient, type FullClient } from '../lib/client-store';
+import { loadClients, saveClient, emptyClient, type FullClient } from '../lib/client-store';
 
 const INTERNAL_TEMPLATES = [
   {
@@ -97,6 +97,15 @@ export function NoteWorkspace() {
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
   const [refineInputs, setRefineInputs] = useState<Record<string, string>>({});
   const [displayCount, setDisplayCount] = useState(30);
+  const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
+
+  // Reload client profile whenever selection changes
+  useEffect(() => {
+    if (!selectedClient) { setClientProfile(null); return; }
+    const clients = loadClients();
+    const p = clients.find(c => c.name.toLowerCase().trim() === selectedClient.toLowerCase().trim()) || null;
+    setClientProfile(p);
+  }, [selectedClient, importInfo]); // re-check after doc upload
 
   const allClients = useMemo(() => {
     const names = new Set<string>();
@@ -192,18 +201,24 @@ export function NoteWorkspace() {
   const handleClinicalDocUpload = async (file: File) => {
     if (!selectedClient) return;
     setImportLoading(true);
-    setImportInfo(`Absorbing context for ${selectedClient}...`);
+    setImportInfo(`Reading ${file.name}...`);
     try {
       const text = await extractFileText(file);
       const clients = loadClients();
-      const profile = clients.find(c => c.name === selectedClient);
-      if (profile) {
-        profile.clinicalBriefing = (profile.clinicalBriefing ? profile.clinicalBriefing + '\n\n' : '') + text;
-        saveClient(profile);
-        setImportInfo(`Intelligence Synchronised for ${selectedClient}`);
+      let profile = clients.find(c => c.name.toLowerCase().trim() === selectedClient.toLowerCase().trim());
+      if (!profile) {
+        // Auto-create a profile for this client so vault works even without admin setup
+        profile = { ...emptyClient(), name: selectedClient, preferredName: selectedClient.split(' ')[0] };
       }
+      const separator = profile.clinicalBriefing
+        ? `\n\n━━━ ${file.name} ━━━\n`
+        : `━━━ ${file.name} ━━━\n`;
+      profile.clinicalBriefing = (profile.clinicalBriefing || '') + separator + text;
+      saveClient(profile);
+      const kb = Math.round(text.length / 1000);
+      setImportInfo(`Loaded: ${file.name} · ${kb}K characters absorbed`);
     } catch (e) {
-      setImportInfo(`Absorption failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setImportInfo(`Failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setImportLoading(false);
     }
@@ -395,29 +410,56 @@ export function NoteWorkspace() {
                   {/* INTELLIGENCE VAULT: Active when client selected */}
                   {selectedClient === client && (
                     <div className="px-5 pb-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
-                      <div className="p-3 bg-hc-teal/5 rounded-xl border border-hc-teal/20 space-y-2">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Shield className="w-3 h-3 text-hc-teal" />
-                          <span className="text-[9px] font-black text-hc-teal uppercase tracking-widest">Intelligence Vault</span>
+                      <div className={`p-3 rounded-xl border space-y-2 transition-colors ${clientProfile?.clinicalBriefing ? 'bg-flag-green/5 border-flag-green/20' : 'bg-hc-teal/5 border-hc-teal/20'}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <Shield className={`w-3 h-3 ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`}>
+                              Intelligence Vault
+                            </span>
+                          </div>
+                          {clientProfile?.clinicalBriefing && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-flag-green animate-pulse" />
+                          )}
                         </div>
-                        
-                        <p className="text-[9px] text-hc-muted leading-tight font-bold uppercase tracking-wider italic">
-                          Attach PBS, Risk Assessments or Care Plans to sharpen generation.
-                        </p>
 
-                        <button 
+                        {clientProfile?.clinicalBriefing ? (
+                          <div className="space-y-1.5">
+                            <p className="text-[9px] text-flag-green font-black uppercase tracking-wider">
+                              {Math.round(clientProfile.clinicalBriefing.length / 1000)}K chars loaded · AI reads full context
+                            </p>
+                            {clientProfile.pbs && (
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ PBS Plan active</p>
+                            )}
+                            {clientProfile.risk?.risks?.length ? (
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ {clientProfile.risk.risks.length} Risk{clientProfile.risk.risks.length > 1 ? 's' : ''} active</p>
+                            ) : null}
+                            {clientProfile.carePlan?.domains?.filter(d => d.enabled).length ? (
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ Care Plan active ({clientProfile.carePlan.domains.filter(d => d.enabled).length} domains)</p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="text-[9px] text-hc-muted leading-tight font-bold uppercase tracking-wider italic">
+                            Attach PBS, risk assessments or care plans to activate professional context.
+                          </p>
+                        )}
+
+                        <button
                           onClick={() => document.getElementById('intel-doc-upload')?.click()}
-                          className="w-full py-1.5 bg-hc-teal/10 hover:bg-hc-teal/20 text-hc-teal text-[9px] font-black uppercase tracking-widest rounded-lg border border-hc-teal/10 transition-all"
+                          disabled={importLoading}
+                          className={`w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${clientProfile?.clinicalBriefing ? 'bg-flag-green/10 hover:bg-flag-green/20 text-flag-green border-flag-green/10' : 'bg-hc-teal/10 hover:bg-hc-teal/20 text-hc-teal border-hc-teal/10'}`}
                         >
-                          + Add Context Doc
+                          {importLoading ? 'Reading...' : clientProfile?.clinicalBriefing ? '+ Add More Docs' : '+ Add Context Doc'}
                         </button>
-                        <input 
-                          type="file" 
-                          id="intel-doc-upload" 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          id="intel-doc-upload"
+                          className="hidden"
+                          accept=".pdf,.txt,.docx,.csv"
                           onChange={e => {
                             const f = e.target.files?.[0];
                             if (f) void handleClinicalDocUpload(f);
+                            if (e.target) e.target.value = '';
                           }}
                         />
                       </div>
@@ -476,9 +518,11 @@ export function NoteWorkspace() {
                 </div>
                 
                 {selectedClient && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-flag-green/10 rounded-lg animate-in fade-in duration-500">
-                    <div className="w-2 h-2 rounded-full bg-flag-green glow-green" />
-                    <span className="text-[9px] font-black text-flag-green uppercase tracking-widest">Context Active</span>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg animate-in fade-in duration-500 ${clientProfile?.clinicalBriefing ? 'bg-flag-green/10' : 'bg-hc-teal/10'}`}>
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${clientProfile?.clinicalBriefing ? 'bg-flag-green' : 'bg-hc-teal'}`} />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`}>
+                      {clientProfile?.clinicalBriefing ? 'Vault Active' : 'Client Selected'}
+                    </span>
                   </div>
                 )}
               </div>
