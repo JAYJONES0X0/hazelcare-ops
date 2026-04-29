@@ -18,6 +18,33 @@ interface Props {
 const LIKELIHOOD_LABELS = ['', 'Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'];
 const IMPACT_LABELS = ['', 'Negligible', 'Tolerable', 'Undesirable', 'Severe', 'Catastrophic'];
 
+function sanitizeRiskTitle(raw: string): string {
+  const compact = raw.replace(/\s+/g, ' ').trim();
+  if (!compact) return '';
+  const withoutMeta = compact
+    .replace(/page\s*\d+\s*of\s*\d+.*$/i, '')
+    .replace(/created\s+\d{1,2}\/\d{1,2}\/\d{2,4}.*$/i, '')
+    .replace(/by\s+©?\s*nourish.*$/i, '')
+    .replace(/\bscore\s*[:=]?\s*\d+\b.*$/i, '')
+    .trim();
+  const sentence = withoutMeta.split(/[.!?]/)[0]?.trim() || withoutMeta;
+  return sentence.slice(0, 120).trim();
+}
+
+function normalizeImportedRiskItems(items: RiskItem[]): RiskItem[] {
+  return items.map((item) => {
+    const safeTitle = sanitizeRiskTitle(item.title || '');
+    return {
+      ...item,
+      title: safeTitle || 'Imported Risk',
+      description: (item.description || '').replace(/\s+/g, ' ').trim().slice(0, 1500),
+      triggers: (item.triggers || []).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 8),
+      earlyWarnings: (item.earlyWarnings || []).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 8),
+      controls: (item.controls || []).map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 12),
+    };
+  });
+}
+
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 function Field({ label, value, onChange, area = false, rows = 3, placeholder = '' }: {
@@ -407,12 +434,14 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         setImportStatus('No risk dataset detected in file.');
         return;
       }
+      const normalizedRiskItems = normalizeImportedRiskItems(importedRisk.risks || []);
       const next: FullClient = {
         ...client,
         ...parsed.client,
         risk: {
           ...(client.risk || emptyRisk(today)),
           ...importedRisk,
+          risks: normalizedRiskItems.length ? normalizedRiskItems : [emptyRisk_item()],
           planDate: importedRisk.planDate || client.risk?.planDate || today,
         },
       };
@@ -521,10 +550,12 @@ export function RiskBuilder({ clientId, onBack }: Props) {
               {risk.risks.filter(r => r.title).map((r, i) => {
                 const { score, color, label } = riskInfo(r.likelihood, r.impact);
                 return (
-                  <span key={i} className="pill !bg-hc-bg text-[10px] font-black uppercase tracking-[0.1em] px-5 py-2.5 shadow-xl transition-all duration-500 hover:scale-105 active:scale-95 cursor-default flex items-center gap-3 border border-hc-muted/5"
+                  <span key={i} className="pill !bg-hc-bg text-[10px] font-black uppercase tracking-[0.1em] px-5 py-2.5 shadow-xl transition-all duration-500 hover:scale-105 active:scale-95 cursor-default flex items-center gap-3 border border-hc-muted/5 max-w-full"
                     style={{ color }}>
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-                    {i + 1}. {r.title} — {score} ({label})
+                    <span className="truncate max-w-[48rem]" title={r.title}>
+                      {i + 1}. {r.title} — {score} ({label})
+                    </span>
                   </span>
                 );
               })}
