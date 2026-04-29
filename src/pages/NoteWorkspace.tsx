@@ -97,6 +97,8 @@ export function NoteWorkspace() {
     };
   }, [entries, selectedClient, dateRange]);
 
+  const filtered = visibleItems;
+
   // Reset display count on filter change
   useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
 

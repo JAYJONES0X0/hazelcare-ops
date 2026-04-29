@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Incident, IncidentStage } from '../lib/types';
 import { useCollapseStore } from '../lib/collapse-store';
 
