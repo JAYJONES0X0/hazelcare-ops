@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ORG_CONFIG } from '../lib/config';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -48,36 +48,31 @@ interface Agency {
   tier: 'preferred' | 'approved' | 'provisional';
 }
 
-// ─── MOCK DATA ─────────────────────────────────────────────────────────────────
+// ─── STORAGE HELPERS ─────────────────────────────────────────────────────────
 
-const SHIFTS: Shift[] = [
-  { id: 's1', house: 'Church House', date: '18/03/2026', time: '07:00–15:00', hours: 8, role: 'Support Worker', rate: 14.50, urgency: 'critical', status: 'open', notes: 'Must have PBS experience' },
-  { id: 's2', house: 'Lingfield House', date: '18/03/2026', time: '15:00–23:00', hours: 8, role: 'Support Worker', rate: 14.50, urgency: 'critical', status: 'open' },
-  { id: 's3', house: 'Canterbury', date: '18/03/2026', time: '23:00–07:00', hours: 8, role: 'Senior Support Worker', rate: 16.00, urgency: 'urgent', status: 'submitted' },
-  { id: 's4', house: 'Laurel House', date: '19/03/2026', time: '07:00–15:00', hours: 8, role: 'Support Worker', rate: 14.50, urgency: 'urgent', status: 'open' },
-  { id: 's5', house: 'Woburn House', date: '19/03/2026', time: '15:00–23:00', hours: 8, role: 'Support Worker', rate: 14.50, urgency: 'standard', status: 'confirmed' },
-  { id: 's6', house: 'Hazelbury House', date: '19/03/2026', time: '07:00–15:00', hours: 8, role: 'Senior Support Worker', rate: 16.00, urgency: 'standard', status: 'open' },
-  { id: 's7', house: 'Church House', date: '20/03/2026', time: '07:00–19:00', hours: 12, role: 'Registered Manager Cover', rate: 22.00, urgency: 'urgent', status: 'open', notes: 'Level 5 diploma required' },
-  { id: 's8', house: 'Lingfield House', date: '20/03/2026', time: '07:00–15:00', hours: 8, role: 'Support Worker', rate: 14.50, urgency: 'standard', status: 'filled' },
-];
+const LS_SHIFTS = 'hc-agency-shifts';
+const LS_WORKERS = 'hc-agency-workers';
+const LS_AGENCIES = 'hc-agencies';
+const LS_RATES = 'hc-rate-cards';
 
-const WORKERS: AgencyWorker[] = [
-  { id: 'w1', name: 'Marcus Thompson', role: 'Senior Support Worker', agency: 'Cucumber Recruitment', dbsRef: 'DBS-2024-7721', dbsExpiry: '12/2026', trainingExpiry: '06/2026', rightToWork: true, status: 'dbs_check', shiftId: 's3', submittedAt: '10:24 today', phone: '07700 900123' },
-  { id: 'w2', name: 'Priya Patel', role: 'Support Worker', agency: 'CareerCare Staffing', dbsRef: 'DBS-2025-4482', dbsExpiry: '03/2027', trainingExpiry: '09/2026', rightToWork: true, status: 'confirmed', shiftId: 's5', submittedAt: 'Yesterday 16:45', phone: '07700 900456' },
-  { id: 'w3', name: 'James Okafor', role: 'Support Worker', agency: 'Cucumber Recruitment', dbsRef: 'DBS-2023-9901', dbsExpiry: '11/2025', trainingExpiry: '02/2026', rightToWork: true, status: 'declined', shiftId: 's1', submittedAt: '09:12 today', phone: '07700 900789' },
-];
+function lsLoad<T>(key: string, fallback: T): T {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
+}
+function lsSave<T>(key: string, data: T) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* ignore */ }
+}
 
-const AGENCIES: Agency[] = [
-  { id: 'a1', name: 'Cucumber Recruitment', contact: 'Sarah Mitchell', email: 'sarah@cucumber-recruitment.co.uk', phone: '0800 123 4567', fillRate: 87, responseTime: '< 2hrs', activeWorkers: 3, complianceScore: 94, tier: 'preferred' },
-  { id: 'a2', name: 'CareerCare Staffing', contact: 'David Osei', email: 'd.osei@careercare.co.uk', phone: '0800 234 5678', fillRate: 79, responseTime: '< 4hrs', activeWorkers: 1, complianceScore: 88, tier: 'approved' },
-  { id: 'a3', name: 'NurseFirst Group', contact: 'Lisa Chen', email: 'lisa@nursefirst.co.uk', phone: '0800 345 6789', fillRate: 61, responseTime: '< 8hrs', activeWorkers: 0, complianceScore: 71, tier: 'provisional' },
-];
+// ─── DEFAULT DATA ─────────────────────────────────────────────────────────────
 
-const RATE_CARDS = [
-  { role: 'Support Worker', day: 14.50, evening: 15.50, night: 16.50, weekend: 16.00, bank_hol: 21.75 },
-  { role: 'Senior Support Worker', day: 16.00, evening: 17.00, night: 18.00, weekend: 17.50, bank_hol: 24.00 },
-  { role: 'Team Leader', day: 18.00, evening: 19.00, night: 20.00, weekend: 19.50, bank_hol: 27.00 },
-  { role: 'Registered Manager Cover', day: 22.00, evening: 23.00, night: 25.00, weekend: 24.00, bank_hol: 33.00 },
+const DEFAULT_SHIFTS: Shift[] = [];
+const DEFAULT_WORKERS: AgencyWorker[] = [];
+const DEFAULT_AGENCIES: Agency[] = [];
+
+const DEFAULT_RATE_CARDS = [
+  { role: 'Support Worker',         day: 0, evening: 0, night: 0, weekend: 0, bank_hol: 0 },
+  { role: 'Senior Support Worker',  day: 0, evening: 0, night: 0, weekend: 0, bank_hol: 0 },
+  { role: 'Team Leader',            day: 0, evening: 0, night: 0, weekend: 0, bank_hol: 0 },
+  { role: 'Registered Manager Cover', day: 0, evening: 0, night: 0, weekend: 0, bank_hol: 0 },
 ];
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
@@ -151,17 +146,19 @@ function WorkerPipeline({ status }: { status: WorkerStatus }) {
 
 // ─── TAB: SHIFT BOARD ─────────────────────────────────────────────────────────
 
-function ShiftBoard() {
+function ShiftBoard({ shifts, onAddWorker, onAddShift }: { shifts: Shift[]; onAddWorker: (w: AgencyWorker) => void; onAddShift: (s: Shift) => void }) {
   const [filter, setFilter] = useState<'all' | 'open' | 'submitted' | 'confirmed'>('all');
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [submitWorker, setSubmitWorker] = useState({ name: '', role: '', agency: '', dbs: '', phone: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [showAddShift, setShowAddShift] = useState(false);
+  const [newShift, setNewShift] = useState({ house: '', date: '', time: '', hours: '8', role: 'Support Worker', urgency: 'standard' as ShiftUrgency, notes: '' });
 
-  const filtered = SHIFTS.filter(s => filter === 'all' || s.status === filter);
-  const open = SHIFTS.filter(s => s.status === 'open').length;
-  const critical = SHIFTS.filter(s => s.urgency === 'critical' && s.status === 'open').length;
-  const filled = SHIFTS.filter(s => s.status === 'filled' || s.status === 'confirmed').length;
-  const totalHours = SHIFTS.filter(s => s.status === 'open').reduce((a, s) => a + s.hours, 0);
+  const filtered = shifts.filter(s => filter === 'all' || s.status === filter);
+  const open = shifts.filter(s => s.status === 'open').length;
+  const critical = shifts.filter(s => s.urgency === 'critical' && s.status === 'open').length;
+  const filled = shifts.filter(s => s.status === 'filled' || s.status === 'confirmed').length;
+  const totalHours = shifts.filter(s => s.status === 'open').reduce((a, s) => a + s.hours, 0);
 
   return (
     <div className="space-y-4 lg:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -181,6 +178,48 @@ function ShiftBoard() {
           </div>
         ))}
       </div>
+
+      {/* Add Shift */}
+      <div className="flex justify-end mb-4">
+        <button onClick={() => setShowAddShift(v => !v)} className="px-6 py-2.5 btn-tactical rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl">+ Log New Shift</button>
+      </div>
+      {showAddShift && (
+        <div className="hc-clay-inset p-6 rounded-2xl border border-hc-teal/20 mb-6 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            {[
+              { key: 'house', label: 'House', placeholder: 'House name' },
+              { key: 'date', label: 'Date (DD/MM/YYYY)', placeholder: 'e.g. 01/05/2026' },
+              { key: 'time', label: 'Time', placeholder: 'e.g. 07:00–15:00' },
+              { key: 'hours', label: 'Hours', placeholder: '8' },
+              { key: 'role', label: 'Role', placeholder: 'Support Worker' },
+              { key: 'notes', label: 'Notes (optional)', placeholder: 'Any special requirements' },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1 block">{f.label}</label>
+                <input placeholder={f.placeholder}
+                  value={(newShift as Record<string, string>)[f.key]}
+                  onChange={e => setNewShift(s => ({ ...s, [f.key]: e.target.value }))}
+                  className="w-full hc-clay-raised border border-white/10 rounded-xl px-3 py-2 text-xs text-hc-text placeholder:text-hc-muted/30 focus:outline-none focus:border-hc-teal/50" />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <select value={newShift.urgency} onChange={e => setNewShift(s => ({ ...s, urgency: e.target.value as ShiftUrgency }))}
+              className="hc-clay-raised border border-white/10 rounded-xl px-3 py-2 text-xs text-hc-text focus:outline-none">
+              <option value="standard">Standard</option>
+              <option value="urgent">Urgent</option>
+              <option value="critical">Critical</option>
+            </select>
+            <button onClick={() => {
+              if (!newShift.house || !newShift.date) return;
+              onAddShift({ id: `s_${Date.now()}`, house: newShift.house, date: newShift.date, time: newShift.time, hours: Number(newShift.hours) || 8, role: newShift.role || 'Support Worker', rate: 0, urgency: newShift.urgency, status: 'open', notes: newShift.notes || undefined });
+              setNewShift({ house: '', date: '', time: '', hours: '8', role: 'Support Worker', urgency: 'standard', notes: '' });
+              setShowAddShift(false);
+            }} className="px-6 py-2 btn-tactical rounded-xl text-[11px] font-black uppercase tracking-widest">Save Shift</button>
+            <button onClick={() => setShowAddShift(false)} className="px-4 py-2 text-[11px] font-black text-hc-muted hover:text-hc-text uppercase">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div className="flex gap-2 hc-clay-inset backdrop-blur-md rounded-2xl p-1.5 border border-white/5 w-fit shadow-2xl mb-8">
@@ -255,7 +294,25 @@ function ShiftBoard() {
                     </div>
                     <div className="flex justify-end gap-4">
                       <button onClick={() => setSelectedShift(null)} className="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-hc-muted hover:text-hc-text transition-all">Cancel</button>
-                      <button onClick={() => setSubmitted(true)}
+                      <button onClick={() => {
+                        if (!submitWorker.name.trim()) return;
+                        onAddWorker({
+                          id: `w_${Date.now()}`,
+                          name: submitWorker.name,
+                          role: submitWorker.role || selectedShift!.role,
+                          agency: submitWorker.agency,
+                          dbsRef: submitWorker.dbs,
+                          dbsExpiry: '',
+                          trainingExpiry: '',
+                          rightToWork: false,
+                          status: 'submitted',
+                          shiftId: selectedShift!.id,
+                          submittedAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' today',
+                          phone: submitWorker.phone,
+                        });
+                        setSubmitted(true);
+                        setSubmitWorker({ name: '', role: '', agency: '', dbs: '', phone: '' });
+                      }}
                         className="px-10 py-3 btn-gradient text-hc-text text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-xl hover:scale-105 transition-all">
                         Submit Worker Details →
                       </button>
@@ -281,24 +338,34 @@ function ShiftBoard() {
   );
 }
 
-function WorkerPipelinePage() {
+function WorkerPipelinePage({ workers, shifts, onUpdateWorker }: { workers: AgencyWorker[]; shifts: Shift[]; onUpdateWorker: (w: AgencyWorker) => void }) {
+  const stageCounts = [
+    workers.filter(w => w.status === 'submitted').length,
+    workers.filter(w => w.status === 'dbs_check').length,
+    workers.filter(w => w.status === 'training_check').length,
+    workers.filter(w => w.status === 'confirmed').length,
+    workers.filter(w => w.status === 'active').length,
+  ];
+  const STAGE_ORDER: WorkerStatus[] = ['submitted', 'dbs_check', 'training_check', 'confirmed', 'active'];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-        {['Requests', 'DBS Check', 'Audit', 'Verified', 'Active'].map((label, i) => {
-          const counts = [1, 1, 0, 1, 0];
-          return (
-            <div key={label} className="hc-clay-raised border border-white/5 rounded-2xl p-5 text-center shadow-lg group hover:bg-white/5 transition-all">
-              <div className="text-2xl font-black text-hc-teal-light tabular-nums tracking-tighter mb-1">{counts[i]}</div>
-              <div className="section-header text-hc-muted text-[11px] tracking-[0.2em]">{label}</div>
-            </div>
-          );
-        })}
+        {['Requests', 'DBS Check', 'Audit', 'Verified', 'Active'].map((label, i) => (
+          <div key={label} className="hc-clay-raised border border-white/5 rounded-2xl p-5 text-center shadow-lg group hover:bg-white/5 transition-all">
+            <div className="text-2xl font-black text-hc-teal-light tabular-nums tracking-tighter mb-1">{stageCounts[i]}</div>
+            <div className="section-header text-hc-muted text-[11px] tracking-[0.2em]">{label}</div>
+          </div>
+        ))}
       </div>
 
+      {workers.length === 0 && (
+        <div className="text-center py-20 opacity-30 text-[11px] font-black uppercase tracking-widest text-hc-muted">No workers submitted yet</div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
-        {WORKERS.map((w, idx) => {
-          const shift = SHIFTS.find(s => s.id === w.shiftId);
+        {workers.map((w, idx) => {
+          const shift = shifts.find(s => s.id === w.shiftId);
           const isDeclined = w.status === 'declined';
           return (
             <div key={w.id} className={`hc-clay-raised border transition-all duration-500 rounded-[2rem] p-6 card-glow group animate-in slide-in-from-bottom-4
@@ -356,7 +423,18 @@ function WorkerPipelinePage() {
                     </div>
                   )}
                 </div>
-                <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] tabular-nums shrink-0 pt-2">CAPTURED {w.submittedAt}</div>
+                <div className="flex flex-col items-end gap-2 shrink-0 pt-2">
+                  <div className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] tabular-nums">CAPTURED {w.submittedAt}</div>
+                  {w.status !== 'declined' && w.status !== 'active' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => {
+                        const idx2 = STAGE_ORDER.indexOf(w.status);
+                        if (idx2 < STAGE_ORDER.length - 1) onUpdateWorker({ ...w, status: STAGE_ORDER[idx2 + 1] });
+                      }} className="px-3 py-1.5 btn-tactical rounded-lg text-[10px] font-black uppercase">Advance &rsaquo;</button>
+                      <button onClick={() => onUpdateWorker({ ...w, status: 'declined' })} className="px-3 py-1.5 hc-clay-raised border border-flag-red/30 text-flag-red rounded-lg text-[10px] font-black uppercase hover:bg-flag-red/10 transition-all">Decline</button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -366,18 +444,49 @@ function WorkerPipelinePage() {
   );
 }
 
-function AgencyDirectory() {
+function AgencyDirectory({ agencies, onAddAgency }: { agencies: Agency[]; onAddAgency: (a: Agency) => void }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newAgency, setNewAgency] = useState({ name: '', contact: '', email: '', phone: '' });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex items-center justify-between px-2">
-        <div className="section-header text-[11px] text-hc-muted tracking-[0.3em] uppercase">{AGENCIES.length} REGISTERED HUB ENTITIES · RANKED BY VECTOR PERFORMANCE</div>
-        <button className="flex items-center gap-2 px-5 py-2 hc-clay-raised border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-hc-text hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
+        <div className="section-header text-[11px] text-hc-muted tracking-[0.3em] uppercase">{agencies.length} REGISTERED HUB ENTITIES · RANKED BY VECTOR PERFORMANCE</div>
+        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-2 px-5 py-2 hc-clay-raised border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-hc-text hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
       </div>
 
+      {showAdd && (
+        <div className="hc-clay-inset p-5 rounded-2xl border border-hc-teal/20 animate-in slide-in-from-top-4 duration-300">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {[
+              { key: 'name', label: 'Agency Name', placeholder: 'e.g. Cucumber Recruitment' },
+              { key: 'contact', label: 'Contact Name', placeholder: 'Account manager' },
+              { key: 'email', label: 'Email', placeholder: 'contact@agency.co.uk' },
+              { key: 'phone', label: 'Phone', placeholder: '0800 000 0000' },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1 block">{f.label}</label>
+                <input placeholder={f.placeholder} value={(newAgency as Record<string, string>)[f.key]}
+                  onChange={e => setNewAgency(a => ({ ...a, [f.key]: e.target.value }))}
+                  className="w-full hc-clay-raised border border-white/10 rounded-xl px-3 py-2 text-xs text-hc-text placeholder:text-hc-muted/30 focus:outline-none focus:border-hc-teal/50" />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => {
+              if (!newAgency.name.trim()) return;
+              onAddAgency({ id: `a_${Date.now()}`, name: newAgency.name, contact: newAgency.contact, email: newAgency.email, phone: newAgency.phone, fillRate: 0, responseTime: 'TBC', activeWorkers: 0, complianceScore: 0, tier: 'provisional' });
+              setNewAgency({ name: '', contact: '', email: '', phone: '' });
+              setShowAdd(false);
+            }} className="px-6 py-2 btn-tactical rounded-xl text-[11px] font-black uppercase tracking-widest">Add Agency</button>
+            <button onClick={() => setShowAdd(false)} className="px-4 py-2 text-[11px] font-black text-hc-muted hover:text-hc-text uppercase">Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
-        {AGENCIES.sort((a, b) => b.fillRate - a.fillRate).map((agency, i) => (
+        {[...agencies].sort((a, b) => b.fillRate - a.fillRate).map((agency, i) => (
           <div key={agency.id}
             className={`hc-clay-raised border transition-all duration-500 rounded-[2.5rem] p-6 cursor-pointer card-glow group
               ${selected === agency.id ? 'border-hc-teal/40 bg-hc-teal/[0.04] shadow-2xl' : 'border-white/5 hover:border-white/10'}`}
@@ -452,7 +561,11 @@ function AgencyDirectory() {
   );
 }
 
-function RateCards() {
+type RateCard = typeof DEFAULT_RATE_CARDS[number];
+
+function RateCards({ rateCards, onUpdateRate }: { rateCards: RateCard[]; onUpdateRate: (rates: RateCard[]) => void }) {
+  const fields: (keyof Omit<RateCard, 'role'>)[] = ['day', 'evening', 'night', 'weekend', 'bank_hol'];
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="hc-clay-raised border border-hc-teal/30 bg-hc-teal/[0.03] rounded-2xl px-8 py-6 flex items-center gap-6 shadow-2xl glow-teal relative overflow-hidden group">
@@ -480,17 +593,31 @@ function RateCards() {
               </tr>
             </thead>
             <tbody>
-              {RATE_CARDS.map((r, idx) => (
-                <tr key={r.role} className={`group hover:bg-white/[0.03] transition-colors border-b border-white/5 ${idx === RATE_CARDS.length - 1 ? 'border-none' : ''}`}>
+              {rateCards.map((r, idx) => (
+                <tr key={r.role} className={`group hover:bg-white/[0.03] transition-colors border-b border-white/5 ${idx === rateCards.length - 1 ? 'border-none' : ''}`}>
                   <td className="px-8 py-6">
                     <div className="text-sm font-black text-hc-text group-hover:text-hc-teal-light transition-colors uppercase tracking-tight">{r.role}</div>
                     <div className="text-hc-muted text-[11px] font-bold uppercase tracking-widest mt-1">Cover Level</div>
                   </td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted uppercase tracking-widest italic">TBC</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted uppercase tracking-widest italic">TBC</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted uppercase tracking-widest italic">TBC</td>
-                  <td className="px-6 py-6 text-center text-[11px] font-black text-hc-muted uppercase tracking-widest italic">TBC</td>
-                  <td className="px-8 py-6 text-center text-[11px] font-black text-hc-muted uppercase tracking-widest italic">TBC</td>
+                  {fields.map(f => (
+                    <td key={f} className="px-4 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-hc-muted text-[10px]">£</span>
+                        <input
+                          type="number"
+                          step="0.50"
+                          min="0"
+                          value={r[f] || ''}
+                          placeholder="0.00"
+                          onChange={e => {
+                            const updated = rateCards.map((rc, i) => i === idx ? { ...rc, [f]: parseFloat(e.target.value) || 0 } : rc);
+                            onUpdateRate(updated);
+                          }}
+                          className="w-16 text-center hc-clay-inset border border-white/10 rounded-lg px-2 py-1.5 text-[11px] font-black text-hc-text focus:outline-none focus:border-hc-teal/50 bg-transparent"
+                        />
+                      </div>
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -530,10 +657,19 @@ type TabId = 'shifts' | 'pipeline' | 'agencies' | 'rates';
 
 export function AgencyPortalPage() {
   const [tab, setTab] = useState<TabId>('shifts');
+  const [shifts, setShifts] = useState<Shift[]>(() => lsLoad(LS_SHIFTS, DEFAULT_SHIFTS));
+  const [workers, setWorkers] = useState<AgencyWorker[]>(() => lsLoad(LS_WORKERS, DEFAULT_WORKERS));
+  const [agencies, setAgencies] = useState<Agency[]>(() => lsLoad(LS_AGENCIES, DEFAULT_AGENCIES));
+  const [rateCards, setRateCards] = useState(() => lsLoad(LS_RATES, DEFAULT_RATE_CARDS));
 
-  const openShifts = SHIFTS.filter(s => s.status === 'open').length;
-  const criticalShifts = SHIFTS.filter(s => s.urgency === 'critical' && s.status === 'open').length;
-  const pendingWorkers = WORKERS.filter(w => w.status !== 'active' && w.status !== 'declined').length;
+  const saveShifts = useCallback((s: Shift[]) => { setShifts(s); lsSave(LS_SHIFTS, s); }, []);
+  const saveWorkers = useCallback((w: AgencyWorker[]) => { setWorkers(w); lsSave(LS_WORKERS, w); }, []);
+  const saveAgencies = useCallback((a: Agency[]) => { setAgencies(a); lsSave(LS_AGENCIES, a); }, []);
+  const saveRates = useCallback((r: typeof DEFAULT_RATE_CARDS) => { setRateCards(r); lsSave(LS_RATES, r); }, []);
+
+  const openShifts = shifts.filter(s => s.status === 'open').length;
+  const criticalShifts = shifts.filter(s => s.urgency === 'critical' && s.status === 'open').length;
+  const pendingWorkers = workers.filter(w => w.status !== 'active' && w.status !== 'declined').length;
 
   const tabs: { id: TabId; label: string; badge?: number }[] = [
     { id: 'shifts', label: 'Shift Board', badge: openShifts },
@@ -564,7 +700,7 @@ export function AgencyPortalPage() {
           {[
             { label: 'Active Gaps', value: openShifts, color: '#14b8a6', pill: 'pill-teal' },
             { label: 'In Scan', value: pendingWorkers, color: '#f59e0b', pill: 'pill-amber' },
-            { label: 'Approved Hubs', value: AGENCIES.length, color: '#3b82f6', pill: 'pill-blue' },
+            { label: 'Approved Hubs', value: agencies.length, color: '#3b82f6', pill: 'pill-blue' },
           ].map(stat => (
             <div key={stat.label} className="hc-clay-raised border border-white/5 rounded-2xl px-6 py-4 text-center min-w-[120px] shadow-xl group cursor-default">
               <div className="text-2xl font-black tabular-nums tracking-tighter group-hover:scale-110 transition-transform duration-500" style={{ color: stat.color }}>{stat.value}</div>
@@ -591,10 +727,10 @@ export function AgencyPortalPage() {
 
       {/* Content */}
       <div className="relative z-10">
-        {tab === 'shifts' && <ShiftBoard />}
-        {tab === 'pipeline' && <WorkerPipelinePage />}
-        {tab === 'agencies' && <AgencyDirectory />}
-        {tab === 'rates' && <RateCards />}
+        {tab === 'shifts' && <ShiftBoard shifts={shifts} onAddWorker={w => saveWorkers([...workers, w])} onAddShift={s => saveShifts([...shifts, s])} />}
+        {tab === 'pipeline' && <WorkerPipelinePage workers={workers} shifts={shifts} onUpdateWorker={w => saveWorkers(workers.map(x => x.id === w.id ? w : x))} />}
+        {tab === 'agencies' && <AgencyDirectory agencies={agencies} onAddAgency={a => saveAgencies([...agencies, a])} />}
+        {tab === 'rates' && <RateCards rateCards={rateCards} onUpdateRate={saveRates} />}
       </div>
     </div>
   );
