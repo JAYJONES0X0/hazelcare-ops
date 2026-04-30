@@ -281,12 +281,12 @@ function DataManagerProp
           <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
           <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1">Manage local care datasets and privacy</p>
         </div>
-        {datasets.some(d => d.present) && (
-          <button onClick={() => { if (confirm('Delete ALL data from this device?')) onClearEverything(); }}
+        <div className="flex items-center gap-3">
+          <button onClick={() => { if (confirm('HARD RESET: This will purge ALL local storage and IndexedDB data, then force a clean reload. Irreversible. Continue?')) onClearEverything(); }}
             className="text-[11px] font-black text-flag-red hover:text-hc-text uppercase tracking-[0.2em] px-4 py-2 hc-clay-raised border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
-            Purge All Data
+            Hard Reset System
           </button>
-        )}
+        </div>
       </div>
 
       <div className="space-y-3">
