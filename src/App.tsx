@@ -256,7 +256,7 @@ export default function App() {
            <div className="absolute inset-0 flex items-center justify-center">
               <div className="hc-clay-raised p-12 flex flex-col items-center gap-6 animate-bounce shadow-2xl border border-hc-teal/5">
                  <Upload className="w-16 h-16 text-hc-teal" />
-                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.4em]">Injest Clinical Stream</div>
+                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.4em]">Injest Sovereign Stream</div>
               </div>
            </div>
         </div>

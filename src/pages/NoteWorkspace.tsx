@@ -128,6 +128,14 @@ export function NoteWorkspace() {
   useEffect(() => {
     const plan = loadCoveragePlan();
     if (!plan) return;
+    
+    // FORENSIC BLOCK: If the saved plan is for a blacklisted artifact, clear it.
+    const EXCLUDED = ['shaun rodgers', 'shaun redgers', 'shaun'];
+    if (EXCLUDED.includes(plan.client.toLowerCase().trim())) {
+      clearCoveragePlan();
+      return;
+    }
+
     setCoveragePlan(plan);
     setSelectedClient(plan.client);
     setClientSearch(plan.client);
@@ -162,7 +170,7 @@ export function NoteWorkspace() {
 
   const allClients = useMemo(() => {
     const names = new Set<string>();
-    const SKIP = new Set(['unknown', 'service user unassigned', 'personnel unassigned']);
+    const SKIP = new Set(['unknown', 'service user unassigned', 'personnel unassigned', 'shaun rodgers', 'shaun redgers']);
     for (const e of entries) {
       if (e.client && e.client.trim() && !SKIP.has(e.client.toLowerCase().trim())) names.add(e.client.trim());
     }

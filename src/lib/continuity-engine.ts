@@ -147,6 +147,7 @@ function parseDayCellToIso(dayCell: string, year: number): string | null {
  * RFC 4180 minimal CSV parser — handles quoted fields with embedded commas.
  */
 function parseCsvLine(line: string): string[] {
+  const delimiter = line.includes('\t') ? '\t' : ',';
   const out: string[] = [];
   let cur = '';
   let inQ = false;
@@ -158,7 +159,7 @@ function parseCsvLine(line: string): string[] {
       else { cur += ch; }
     } else {
       if (ch === '"') inQ = true;
-      else if (ch === ',') { out.push(cur); cur = ''; }
+      else if (ch === delimiter) { out.push(cur); cur = ''; }
       else { cur += ch; }
     }
   }

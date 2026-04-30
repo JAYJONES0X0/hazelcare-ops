@@ -350,12 +350,14 @@ export function parseRosterCSV(text: string, fileName: string): Shift[] {
   if (lines.length < 2) return [];
 
   const parseRow = (line: string): string[] => {
+    // Handle both CSV (comma) and PDF extraction (tab)
+    const delimiter = line.includes('\t') ? '\t' : ',';
     const result: string[] = [];
     let cur = '', inQuotes = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') inQuotes = !inQuotes;
-      else if (ch === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+      else if (ch === delimiter && !inQuotes) { result.push(cur.trim()); cur = ''; }
       else cur += ch;
     }
     result.push(cur.trim());
