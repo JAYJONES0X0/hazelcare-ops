@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hc-teal: #0d9488;
+  --color-hc-dark: #0f172a;
+  --color-hc-bone: #f8fafc;
+  --color-hc-accent: #14b8a6;
+}
+
+:root {
+  --hc-teal: #0d9488;
+  --hc-dark: #0f172a;
+  --hc-bone: #f8fafc;
+}
+
+@layer base {
+  body {
+    @apply bg-hc-bone text-hc-dark font-sans overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .hc-clay-raised {
+    @apply bg-white border border-slate-200/50 rounded-3xl shadow-[8px_8px_16px_rgba(0,0,0,0.05),-8px_-8px_16px_rgba(255,255,255,0.8)] transition-all duration-300;
+  }
+  
+  .hc-clay-inset {
+    @apply bg-hc-bone border border-slate-200/50 rounded-2xl shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.8)];
+  }
+
+  .btn-tactical {
+    @apply bg-hc-teal text-hc-bone px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-teal-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-3xl shadow-xl;
+  }
+}
+
+/* Custom Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-sovereign {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

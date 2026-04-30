@@ -47,6 +47,7 @@ const navSections: NavSection[] = [
     color: 'text-hc-teal-light',
     items: [
       { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
+      { id: 'training-hub' as Page,   label: 'Sovereign Trainer', icon: <Shield size={16} /> },
       { id: 'client-diary' as Page,    label: 'Live Feed',         icon: <BookOpen size={16} /> },
       { id: 'client-docs' as Page,     label: 'Sovereign Vault',   icon: <HardDrive size={16} /> },
       { id: 'handover' as Page,        label: 'Shift Handovers',   icon: <FileText size={16} /> },

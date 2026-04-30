@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazelcare Operations - Documentation Analytics Briefing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.15) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, rgba(37, 99, 235, 0.1) 0, transparent 50%);
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .metric-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        .tab-active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-bottom: 2px solid #3b82f6;
+        }
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .bad-note-blur {
+            filter: grayscale(1) opacity(0.7);
+        }
+        .good-note-glow {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="glass-panel sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Hazelcare <span class="text-blue-500">Intelligence</span></h1>
+                <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Organizational Briefing Dashboard</p>
+            </div>
+        </div>
+        <div class="hidden md:flex items-center gap-6">
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700">
+                <div class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></div>
+                <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Live Audit Stream</span>
+            </div>
+            <button class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-6 py-2.5 rounded-full transition-all shadow-lg shadow-blue-600/20">
+                GENERATE TRAINER PACK
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-12 w-full">
+        
+        <!-- Briefing Header -->
+        <div class="mb-12">
+            <h2 class="text-4xl font-extrabold text-white mb-4">The "Hazelcare Voice" Alignment</h2>
+            <p class="text-slate-400 text-lg max-w-3xl leading-relaxed">
+                This environment prepares the trainer to align staff reporting with our <span class="text-blue-400 font-semibold">Zero-Failure Documentation Standard</span>. We analyze the gap between "Minimalist Logging" and "Clinical Defensive Documentation."
+            </p>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div class="glass-panel p-6 rounded-2xl metric-card border-l-4 border-blue-500">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Dataset</p>
+                <h3 class="text-4xl font-black text-white">3,792 <span class="text-sm font-medium text-slate-500">Entries</span></h3>
+                <div class="mt-4 flex items-center text-xs text-blue-400 font-bold">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.513 2.121.879c.01.003.02.005.03.008a6.952 6.952 0 005.942-1.98c.033-.033.066-.066.1-.1a.33.33 0 01.353-.066.33.33 0 01.12.593A5.058 5.058 0 0112.12 15.12z" clip-rule="evenodd"></path></svg>
+                    High Performance Trend
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl metric-card border-l-4 border-emerald-500">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Elite Word Avg</p>
+                <h3 class="text-4xl font-black text-white">548 <span class="text-sm font-medium text-slate-500">Words</span></h3>
+                <p class="text-[10px] text-slate-500 mt-4 italic">Baseline: Bishwas A. / Sachin R.</p>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl metric-card border-l-4 border-amber-500">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Compliance Rate</p>
+                <h3 class="text-4xl font-black text-white">72% <span class="text-sm font-medium text-slate-500">Usage</span></h3>
+                <p class="text-[10px] text-slate-500 mt-4 italic">Target: 100% Header Utilization</p>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl metric-card border-l-4 border-rose-500">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Critical Risk</p>
+                <h3 class="text-4xl font-black text-white">14 <span class="text-sm font-medium text-slate-500">Flagged</span></h3>
+                <div class="mt-4 flex items-center text-xs text-rose-500 font-bold">
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-2 pulse-red"></div>
+                    POLICE INVOLVEMENT DETECTED
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Dashboard -->
+        <div class="glass-panel rounded-3xl overflow-hidden border border-slate-700 shadow-2xl">
+            <div class="flex border-b border-slate-700 bg-slate-800/30">
+                <button class="px-8 py-6 text-sm font-bold uppercase tracking-widest tab-active" onclick="switchTab('evolution')">01. The Note Evolution</button>
+                <button class="px-8 py-6 text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all" onclick="switchTab('matrix')">02. Performance Matrix</button>
+                <button class="px-8 py-6 text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all" onclick="switchTab('process')">03. The Hazelcare Process</button>
+                <button class="px-8 py-6 text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all" onclick="switchTab('risk')">04. Risk Deconstruction</button>
+            </div>
+
+            <div class="p-10" id="tab-content">
+                <!-- Evolution Tab -->
+                <div id="evolution-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        <!-- Flawed Section -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-rose-500/10 text-rose-500 text-[10px] font-black px-3 py-1 rounded-full border border-rose-500/20 uppercase tracking-widest">At-Risk Process</span>
+                                <h4 class="text-lg font-bold text-white">The "Minimalist" Flaw</h4>
+                            </div>
+                            
+                            <div class="glass-panel p-6 rounded-2xl border-rose-500/30 bad-note-blur space-y-4">
+                                <div class="font-mono text-sm text-rose-300/80 leading-relaxed italic">
+                                    "Jamie remained calm throughout the day he went and took a shower at 18:30pm . He was in there for a atleast half an hour and when he was finished he went into his room and stayed there for a while."
+                                </div>
+                                <div class="pt-4 border-t border-rose-500/20 space-y-2">
+                                    <p class="text-[10px] font-black text-rose-500 uppercase tracking-tighter flex items-center gap-2">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Trainer Warning: Audit Failure Point
+                                    </p>
+                                    <ul class="text-xs text-slate-400 space-y-1 list-disc ml-4">
+                                        <li>Zero mention of mental state or "Presentation."</li>
+                                        <li>Missing clinical headers (Medication/Mood/ABC).</li>
+                                        <li>Fails to prove "Proactive Engagement."</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                             <div class="glass-panel p-6 rounded-2xl border-rose-500/30 bad-note-blur space-y-4">
+                                <div class="font-mono text-sm text-rose-300/80 leading-relaxed italic">
+                                    "staff supported jamie with his Lundary and also specially washed his shoes"
+                                </div>
+                                <div class="pt-4 border-t border-rose-500/20 space-y-2">
+                                    <p class="text-[10px] font-black text-rose-500 uppercase tracking-tighter flex items-center gap-2">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Trainer Warning: Task vs. Care Gap
+                                    </p>
+                                    <ul class="text-xs text-slate-400 space-y-1 list-disc ml-4">
+                                        <li>Documents "Tasks" but ignores the "Human" being cared for.</li>
+                                        <li>Indefensible in a Safeguarding Review.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Standard Section -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">Hazelcare Standard</span>
+                                <h4 class="text-lg font-bold text-white">The "Clinical Narrative"</h4>
+                            </div>
+                            
+                            <div class="glass-panel p-6 rounded-2xl border-emerald-500/30 good-note-glow space-y-4">
+                                <div class="font-mono text-xs text-emerald-100 leading-relaxed">
+                                    <span class="text-emerald-500 font-bold uppercase tracking-widest">[SUPPORT SESSION]</span><br>
+                                    "I attended Jamie’s room at 09:45am... Jamie was observed asleep. He woke when I checked on him, greeted me appropriately..."<br><br>
+                                    <span class="text-emerald-500 font-bold uppercase tracking-widest">[MENTAL WELLBEING]</span><br>
+                                    "Jamie appeared stable in mood... No signs of distress, paranoia, or agitation... Asked about police station appointment; informed him Amos would support transport."<br><br>
+                                    <span class="text-emerald-500 font-bold uppercase tracking-widest">[OUTCOME]</span><br>
+                                    "Jamie accepted support with daily living... Prompts provided regarding environmental management. No safeguarding concerns."
+                                </div>
+                                <div class="pt-4 border-t border-emerald-500/20 space-y-2">
+                                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-tighter flex items-center gap-2">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Audit Shield: High Compliance
+                                    </p>
+                                    <ul class="text-xs text-slate-400 space-y-1 list-disc ml-4">
+                                        <li>Proves "Observation" and "Presentation" status.</li>
+                                        <li>Uses proprietary headers for systematic auditing.</li>
+                                        <li>Captures "The Voice" of the client and staff interaction.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Call to Action -->
+        <div class="mt-12 p-8 glass-panel rounded-3xl border border-blue-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-6">
+                <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-black">!</div>
+                <div>
+                    <h4 class="text-xl font-bold text-white">Trainer Action Required</h4>
+                    <p class="text-slate-400 text-sm">Target the <span class="text-rose-400 font-semibold">"Minimalist Logs"</span> in the next 1:1 sessions to eliminate legal exposure.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-full transition-all border border-slate-600">VIEW FULL AUDIT</button>
+                <button class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-all shadow-lg shadow-blue-600/20">DOWNLOAD TRAINING DECK</button>
+            </div>
+        </div>
+    </main>
+
+    <template id="tpl-matrix">
+        <div class="space-y-8 animate-in fade-in duration-500">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h3 class="text-2xl font-bold text-white">The Elite Tier vs. High-Risk Briefing</h3>
+                    <p class="text-slate-400 text-sm mt-1">Quantifying documentation value across the staff spectrum.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Elite Row -->
+                <div class="glass-panel p-6 rounded-2xl border-l-4 border-blue-500 flex items-center justify-between">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-black">YT</div>
+                        <div>
+                            <h4 class="text-lg font-bold text-white">Yvonne Tambu</h4>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500">Elite Performance - Cottrell House</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-black text-white">597 <span class="text-[10px] text-slate-500 uppercase">Words Avg</span></div>
+                        <div class="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full border border-emerald-500/20 mt-1 uppercase">100% Structural Sync</div>
+                    </div>
+                </div>
+
+                <!-- Elite Row 2 -->
+                <div class="glass-panel p-6 rounded-2xl border-l-4 border-blue-500 flex items-center justify-between">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-black">BA</div>
+                        <div>
+                            <h4 class="text-lg font-bold text-white">Bishwas Adhikari</h4>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500">Elite Performance - Master Class</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-black text-white">842 <span class="text-[10px] text-slate-500 uppercase">Words Avg</span></div>
+                        <div class="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full border border-emerald-500/20 mt-1 uppercase">Gold Standard Narrative</div>
+                    </div>
+                </div>
+
+                <!-- Training Row -->
+                <div class="glass-panel p-6 rounded-2xl border-l-4 border-rose-500 bg-rose-500/5 flex items-center justify-between">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center font-black">??</div>
+                        <div>
+                            <h4 class="text-lg font-bold text-white">The "Minimalist" Group</h4>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500">Training Priority A</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-black text-rose-500">&lt; 20 <span class="text-[10px] text-slate-500 uppercase">Words Avg</span></div>
+                        <div class="px-3 py-1 bg-rose-500/10 text-rose-500 text-[10px] font-black rounded-full border border-rose-500/20 mt-1 uppercase">High Legal Risk</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-process">
+        <div class="space-y-8 animate-in fade-in duration-500">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass-panel p-8 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20">01</div>
+                    <h4 class="text-xl font-black text-white">The "When"</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Reporting is a **Continuous Loop**. Staff document during shifts (08:00-20:00 / 20:00-08:00). Handover is generated live via Mobile App.
+                    </p>
+                </div>
+                <div class="glass-panel p-8 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20">02</div>
+                    <h4 class="text-xl font-black text-white">The "How"</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Mandatory Headers: <span class="text-white font-bold">Mood, Medication, Activities, Environment, Risk, Outcome.</span> This ensures zero clinical gaps during CQC audits.
+                    </p>
+                </div>
+                <div class="glass-panel p-8 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-rose-500/20">03</div>
+                    <h4 class="text-xl font-black text-white">The "Why"</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        We don't log tasks; we document **Risk Management**. If Jamie mentions police or Tony has an incident, the documentation is our **Defensive Shield**.
+                    </p>
+                </div>
+             </div>
+        </div>
+    </template>
+
+    <template id="tpl-risk">
+        <div class="space-y-8 animate-in fade-in duration-500">
+            <!-- Incident 1 -->
+            <div class="glass-panel rounded-3xl overflow-hidden border border-rose-500/30">
+                <div class="bg-rose-500/10 px-8 py-4 border-b border-rose-500/20 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <span class="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Police Critical</span>
+                        <h4 class="text-lg font-bold text-white">Case: Jamie Morton (Disturbance)</h4>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500">Log Date: 18/04/2026</span>
+                </div>
+                <div class="p-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="space-y-4">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">The Situation</p>
+                        <p class="text-sm text-slate-300 leading-relaxed italic border-l-2 border-slate-700 pl-4">
+                            "Jamie had been verbally abusing neighbours... two police officers arrived at the house... Jamie saw the police van and left the house in fear of being arrested."
+                        </p>
+                    </div>
+                    <div class="space-y-4">
+                        <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Hazelcare De-escalation Strategy</p>
+                        <ul class="space-y-3">
+                            <li class="flex gap-3">
+                                <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-xs text-slate-400">**Outcome Oriented:** Staff apologised to neighbours to lower community tension.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-xs text-slate-400">**Truth Boundaried:** Reminded Jamie that police are still watching and arrest is possible.</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="text-xs text-slate-400">**Supportive:** Encouraged calls to family to reinforce boundaries.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        function switchTab(tabId) {
+            // Update buttons
+            const buttons = document.querySelectorAll('button[onclick^="switchTab"]');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('onclick').includes(tabId)) {
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('text-slate-500');
+                } else {
+                    btn.classList.remove('tab-active');
+                    btn.classList.add('text-slate-500');
+                }
+            });
+
+            // Update content
+            const contentDiv = document.getElementById('tab-content');
+            const template = document.getElementById(`tpl-${tabId}`);
+            if (template) {
+                contentDiv.innerHTML = template.innerHTML;
+            } else {
+                // Default fallback for evolution
+                location.reload(); 
+            }
+        }
+    </script>
+</body>
+</html>

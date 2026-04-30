@@ -58,6 +58,38 @@ Staff Response & De-escalation:
 
 Post-Event Resolution:
 [The client's recovery process and current wellbeing status.]`
+  },
+  {
+    id: 'elite-1to1-narrative',
+    name: 'Elite Narrative (1:1 Focus)',
+    content: `Daily 1:1 support
+
+[TIME_BLOCK_1]
+[Narrative of initial engagement, morning checks, motivation and hygiene prompting.]
+
+[TIME_BLOCK_2]
+[Medication support details, response to prompting, and welfare check.]
+
+[TIME_BLOCK_3]
+[Community access preparation, safety reminders, and departure details.]
+
+[TIME_BLOCK_4]
+[Post-community review, money management discussion, and return status.]
+
+[TIME_BLOCK_5]
+[Meal preparation support, nutritional encouragement, and responsive engagement.]
+
+[TIME_BLOCK_6]
+[Evening settling, mood assessment, and specific administrative/plan-based queries.]
+
+Nutrition & Hydration
+[Detailed breakdown of food intake, hydration, and nutritional choices discussed.]
+
+Overall Observations
+[Room cleanliness, general mood/presentation, and lack of distress indicators.]
+
+Outcome
+[Summary of shift goals achieved, medication compliance, and overall engagement status.]`
   }
 ];
 
@@ -269,7 +301,10 @@ export function NoteWorkspace() {
   useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
 
   useEffect(() => {
-    if (!coveragePlan || !reviewCoverage) return;
+    if (!coveragePlan || !reviewCoverage || !selectedClient) return;
+    // CRITICAL: Only generate context if the plan belongs to the ACTIVE client
+    if (coveragePlan.client.toLowerCase().trim() !== selectedClient.toLowerCase().trim()) return;
+
     setGhostContextMap(prev => {
       const next = { ...prev };
       let changed = false;
@@ -282,7 +317,7 @@ export function NoteWorkspace() {
       }
       return changed ? next : prev;
     });
-  }, [coveragePlan, reviewCoverage]);
+  }, [coveragePlan, reviewCoverage, selectedClient]);
 
   // Entry count per client (for sidebar badges)
   const clientEntryCounts = useMemo(() => {
@@ -392,9 +427,11 @@ export function NoteWorkspace() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        result += decoder.decode(value);
+        result += decoder.decode(value, { stream: true });
         setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
       }
+      result += decoder.decode();
+      setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
       if (refineInstructions) {
         setRefineInputs(prev => ({ ...prev, [entryKey]: '' }));
       }
@@ -487,9 +524,11 @@ export function NoteWorkspace() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        result += decoder.decode(value);
+        result += decoder.decode(value, { stream: true });
         setGhostMap(prev => ({ ...prev, [gapId]: result }));
       }
+      result += decoder.decode();
+      setGhostMap(prev => ({ ...prev, [gapId]: result }));
     } catch (e) {
       setGhostMap(prev => ({ ...prev, [gapId]: `Ghost write failed: ${e instanceof Error ? e.message : 'Unknown error'}` }));
     } finally {
@@ -596,61 +635,60 @@ export function NoteWorkspace() {
     }
   };
 
-  const buildMergedText = (groupEntries: CareEntry[], linkedIds: string[]) => groupEntries
-    .filter(entry => linkedIds.includes(entry.id))
-    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.id.localeCompare(b.id))
-    .map((entry, index) => [
-      `[Linked note ${index + 1} of ${linkedIds.length}]`,
-      `Date: ${entry.date}`,
-      entry.time ? `Time: ${entry.time}` : '',
-      `Staff: ${entry.carer}`,
-      `Type: ${entry.type}`,
-      '',
-      entry.entry,
-    ].filter(Boolean).join('\n'))
-    .join('\n\n---\n\n');
-
-  const runLinkedRewrite = async (anchorKey: string, anchor: CareEntry, groupEntries: CareEntry[]) => {
-    const linkedIds = groupEntries.map(entry => entry.id).filter(id => linkedEntryIds[id]);
-    if (linkedIds.length < 2) return;
-    const mergedText = buildMergedText(groupEntries, linkedIds);
-    await runRewrite(
-      anchorKey,
-      mergedText,
-      anchor.client,
-      `Merge these ${linkedIds.length} same-day source notes into one complete shift note. Remove duplication, keep all clinically relevant facts, preserve chronological order, and return one cohesive final note.`
-    );
-  };
-
-  const saveGhostAsEntry = async (ghostId: string, date: string, client: string, carer: string, text: string) => {
+  const saveGhostAsEntry = async (ghostKey: string, date: string, client: string, carer: string, text: string) => {
     if (!text.trim()) return;
-    const newEntry: CareEntry = {
-      id: `ghost-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      date,
-      house: entries.find(e => e.client?.toLowerCase().trim() === client.toLowerCase().trim())?.house || 'UNKNOWN',
-      type: 'Daily Support',
-      carer: carer || 'AI Assisted',
-      client,
-      entry: text.trim(),
-      severity: 'green',
-      flags: [],
-      category: 'daily_support',
-    };
-    const added = await appendEntriesAsync([newEntry]);
-    if (!added) return;
-    const all = await getAllEntriesAsync();
-    setEntries(all);
-    setGhostSavedMap(prev => ({ ...prev, [ghostId]: true }));
-    setTimeout(() => setGhostSavedMap(prev => ({ ...prev, [ghostId]: false })), 2000);
+    setGhostLoadingMap(prev => ({ ...prev, [ghostKey]: true }));
+    try {
+      const newEntry: CareEntry = {
+        id: crypto.randomUUID(),
+        date,
+        client,
+        carer: carer || 'Personnel Unassigned',
+        entry: text.trim(),
+        type: 'Ghost Written',
+        severity: 'none',
+        flags: [],
+        house: 'UNASSIGNED',
+        category: 'daily_support'
+      };
+      await upsertEntryAsync(newEntry);
+      const all = await getAllEntriesAsync();
+      setEntries(all);
+      setGhostSavedMap(prev => ({ ...prev, [ghostKey]: true }));
+      setGhostMap(prev => {
+        const next = { ...prev };
+        delete next[ghostKey];
+        return next;
+      });
+    } catch (e) {
+      console.error('Failed to save ghost entry:', e);
+    } finally {
+      setGhostLoadingMap(prev => ({ ...prev, [ghostKey]: false }));
+    }
   };
 
-  const replaceEntryWithRewrite = async (entryKey: string, original: CareEntry, rewritten: string) => {
+  const runLinkedRewrite = async (entryKey: string, original: CareEntry, groupEntries: CareEntry[]) => {
+    const linkedEntries = groupEntries.filter(entry => linkedEntryIds[entry.id]);
+    if (linkedEntries.length < 2) return;
+    const combinedText = linkedEntries
+      .sort((a, b) => (a.time || '').localeCompare(b.time || '') || a.id.localeCompare(b.id))
+      .map(entry => `[${entry.time || 'no time'} - ${entry.carer}]: ${entry.entry}`)
+      .join('\n\n');
+    await runRewrite(entryKey, combinedText, original.client, 'Merge these observations into a single, high-quality clinical narrative.');
+  };
+
+  const handleApplyRewrite = async (entryKey: string, original: CareEntry, rewritten: string) => {
     if (!rewritten.trim()) return;
     setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: true }));
     try {
       const updated: CareEntry = { ...original, entry: rewritten.trim() };
       await upsertEntryAsync(updated);
       setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+      setRewriteMap(prev => {
+        const next = { ...prev };
+        delete next[entryKey];
+        return next;
+      });
     } finally {
       setReplaceLoadingMap(prev => ({ ...prev, [entryKey]: false }));
     }
@@ -681,6 +719,11 @@ export function NoteWorkspace() {
       setLinkedEntryIds(prev => {
         const next = { ...prev };
         for (const id of linkedIds) delete next[id];
+        return next;
+      });
+      setRewriteMap(prev => {
+        const next = { ...prev };
+        delete next[entryKey];
         return next;
       });
     } finally {
@@ -1439,82 +1482,90 @@ export function NoteWorkspace() {
                     <p className="text-[12px] font-medium text-hc-text/80 leading-relaxed">{e.entry}</p>
                   </div>
 
-                  <div className="p-6 space-y-3 bg-hc-teal/[0.02]">
-                    <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Refined Output</div>
+                  <div className="p-6 space-y-3 bg-hc-teal/[0.02] flex flex-col">
+                    <div className="text-[11px] font-black text-hc-teal uppercase tracking-widest shrink-0">Refined Output</div>
                     {rewrite ? (
-                      <div className="animate-in fade-in duration-500 flex flex-col">
+                      <div className="animate-in fade-in duration-500 flex flex-col flex-1">
                         <div className="flex-1">
                           {rewrite.startsWith('AI models are at capacity') || rewrite.startsWith('Generation failed') ? (
                             <div className="flex items-center gap-3 p-4 rounded-xl bg-flag-amber/10 border border-flag-amber/20">
                               <AlertTriangle className="w-4 h-4 text-flag-amber shrink-0" />
-                              <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide leading-relaxed">{rewrite}</p>
+                              <p className="text-[11px] font-black text-flag-amber uppercase tracking-wide">{rewrite}</p>
                             </div>
                           ) : (
                             <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{rewrite}</p>
                           )}
                         </div>
-                        
-                        <div className="mt-6 space-y-4">
-                          <div className="relative group/refine">
-                            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-hc-teal/40 group-focus-within/refine:text-hc-teal transition-colors" />
-                            <input 
-                              value={refineInputs[key] || ''}
-                              onChange={e => setRefineInputs(prev => ({ ...prev, [key]: e.target.value }))}
-                              onKeyDown={evt => {
-                                if (evt.key === 'Enter' && refineInputs[key]?.trim() && !isLoading) {
-                                  void runRewrite(key, e.entry, e.client, refineInputs[key]);
-                                }
-                              }}
-                              placeholder="Precise refinement (e.g. 'Add gaming detail', 'Make it shorter')..."
-                              className="w-full hc-clay-inset bg-hc-teal/[0.03] pl-9 pr-4 py-2.5 rounded-xl text-[11px] font-black text-hc-text focus:outline-none placeholder:text-hc-muted/40 transition-all border border-transparent focus:border-hc-teal/20"
-                            />
-                          </div>
-
-                          <div className="flex gap-3 flex-wrap">
-                            <button onClick={() => copyToClipboard(key, rewrite)}
-                              className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${isCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>
+                        <div className="mt-6 pt-6 border-t border-hc-border/10 flex flex-wrap items-center justify-between gap-4 shrink-0">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => copyToClipboard(key, rewrite)}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                isCopied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'
+                              }`}
+                            >
                               {isCopied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                               {isCopied ? 'Copied' : 'Copy'}
                             </button>
-                            <button 
-                              onClick={() => void runRewrite(key, e.entry, e.client, refineInputs[key])}
-                              disabled={isLoading}
-                              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
-                            >
-                              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                              {refineInputs[key] ? 'Refine' : 'Regenerate'}
-                            </button>
-                            <button
-                              onClick={() => void replaceEntryWithRewrite(key, e, rewrite)}
-                              disabled={isReplacing}
-                              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hc-clay-inset text-hc-muted hover:text-hc-text transition-all disabled:opacity-50"
-                            >
-                              <CheckCircle className={`w-3.5 h-3.5 ${isReplacing ? 'animate-pulse' : ''}`} />
-                              {isReplacing ? 'Replacing...' : 'Replace Original'}
-                            </button>
-                            {sameDay && linkedSameDayCount > 1 && (
+                            {!isLinked && (
                               <button
-                                onClick={() => void mergeReplaceAndRemoveLinked(key, e, sameDay.entries, rewrite)}
+                                onClick={() => void handleApplyRewrite(key, e, rewrite)}
                                 disabled={isReplacing}
-                                className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest bg-flag-amber/10 text-flag-amber border border-flag-amber/20 hover:bg-flag-amber/20 transition-all disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hc-clay-raised text-hc-text hover:text-hc-teal disabled:opacity-50"
                               >
-                                <Paperclip className={`w-3.5 h-3.5 ${isReplacing ? 'animate-pulse' : ''}`} />
-                                Merge + Remove Linked
+                                {isReplacing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                                {isReplacing ? 'Replacing...' : 'Apply Over Original'}
                               </button>
                             )}
+                            {isLinked && (
+                              <button
+                                onClick={() => void mergeReplaceAndRemoveLinked(key, e, sameDay!.entries, rewrite)}
+                                disabled={isReplacing}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-hc-teal text-hc-bone shadow-md disabled:opacity-50"
+                              >
+                                {isReplacing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Layers className="w-3.5 h-3.5" />}
+                                {isReplacing ? 'Merging...' : 'Replace All Selected'}
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                             <input 
+                               value={refineInputs[key] || ''}
+                               onChange={e => setRefineInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                               onKeyDown={ev => { if (ev.key === 'Enter') void runRewrite(key, e.entry, e.client, refineInputs[key]); }}
+                               placeholder="Refine further..."
+                               className="w-48 hc-clay-inset bg-hc-surface/50 rounded-xl px-3 py-2 text-[10px] font-black text-hc-text outline-none placeholder:text-hc-muted/50"
+                             />
+                             <button
+                               onClick={() => void runRewrite(key, e.entry, e.client, refineInputs[key])}
+                               disabled={isLoading}
+                               className="p-2 hc-clay-raised text-hc-teal hover:scale-110 transition-transform disabled:opacity-50"
+                             >
+                               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                             </button>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-start justify-center gap-4 py-4 text-hc-muted group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => void runRewrite(key, e.entry, e.client)}
-                          disabled={isLoading}
-                          className="flex items-center gap-2 px-6 py-3 rounded-xl btn-tactical text-[11px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Sparkles className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                          {isLoading ? 'Refining...' : 'Refine Entry'}
-                        </button>
+                      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-hc-teal/[0.01] rounded-2xl border border-dashed border-hc-teal/20">
+                        {isLoading ? (
+                          <div className="flex flex-col items-center gap-4">
+                            <Sparkles className="w-8 h-8 text-hc-teal animate-spin-slow" />
+                            <div className="text-[10px] font-black text-hc-teal uppercase tracking-widest animate-pulse">Consulting intelligence vault...</div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-[11px] font-bold text-hc-muted uppercase tracking-widest mb-4">{goldTemplate ? 'Template selected' : 'Intelligence ready'}</p>
+                            <button
+                              onClick={() => void runRewrite(key, e.entry, e.client)}
+                              className="btn-tactical text-[10px] px-8 py-3 rounded-2xl flex items-center gap-3 group"
+                            >
+                              <Sparkles className="w-4 h-4 text-hc-teal group-hover:scale-125 transition-transform" />
+                              Refine Observation
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1523,14 +1574,13 @@ export function NoteWorkspace() {
             );
           })}
 
-          {filtered.length > displayCount && (
-            <div className="flex justify-center pt-8 pb-12">
-              <button 
+          {displayCount < filtered.length && (
+            <div className="flex justify-center pt-8">
+              <button
                 onClick={() => setDisplayCount(prev => prev + 30)}
-                className="btn-clay px-12 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl group flex items-center gap-3"
+                className="btn-tactical text-[11px] font-black px-12 py-4 rounded-[2rem]"
               >
-                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                Load More
+                Load {Math.min(30, filtered.length - displayCount)} More Records
               </button>
             </div>
           )}

@@ -104,9 +104,9 @@ You write shift notes with three qualities: clinical precision, genuine human wa
 RULES:
 1. UK ENGLISH only — summarise, recognise, behaviour, practise, centre, etc.
 2. PERSONA: Write in first person as the staff member who was on shift. You are documenting what you observed and did, not describing the client from a distance.
-3. TEMPLATE IS STRUCTURE ONLY: If a [MANDATORY LAYOUT / TEMPLATE] is provided, it is a SKELETON — headers, time blocks, spacing. IGNORE all example text and facts inside the template. Never let template content bleed into the output.
-4. RAW DATA IS SOVEREIGN: The [RAW DATA TO PROCESS] is the ONLY source of facts about what happened. You may infer mood and context from the facts, but you may NOT add events, locations, or actions that are not in the raw data.
-5. CONTEXT KNOWLEDGE: If [ESSENTIAL CONTEXT] is provided (absorbed PDFs, PBS, care plan, risk assessments), use it as your professional knowledge base. Apply it the way an experienced worker uses their knowledge — to describe events with proper professional language, to notice and name relevant behaviours, to reference support strategies in passing ("In line with his PBS..."), and to write with genuine insight into the person's needs.
+3. TEMPLATE IS STRUCTURE ONLY: The [MANDATORY LAYOUT / TEMPLATE] is a HOLLOW SKELETON. You must mirror its headers, time-block patterns, and whitespace exactly, but you MUST NOT use any of the names, dates, times, or events described in it. If the template says "Jamie took meds at 12:00" but the raw data says "Sarah took meds at 09:00", you write "09:00: Sarah took meds".
+4. RAW DATA IS SOVEREIGN: The [RAW DATA TO PROCESS] is your only source of truth. If a fact is in the template but NOT in the raw data, it is a phantom and must be ignored.
+5. CLINICAL VACUUM: Treat the template as if it were written by a ghost. It provides the rhythm, you provide the reality.
 6. PRESERVE WHITESPACE: Mirror the exact line breaks, blank lines, and headers of the template.
 7. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" — instead write "he appeared settled" or "I found him in good spirits."
 8. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
@@ -528,9 +528,6 @@ async function handleEnhanceNote(req, res) {
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
-  // Smart context truncation — Groq models have ~128K token windows.
-  // We budget: 500 system + 6000 context + 2000 template + 4000 note + 2000 output = ~14500 tokens safe.
-  // 1 token ≈ 4 chars, so 6000 tokens ≈ 24000 chars for context.
   const CTX_MAX = 20_000;
   const TPL_MAX = 4_000;
   const PREV_MAX = 4_000;
@@ -596,10 +593,8 @@ async function handleEnhanceNote(req, res) {
           const parsed = JSON.parse(data);
           let chunk = '';
           if (provider === 'gemini') {
-            // Gemini SSE: candidates[0].content.parts[0].text
             chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
           } else {
-            // OpenAI-compatible (Groq, OpenRouter)
             chunk = parsed.choices?.[0]?.delta?.content || '';
           }
           if (chunk) res.write(chunk);
@@ -657,7 +652,6 @@ async function handleGhostWrite(req, res) {
   const safeNext = nextNote ? nextNote.slice(0, NOTE_MAX) : '';
   const safeShiftCtx = shiftContext ? shiftContext.slice(0, 2000) : '';
 
-  // Work out day of week from DD/MM/YYYY
   let dayLabel = '';
   try {
     const parts = date.split('/');
@@ -677,11 +671,11 @@ async function handleGhostWrite(req, res) {
     '',
     safeNext ? `[NEXT SHIFT NOTE — evidence of what followed this day]:\n${safeNext}` : '[NEXT SHIFT NOTE]: Not available',
     '',
-    safeContext ? `[CLINICAL PROFILE & KNOWLEDGE BASE]:\n${safeContext}` : '',
+    safeContext ? `[INTELLIGENCE PROFILE & KNOWLEDGE BASE]:\n${safeContext}` : '',
     '',
     safeTemplate ? `[NOTE STRUCTURE TO FOLLOW — use these headings and sections exactly]:\n${safeTemplate}` : '',
     '',
-    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and clinical knowledge, and any shift context provided to reconstruct the support provided. Write as the support worker on shift.`,
+    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and intelligence knowledge, and any shift context provided to reconstruct the support provided. Write as the support worker on shift.`,
     `QUALITY BAR: Include clear specifics for each section (what happened, intervention, client response, end status). Avoid vague one-line summaries.`,
   ].filter(l => l !== undefined).join('\n');
 
@@ -689,7 +683,7 @@ async function handleGhostWrite(req, res) {
     { role: 'system', content: GHOST_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const opts = { stream: true, max_tokens: 3200, temperature: 0.2 };
+  const opts = { stream: true, max_tokens: 4200, temperature: 0.2 };
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');

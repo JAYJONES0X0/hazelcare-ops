@@ -21,6 +21,7 @@ import { NoteWorkspace } from './pages/NoteWorkspace';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { EmpireMatrix } from './pages/EmpireMatrix';
+import SovereignTrainingHub from './pages/SovereignTrainingHub';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -214,6 +215,7 @@ export default function App() {
               {page === 'staff' && <StaffPage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
               {page === 'notes' && <StaffNotePage />}
               {page === 'note-workspace' && <NoteWorkspace />}
+              {page === 'training-hub' && <SovereignTrainingHub />}
               {page === 'handover' && <HandoverPage weekData={weekData} />}
               {page === 'compliance' && <CompliancePage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
               {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}

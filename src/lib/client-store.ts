@@ -423,7 +423,7 @@ export function emptyClient(): FullClient {
     diagnoses: [],
     keyWorker: '',
     responsible: '',
-    completedBy: 'Brooklyn Ruvinga',
+    completedBy: '',
     dateOfAdmission: '',
     reviewDate,
     createdAt: new Date().toISOString(),
