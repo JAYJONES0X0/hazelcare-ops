@@ -118,6 +118,10 @@ export function saveCoveragePlan(plan: CoveragePlan): void {
   localStorage.setItem(COVERAGE_PLAN_KEY, JSON.stringify(plan));
 }
 
+export function clearCoveragePlan() {
+  localStorage.removeItem(COVERAGE_PLAN_KEY);
+}
+
 export function buildShiftContext(plan: CoveragePlan, date: string): string {
   const windows = plan.windows.map((w) => `${w.start}-${w.end} 1:1 support`).join('; ');
   return `${plan.client} expected 1:1 support on ${date}: ${windows}. Use these exact support windows and evidence the support, intervention, client response, and handover outcome.`;

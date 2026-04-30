@@ -297,8 +297,15 @@ export function NoteWorkspace() {
     };
   }, [entries, selectedClient, dateRange, expectedNotesPerDay, coveragePlan]);
 
-  // Reset display count on filter change
-  useEffect(() => { setDisplayCount(30); }, [selectedClient, dateRange]);
+  // Reset display count and transient maps on filter change
+  useEffect(() => {
+    setDisplayCount(30);
+    setGhostContextMap({});
+    setGhostMap({});
+    setRewriteMap({});
+    setLoadingMap({});
+    setGhostLoadingMap({});
+  }, [selectedClient, dateRange]);
 
   useEffect(() => {
     if (!coveragePlan || !reviewCoverage || !selectedClient) return;

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
+import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
 import { clearWeekData, clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
 import { clearClientData, clearStaffNotes, type FullClient } from '../lib/client-store';
 import {
@@ -202,7 +203,7 @@ function DataManagerProp
 ({ clients, onClearEverything, onClearType }: {
   clients: FullClient[];
   onClearEverything: () => void;
-  onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => void;
+  onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets') => void;
 }) {
   const [realCount, setRealCount] = useState(0);
   const [storageAudit, setStorageAudit] = useState<Record<string, { count: number; size: number }>>({});
@@ -211,6 +212,7 @@ function DataManagerProp
   const restoreRef = useRef<HTMLInputElement>(null);
   const actions = loadActions();
   const incidents = loadIncidents();
+  const plan = loadCoveragePlan();
   const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
 
   useEffect(() => {
@@ -268,6 +270,7 @@ function DataManagerProp
     { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
     { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
     { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },
+    { key: 'targets', label: 'Shift Coverage Targets', present: !!plan, desc: plan ? `Active monitoring for ${plan.client}` : 'No targets configured' },
     { key: 'notes', label: 'Staff Notes', present: notes.length > 0, desc: notes.length > 0 ? `${notes.length} saved notes` : 'Local registry empty' },
   ];
 
@@ -409,11 +412,13 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
     await purgeSystemDataAsync();
   };
 
-  const handleClearType = async (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes') => {
+  const handleClearType = async (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets') => {
     if (!confirm(`PURGE: Wipe all ${type.toUpperCase()} records?`)) return;
     
     if (type === 'diary') {
       await clearEntryStoreAsync();
+    } else if (type === 'targets') {
+      clearCoveragePlan();
     } else if (type === 'clients') {
       clearClientData();
     } else if (type === 'notes') {
