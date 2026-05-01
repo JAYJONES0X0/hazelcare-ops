@@ -7,8 +7,9 @@ import {
   flattenWeekEntries,
   type MonitoringFilters,
 } from '../lib/staff-monitoring';
+import { scoreEntry } from '../lib/entry-rubric';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen } from 'lucide-react';
+import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert } from 'lucide-react';
 import type { StaffScorecard } from '../lib/staff-monitoring';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
@@ -23,6 +24,18 @@ import {
   saveCoveragePlan,
   type CoveragePlan,
 } from '../lib/coverage-plan';
+import {
+  enrollInSequence,
+  loadActiveSequences,
+  advanceSequence,
+  STANDARD_SEQUENCES,
+  logCoachingAction,
+  recordCoachingEvents,
+  recordModuleScores,
+  detectGrowthAlerts,
+  type ActiveSequence,
+  type GrowthAlert,
+} from '../lib/staff-monitoring-store';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -104,8 +117,22 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
   const coverage = snapshot.coverage || computeCoverageSummary(weekData ? flattenWeekEntries(weekData) : [], coveragePlan);
 
+  // Record scores and detect improvements whenever snapshot changes
+  useEffect(() => {
+    if (snapshot.staff.length === 0) return;
+    recordCoachingEvents(snapshot.staff);
+    recordModuleScores(snapshot.staff);
+    const alerts = detectGrowthAlerts(snapshot.staff);
+    setGrowthAlerts(alerts);
+    setActiveSequences(loadActiveSequences());
+  }, [snapshot]);
+
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
   const [coachCopied, setCoachCopied] = useState(false);
+  const [activeSequences, setActiveSequences] = useState<ActiveSequence[]>(() => loadActiveSequences());
+  const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
+  const [sequenceNote, setSequenceNote] = useState('');
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const STAFF_IDS = useMemo(() => snapshot.staff.map(s => s.carer), [snapshot.staff]);
 
@@ -114,34 +141,152 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     [coachStaff, snapshot.staff]
   );
 
+  // Get the 3 worst-scoring entries for a carer from weekData
+  function getWorstEntries(carer: string): CareEntry[] {
+    if (!weekData) return [];
+    const all = flattenWeekEntries(weekData).filter(e => (e.carer || '').trim() === carer);
+    return all
+      .map(e => ({ entry: e, score: scoreEntry(e).total }))
+      .filter(({ score }) => score < 70)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3)
+      .map(({ entry }) => entry);
+  }
+
+  // Transform an entry into gold standard first-person format
+  function buildGoldStandard(entry: CareEntry): string {
+    let text = (entry.entry || '').trim();
+    if (!text) {
+      const client = entry.client?.trim() || 'the client';
+      const firstName = client.split(' ')[0];
+      return `I supported ${firstName} with personal care, meal preparation, and medication prompt. ${firstName} was calm and engaged well with support throughout. No incidents or safeguarding concerns were identified during this period. All support was delivered in line with ${firstName}'s care plan.`;
+    }
+
+    // Third-person → first-person transformations
+    const subs: [RegExp, string][] = [
+      [/\bstaff (supported|assisted|helped|provided|led|maintained|promoted|ensured|acted|encouraged|followed|documented|worked|completed|delivered|administered|gave|offered|observed|monitored|prompted|accompanied)\b/gi, 'I $1'],
+      [/\bstaff members? (supported|assisted|helped|provided|led|maintained|were|was)\b/gi, 'I $1'],
+      [/\bstaff member\b/gi, 'I'],
+      [/\bthe (carer|support worker|worker)\b/gi, 'I'],
+      [/\b(a carer|a support worker|a worker)\b/gi, 'I'],
+    ];
+    for (const [pat, rep] of subs) text = text.replace(pat, rep);
+
+    // Clean up double spaces
+    text = text.replace(/\s{2,}/g, ' ').trim();
+
+    // Ensure ends with a full stop
+    if (!/[.!?]$/.test(text)) text += '.';
+
+    const result = scoreEntry(entry);
+    const client = (entry.client?.trim() || '').split(' ')[0] || 'the client';
+    const isCore = !entry.client || entry.category === 'handover' || entry.category === 'health_safety';
+
+    // Append what was missing
+    const presScore = result.modules.find(m => m.name === 'Presentation & Outcomes')?.score ?? 100;
+    const taskScore = result.modules.find(m => m.name === 'Support Tasks')?.score ?? 100;
+    const sgScore = result.modules.find(m => m.name === 'Safeguarding Overview')?.score ?? 100;
+    const resScore = result.modules.find(m => m.name === 'Resident Welfare Overview')?.score ?? 100;
+
+    if (!isCore && presScore < 60) {
+      text += ` ${client} was calm and co-operative throughout the visit and engaged well with all prompts offered.`;
+    }
+    if (!isCore && taskScore < 60) {
+      text += ` Support provided included personal care, medication prompt, and meal preparation — all completed in line with the care plan.`;
+    }
+    if (isCore && resScore < 60) {
+      text += ` All residents were observed and presented as settled during the shift. No concerns regarding welfare were noted.`;
+    }
+    if ((isCore || entry.category === 'handover') && sgScore < 60) {
+      text += ` No incidents or safeguarding concerns were identified during this period. All relevant information has been documented and passed to the next shift.`;
+    } else if (!isCore) {
+      const hasSg = /incident|safeguard|no concern|no issues/i.test(text);
+      if (!hasSg) text += ` No safeguarding concerns were identified during this visit.`;
+    }
+
+    return text;
+  }
+
   function buildCoachingNote(r: StaffScorecard): string {
-    const scoreColor = r.qualityScore >= 70 ? 'strong' : r.qualityScore >= 45 ? 'developing' : 'requires improvement';
-    const weakest = [...r.moduleBreakdown].sort((a, b) => a.score - b.score).slice(0, 3);
+    const firstName = r.carer.split(' ')[0];
+    const worstEntries = getWorstEntries(r.carer);
+
+    // Build natural-language improvement points from actual gaps
+    const allMissing = r.moduleBreakdown.flatMap(m => m.missing);
+    const points: string[] = [];
+    if (allMissing.some(g => /first person|carer action|who provided/i.test(g))) {
+      points.push(`Start each entry by stating what you actually did — "I supported ${firstName === r.carer.split(' ')[0] ? (worstEntries[0]?.client?.split(' ')[0] || 'them') : firstName} with..." gives the note an owner straight away.`);
+    }
+    if (allMissing.some(g => /support tasks|specific tasks/i.test(g))) {
+      points.push('Be specific about the tasks. "Provided support" tells us nothing. "Supported with shower, prompted for medication, prepared lunch" tells us everything.');
+    }
+    if (allMissing.some(g => /presentation|outcome|responded/i.test(g))) {
+      points.push(`Always say how they were. Mood, engagement, any refusals. Even "calm throughout and accepted all prompts" is better than nothing — it's the evidence.`);
+    }
+    if (allMissing.some(g => /safeguarding|incident/i.test(g))) {
+      points.push('If nothing happened, say so. "No concerns or incidents during this visit" is a statement of fact, and it matters on a CQC file.');
+    }
+    if (r.shortEntryRatio > 0.3) {
+      points.push(`Some of the entries are very short — a few words at most. That won't hold up if we're ever asked to evidence the care. A solid entry takes two minutes to write properly.`);
+    }
+
+    const openingLine = r.qualityScore >= 60
+      ? `I've been going through your entries from this period and there's a lot of good work in there. A few things would make a real difference to the standard though, so I wanted to flag them.`
+      : `I've been reviewing your recent entries and I want to have a quiet word about the documentation. The care is there — I can see you're putting in the work. But what's written down needs to show that, and right now it isn't quite getting there.`;
+
     const lines: string[] = [
-      `CLINICAL COACHING NOTE — ${r.carer.toUpperCase()}`,
-      `Generated: ${new Date().toLocaleDateString('en-GB')} | Quality Score: ${r.qualityScore}% (${scoreColor})`,
-      `Entries reviewed: ${r.scoreableCount} | Avg length: ${r.avgEntryChars} chars | Short entries: ${Math.round(r.shortEntryRatio * 100)}%`,
-      `Daily support coverage: ${r.expectedDailySupportEntries > 0 ? `${r.actualDailySupportEntries}/${r.expectedDailySupportEntries} (${r.dailySupportCoveragePct ?? 0}%)` : 'N/A (no daily-support expectation in this window)'}`,
+      `Subject: Documentation Feedback — ${r.carer}`,
       '',
-      'KEY DEVELOPMENT AREAS:',
-      ...weakest.map(m => `  • ${m.name} — ${m.score}%${m.missing.length ? '\n    Missing: ' + m.missing.slice(0, 3).join(', ') : ''}`),
+      `Hi ${firstName},`,
+      '',
+      openingLine,
       '',
     ];
-    if (r.topGaps.length) {
-      lines.push('RECURRING GAPS:', ...r.topGaps.slice(0, 4).map(g => `  • ${g}`), '');
+
+    if (points.length > 0) {
+      points.forEach(p => lines.push(`• ${p}`, ''));
     }
+
     if (r.isRepeatTarget && r.repeatGaps.length) {
-      lines.push('⚠ REPEAT COACHING TARGET — gaps persisting from previous review:', ...r.repeatGaps.slice(0, 3).map(g => `  • ${g}`), '');
+      lines.push(`I do want to be straight with you — we've spoken about some of this before. I need to see a real change in the entries going forward, not just this week.`, '');
     }
+
+    if (worstEntries.length > 0) {
+      const primary = worstEntries[0];
+      const clientLabel = primary.client || 'the house note';
+      lines.push(
+        `To show you what I mean, here's one of your entries from ${primary.date || 'this week'} for ${clientLabel}:`,
+        '',
+        (primary.entry || '').trim(),
+        '',
+        `And here's how that same shift reads when it's written to the standard we need:`,
+        '',
+        buildGoldStandard(primary),
+        '',
+        `Same shift. Same information. Just written in a way that actually evidences what you did.`,
+        '',
+      );
+
+      if (worstEntries.length > 1) {
+        lines.push(`One more example — ${worstEntries[1].date || ''} for ${worstEntries[1].client || 'the house'}:`, '');
+        lines.push(
+          `As written:`,
+          (worstEntries[1].entry || '').trim(),
+          '',
+          `Should look more like:`,
+          buildGoldStandard(worstEntries[1]),
+          '',
+        );
+      }
+    }
+
     lines.push(
-      'RECOMMENDED ACTIONS:',
-      '  1. Review the entries flagged below with the staff member 1:1.',
-      '  2. Demonstrate expected documentation standard using a completed example.',
-      '  3. Set a 2-week improvement target and re-score.',
-      r.qualityScore < 45 ? '  4. ESCALATE: Consider formal supervision / disciplinary pathway.' : '  4. Positive reinforcement where scores are strong.',
+      `Have a look at your upcoming entries with this in mind. I'll do another review in two weeks. Come and find me if you want to go through it together — happy to sit down.`,
       '',
-      `— Generated by Hazelcare Force Protection | ${new Date().toISOString()}`
+      `Regards,`,
+      `Management Team`,
     );
+
     return lines.join('\n');
   }
 
@@ -264,6 +409,23 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
         )}
       </div>
 
+      {/* Growth alerts banner */}
+      {growthAlerts.length > 0 && (
+        <div className="mb-8 p-5 rounded-2xl bg-flag-green/10 border border-flag-green/30 flex items-start gap-4">
+          <Award className="w-5 h-5 text-flag-green shrink-0 mt-0.5" />
+          <div>
+            <div className="text-[10px] font-black text-flag-green uppercase tracking-widest mb-2">Improvement Detected</div>
+            <div className="flex flex-wrap gap-3">
+              {growthAlerts.map(a => (
+                <span key={a.carer} className="text-[11px] text-hc-muted">
+                  <span className="font-black text-flag-green">{a.carer.split(' ')[0]}</span> — {a.module} +{a.delta}pts
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12">
         {[
           { label: 'Intelligence Window', value: snapshot.windowLabel, icon: <Activity className="w-4 h-4" /> },
@@ -306,7 +468,15 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                       <div className="flex items-center gap-8 min-w-0">
                          <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-text text-sm uppercase">{s.carer.charAt(0)}</div>        
                          <div>
-                            <div className="text-base font-black text-hc-text uppercase leading-none mb-2 group-hover:text-hc-teal transition-colors">{s.carer}</div>
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="text-base font-black text-hc-text uppercase leading-none group-hover:text-hc-teal transition-colors">{s.carer}</div>
+                              {s.tier === 3 && <span className="pill !bg-flag-red/20 !text-flag-red border-flag-red/30 text-[8px]">T3 · Disciplinary</span>}
+                              {s.tier === 2 && <span className="pill !bg-flag-amber/20 !text-flag-amber border-flag-amber/30 text-[8px]">T2 · Formal Review</span>}
+                              {s.tier === 1 && <span className="pill !bg-hc-teal/20 !text-hc-teal border-hc-teal/30 text-[8px]">T1 · Coaching</span>}
+                              {activeSequences.some(seq => seq.carer === s.carer && seq.status === 'active') && (
+                                <span className="pill !bg-flag-amber/10 !text-flag-amber border-flag-amber/20 text-[8px]">▶ Sequence Active</span>
+                              )}
+                            </div>
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               {s.categoryBreakdown.map(({ category, count }) => (
                                 <span key={category} className="pill pill-teal !bg-hc-bg border-hc-teal/20 text-[9px]">
@@ -462,6 +632,154 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                     </div>
                   </div>
                 )}
+
+                {/* Growth alert for this carer */}
+                {growthAlerts.find(a => a.carer === coachRecord.carer) && (() => {
+                  const alert = growthAlerts.find(a => a.carer === coachRecord.carer)!;
+                  return (
+                    <div className="flex items-start gap-3 p-4 bg-flag-green/10 border border-flag-green/30 rounded-xl">
+                      <Award className="w-4 h-4 text-flag-green shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-black text-flag-green uppercase tracking-widest mb-1">Growth Detected</div>
+                        <div className="text-[11px] text-hc-muted">{alert.module}: {alert.previousScore}% → {alert.currentScore}% (+{alert.delta}pts)</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Escalation pathway */}
+                {coachRecord.tier && (
+                  <div className="border border-hc-border/20 rounded-2xl overflow-hidden">
+                    <div className={`px-5 py-3 flex items-center gap-3 ${coachRecord.tier === 3 ? 'bg-flag-red/10' : coachRecord.tier === 2 ? 'bg-flag-amber/10' : 'bg-hc-teal/10'}`}>
+                      <ShieldAlert size={14} className={coachRecord.tier === 3 ? 'text-flag-red' : coachRecord.tier === 2 ? 'text-flag-amber' : 'text-hc-teal'} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${coachRecord.tier === 3 ? 'text-flag-red' : coachRecord.tier === 2 ? 'text-flag-amber' : 'text-hc-teal'}`}>
+                        {coachRecord.tier === 3 ? 'Tier 3 — Disciplinary Pathway' : coachRecord.tier === 2 ? 'Tier 2 — Formal Supervision' : 'Tier 1 — Coaching Required'}
+                      </span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {/* Active sequence status */}
+                      {(() => {
+                        const seq = activeSequences.find(s => s.carer === coachRecord.carer && s.status === 'active');
+                        if (seq) {
+                          const template = STANDARD_SEQUENCES.find(t => t.id === seq.sequenceId);
+                          const step = template?.steps[seq.currentStepIndex];
+                          return (
+                            <div className="hc-clay-inset p-4 rounded-xl space-y-3">
+                              <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Active: {template?.name}</div>
+                              <div className="text-[11px] font-black text-hc-text">Step {seq.currentStepIndex + 1}: {step?.label}</div>
+                              <div className="space-y-2">
+                                <input
+                                  value={sequenceNote}
+                                  onChange={e => setSequenceNote(e.target.value)}
+                                  placeholder="Add note for this step…"
+                                  className="w-full hc-clay-inset rounded-lg px-3 py-2 text-[10px] text-hc-text bg-transparent outline-none placeholder:text-hc-muted/40"
+                                />
+                                <button
+                                  onClick={() => {
+                                    advanceSequence(seq.id, sequenceNote);
+                                    setSequenceNote('');
+                                    setActiveSequences(loadActiveSequences());
+                                  }}
+                                  className="w-full py-2.5 rounded-xl btn-tactical text-[9px] font-black uppercase tracking-widest"
+                                >
+                                  Mark Step Complete &rsaquo;
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-2">
+                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-2">Enrol in Pathway</div>
+                            {STANDARD_SEQUENCES.map(seq => (
+                              <button
+                                key={seq.id}
+                                onClick={() => {
+                                  if (enrolling === seq.id) {
+                                    enrollInSequence(coachRecord.carer, seq.id);
+                                    logCoachingAction(coachRecord.carer);
+                                    setActiveSequences(loadActiveSequences());
+                                    setEnrolling(null);
+                                  } else {
+                                    setEnrolling(seq.id);
+                                  }
+                                }}
+                                className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                  enrolling === seq.id
+                                    ? 'bg-flag-amber text-hc-bone'
+                                    : 'hc-clay-raised text-hc-muted hover:text-hc-text active:hc-clay-pressed'
+                                }`}
+                              >
+                                <Zap size={10} className="inline mr-1.5" />
+                                {enrolling === seq.id ? `Confirm: ${seq.name}` : seq.name}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Live entry review — actual vs expected */}
+                {(() => {
+                  const worst = getWorstEntries(coachRecord.carer);
+                  if (worst.length === 0) return null;
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-3.5 h-3.5 text-hc-muted" />
+                        <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Live Entry Review</span>
+                      </div>
+                      <div className="space-y-4">
+                        {worst.map((entry, i) => {
+                          const result = scoreEntry(entry);
+                          const missing = result.modules.flatMap(m => m.missing);
+                          return (
+                            <div key={entry.id} className="rounded-2xl overflow-hidden border border-hc-border/20">
+                              <div className="px-4 py-2.5 bg-hc-bg/60 flex items-center justify-between border-b border-hc-border/10">
+                                <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">
+                                  Entry {i + 1} · {entry.date || '—'} · {entry.client || 'House note'}
+                                </span>
+                                <span className={`text-[9px] font-black tabular-nums ${result.total >= 60 ? 'text-flag-green' : result.total >= 40 ? 'text-flag-amber' : 'text-flag-red'}`}>
+                                  {result.total}%
+                                </span>
+                              </div>
+
+                              {/* Actual bad entry */}
+                              <div className="px-4 py-3 border-b border-hc-border/10">
+                                <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">as written</div>
+                                <p className="text-[10px] text-hc-muted leading-relaxed italic">
+                                  "{(entry.entry || '').trim().slice(0, 250)}{(entry.entry || '').length > 250 ? '…' : ''}"
+                                </p>
+                              </div>
+
+                              {/* What's missing */}
+                              {missing.length > 0 && (
+                                <div className="px-4 py-3 border-b border-hc-border/10 bg-flag-red/5">
+                                  <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">Missing</div>
+                                  {missing.map((gap, j) => (
+                                    <div key={j} className="text-[10px] text-flag-red/80 flex items-start gap-1.5 mb-1">
+                                      <span className="shrink-0">›</span>{gap}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Gold standard rewrite */}
+                              <div className="px-4 py-3 bg-flag-green/5">
+                                <div className="text-[8px] font-black text-flag-green uppercase tracking-widest mb-1.5">gold standard</div>
+                                <p className="text-[10px] text-hc-text leading-relaxed">
+                                  {buildGoldStandard(entry)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Copy coaching note */}
                 <button

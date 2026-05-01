@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine, ChevronRight, Paperclip } from 'lucide-react';
+import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users, Calendar, RefreshCw, AlertTriangle, Shield, PenLine, ChevronRight, Paperclip, Layers } from 'lucide-react';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
@@ -7,91 +7,123 @@ import type { CareEntry } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync, deleteEntriesByIdsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
-import { loadClients, saveClient, emptyClient, type FullClient } from '../lib/client-store';
-import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, type CoveragePlan } from '../lib/coverage-plan';
+import { loadClients, saveClient, emptyClient, type FullClient, type VaultDoc } from '../lib/client-store';
+import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, clearCoveragePlan, type CoveragePlan } from '../lib/coverage-plan';
 
 const INTERNAL_TEMPLATES = [
   {
     id: 'narrative-v2',
-    name: 'Organic Narrative (Forensic)',
-    content: `Atmosphere & Shift Commencement:
-[Describe the initial environment and the client's first presentation of the day.]
-
-Engagement & Individual Progress:
-[Detail the specific 1:1 support delivered, focusing on the quality of engagement, any goals worked on, and the client's response to staff prompts.]
-
-Clinical Presentation & Wellbeing:
-[Provide a synthesis of the client's mood, physical health indicators, and general mental wellbeing throughout the period.]
-
-Summary of Outcome:
-[Reflect on the day's successes or challenges and confirm the state in which the client was handed over.]`
+    name: 'Story-Led Narrative',
+    content: `Write this as a single flowing account of the shift — no headings, no bullet points. Tell the story of what happened, in the order it happened, from the moment you arrived to the moment you left. Write in first person. The reader should be able to picture the whole shift just from reading this. Start with how the client was when you arrived, move through the day naturally, and end with how they were when you left and what the next shift needs to know.`
   },
   {
     id: 'audit-forensic',
-    name: 'Forensic Timeline (Humanized)',
-    content: `08:00 - 10:00 (The Morning Period)
-[Provide a narrative of the morning routine, breakfast, and initial settling.]
+    name: 'Structured Handover',
+    content: `How they presented at the start of the shift:
 
-10:00 - 14:00 (Active Engagement)
-[Detail community access, social interactions, or focused 1:1 sessions. Focus on client choice and autonomy.]
 
-14:00 - 17:00 (The Afternoon/Evening Period)
-[Capture the wind-down or late afternoon activities, including meal prep and welfare checks.]
+What support was provided and how it went:
 
-Safety & Significant Observations:
-[Detail any specific incidents, risks managed, or deviations from the care plan with a focus on staff response.]
 
-Handover & End of Day Presentation:
-[Briefly state the final wellbeing check and handover status.]`
+Meals, medication and physical health:
+
+
+Any concerns, incidents or notable moments:
+
+
+How they were at handover and what the next shift needs to know:`
   },
   {
     id: 'behavioral-complex',
-    name: 'Behavioral Reasoning',
-    content: `Presentation & Baseline:
-[Synthesis of the client's state before any identified events.]
+    name: 'Behavioural Support Note',
+    content: `What was happening before the behaviour occurred (the build-up, the environment, what had just happened):
 
-The Support Context:
-[Describe any triggers or environmental factors that required staff intervention. Explain the "why" behind the behaviors.]
 
-Staff Response & De-escalation:
-[Narrative of how staff supported the client, including verbal and non-verbal techniques used.]
+What the behaviour looked like and how long it lasted:
 
-Post-Event Resolution:
-[The client's recovery process and current wellbeing status.]`
+
+How I responded and what I did to support them through it:
+
+
+How they came through it and how they were afterwards:
+
+
+What this tells us and what to watch for next time:`
   },
   {
     id: 'elite-1to1-narrative',
-    name: 'Elite Narrative (1:1 Focus)',
-    content: `Daily 1:1 support
+    name: 'Person-Centred 1:1',
+    content: `What mattered to them today:
 
-[TIME_BLOCK_1]
-[Narrative of initial engagement, morning checks, motivation and hygiene prompting.]
 
-[TIME_BLOCK_2]
-[Medication support details, response to prompting, and welfare check.]
+How the day actually went:
 
-[TIME_BLOCK_3]
-[Community access preparation, safety reminders, and departure details.]
 
-[TIME_BLOCK_4]
-[Post-community review, money management discussion, and return status.]
+The moments that stand out (good or difficult):
 
-[TIME_BLOCK_5]
-[Meal preparation support, nutritional encouragement, and responsive engagement.]
 
-[TIME_BLOCK_6]
-[Evening settling, mood assessment, and specific administrative/plan-based queries.]
+How they communicated and what they were telling us:
 
-Nutrition & Hydration
-[Detailed breakdown of food intake, hydration, and nutritional choices discussed.]
 
-Overall Observations
-[Room cleanliness, general mood/presentation, and lack of distress indicators.]
+Nutrition, hydration and physical wellbeing:
 
-Outcome
-[Summary of shift goals achieved, medication compliance, and overall engagement status.]`
+
+Where things stand at the end of the shift:`
   }
 ];
+
+// Builds the full intelligence context for a client, prioritising structured profile data
+// then distributing remaining budget evenly across vault documents so all files get fair coverage.
+function buildClientIntelContext(profile: FullClient, maxChars = 72_000): string {
+  const parts: string[] = [];
+
+  // Structured profile data first — always included, concise and highest clinical value
+  if (profile.diagnoses?.length) {
+    parts.push(`DIAGNOSES: ${profile.diagnoses.join(', ')}`);
+  }
+  if (profile.carePlan) {
+    if (profile.carePlan.biography) parts.push(`BIOGRAPHY: ${profile.carePlan.biography}`);
+    if (profile.carePlan.criticalInfo) parts.push(`CRITICAL INFORMATION: ${profile.carePlan.criticalInfo}`);
+    const active = profile.carePlan.domains.filter(d => d.enabled).map(d => `[${d.title}]: ${d.howToAchieve}`);
+    if (active.length) parts.push(`CARE PLAN STRATEGIES:\n${active.join('\n')}`);
+  }
+  if (profile.pbs) {
+    const routines = profile.pbs.routineStrategies.filter(Boolean);
+    const works = profile.pbs.whatWorks.filter(Boolean);
+    const doesnt = profile.pbs.doesntWork.filter(Boolean);
+    if (routines.length) parts.push(`DAILY ROUTINES: ${routines.join('; ')}`);
+    if (works.length) parts.push(`WHAT WORKS: ${works.join('; ')}`);
+    if (doesnt.length) parts.push(`WHAT DOES NOT WORK: ${doesnt.join('; ')}`);
+  }
+  if (profile.risk?.risks?.length) {
+    const summary = profile.risk.risks.map(r =>
+      `[${r.title}]: triggers: ${r.triggers.slice(0, 2).join(', ')}; controls: ${r.controls.slice(0, 2).join('; ')}`
+    );
+    parts.push(`KEY RISKS:\n${summary.join('\n')}`);
+  }
+
+  // Resolve vault documents — new vaultDocs array or fall back to legacy clinicalBriefing
+  const vaultDocs: VaultDoc[] = profile.vaultDocs?.length
+    ? profile.vaultDocs
+    : profile.clinicalBriefing
+      ? [{ id: 'legacy', name: 'Uploaded Documents', text: profile.clinicalBriefing, uploadedAt: '' }]
+      : [];
+
+  if (vaultDocs.length) {
+    const structuredLen = parts.join('\n\n').length;
+    const vaultBudget = Math.max(8_000, maxChars - structuredLen);
+    const perDoc = Math.floor(vaultBudget / vaultDocs.length);
+
+    for (const doc of vaultDocs) {
+      const excerpt = doc.text.length > perDoc
+        ? doc.text.slice(0, perDoc) + `\n[...${Math.round((doc.text.length - perDoc) / 1000)}K chars of ${doc.name} omitted]`
+        : doc.text;
+      parts.push(`[DOCUMENT: ${doc.name}]\n${excerpt}`);
+    }
+  }
+
+  return parts.join('\n\n');
+}
 
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
@@ -378,16 +410,23 @@ export function NoteWorkspace() {
       const clients = loadClients();
       let profile = clients.find(c => c.name.toLowerCase().trim() === selectedClient.toLowerCase().trim());
       if (!profile) {
-        // Auto-create a profile for this client so vault works even without admin setup
         profile = { ...emptyClient(), name: selectedClient, preferredName: selectedClient.split(' ')[0] };
       }
-      const separator = profile.clinicalBriefing
-        ? `\n\n━━━ ${file.name} ━━━\n`
-        : `━━━ ${file.name} ━━━\n`;
-      profile.clinicalBriefing = (profile.clinicalBriefing || '') + separator + text;
+      const newDoc: VaultDoc = {
+        id: `vault-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: file.name,
+        text,
+        uploadedAt: new Date().toISOString(),
+      };
+      profile.vaultDocs = [...(profile.vaultDocs || []), newDoc];
+      // Keep clinicalBriefing in sync for legacy ghost-write compat
+      profile.clinicalBriefing = profile.vaultDocs.map(d => `━━━ ${d.name} ━━━\n${d.text}`).join('\n\n');
       saveClient(profile);
+      // Reload clientProfile so UI updates immediately
+      setClientProfile({ ...profile });
       const kb = Math.round(text.length / 1000);
-      setImportInfo(`Loaded: ${file.name} · ${kb}K characters absorbed`);
+      const total = profile.vaultDocs.length;
+      setImportInfo(`Absorbed: ${file.name} · ${kb}K chars · ${total} doc${total !== 1 ? 's' : ''} in vault`);
     } catch (e) {
       setImportInfo(`Failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
@@ -395,34 +434,29 @@ export function NoteWorkspace() {
     }
   };
 
+  const handleRemoveVaultDoc = (docId: string) => {
+    if (!selectedClient) return;
+    const clients = loadClients();
+    const profile = clients.find(c => c.name.toLowerCase().trim() === selectedClient.toLowerCase().trim());
+    if (!profile) return;
+    profile.vaultDocs = (profile.vaultDocs || []).filter(d => d.id !== docId);
+    profile.clinicalBriefing = profile.vaultDocs.length
+      ? profile.vaultDocs.map(d => `━━━ ${d.name} ━━━\n${d.text}`).join('\n\n')
+      : '';
+    saveClient(profile);
+    setClientProfile({ ...profile });
+  };
+
   const runRewrite = async (entryKey: string, text: string, clientName: string, refineInstructions?: string) => {
     const clients = loadClients();
     const profile = clients.find(c => c.name.toLowerCase().trim() === clientName.toLowerCase().trim());
-    let intelContext = '';
-
-    if (profile) {
-      const parts = [];
-      if (profile.clinicalBriefing) parts.push(`[ABSORBED KNOWLEDGE]:\n${profile.clinicalBriefing}`);
-      if (profile.diagnoses.length) parts.push(`DIAGNOSES: ${profile.diagnoses.join(', ')}`);
-      if (profile.carePlan) {
-        const active = profile.carePlan.domains.filter(d => d.enabled).map(d => `[${d.title}]: ${d.howToAchieve}`);
-        if (active.length) parts.push(`CARE PLAN STRATEGIES:\n${active.join('\n')}`);
-      }
-      if (profile.pbs) {
-        parts.push(`SUPPORT STRATEGIES (PBS): ${profile.pbs.routineStrategies.filter(Boolean).join('; ')}`);
-        parts.push(`DE-ESCALATION (What works): ${profile.pbs.whatWorks.filter(Boolean).join('; ')}`);
-      }
-      if (profile.risk) {
-        const topRisks = profile.risk.risks.map(r => `[Risk: ${r.title}]: ${r.controls.join('; ')}`);
-        parts.push(`RISK MITIGATION:\n${topRisks.join('\n')}`);
-      }
-      intelContext = parts.join('\n\n');
-    }
+    const intelContext = profile ? buildClientIntelContext(profile, 72_000) : '';
 
     setLoadingMap(prev => ({ ...prev, [entryKey]: true }));
     try {
       const groqRes = await fetch('/api/staff/enhance-note', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
@@ -485,22 +519,7 @@ export function NoteWorkspace() {
 
     const clients = loadClients();
     const profile = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
-    const parts: string[] = [];
-    if (profile) {
-      if (profile.clinicalBriefing) parts.push(`[ABSORBED KNOWLEDGE]:\n${profile.clinicalBriefing}`);
-      if (profile.diagnoses.length) parts.push(`DIAGNOSES: ${profile.diagnoses.join(', ')}`);
-      if (profile.carePlan) {
-        const active = profile.carePlan.domains.filter(d => d.enabled).map(d => `[${d.title}]: ${d.howToAchieve}`);
-        if (active.length) parts.push(`CARE PLAN STRATEGIES:\n${active.join('\n')}`);
-      }
-      if (profile.pbs) {
-        parts.push(`DAILY ROUTINES: ${profile.pbs.routineStrategies.filter(Boolean).join('; ')}`);
-        parts.push(`WHAT WORKS: ${profile.pbs.whatWorks.filter(Boolean).join('; ')}`);
-      }
-      if (profile.risk?.risks?.length) {
-        parts.push(`KEY RISKS: ${profile.risk.risks.map(r => `${r.title} — ${r.controls.slice(0,2).join('; ')}`).join(' | ')}`);
-      }
-    }
+    const clinicalContext = profile ? buildClientIntelContext(profile, 55_000) : '';
 
     const shiftContext = ghostContextMap[gapId]?.trim() || '';
 
@@ -509,6 +528,7 @@ export function NoteWorkspace() {
     try {
       const res = await fetch('/api/staff/ghost-write', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date,
@@ -516,8 +536,8 @@ export function NoteWorkspace() {
           prevNote: prevEntry ? `[${prevEntry.date} — ${prevEntry.carer}]: ${prevEntry.entry}` : '',
           nextNote: nextEntry ? `[${nextEntry.date} — ${nextEntry.carer}]: ${nextEntry.entry}` : '',
           referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
-          clinicalContext: parts.join('\n\n'),
-          shiftContext // Added to AI prompt context
+          clinicalContext,
+          shiftContext
         })
       });
       if (!res.ok) {
@@ -885,24 +905,47 @@ export function NoteWorkspace() {
                           )}
                         </div>
 
-                        {clientProfile?.clinicalBriefing ? (
+                        {(clientProfile?.vaultDocs?.length || clientProfile?.clinicalBriefing) ? (
                           <div className="space-y-1.5">
-                            <p className="text-[9px] text-flag-green font-black uppercase tracking-wider">
-                              {Math.round(clientProfile.clinicalBriefing.length / 1000)}K chars loaded · AI reads full context
-                            </p>
+                            {/* Per-document list */}
+                            {(clientProfile.vaultDocs?.length
+                              ? clientProfile.vaultDocs
+                              : [{ id: 'legacy', name: 'Uploaded Documents', text: clientProfile.clinicalBriefing || '', uploadedAt: '' }]
+                            ).map(doc => (
+                              <div key={doc.id} className="flex items-center justify-between gap-1">
+                                <span className="text-[9px] text-flag-green font-bold truncate max-w-[120px]" title={doc.name}>
+                                  {doc.name}
+                                </span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <span className="text-[8px] text-hc-muted/60 font-bold tabular-nums">
+                                    {Math.round(doc.text.length / 1000)}K
+                                  </span>
+                                  {doc.id !== 'legacy' && (
+                                    <button
+                                      onClick={() => handleRemoveVaultDoc(doc.id)}
+                                      className="text-hc-muted/40 hover:text-flag-red transition-colors"
+                                      title={`Remove ${doc.name}`}
+                                    >
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            {/* Structured profile badges */}
                             {clientProfile.pbs && (
-                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ PBS Plan active</p>
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ PBS active</p>
                             )}
                             {clientProfile.risk?.risks?.length ? (
-                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ {clientProfile.risk.risks.length} Risk{clientProfile.risk.risks.length > 1 ? 's' : ''} active</p>
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ {clientProfile.risk.risks.length} risk{clientProfile.risk.risks.length > 1 ? 's' : ''}</p>
                             ) : null}
                             {clientProfile.carePlan?.domains?.filter(d => d.enabled).length ? (
-                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ Care Plan active ({clientProfile.carePlan.domains.filter(d => d.enabled).length} domains)</p>
+                              <p className="text-[9px] text-hc-muted/70 font-bold uppercase tracking-wider">+ care plan ({clientProfile.carePlan.domains.filter(d => d.enabled).length} domains)</p>
                             ) : null}
                           </div>
                         ) : (
                           <p className="text-[9px] text-hc-muted leading-tight font-bold uppercase tracking-wider italic">
-                            Attach PBS, risk assessments or care plans to activate professional context.
+                            Upload care plans, PBS, risk assessments or diary exports to activate full intelligence.
                           </p>
                         )}
 

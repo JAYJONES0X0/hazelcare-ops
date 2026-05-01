@@ -20,6 +20,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    // Auto-clear corrupt localStorage keys on first catch — preserves week data
+    try {
+      localStorage.removeItem('hazelcare-ops');
+      localStorage.removeItem('hc_current_page');
+      localStorage.removeItem('hc-registered-sessions');
+    } catch { /* ignore */ }
   }
 
   public render() {
@@ -33,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div>
               <h1 className="text-xl font-black text-hc-text uppercase tracking-tighter">System Recovery Mode</h1>
               <p className="text-[11px] font-bold text-hc-muted uppercase tracking-widest mt-2 leading-relaxed">
-                The application encountered a state mismatch. We have isolated the fault to protect your data.
+                State reset complete. Reload to resume.
               </p>
             </div>
             <button

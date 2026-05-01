@@ -4,6 +4,20 @@ import type { Page } from '../lib/types';
 import type { Action, WeekSummary } from '../lib/types';
 
 import { ORG_CONFIG } from '../lib/config';
+
+function useBrandAssets() {
+  const [logo, setLogo] = useState(() => localStorage.getItem('hc-org-logo') || '');
+  const [avatar, setAvatar] = useState(() => localStorage.getItem('hc-user-avatar') || '');
+  useEffect(() => {
+    const refresh = () => {
+      setLogo(localStorage.getItem('hc-org-logo') || '');
+      setAvatar(localStorage.getItem('hc-user-avatar') || '');
+    };
+    window.addEventListener('hc-brand-updated', refresh);
+    return () => window.removeEventListener('hc-brand-updated', refresh);
+  }, []);
+  return { logo, avatar };
+}
 import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
   Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
@@ -89,6 +103,7 @@ const navSections: NavSection[] = [
 ];
 
 export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onSignOut }: Props) {
+  const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
   });
@@ -143,7 +158,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
 
       <div className={`hc-clay-raised mb-6 flex flex-col items-center transition-[padding,gap] duration-300 ${collapsed ? 'p-2 gap-0' : 'p-5 gap-3'}`}>
         <div className="w-10 h-10 rounded-2xl hc-clay-inset flex items-center justify-center shrink-0">
-          <img src={ORG_CONFIG.logoIcon} alt="HC" className="w-6 h-6 opacity-80" />
+          <img src={orgLogo || ORG_CONFIG.logoIcon} alt="HC" className="w-6 h-6 object-contain" />
         </div>
         {!collapsed && (
           <div className="text-center overflow-hidden">
@@ -229,6 +244,22 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
               </div>
               <div className="h-px bg-hc-border opacity-20 mx-2" />
             </>
+          )}
+
+          {/* Avatar row */}
+          {!collapsed && (
+            <div className="flex items-center gap-3 px-2 mb-2">
+              <div className="w-8 h-8 rounded-full hc-clay-inset flex items-center justify-center overflow-hidden shrink-0 border border-hc-teal/20">
+                {userAvatar
+                  ? <img src={userAvatar} alt="You" className="w-full h-full object-cover" />
+                  : <span className="text-[10px] font-black text-hc-muted">A</span>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[9px] font-black text-hc-text uppercase tracking-widest truncate">Admin</div>
+                <div className="text-[8px] font-bold text-hc-muted opacity-60 uppercase tracking-widest">Sovereign Access</div>
+              </div>
+            </div>
           )}
 
           <div className={`flex items-center gap-2 ${collapsed ? 'flex-col' : ''}`}>

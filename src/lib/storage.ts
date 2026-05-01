@@ -4,7 +4,21 @@ const STORAGE_KEY = 'hazelcare-ops';
 const WEEK_DATA_KEY = 'hc-week-data-v2';
 const CLIENTS_KEY = 'hc-clients-v2';
 const STAFF_NOTES_KEY = 'hazelcare-staff-notes';
+const SCHEMA_VERSION_KEY = 'hc-schema-v';
+const CURRENT_SCHEMA = '3';
 let sessionWeekData: WeekSummary | null = null;
+
+// Clear stale state if schema version changed (new deploy with breaking changes)
+(function migrateSchema() {
+  try {
+    if (localStorage.getItem(SCHEMA_VERSION_KEY) !== CURRENT_SCHEMA) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('hc_current_page');
+      localStorage.removeItem('hc-registered-sessions');
+      localStorage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);
+    }
+  } catch { /* ignore */ }
+})();
 
 function normalizeState(raw: Partial<AppState> | null | undefined): AppState {
   return {

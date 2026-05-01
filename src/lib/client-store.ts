@@ -176,6 +176,13 @@ export interface ClientDocument {
   uploadedAt: string;
 }
 
+export interface VaultDoc {
+  id: string;
+  name: string;
+  text: string;
+  uploadedAt: string;
+}
+
 export interface FullClient extends ClientBasic {
   pbs: PBSData | null;
   risk: RiskData | null;
@@ -183,6 +190,7 @@ export interface FullClient extends ClientBasic {
   supportPlan: SupportPlanData | null;
   documents: ClientDocument[];
   clinicalBriefing?: string;
+  vaultDocs?: VaultDoc[];
 }
 
 // ─── STORAGE ───────────────────────────────────────────────────────────────────

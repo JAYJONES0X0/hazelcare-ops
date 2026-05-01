@@ -60,22 +60,29 @@ export function scoreEntry(entry: CareEntry): EntryScore {
     // ── CORE STAFF DAILY NOTE RUBRIC ──
     
     // 1. Environmental & Safety (Critical for Core)
-    const envTerms = ['clean', 'hazard', 'communal', 'kitchen', 'lounge', 'safe', 'check', 'environment', 'property', 'maintain'];
+    const envTerms = [
+      'clean', 'hazard', 'communal', 'kitchen', 'lounge', 'safe', 'check', 'environment',
+      'property', 'maintain', 'bedroom', 'bathroom', 'toilet', 'tidy', 'secure', 'lock',
+      'fire', 'alarm', 'repair', 'inspect', 'tour',
+    ];
     const envHits = envTerms.filter(t => e.includes(t)).length;
     let envScore = 0;
     const envMissing: string[] = [];
-    if (envHits >= 3) envScore = 100;
-    else if (envHits > 0) { envScore = 50; envMissing.push('Add specific rooms checked (e.g. kitchen, lounge)'); }
+    if (envHits >= 2) envScore = 100;
+    else if (envHits > 0) { envScore = 50; envMissing.push('Name specific areas checked (e.g. kitchen, lounge, bedrooms)'); }
     else { envScore = 0; envMissing.push('No environmental/safety checks documented for the house'); }
     modules.push({ name: 'Environmental Safety', score: envScore, missing: envMissing });
 
     // 2. Resident Overview (Must mention multiple or "all")
-    const resTerms = ['resident', 'tenant', 'supported', 'monitored', 'presentation', 'room'];
+    const resTerms = [
+      'resident', 'tenant', 'supported', 'monitored', 'presentation', 'room',
+      'occupant', 'client', 'all', 'settled', 'calm', 'bed', 'sleep', 'awake',
+    ];
     const resHits = resTerms.filter(t => e.includes(t)).length;
     let resScore = 0;
     const resMissing: string[] = [];
-    if (resHits >= 3) resScore = 100;
-    else if (resHits > 0) { resScore = 50; resMissing.push('Expand on presentation of residents in communal areas'); }
+    if (resHits >= 2) resScore = 100;
+    else if (resHits > 0) { resScore = 50; resMissing.push('Expand on how residents presented in communal areas or at handover'); }
     else { resScore = 0; resMissing.push('No resident welfare overview documented'); }
     modules.push({ name: 'Resident Welfare Overview', score: resScore, missing: resMissing });
 
@@ -92,34 +99,54 @@ export function scoreEntry(entry: CareEntry): EntryScore {
   } else {
     // ── 1:1 SUPPORT NOTE RUBRIC ──
 
-    // 1. First-Person Voice & Engagement
-    const fpCount = [' i ', ' my ', ' we ', 'me '].filter(t => ` ${e} `.includes(t)).length;
-    const tpCount = ['staff', 'carer', 'support worker'].filter(t => ` ${e} `.includes(t)).length;
+    // 1. Carer Accountability
+    // UK care notes are written in third person ("Staff supported X") or first person ("I supported X").
+    // Both are valid — CQC requires accountability, not a specific grammatical person.
+    // We check that SOME clear carer action is documented (who did what).
+    const fpTerms = [' i ', ' my ', ' we '];
+    const tpTerms = ['staff', 'carer', 'support worker', 'worker'];
+    const actionStems = ['support', 'assist', 'help', 'prompt', 'provid', 'offer', 'deliver', 'accompan', 'encourage', 'attend'];
+    const fpCount = fpTerms.filter(t => ` ${e} `.includes(t)).length;
+    const tpCount = tpTerms.filter(t => e.includes(t)).length;
+    const actionCount = actionStems.filter(t => e.includes(t)).length;
+    const hasAccountability = fpCount > 0 || tpCount > 0 || actionCount > 0;
     let fpScore = 0;
     const fpMissing: string[] = [];
-    if (fpCount > 0 && tpCount === 0) fpScore = 100;
-    else if (fpCount > 0 && tpCount > 0) { fpScore = 50; fpMissing.push('Mixed perspective — use "I" instead of "staff"'); }
-    else { fpScore = 0; fpMissing.push('Written in third person ("staff supported") instead of first person ("I supported")'); }
+    if (hasAccountability) {
+      fpScore = 100;
+    } else {
+      fpScore = 0;
+      fpMissing.push('No clear carer action documented — state who provided the support and what was done');
+    }
     modules.push({ name: 'Voice & Accountability', score: fpScore, missing: fpMissing });
 
     // 2. Specific Support Tasks
-    const taskTerms = ['personal care', 'medication', 'nutrition', 'meal', 'fluid', 'shower', 'dress', 'prompt', 'hygiene', 'activity'];
+    const taskTerms = [
+      'personal care', 'medication', 'nutrition', 'meal', 'fluid', 'shower', 'dress',
+      'prompt', 'hygiene', 'activity', 'wash', 'bath', 'toilet', 'laundry', 'cook',
+      'prepar', 'appointment', 'transport', 'teeth', 'hair', 'clean', 'routine',
+    ];
     const taskHits = taskTerms.filter(t => e.includes(t)).length;
     let taskScore = 0;
     const taskMissing: string[] = [];
-    if (taskHits >= 3) taskScore = 100;
-    else if (taskHits > 0) { taskScore = 50; taskMissing.push('Expand on specific tasks supported (e.g. personal care, meals)'); }
-    else { taskScore = 0; taskMissing.push('No specific support tasks detailed'); }
+    if (taskHits >= 2) taskScore = 100;
+    else if (taskHits > 0) { taskScore = 50; taskMissing.push('Add more specific tasks (e.g. personal care, medication, meals)'); }
+    else { taskScore = 0; taskMissing.push('No specific support tasks detailed — list what was provided'); }
     modules.push({ name: 'Support Tasks', score: taskScore, missing: taskMissing });
 
     // 3. Presentation & Outcomes
-    const moodTerms = ['mood', 'calm', 'settled', 'anxious', 'agitated', 'engaged', 'refused', 'declined', 'outcome', 'stable'];
+    const moodTerms = [
+      'mood', 'calm', 'settled', 'anxious', 'agitated', 'engaged', 'refused', 'declined',
+      'outcome', 'stable', 'happy', 'upset', 'distressed', 'content', 'positive', 'good',
+      'cooperative', 'co-operative', 'compliant', 'willingly', 'reluctant', 'presentation',
+      'responded', 'accept', 'appear', 'well', 'unwell', 'alert', 'tired', 'sleepy',
+    ];
     const moodHits = moodTerms.filter(t => e.includes(t)).length;
     let moodScore = 0;
     const moodMissing: string[] = [];
     if (moodHits >= 2) moodScore = 100;
-    else if (moodHits > 0) { moodScore = 50; moodMissing.push('Add detail on how they responded to support/prompts'); }
-    else { moodScore = 0; moodMissing.push('Missing presentation or outcome (e.g. mood, engagement, refusals)'); }
+    else if (moodHits > 0) { moodScore = 50; moodMissing.push('Add how the client responded (mood, engagement, any refusals)'); }
+    else { moodScore = 0; moodMissing.push('Missing client presentation or outcome — how did they appear and respond?'); }
     modules.push({ name: 'Presentation & Outcomes', score: moodScore, missing: moodMissing });
   }
 

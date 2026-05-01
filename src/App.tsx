@@ -230,20 +230,20 @@ export default function App() {
             </div>
 
             {/* Floating Navigation Hub */}
-            <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-3">
-              <button 
+            <div className="fixed bottom-6 right-4 z-[100] flex flex-col gap-1.5 opacity-50 hover:opacity-100 transition-opacity">
+              <button
                 onClick={scrollToTop}
                 title="Scroll to Top"
-                className="p-4 hc-clay-raised rounded-2xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-2xl bg-hc-surface/80 backdrop-blur-md"
+                className="p-2 hc-clay-raised rounded-xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-md bg-hc-surface/80 backdrop-blur-md"
               >
-                <ArrowUp className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+                <ArrowUp className="w-3.5 h-3.5" />
               </button>
-              <button 
+              <button
                 onClick={scrollToBottom}
                 title="Scroll to Bottom"
-                className="p-4 hc-clay-raised rounded-2xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-2xl bg-hc-surface/80 backdrop-blur-md"
+                className="p-2 hc-clay-raised rounded-xl text-hc-teal hover:scale-110 active:scale-95 transition-all group shadow-md bg-hc-surface/80 backdrop-blur-md"
               >
-                <ArrowDown className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                <ArrowDown className="w-3.5 h-3.5" />
               </button>
             </div>
           </main>

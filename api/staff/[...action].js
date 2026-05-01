@@ -528,7 +528,7 @@ async function handleEnhanceNote(req, res) {
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
-  const CTX_MAX = 20_000;
+  const CTX_MAX = 80_000;
   const TPL_MAX = 4_000;
   const PREV_MAX = 4_000;
 
@@ -564,7 +564,7 @@ async function handleEnhanceNote(req, res) {
     { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const opts = { stream: true, max_tokens: 4200, temperature: 0.2 };
+  const opts = { stream: true, max_tokens: 4200, temperature: 0.45 };
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
@@ -683,7 +683,7 @@ async function handleGhostWrite(req, res) {
     { role: 'system', content: GHOST_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const opts = { stream: true, max_tokens: 4200, temperature: 0.2 };
+  const opts = { stream: true, max_tokens: 4200, temperature: 0.45 };
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');

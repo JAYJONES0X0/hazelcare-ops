@@ -28,3 +28,34 @@ export const ORG_CONFIG = {
 export function getStorageKey(key: string): string {
   return `${ORG_CONFIG.storagePrefix}-${key}`;
 }
+
+export interface OrgSettingsOverride {
+  name?: string;
+  fullName?: string;
+  cqcNumber?: string;
+  address?: string;
+  phone?: string;
+  supportEmail?: string;
+  tagline?: string;
+}
+
+const ORG_SETTINGS_KEY = 'hc-org-settings';
+
+export function loadOrgSettings(): typeof ORG_CONFIG & OrgSettingsOverride {
+  try {
+    const raw = localStorage.getItem(ORG_SETTINGS_KEY);
+    if (raw) return { ...ORG_CONFIG, ...(JSON.parse(raw) as OrgSettingsOverride) };
+  } catch { /* ignore */ }
+  return ORG_CONFIG;
+}
+
+export function saveOrgSettings(settings: OrgSettingsOverride): void {
+  try { localStorage.setItem(ORG_SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
+}
+
+export function loadRawOrgSettings(): OrgSettingsOverride {
+  try {
+    const raw = localStorage.getItem(ORG_SETTINGS_KEY);
+    return raw ? (JSON.parse(raw) as OrgSettingsOverride) : {};
+  } catch { return {}; }
+}
