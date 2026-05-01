@@ -1,4 +1,4 @@
-import type { CareEntry } from './types';
+import type { CareEntry, Shift } from './types';
 import { parseDateMs } from './entry-store';
 
 export interface ClinicalGap {
@@ -13,9 +13,10 @@ export interface ClinicalGap {
 
 /**
  * Sweeps a dataset to find missing days in clinical evidence per client.
- * Uses cross-client data in the same house to infer who was on shift.
+ * Uses cross-client data in the same house to infer who was on shift, 
+ * but prioritizes actual roster shifts if provided.
  */
-export function detectClinicalGaps(entries: CareEntry[]): ClinicalGap[] {
+export function detectClinicalGaps(entries: CareEntry[], rosterShifts: Shift[] = []): ClinicalGap[] {
   if (entries.length === 0) return [];
 
   // 1. Group by Client and House
@@ -68,7 +69,17 @@ export function detectClinicalGaps(entries: CareEntry[]): ClinicalGap[] {
         // GAP FOUND
         const dateStr = new Date(day).toLocaleDateString('en-GB');
         const hKey = data.house;
-        const likelyCarers = Array.from(attendanceMap.get(hKey)?.get(day) || []);
+        
+        // Infer from other diary entries in the house
+        const inferredCarers = Array.from(attendanceMap.get(hKey)?.get(day) || []);
+        
+        // Find actual rostered staff for this specific client and date if possible
+        const rosteredStaff = rosterShifts
+          .filter(s => s.date === dateStr && (s.staffId || s.id))
+          .map(s => s.staffId || 'Unknown Carer');
+
+        // Combine and prioritize rostered staff
+        const likelyCarers = Array.from(new Set([...rosteredStaff, ...inferredCarers]));
 
         gaps.push({
           id: `gap-${client}-${day}`,

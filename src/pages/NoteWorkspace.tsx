@@ -3,7 +3,8 @@ import { FileText, Search, Sparkles, Copy, CheckCircle, Download, Trash2, Users,
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { detectClinicalGaps, type ClinicalGap } from '../lib/continuity-engine';
-import type { CareEntry } from '../lib/types';
+import { parseRosterCSV } from '../lib/universal-parser';
+import type { CareEntry, Shift } from '../lib/types';
 import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync, deleteEntriesByIdsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
@@ -215,6 +216,27 @@ export function NoteWorkspace() {
     return allClients.filter(c => c.toLowerCase().includes(clientSearch.toLowerCase()));
   }, [allClients, clientSearch]);
 
+  // Memoize roster shifts from vault documents
+  const activeRoster = useMemo(() => {
+    if (!clientProfile?.vaultDocs?.length) return [];
+    const rosterDocs = clientProfile.vaultDocs.filter(d => 
+      d.name.toLowerCase().includes('roster') || 
+      d.name.toLowerCase().includes('rota') ||
+      d.text.toLowerCase().includes('roster')
+    );
+    
+    let allShifts: Shift[] = [];
+    for (const doc of rosterDocs) {
+      try {
+        const shifts = parseRosterCSV(doc.text, doc.name);
+        allShifts = [...allShifts, ...shifts];
+      } catch (e) {
+        console.error('Failed to parse roster doc:', doc.name, e);
+      }
+    }
+    return allShifts;
+  }, [clientProfile]);
+
   // Filtered entries + Continuity Gaps
   const { visibleItems, stats } = useMemo(() => {
     const raw = entries.filter(e => {
@@ -231,7 +253,7 @@ export function NoteWorkspace() {
       return true;
     });
 
-    const gaps = detectClinicalGaps(raw);
+    const gaps = detectClinicalGaps(raw, activeRoster);
     const combined = [
       ...raw.map(e => ({ ...e, type: 'entry' as const })),
       ...gaps.map(g => ({ ...g, type: 'gap' as const, entry: '', carer: 'SYSTEM_AUDIT' }))
@@ -452,6 +474,17 @@ export function NoteWorkspace() {
     const profile = clients.find(c => c.name.toLowerCase().trim() === clientName.toLowerCase().trim());
     const intelContext = profile ? buildClientIntelContext(profile, 72_000) : '';
 
+    const entry = entries.find(e => e.id === entryKey);
+    let finalInstructions = refineInstructions || '';
+    if (entry && (entry.carer.toLowerCase().includes('region') || entry.carer.toLowerCase().includes('unassigned'))) {
+      const rostered = activeRoster
+        .filter(s => s.date === entry.date && (s.staffId || s.id))
+        .map(s => s.staffId || 'Unknown Carer');
+      if (rostered.length > 0) {
+        finalInstructions = `${finalInstructions}\nNOTE: The original record lists a generic carer ('${entry.carer}'), but the official roster for this date (${entry.date}) indicates the staff member on shift was: ${rostered.join(', ')}. Please update the narrative to reflect the correct personnel identity in the first person.`.trim();
+      }
+    }
+
     setLoadingMap(prev => ({ ...prev, [entryKey]: true }));
     try {
       const groqRes = await fetch('/api/staff/enhance-note', {
@@ -463,7 +496,7 @@ export function NoteWorkspace() {
           noteType: 'Shift Note',
           clientName,
           referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
-          refineInstructions,
+          refineInstructions: finalInstructions,
           previousOutput: rewriteMap[entryKey],
           clinicalContext: intelContext
         })
@@ -521,7 +554,14 @@ export function NoteWorkspace() {
     const profile = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
     const clinicalContext = profile ? buildClientIntelContext(profile, 55_000) : '';
 
-    const shiftContext = ghostContextMap[gapId]?.trim() || '';
+    const shiftContextRaw = ghostContextMap[gapId]?.trim() || '';
+    
+    // Find rostered personnel for this gap
+    const gapItem = visibleItems.find(item => item.type === 'gap' && (item as any).id === gapId) as any;
+    const personnel = gapItem?.likelyCarers || [];
+    const personnelCtx = personnel.length > 0 ? `\nPERSONNEL ON SHIFT (According to Roster): ${personnel.join(', ')}` : '';
+    
+    const shiftContext = (shiftContextRaw + personnelCtx).trim();
 
     setGhostLoadingMap(prev => ({ ...prev, [gapId]: true }));
     setGhostMap(prev => ({ ...prev, [gapId]: '' }));
