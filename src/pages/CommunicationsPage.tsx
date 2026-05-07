@@ -18,6 +18,7 @@ export function CommunicationsPage() {
   const [filterType, setFilterType] = useState<InterceptVector | 'all'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [parseError, setParseError] = useState(false);
 
   // SESSION PERSISTENCE ANCHOR
   useEffect(() => {
@@ -176,7 +177,9 @@ export function CommunicationsPage() {
     }
 
     if (newIntel.length === 0) {
-      alert("SIGNAL LOSS: No actionable intel detected in stream. Ensure you've pasted the full dashboard dump (including headers).");
+      setParseError(true);
+      setTimeout(() => setParseError(false), 5000);
+      return;
     }
 
     setIntel([...newIntel, ...intel].slice(0, 500));
@@ -236,6 +239,13 @@ export function CommunicationsPage() {
                 3. Paste the entire dump into the terminal below.<br/>
                 4. Press <span className="text-hc-text font-black">SYNTHESIZE</span> to extract actionable intel.
               </p>
+            </div>
+          )}
+
+          {parseError && (
+            <div className="bg-flag-red/10 border border-flag-red/30 p-3 rounded-xl animate-in fade-in duration-300">
+              <div className="text-[10px] font-black text-flag-red uppercase tracking-widest">Signal Loss — No intel detected</div>
+              <p className="text-[10px] text-hc-muted mt-1">Ensure you pasted the full dashboard dump including section headers (Notices, Incoming Texts, etc.)</p>
             </div>
           )}
 

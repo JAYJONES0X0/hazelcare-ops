@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { WeekSummary, Action, Page } from '../lib/types';
 import { detectTrends } from '../lib/trends';
 import { useCollapseStore } from '../lib/collapse-store';
-import { Activity, ChevronRight, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Activity, ChevronRight, TrendingUp, AlertTriangle, Upload } from 'lucide-react';
+import { getAllEntriesAsync } from '../lib/entry-store';
+import { buildWeekSummary } from '../lib/universal-parser';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -10,7 +12,19 @@ interface Props {
   setPage: (p: Page, ctx?: any) => void;
 }
 
-export function BriefingPage({ weekData, actions, setPage }: Props) {
+export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props) {
+  const [weekData, setWeekData] = useState<WeekSummary | null>(weekDataProp);
+  const [hydrating, setHydrating] = useState(!weekDataProp);
+
+  // Self-hydrate from IndexedDB if prop is null
+  useEffect(() => {
+    if (weekDataProp) { setWeekData(weekDataProp); setHydrating(false); return; }
+    getAllEntriesAsync().then(entries => {
+      if (entries.length > 0) setWeekData(buildWeekSummary(entries));
+      setHydrating(false);
+    }).catch(() => setHydrating(false));
+  }, [weekDataProp]);
+
   const allEntries = useMemo(() => weekData ? Object.values(weekData.houses).flatMap(h => h.entries) : [], [weekData]);
   const trends = useMemo(() => detectTrends(allEntries), [allEntries]);
 
@@ -40,15 +54,26 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
   const SECTION_IDS = ['interventions', 'clients', 'trends', 'houses'];
   const allCollapsed = allSectionsCollapsed(SECTION_IDS);
 
+  if (hydrating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-hc-bg">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin" />
+          <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Initialising Briefing Matrix</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!weekData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-hc-bg animate-in fade-in duration-1000">
         <div className="w-32 h-32 rounded-3xl hc-clay-raised flex items-center justify-center mb-10">
-          <Activity className="w-12 h-12 text-hc-teal opacity-20" />
+          <Upload className="w-12 h-12 text-hc-teal opacity-20" />
         </div>
-        <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-6 text-center">Protocol Offline</h2>
-        <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm">Initialise the region telemetry to generate service briefing.</p>
-        <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Initialise Field Sync</button>
+        <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-6 text-center">No Data Yet</h2>
+        <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm">Drop in a CarePlanner or Nourish CSV export to initialise the briefing.</p>
+        <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Field Ingest</button>
       </div>
     );
   }
@@ -164,7 +189,7 @@ export function BriefingPage({ weekData, actions, setPage }: Props) {
                   <Metric label="Critical" val={h.flags.red} red />
                   <Metric label="Monitor" val={h.flags.amber} amber />
                 </div>
-                <button onClick={() => setPage('dashboard')} className="btn-clay !py-2.5 !rounded-xl text-[11px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Audit Site</button>
+                <button onClick={() => setPage('staff-monitoring')} className="btn-clay !py-2.5 !rounded-xl text-[11px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Force Protection ›</button>
               </div>
             ))}
           </div>

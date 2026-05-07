@@ -8,8 +8,9 @@ import {
   type MonitoringFilters,
 } from '../lib/staff-monitoring';
 import { scoreEntry } from '../lib/entry-rubric';
+import { auditTaskNotes, type TaskNoteCarerSummary, type TaskNoteGap } from '../lib/task-note-auditor';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert } from 'lucide-react';
+import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert, ClipboardCheck, ChevronDown } from 'lucide-react';
 import type { StaffScorecard } from '../lib/staff-monitoring';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
@@ -25,6 +26,7 @@ import {
   type CoveragePlan,
 } from '../lib/coverage-plan';
 import {
+import {
   enrollInSequence,
   loadActiveSequences,
   advanceSequence,
@@ -35,7 +37,8 @@ import {
   detectGrowthAlerts,
   type ActiveSequence,
   type GrowthAlert,
-} from '../lib/staff-monitoring-store';
+import { HandoverPage } from './HandoverPage';
+import { NourishTaskPack } from './NourishTaskPack';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -115,6 +118,11 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     coveragePlan,
   }), [house, dateRange, selectedClient, coveragePlan]);
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, filters), [weekData, filters]);
+  const taskAudit = useMemo(() => {
+    if (!weekData) return null;
+    const all = flattenWeekEntries(weekData);
+    return auditTaskNotes(all);
+  }, [weekData]);
   const coverage = snapshot.coverage || computeCoverageSummary(weekData ? flattenWeekEntries(weekData) : [], coveragePlan);
 
   // Record scores and detect improvements whenever snapshot changes
@@ -127,7 +135,11 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     setActiveSequences(loadActiveSequences());
   }, [snapshot]);
 
+  const [activeTab, setActiveTab] = useState<'handover' | 'task-notes' | 'shift-handovers' | 'nourish-tasks'>('handover');
+  const [expandedTaskCarer, setExpandedTaskCarer] = useState<string | null>(null);
+  const [expandedTaskGap, setExpandedTaskGap] = useState<string | null>(null);
   const [coachStaff, setCoachStaff] = useState<string | null>(null);
+  const [coachTaskStaff, setCoachTaskStaff] = useState<string | null>(null);
   const [coachCopied, setCoachCopied] = useState(false);
   const [activeSequences, setActiveSequences] = useState<ActiveSequence[]>(() => loadActiveSequences());
   const [growthAlerts, setGrowthAlerts] = useState<GrowthAlert[]>([]);
@@ -290,6 +302,85 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     return lines.join('\n');
   }
 
+  // ── Task Note Coaching Letter ─────────────────────────────────────────────
+  function buildTaskNoteCoachingNote(staffRow: TaskNoteCarerSummary): string {
+    const firstName = staffRow.carer.split(' ')[0];
+    const criticalGaps = staffRow.gaps.filter(g => g.severity === 'critical').slice(0, 3);
+    const highGaps = staffRow.gaps.filter(g => g.severity === 'high').slice(0, 2);
+    const exampleGaps = [...criticalGaps, ...highGaps].slice(0, 3);
+
+    // Derive key patterns
+    const hasBlank = staffRow.gaps.some(g => g.failures.includes('blank'));
+    const hasMedGap = staffRow.gaps.some(g => g.failures.includes('medication_incomplete'));
+    const hasPlaceholder = staffRow.gaps.some(g => g.failures.includes('generic_placeholder'));
+    const hasTooShort = staffRow.gaps.some(g => g.failures.includes('too_short'));
+
+    const points: string[] = [];
+    if (hasBlank) points.push('Several task notes were submitted completely blank. A blank task note is worse than no note — it tells us the task was opened but not completed, and gives us nothing to evidence the care.');
+    if (hasMedGap) points.push('Medication task notes must state whether the medication was taken, refused, or missed — and reference the MAR chart. "Gave medication" is not sufficient. We need: taken/refused, any concerns, and MAR confirmed.');
+    if (hasPlaceholder) points.push('Entries like "done and recorded", "completed", or "not required" are not care notes. They give no evidence of what happened. Each task note must answer the task instruction.');
+    if (hasTooShort) points.push('Some notes are a single sentence covering a task that requires real documentation. A task note must respond to the instruction — if the task asks you to record mood, you record mood.');
+    if (points.length === 0) points.push('The task notes reviewed do not sufficiently evidence the care delivered. Each note must respond to the task instruction and record the client\'s presentation and response.');
+
+    const complianceStatement = staffRow.complianceScore < 40
+      ? `Your current task note compliance is at ${staffRow.complianceScore}% — ${staffRow.failingTaskNotes} of your ${staffRow.totalTaskNotes} task notes did not meet the required standard. This is a significant concern.`
+      : `Your task note compliance is currently ${staffRow.complianceScore}% — ${staffRow.failingTaskNotes} of ${staffRow.totalTaskNotes} notes reviewed need attention.`;
+
+    const lines: string[] = [
+      `Subject: Task Note Documentation Feedback — ${staffRow.carer}`,
+      '',
+      `Hi ${firstName},`,
+      '',
+      `I've been reviewing your task notes on the Nourish app and I want to flag some concerns. ${complianceStatement}`,
+      '',
+      `Task notes are not optional extras — they are the legal record that a specific care task was completed to the required standard. When they are blank, vague, or generic, we have no evidence that the care happened at all.`,
+      '',
+    ];
+
+    points.forEach(p => lines.push(`• ${p}`, ''));
+
+    if (exampleGaps.length > 0) {
+      const first = exampleGaps[0];
+      lines.push(
+        `Here's a real example from your recent notes — ${first.date} for ${first.client} (${first.taskCategoryLabel}):`,
+        '',
+        `As written:`,
+        first.noteText.trim() || '(blank — nothing written)',
+        '',
+        `What it should look like:`,
+        first.goldStandard,
+        '',
+        `Same task. Same shift. Just written in a way that actually evidences the care.`,
+        '',
+      );
+
+      if (exampleGaps.length > 1) {
+        const second = exampleGaps[1];
+        lines.push(
+          `One more — ${second.date} for ${second.client} (${second.taskCategoryLabel}):`,
+          '',
+          `As written:`,
+          second.noteText.trim() || '(blank)',
+          '',
+          `Should read:`,
+          second.goldStandard,
+          '',
+        );
+      }
+    }
+
+    lines.push(
+      `Please review your upcoming task notes with this standard in mind. Every note should answer the task instruction directly.`,
+      '',
+      `I'll carry out another review in two weeks. Come and find me if you want to go through this together.`,
+      '',
+      `Regards,`,
+      `Management Team`,
+    );
+
+    return lines.join('\n');
+  }
+
   const commitCoveragePlan = () => {
     if (!coveragePlan) return;
     saveCoveragePlan(coveragePlan);
@@ -299,6 +390,17 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     if (!coveragePlan) return;
     saveCoveragePlan(coveragePlan);
     setPage?.('note-workspace', { coveragePlan });
+  };
+
+  const SEV_COLOR: Record<string, string> = {
+    critical: 'text-flag-red',
+    high: 'text-flag-amber',
+    medium: 'text-hc-muted',
+  };
+  const SEV_BG: Record<string, string> = {
+    critical: 'bg-flag-red/10 border-flag-red/20',
+    high: 'bg-flag-amber/10 border-flag-amber/20',
+    medium: 'bg-hc-muted/5 border-hc-muted/20',
   };
 
   return (
@@ -441,7 +543,58 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
         ))}
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-10 relative">
+      {/* Segmented Control Switcher */}
+      <div className="w-full overflow-x-auto scrollbar-none mb-6">
+        <div className="inline-flex items-center p-1.5 rounded-[2rem] hc-clay-raised min-w-max">
+          <button
+            onClick={() => setActiveTab('handover')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'handover' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <Activity size={13} /> Handover Quality
+            <span className={`ml-1 px-2 py-0.5 rounded-full text-[9px] transition-all ${
+              activeTab === 'handover' ? 'hc-clay-inset' : 'bg-black/5 text-hc-muted'
+            }`}>
+              {snapshot.staff.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('task-notes')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'task-notes' ? 'hc-clay-pressed text-flag-amber shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <ClipboardCheck size={13} /> 1:1 Evidence Audit
+            {taskAudit && taskAudit.failingTaskNotes > 0 && (
+              <span className={`ml-1 px-2 py-0.5 rounded-full text-[9px] transition-all ${
+                activeTab === 'task-notes' ? 'bg-flag-amber/20 border border-flag-amber/30 text-flag-amber' : 'bg-black/5 text-hc-muted'
+              }`}>
+                {taskAudit.failingTaskNotes}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('shift-handovers')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'shift-handovers' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <FileText size={13} /> Shift Handovers
+          </button>
+          <button
+            onClick={() => setActiveTab('nourish-tasks')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'nourish-tasks' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <ClipboardList size={13} /> Nourish Task Packs
+          </button>
+        </div>
+      </div>
+
+      {(activeTab === 'handover' || activeTab === 'task-notes') && (
+        <div className="flex flex-col xl:flex-row gap-10 relative">
         {booting && (
           <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50 min-h-[600px]">
              <div className="flex flex-col items-center">
@@ -452,6 +605,157 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
           </div>
         )}
         <div className="flex-1 flex flex-col gap-10">
+          {activeTab === 'task-notes' && taskAudit && (
+            <section className="space-y-4 w-full">
+              {/* 1:1 Evidence Audit header */}
+              {/* Mode banner */}
+              <div className={`mb-4 px-5 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest flex items-center gap-3 ${
+                taskAudit.auditMode === 'appointment_evidence'
+                  ? 'bg-hc-teal/5 border-hc-teal/20 text-hc-teal'
+                  : 'bg-flag-amber/5 border-flag-amber/20 text-flag-amber'
+              }`}>
+                <ClipboardCheck size={12} />
+                {taskAudit.auditMode === 'appointment_evidence'
+                  ? `Appointment Evidence Mode · Auditing appointment notes & daily 1:1 narratives — task ticks are not flagged`
+                  : `Legacy Task Tick Mode · No appointment notes detected — flagging blank/placeholder task ticks only`
+                }
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                {[
+                  { label: taskAudit.auditMode === 'appointment_evidence' ? 'Appointments Checked' : 'Task Notes Scanned', value: taskAudit.totalTaskNotes, color: 'text-hc-text' },
+                  { label: 'Missing Narratives', value: taskAudit.appointmentsMissingNarrative, color: taskAudit.appointmentsMissingNarrative > 0 ? 'text-flag-red' : 'text-flag-green' },
+                  { label: 'Evidence Score', value: `${taskAudit.overallComplianceScore}%`, color: taskAudit.overallComplianceScore >= 80 ? 'text-flag-green' : taskAudit.overallComplianceScore >= 60 ? 'text-flag-amber' : 'text-flag-red' },
+                  { label: 'Staff With Gaps', value: taskAudit.byStaff.length, color: taskAudit.byStaff.length > 0 ? 'text-flag-red' : 'text-flag-green' },
+                ].map(s => (
+                  <div key={s.label} className="hc-clay-raised rounded-2xl p-4 text-center">
+                    <div className={`text-2xl font-black tabular-nums ${s.color}`}>{s.value}</div>
+                    <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-3 px-1 mb-4">
+                <ClipboardCheck size={14} className="text-flag-amber" />
+                <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">1:1 Evidence Gaps By Staff</h2>
+              </div>
+
+              {taskAudit.byStaff.length === 0 && (
+                <div className="hc-clay-raised rounded-3xl p-16 text-center">
+                  <ClipboardCheck size={32} className="text-flag-green/50 mx-auto mb-3" />
+                  <p className="text-[11px] font-black text-hc-text uppercase tracking-widest">All task notes compliant</p>
+                  <p className="text-[10px] text-hc-muted mt-1">No task note gaps detected in this data window</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {taskAudit.byStaff.map((staffRow: TaskNoteCarerSummary) => {
+                  const isExpanded = expandedTaskCarer === staffRow.carer;
+                  const scoreColor = staffRow.complianceScore >= 80 ? 'text-flag-green' : staffRow.complianceScore >= 60 ? 'text-flag-amber' : 'text-flag-red';
+                  return (
+                    <div key={staffRow.carer} className="hc-clay-raised overflow-hidden">
+                      <div
+                        className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
+                        onClick={() => { setExpandedTaskCarer(isExpanded ? null : staffRow.carer); setCoachTaskStaff(staffRow.carer); setCoachStaff(null); }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-2xl hc-clay-inset flex items-center justify-center font-black text-hc-text text-sm uppercase">{staffRow.carer.charAt(0)}</div>
+                          <div>
+                            <div className="text-[11px] font-black text-hc-text uppercase tracking-wide mb-1">{staffRow.carer}</div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {staffRow.criticalCount > 0 && <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-flag-red/10 border border-flag-red/20 text-[9px] font-black text-flag-red">
+                                <AlertTriangle size={8} /> {staffRow.criticalCount} critical
+                              </span>}
+                              {staffRow.highCount > 0 && <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-flag-amber/10 border border-flag-amber/20 text-[9px] font-black text-flag-amber">
+                                {staffRow.highCount} high
+                              </span>}
+                              <span className="text-[9px] text-hc-muted">{staffRow.failingTaskNotes}/{staffRow.totalTaskNotes} task notes flagged</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <div className={`text-lg font-black tabular-nums ${scoreColor}`}>{staffRow.complianceScore}%</div>
+                            <div className="text-[8px] text-hc-muted uppercase tracking-widest">compliance</div>
+                          </div>
+                          <button
+                            onClick={e => { e.stopPropagation(); setCoachTaskStaff(staffRow.carer); setCoachStaff(null); }}
+                            className="px-4 py-2 rounded-xl btn-tactical text-[9px] font-black uppercase tracking-widest"
+                          >Coach &rsaquo;</button>
+                          <ChevronDown size={14} className={`text-hc-muted transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="px-5 pb-5 space-y-3 border-t border-hc-border/10 pt-4 animate-in slide-in-from-top-2 duration-200">
+                          {staffRow.gaps.map((gap: TaskNoteGap) => {
+                            const gapId = `${gap.entryId}-${gap.date}`;
+                            const gapExpanded = expandedTaskGap === gapId;
+                            return (
+                              <div key={gapId} className={`rounded-2xl border overflow-hidden ${SEV_BG[gap.severity]}`}>
+                                <div
+                                  className="p-4 flex items-start justify-between cursor-pointer gap-4"
+                                  onClick={() => setExpandedTaskGap(gapExpanded ? null : gapId)}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${SEV_BG[gap.severity]} ${SEV_COLOR[gap.severity]}`}>
+                                        {gap.severity}
+                                      </span>
+                                      <span className="text-[9px] font-black text-hc-muted uppercase">{gap.taskCategoryLabel}</span>
+                                      <span className="text-[9px] text-hc-muted">{gap.date} · {gap.client}</span>
+                                    </div>
+                                    <div className="text-[10px] text-hc-text/70 italic truncate">
+                                      "{gap.noteText.slice(0, 100)}{gap.noteText.length > 100 ? '…' : ''}"
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <span className={`text-[11px] font-black tabular-nums ${gap.score >= 60 ? 'text-flag-amber' : 'text-flag-red'}`}>{gap.score}%</span>
+                                    <ChevronDown size={12} className={`text-hc-muted transition-transform duration-200 ${gapExpanded ? '' : '-rotate-90'}`} />
+                                  </div>
+                                </div>
+
+                                {gapExpanded && (
+                                  <div className="px-4 pb-4 space-y-3 border-t border-hc-border/10 pt-3 animate-in slide-in-from-top-2 duration-200">
+                                    {/* What was written */}
+                                    <div>
+                                      <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">As Written</div>
+                                      <div className="hc-clay-inset rounded-xl p-3 text-[10px] text-hc-text/70 italic leading-relaxed">
+                                        {gap.noteText || <span className="text-flag-red/60">— blank —</span>}
+                                      </div>
+                                    </div>
+                                    {/* Failure reasons */}
+                                    <div>
+                                      <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">What's Missing</div>
+                                      <div className="space-y-1">
+                                        {gap.failureMessages.map((msg, i) => (
+                                          <div key={i} className="flex items-start gap-2 text-[10px] text-flag-red/80">
+                                            <span className="shrink-0 mt-0.5">›</span>{msg}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    {/* Gold standard */}
+                                    <div>
+                                      <div className="text-[8px] font-black text-flag-green uppercase tracking-widest mb-1.5">Gold Standard</div>
+                                      <div className="hc-clay-inset rounded-xl p-3 text-[10px] text-hc-text leading-relaxed">
+                                        {gap.goldStandard}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'handover' && (
           <section className="space-y-4">
             <div className="flex items-center gap-3 px-4 mb-6">
               <div className="w-2.5 h-2.5 rounded-full bg-flag-amber glow-amber" />
@@ -528,10 +832,125 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
               })}
             </div>
           </section>
+          )}
         </div>
         
         <div className="w-full xl:w-[500px] shrink-0">
-          {coachRecord ? (
+          {/* ── Task Note Coaching Studio ── */}
+          {coachTaskStaff && taskAudit && (() => {
+            const taskRow = taskAudit.byStaff.find(s => s.carer === coachTaskStaff);
+            if (!taskRow) return null;
+            const scoreColor = taskRow.complianceScore >= 80 ? 'text-flag-green' : taskRow.complianceScore >= 60 ? 'text-flag-amber' : 'text-flag-red';
+            const exampleGaps = [...taskRow.gaps.filter(g => g.severity === 'critical'), ...taskRow.gaps.filter(g => g.severity === 'high')].slice(0, 3);
+            return (
+              <div className="hc-clay-raised overflow-hidden sticky top-10 animate-in slide-in-from-right-8 duration-700">
+                <div className="p-6 border-b border-hc-border flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-lg font-black text-flag-amber">{taskRow.carer.charAt(0)}</div>
+                    <div>
+                      <h2 className="text-base font-black text-hc-text uppercase leading-none mb-1">{taskRow.carer}</h2>
+                      <p className="text-[10px] font-black text-flag-amber uppercase tracking-[0.2em]">Task Note Coaching</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setCoachTaskStaff(null)} className="w-9 h-9 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-flag-red transition-all text-lg">&times;</button>
+                </div>
+
+                <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto scrollbar-thin">
+                  {/* Score headline */}
+                  <div className="hc-clay-inset p-5 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Task Note Compliance</div>
+                      <div className={`text-3xl font-black tabular-nums ${scoreColor}`}>{taskRow.complianceScore}%</div>
+                    </div>
+                    <div className="text-right text-[10px] font-black text-hc-muted uppercase space-y-1">
+                      <div>{taskRow.totalTaskNotes} task notes reviewed</div>
+                      <div className="text-flag-red">{taskRow.failingTaskNotes} non-compliant</div>
+                      {taskRow.criticalCount > 0 && <div className="text-flag-red">{taskRow.criticalCount} critical</div>}
+                      {taskRow.highCount > 0 && <div className="text-flag-amber">{taskRow.highCount} high</div>}
+                    </div>
+                  </div>
+
+                  {/* Category breakdown of failures */}
+                  {(() => {
+                    const catCount = new Map<string, number>();
+                    for (const g of taskRow.gaps) catCount.set(g.taskCategoryLabel, (catCount.get(g.taskCategoryLabel) || 0) + 1);
+                    const cats = [...catCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+                    return cats.length > 0 ? (
+                      <div>
+                        <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Failure Categories</div>
+                        <div className="flex flex-wrap gap-2">
+                          {cats.map(([cat, count]) => (
+                            <span key={cat} className="px-2.5 py-1 rounded-full bg-flag-amber/10 border border-flag-amber/20 text-[9px] font-black text-flag-amber">
+                              {cat} ×{count}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Live task note examples */}
+                  {exampleGaps.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <ClipboardCheck className="w-3.5 h-3.5 text-hc-muted" />
+                        <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Failing Task Notes</span>
+                      </div>
+                      <div className="space-y-3">
+                        {exampleGaps.map((gap, i) => (
+                          <div key={i} className="rounded-2xl overflow-hidden border border-hc-border/20">
+                            <div className="px-4 py-2.5 bg-hc-bg/60 flex items-center justify-between border-b border-hc-border/10">
+                              <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">
+                                {gap.taskCategoryLabel} · {gap.date} · {gap.client}
+                              </span>
+                              <span className={`text-[9px] font-black tabular-nums ${gap.score < 40 ? 'text-flag-red' : 'text-flag-amber'}`}>{gap.score}%</span>
+                            </div>
+                            <div className="px-4 py-3 border-b border-hc-border/10">
+                              <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">as written</div>
+                              <p className="text-[10px] text-hc-muted leading-relaxed italic">
+                                "{gap.noteText.trim().slice(0, 200) || '(blank — nothing written)'}{gap.noteText.length > 200 ? '…' : ''}"
+                              </p>
+                            </div>
+                            {gap.failureMessages.length > 0 && (
+                              <div className="px-4 py-3 border-b border-hc-border/10 bg-flag-red/5">
+                                <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">missing</div>
+                                {gap.failureMessages.map((msg, j) => (
+                                  <div key={j} className="text-[10px] text-flag-red/80 flex items-start gap-1.5 mb-1">
+                                    <span className="shrink-0">›</span>{msg}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="px-4 py-3 bg-flag-green/5">
+                              <div className="text-[8px] font-black text-flag-green uppercase tracking-widest mb-1.5">gold standard</div>
+                              <p className="text-[10px] text-hc-text leading-relaxed">{gap.goldStandard}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Copy task note coaching letter */}
+                  <button
+                    onClick={() => {
+                      void navigator.clipboard.writeText(buildTaskNoteCoachingNote(taskRow));
+                      setCoachCopied(true);
+                      setTimeout(() => setCoachCopied(false), 2500);
+                    }}
+                    className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest transition-all shadow-xl
+                      ${coachCopied ? 'bg-flag-green/20 text-flag-green border border-flag-green/30' : 'btn-tactical'}`}
+                  >
+                    {coachCopied ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {coachCopied ? 'Task Coaching Note Copied' : 'Copy Task Coaching Note'}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── Handover Coaching Studio ── */}
+          {!coachTaskStaff && coachRecord ? (
             <div className="hc-clay-raised overflow-hidden sticky top-10 animate-in slide-in-from-right-8 duration-700">
               {/* Header */}
               <div className="p-6 border-b border-hc-border flex items-center justify-between">
@@ -796,15 +1215,19 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                 </button>
               </div>
             </div>
-          ) : (
+          ) : !coachTaskStaff ? (
             <div className="hc-clay-raised p-16 flex flex-col items-center justify-center opacity-30 text-center sticky top-10 bg-hc-bg/30 h-[400px]">
                <MessageSquare className="w-16 h-16 text-hc-muted mb-8" strokeWidth={1} />
                <div className="text-[12px] font-black uppercase tracking-[0.4em] mb-4">Command Awaiting Input</div>
                <p className="text-[10px] font-bold uppercase tracking-widest max-w-xs">Select personnel record to initialise studio.</p>
             </div>
-          )}
+          ) : null}
         </div>
-      </div>
+        </div>
+      )}
+
+      {activeTab === 'shift-handovers' && <HandoverPage weekData={weekData} />}
+      {activeTab === 'nourish-tasks' && <NourishTaskPack />}
     </div>
   );
 }

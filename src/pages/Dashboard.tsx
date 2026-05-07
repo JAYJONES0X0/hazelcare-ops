@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw, Users, FileText, Clock } from 'lucide-react';
 import type { WeekSummary, Action, Incident, Page } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
@@ -50,7 +50,7 @@ function Section({ title, count, children, collapsed, onToggle }: { id: string; 
 }
 
 export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
-  // ── Date range state ──────────────────────────────────────────────────────
+  // â”€â”€ Date range state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [storeBounds, setStoreBounds] = useState<{ from: string; to: string; count: number } | null>(null);
   const [dateFrom, setDateFrom] = useState(''); // ISO yyyy-mm-dd
   const [dateTo,   setDateTo]   = useState('');
@@ -120,7 +120,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     setDateFrom(from.toISOString().slice(0, 10));
   }
 
-  // ── Optimized Metric Aggregation ───────────────────────────────────────────
+  // â”€â”€ Optimized Metric Aggregation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { houseStats, metrics } = useMemo(() => {
     const d = filteredData || weekData;
     if (!d) return { houseStats: [], metrics: { totalEntries: 0, activeStaff: 0, pendingActions: 0, activeIncidents: 0, totalRedFlags: 0, totalAmberFlags: 0, uniqueClients: 0, gaps: 0, criticalGaps: 0 } };
@@ -151,7 +151,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   // Active data reference
   const data = filteredData || weekData;
 
-  // ── Empty state ──────────────────────────────────────────────────────────
+  // â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 animate-in fade-in duration-700">
@@ -168,13 +168,13 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   }
 
   const dateLabel = dateFrom || dateTo
-    ? `${dateFrom ? formatDisplayDate(dateFrom) : '…'} → ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
+    ? `${dateFrom ? formatDisplayDate(dateFrom) : 'â€¦'} â†’ ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
     : 'All Time';
 
   return (
     <div className="animate-in fade-in duration-700">
 
-      {/* ── DATE RANGE CONTROL BAR ─────────────────────────────────────────── */}
+      {/* â”€â”€ DATE RANGE CONTROL BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="sticky top-0 z-30 bg-hc-bg/95 backdrop-blur-xl border-b border-hc-border/30 px-6 lg:px-12 py-4">
         <div className="max-w-[1800px] mx-auto flex flex-wrap items-center gap-4">
 
@@ -183,7 +183,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             <div className="flex items-center gap-2 mr-2">
               <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
               <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">
-                {totalInStore.toLocaleString()} Records · {storeBounds.from} → {storeBounds.to}
+                {totalInStore.toLocaleString()} Records Â· {storeBounds.from} â†’ {storeBounds.to}
               </span>
             </div>
           )}
@@ -222,7 +222,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               onChange={e => setDateFrom(e.target.value)}
               className="hc-clay-inset px-3 py-1.5 text-[11px] font-black text-hc-text rounded-lg outline-none border border-hc-border/20 focus:border-hc-teal/50 transition-all"
             />
-            <span className="text-[11px] text-hc-muted font-black">→</span>
+            <span className="text-[11px] text-hc-muted font-black">â†’</span>
             <input
               type="date"
               value={dateTo}
@@ -235,16 +235,16 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         </div>
       </div>
 
-      {/* ── MAIN CONTENT ───────────────────────────────────────────────────── */}
+      {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="p-6 lg:p-12 max-w-[1800px] mx-auto space-y-12">
 
-        {/* ── SITREP HEADER ── */}
+        {/* â”€â”€ SITREP HEADER â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-hc-border pb-8">
           <div>
             <div className="flex items-center gap-4 mb-4">
-              <span className="pill pill-teal text-[10px]">HAZEL CARE · COMMAND INTEL</span>
+              <span className="pill pill-teal text-[10px]">HAZEL CARE Â· COMMAND INTEL</span>
               <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE SITREP · {dateLabel}</span>
+              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE SITREP Â· {dateLabel}</span>
             </div>
             <h1 className="text-5xl font-black text-hc-text tracking-tighter uppercase leading-none">Sitrep Center</h1>
           </div>
@@ -257,7 +257,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
         </div>
 
-        {/* ── KPI PODS ── */}
+        {/* â”€â”€ KPI PODS â”€â”€ */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: 'Intelligence Records', val: metrics.totalEntries.toLocaleString(), sub: 'In Window',         color: 'text-hc-text'    },
@@ -275,7 +275,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           ))}
         </div>
 
-        {/* ── ENTRY TYPE VECTOR FEED ── */}
+        {/* â”€â”€ ENTRY TYPE VECTOR FEED â”€â”€ */}
         {data.entryTypes && Object.keys(data.entryTypes).length > 0 && (
           <div className="space-y-3">
             <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">Signal Type Distribution</h2>
@@ -299,7 +299,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
         )}
 
-        {/* ── AMBER FLAG SUMMARY STRIP ── */}
+        {/* â”€â”€ AMBER FLAG SUMMARY STRIP â”€â”€ */}
         {metrics.totalAmberFlags > 0 && (
           <div className="hc-clay-raised border border-flag-amber/20 p-4 rounded-xl flex items-center gap-4">
             <AlertTriangle size={16} className="text-flag-amber flex-shrink-0" />
@@ -307,19 +307,19 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               {metrics.totalAmberFlags} amber alert{metrics.totalAmberFlags !== 1 ? 's' : ''} require review in selected window
             </span>
             <button onClick={() => setPage('client-diary', { severity: 'amber' })} className="ml-auto text-[10px] font-black text-flag-amber uppercase tracking-widest hover:underline">
-              Review →
+              Review â†’
             </button>
           </div>
         )}
 
-        {/* ── 7-DAY PERSISTENCE MATRIX ── */}
+        {/* â”€â”€ 7-DAY PERSISTENCE MATRIX â”€â”€ */}
         {(() => {
           // Collect all unique dates across all houses, sorted descending, last 7
           const allEntries = Object.values(data.houses).flatMap(h => h.entries);
           const dateSet = new Set(allEntries.map(e => e.date));
           const sortedDates = Array.from(dateSet)
             .sort((a, b) => {
-              // DD/MM/YYYY → compare as date
+              // DD/MM/YYYY â†’ compare as date
               const [ad, am, ay] = a.split('/'); const [bd, bm, by] = b.split('/');
               return new Date(`${by}-${bm}-${bd}`).getTime() - new Date(`${ay}-${am}-${ad}`).getTime();
             })
@@ -372,7 +372,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                                       : '#f3efe0',
                                 }}
                               >
-                                {cnt === 0 ? '·' : cnt}
+                                {cnt === 0 ? 'Â·' : cnt}
                               </div>
                             </td>
                           );
@@ -389,12 +389,12 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           );
         })()}
 
-        {/* ── REGIONAL OPERATIONS MATRIX ── */}
+        {/* â”€â”€ REGIONAL OPERATIONS MATRIX â”€â”€ */}
         <Section id="regional" title="Regional Operations Matrix" count={houseStats.length} collapsed={isSectionCollapsed('regional')} onToggle={() => toggleSection('regional')}>
 
           {houseStats.length === 0 ? (
             <div className="hc-clay-raised rounded-2xl p-12 text-center">
-              <p className="text-[11px] font-black text-hc-muted uppercase tracking-widest">No data for selected range — try widening the date window</p>
+              <p className="text-[11px] font-black text-hc-muted uppercase tracking-widest">No data for selected range â€” try widening the date window</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -431,14 +431,14 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           )}
         </Section>
 
-        {/* ── COMMAND VECTOR SHORTCUTS ── */}
+        {/* â”€â”€ COMMAND VECTOR SHORTCUTS â”€â”€ */}
         <Section id="shortcuts" title="Command Vector Shortcuts" collapsed={isSectionCollapsed('shortcuts')} onToggle={() => toggleSection('shortcuts')}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {[
               { label: 'Force Protection',    desc: 'Readiness & Diagnostic', icon: <Activity />,      id: 'staff-monitoring' },
               { label: 'Incident Governance', desc: 'Active Escalations',     icon: <AlertTriangle />, id: 'incidents'        },
               { label: 'Command Vectors',     desc: 'Deployment Queue',       icon: <Zap />,           id: 'actions'          },
-              { label: 'Regulatory Audit',    desc: 'Compliance Readiness',   icon: <Shield />,        id: 'compliance'       },
+              { label: 'Personnel Audit',     desc: 'Staff Compliance'     ,   icon: <Shield />,        id: 'compliance'       },
               { label: 'Audit Archives',      desc: 'Advanced Data Export',   icon: <Printer />,       id: 'reports'          },
             ].map(btn => (
               <div

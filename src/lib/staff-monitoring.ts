@@ -225,10 +225,32 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     // Only score care entries — exclude finance, staff-admin
     const scoreableList = list.filter((e) => !NON_SCOREABLE.has(e.category || ''));
 
-    const totalChars = scoreableList.reduce((s, e) => s + (e.entry?.length || 0), 0);
-    const avgEntryChars = scoreableList.length ? totalChars / scoreableList.length : 0;
-    const shortEntryCount = scoreableList.filter((e) => (e.entry?.length || 0) < SHORT_LEN).length;
-    const shortEntryRatio = scoreableList.length ? shortEntryCount / scoreableList.length : 0;
+    // --- TEMPORAL SHIFT BOUNDARY LOGIC ---
+    const validClinicalEntries: CareEntry[] = [];
+    let penalizableShortEntries = 0;
+    const shiftsByClientDate = new Map<string, CareEntry[]>();
+    for (const e of scoreableList) {
+      const key = `${e.client || 'unknown'}|${e.date || 'unknown'}`;
+      if (!shiftsByClientDate.has(key)) shiftsByClientDate.set(key, []);
+      shiftsByClientDate.get(key)!.push(e);
+    }
+    for (const shiftEntries of shiftsByClientDate.values()) {
+      const hasNarrativeAnchor = shiftEntries.some(e => 
+        (e.category === 'handover' || (e.incidentType || '').toLowerCase().includes('handover')) || 
+        ((e.entry?.length || 0) >= 150)
+      );
+      if (hasNarrativeAnchor) {
+         validClinicalEntries.push(...shiftEntries.filter(e => (e.category === 'handover' || (e.incidentType || '').toLowerCase().includes('handover')) || ((e.entry?.length || 0) >= 150)));
+      } else {
+         validClinicalEntries.push(...shiftEntries);
+         penalizableShortEntries += shiftEntries.filter(e => (e.entry?.length || 0) < SHORT_LEN).length;
+      }
+    }
+
+    const totalChars = validClinicalEntries.reduce((s, e) => s + (e.entry?.length || 0), 0);
+    const avgEntryChars = validClinicalEntries.length ? totalChars / validClinicalEntries.length : 0;
+    const shortEntryCount = penalizableShortEntries;
+    const shortEntryRatio = validClinicalEntries.length ? shortEntryCount / validClinicalEntries.length : 0;
     const redCount = list.filter((e) => e.severity === 'red').length;
     const amberCount = list.filter((e) => e.severity === 'amber').length;
     const houses = new Set(list.map((e) => e.house).filter(Boolean));
@@ -240,7 +262,8 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
       score: NON_SCOREABLE.has(e.category || '') ? -1 : scoreEntry(e).total,
       category: e.category || 'other',
     }));
-    const scoredEntries = entryScores.filter((e) => e.score >= 0);
+    const validClinicalIds = new Set(validClinicalEntries.map(e => e.id));
+    const scoredEntries = entryScores.filter((e) => validClinicalIds.has(e.id) && e.score >= 0);
     const avgRubricScore = scoredEntries.length ? Math.round(scoredEntries.reduce((s, e) => s + e.score, 0) / scoredEntries.length) : 0;
 
     // Per-category sub-scores

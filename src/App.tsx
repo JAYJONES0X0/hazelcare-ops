@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Component, useRef, type ReactNode, type ErrorInfo } from 'react';
+﻿import { useState, useEffect, useCallback, Component, useRef, type ReactNode, type ErrorInfo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { UploadPage } from './pages/UploadPage';
@@ -22,6 +22,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminPage } from './pages/AdminPage';
 import { EmpireMatrix } from './pages/EmpireMatrix';
 import SovereignTrainingHub from './pages/SovereignTrainingHub';
+import { NourishTaskPack } from './pages/NourishTaskPack';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -93,7 +94,7 @@ export default function App() {
   const [clients] = useState<FullClient[]>(() => loadClients());
 
   useEffect(() => {
-    // ── MILITARY GRADE HYDRATION: Connect Offline Dashboards to Unlimited IndexedDB
+    // â”€â”€ MILITARY GRADE HYDRATION: Connect Offline Dashboards to Unlimited IndexedDB
     getAllEntriesAsync().then(entries => {
       if (entries && entries.length > 0) {
         const generated = buildWeekSummary(entries);
@@ -226,7 +227,8 @@ export default function App() {
               {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
               {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
               {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
-              {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} />}
+              {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} setPage={setPage} />}
+              {page === 'nourish-tasks' && <NourishTaskPack />}
             </div>
 
             {/* Floating Navigation Hub */}

@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive, Users } from 'lucide-react';
 import JSZip from 'jszip';
 import { loadClients } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
@@ -10,6 +10,8 @@ import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
 import { extractFileText } from '../lib/universal-extractor';
 import { appendEntries } from '../lib/entry-store';
+import { parseClientRosterCSV, saveRosterShifts, getRosterSummary, type RosterSummary } from '../lib/roster-store';
+import { enrichEntriesWithRoster } from '../lib/roster-store';
 
 type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
@@ -238,8 +240,13 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [selectedTargets, setSelectedTargets] = useState<ImportTarget[]>([]);
   const [clientMode, setClientMode] = useState<ClientMode>('global');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [rosterStatus, setRosterStatus] = useState<RosterSummary | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const clients = loadClients();
+
+  useEffect(() => {
+    getRosterSummary().then(setRosterStatus).catch(() => {});
+  }, []);
 
   const reset = () => {
     setStep('choose'); setPreview(null); setProgress(0); setErrorMsg('');
@@ -278,7 +285,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!preview) return;
     if (zipGuidance.length > 0) {
       const active = zipGuidance.filter(r => r.include && r.selectedTarget !== 'skip');
@@ -286,12 +293,43 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       return;
     }
     if (!selectedTargets.length) { setErrorMsg('Select target vector.'); return; }
+
+    // ── ROSTER UPLOAD PATH ──────────────────────────────────────────────────
+    // If this is a roster file, parse and save to IndexedDB, then done.
+    if (preview.type === 'roster' || selectedTargets.includes('roster')) {
+      try {
+        const rawText = preview.envelope.rawText || '';
+        const shifts = parseClientRosterCSV(rawText);
+        if (shifts.length === 0) {
+          setErrorMsg('No shifts could be parsed from this roster file. Check the format.');
+          setStep('error');
+          return;
+        }
+        await saveRosterShifts(shifts);
+        const summary = await getRosterSummary();
+        setRosterStatus(summary);
+        setResultMsg(`Roster loaded: ${shifts.length} shifts across ${summary?.totalClients || 0} clients and ${summary?.totalCarers || 0} staff. Diary uploads from now will auto-resolve carer names.`);
+        setStep('done');
+        return;
+      } catch (e: any) {
+        setErrorMsg(`Roster parse failed: ${e.message}`);
+        setStep('error');
+        return;
+      }
+    }
+
+    // ── DIARY UPLOAD PATH ───────────────────────────────────────────────────
     const res = routeImport(preview.envelope, { targets: selectedTargets, clientMode, selectedClientId });
     if (res.ok) {
-      // Persist raw entries to temporal store so date-range analysis works
+      // Persist raw entries — enriched with roster if available
       if (preview.envelope.diaryEntries?.length) {
-        const added = appendEntries(preview.envelope.diaryEntries);
-        if (added > 0) res.messages.push(`${added} entries added to temporal store.`);
+        const enriched = await enrichEntriesWithRoster(preview.envelope.diaryEntries);
+        const resolved = enriched.filter(e => e.carer !== 'Region Entry' && e.carer !== 'Personnel Unassigned').length;
+        const added = appendEntries(enriched);
+        if (added > 0) {
+          res.messages.push(`${added} entries ingested.`);
+          if (resolved > 0) res.messages.push(`${resolved} carer identities resolved via roster.`);
+        }
       }
       if (selectedTargets.includes('reports')) {
         const data = loadWeekData();
@@ -328,7 +366,18 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Field Ingest Matrix</h1>
             <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">High-Density Operational Intake Protocol</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-4">
+            {/* Roster status pill */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
+              rosterStatus
+                ? 'bg-hc-teal/5 border-hc-teal/20 text-hc-teal'
+                : 'bg-flag-amber/5 border-flag-amber/20 text-flag-amber'
+            }`}>
+              <Users size={10} />
+              {rosterStatus
+                ? `Roster Active · ${rosterStatus.totalCarers} Staff · ${rosterStatus.totalClients} Clients`
+                : 'No Roster Loaded · Upload Roster First'}
+            </div>
             <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Command Center</button>
             <button onClick={reset} className="px-8 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[11px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">Purge Buffer</button>
           </div>
@@ -413,6 +462,34 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             <VerificationGrid items={preview.rawItems || []} type={preview.type} onUpdate={items => setPreview({ ...preview, rawItems: items })} />
 
             <div className="hc-clay-raised p-12 rounded-[3rem] border border-hc-muted/5 bg-black/[0.01] shadow-2xl">
+              {preview.type === 'diary' && !rosterStatus && (
+               <div className="hc-clay-inset p-10 rounded-[3rem] border-2 border-flag-amber/30 bg-flag-amber/5 mb-10 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 transition-transform duration-700">
+                    <Users className="w-40 h-40 text-flag-amber" />
+                 </div>
+                 <h3 className="text-xl font-black text-flag-amber uppercase tracking-widest mb-4 flex items-center gap-3">
+                    <AlertTriangle className="w-6 h-6 animate-pulse" />
+                    Missing Temporal Boundaries
+                 </h3>
+                 <p className="text-[12px] font-black text-hc-text/70 uppercase tracking-widest leading-relaxed mb-8 max-w-2xl relative z-10">
+                    To audit 1:1 appointments correctly and group scattered task notes into shifts, the OS needs the Master Roster. Please export the Client or Carer Roster from CarePlanner and drop it below.
+                 </p>
+                 <div className="flex gap-4 relative z-10 mb-8">
+                   <a href="https://hazelcare.nourishcare.com/roster/client-roster" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-xl shadow-flag-amber/20">
+                     Open Client Roster
+                   </a>
+                   <a href="https://hazelcare.nourishcare.com/roster/carer-roster" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-xl shadow-flag-amber/20">
+                     Open Carer Roster
+                   </a>
+                 </div>
+                 <div className="p-8 border-2 border-dashed border-flag-amber/30 rounded-2xl bg-black/[0.02] relative flex flex-col items-center justify-center cursor-pointer hover:bg-flag-amber/10 transition-all z-10">
+                    <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files && handleFiles(e.target.files)} />
+                    <Upload className="w-8 h-8 text-flag-amber mb-3" />
+                    <span className="text-[11px] font-black text-flag-amber uppercase tracking-widest">Drop Roster CSV here to unlock audit</span>
+                 </div>
+               </div>
+              )}
+
               <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                  <div className="w-2 h-2 rounded-full bg-hc-teal shadow-[0_0_10px_#14b8a6]" />
                  Operational Routing Configuration

@@ -22,7 +22,7 @@ import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
   Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
   Database, Settings2, Sparkles, ChevronLeft, ChevronRight, Activity, HardDrive,
-  UserCheck, ShieldCheck, Cog, TrendingUp
+  UserCheck, ShieldCheck, Cog, TrendingUp, ClipboardList
 } from 'lucide-react';
 
 interface Props {
@@ -48,11 +48,10 @@ const navSections: NavSection[] = [
     icon: <LayoutDashboard size={16} />,
     color: 'text-hc-teal',
     items: [
-      { id: 'briefing' as Page,      label: 'Strategy Briefing', icon: <LayoutDashboard size={16} /> },
-      { id: 'dashboard',             label: 'Sitrep Center',     icon: <BarChart3 size={16} /> },
-      { id: 'empire-matrix' as Page,   label: 'Empire Matrix',     icon: <TrendingUp size={16} /> },
-      { id: 'upload',                label: 'Field Injest',      icon: <Upload size={16} /> },
-      { id: 'communications' as Page,label: 'Comms Intercept',   icon: <MessageSquare size={16} /> },
+      { id: 'briefing' as Page,        label: 'Strategy Briefing',  icon: <LayoutDashboard size={16} /> },
+      { id: 'dashboard',               label: 'Sitrep Center',      icon: <BarChart3 size={16} /> },
+      { id: 'empire-matrix' as Page,   label: 'Empire Matrix',      icon: <TrendingUp size={16} /> },
+      { id: 'communications' as Page,  label: 'Comms Intercept',    icon: <MessageSquare size={16} /> },
     ],
   },
   {
@@ -60,35 +59,40 @@ const navSections: NavSection[] = [
     icon: <Activity size={16} />,
     color: 'text-hc-teal-light',
     items: [
-      { id: 'note-workspace' as Page, label: 'Note Workspace',    icon: <Sparkles size={16} /> },
-      { id: 'training-hub' as Page,   label: 'Sovereign Trainer', icon: <Shield size={16} /> },
-      { id: 'client-diary' as Page,    label: 'Live Feed',         icon: <BookOpen size={16} /> },
-      { id: 'client-docs' as Page,     label: 'Sovereign Vault',   icon: <HardDrive size={16} /> },
-      { id: 'handover' as Page,        label: 'Shift Handovers',   icon: <FileText size={16} /> },
-      { id: 'templates',               label: 'Builder Templates', icon: <Database size={16} /> },
+      { id: 'client-diary' as Page,    label: 'Live Feed',          icon: <BookOpen size={16} /> },
+      { id: 'client-docs' as Page,     label: 'Sovereign Vault',    icon: <HardDrive size={16} /> },
+      { id: 'risk' as Page,            label: 'Risk Matrix',        icon: <Activity size={16} /> },
+      { id: 'reports' as Page,         label: 'Regulatory Audit',   icon: <ClipboardCheck size={16} /> },
     ],
   },
   {
-    label: 'Personnel & Protection',
-    icon: <ShieldCheck size={16} />,
+    label: 'Documentation Hub',
+    icon: <FileText size={16} />,
     color: 'text-flag-amber',
     items: [
-      { id: 'staff',                   label: 'Personnel Ledger',  icon: <Users size={16} /> },
-      { id: 'staff-monitoring' as Page,label: 'Force Protection',  icon: <Shield size={16} /> },
-      { id: 'compliance',              label: 'Personnel Audit',   icon: <UserCheck size={16} /> },
-      { id: 'notes' as Page,           label: 'Dictation & Core Notes', icon: <FileText size={16} /> },
+      { id: 'staff-monitoring' as Page, label: 'Force Protection',   icon: <Shield size={16} /> },
+      { id: 'notes' as Page,            label: 'Dictation Studio',   icon: <MessageSquare size={16} /> },
+      { id: 'training-hub' as Page,     label: 'Sovereign Trainer',  icon: <ShieldCheck size={16} /> },
     ],
   },
   {
-    label: 'Operations & Audit',
+    label: 'Personnel',
+    icon: <Users size={16} />,
+    color: 'text-hc-teal',
+    items: [
+      { id: 'staff',       label: 'Personnel Ledger', icon: <Users size={16} /> },
+      { id: 'compliance',  label: 'Personnel Audit',  icon: <UserCheck size={16} /> },
+    ],
+  },
+  {
+    label: 'Operations',
     icon: <Zap size={16} />,
     color: 'text-flag-red',
     items: [
-      { id: 'actions',                 label: 'Command Vectors',   icon: <Zap size={16} /> },
-      { id: 'incidents',               label: 'Incident Govt',     icon: <AlertTriangle size={16} /> },
-      { id: 'reports' as Page,         label: 'Regulatory Audit',  icon: <ClipboardCheck size={16} /> },
-      { id: 'agency' as Page,          label: 'External Support',  icon: <Briefcase size={16} /> },
-      { id: 'risk' as Page,            label: 'Risk Matrix',       icon: <Activity size={16} /> },
+      { id: 'actions',               label: 'Command Vectors',  icon: <Zap size={16} /> },
+      { id: 'incidents',             label: 'Incident Log',     icon: <AlertTriangle size={16} /> },
+      { id: 'agency' as Page,        label: 'External Support', icon: <Briefcase size={16} /> },
+      { id: 'upload',                label: 'Field Ingest',     icon: <Upload size={16} /> },
     ],
   },
   {
@@ -110,7 +114,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('hc-sidebar-expanded');
-    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Intelligence Core': true };
+    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Documentation Hub': true };
   });
 
   const toggleSidebar = () => setCollapsed(c => {
@@ -176,12 +180,19 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
           const hasActiveItem = section.items.some(item => page === item.id);
 
           return (
-            <div key={section.label} className="space-y-1">
+            <div 
+              key={section.label} 
+              className={`transition-all duration-300 ${
+                (hasActiveItem || isExpanded) && !collapsed 
+                  ? 'hc-clay-raised p-2 rounded-[2rem] mb-4 space-y-2' 
+                  : 'space-y-1 mb-2'
+              }`}
+            >
               <button
                 onClick={() => toggleSection(section.label)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
                   collapsed ? 'justify-center hc-clay-raised' : 'justify-between'
-                } ${hasActiveItem && !isExpanded ? 'hc-clay-raised ' + section.color : 'text-hc-muted hover:text-hc-text'}`}
+                } ${hasActiveItem && collapsed ? 'hc-clay-pressed ' + section.color : 'text-hc-muted hover:text-hc-text'}`}
               >
                 <div className="flex items-center gap-3">
                   <span className={`${hasActiveItem ? section.color : 'opacity-60'}`}>{section.icon}</span>
@@ -193,7 +204,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
               </button>
 
               {isExpanded && !collapsed && (
-                <div className="space-y-2 ml-4 border-l border-hc-border/10 pl-3 animate-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
                   {section.items.map((item) => {
                     const active = page === item.id;
                     return (
@@ -203,11 +214,11 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
                         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group active:hc-clay-pressed relative
                           ${active
                             ? 'hc-clay-pressed ' + section.color + ' shadow-inner shadow-black/20'
-                            : 'text-hc-text/50 hover:text-hc-text hover:hc-clay-raised'
+                            : 'text-hc-text/60 hover:text-hc-text hover:hc-clay-raised/50'
                           }`}
                       >
                         {active && (
-                          <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-full animate-in fade-in duration-1000 ${section.color.replace('text-', 'bg-')}`} 
+                          <div className={`absolute left-2 top-1/4 bottom-1/4 w-1 rounded-full animate-in fade-in duration-1000 ${section.color.replace('text-', 'bg-')}`} 
                                style={{ boxShadow: `0 0 12px currentColor` }} />
                         )}
                         <div className="flex items-center gap-3">

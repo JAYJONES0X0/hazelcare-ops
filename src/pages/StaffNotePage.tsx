@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2 } from 'lucide-react';
+import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
+import { HAZELCARE_HOUSES } from '../lib/compliance-store';
+import { NoteWorkspace } from './NoteWorkspace';
+import { TemplatesPage } from './TemplatesPage';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -36,16 +39,16 @@ const SpeechRecognitionAPI =
 const speechSupported = !!SpeechRecognitionAPI;
 
 export const VOICE_LANGUAGES = [
-  { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
-  { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
-  { code: 'fr-FR', label: 'French', flag: '🇫🇷' },
-  { code: 'es-ES', label: 'Spanish', flag: '🇪🇸' },
-  { code: 'de-DE', label: 'German', flag: '🇩🇪' },
-  { code: 'it-IT', label: 'Italian', flag: '🇮🇹' },
-  { code: 'pt-PT', label: 'Portuguese', flag: '🇵🇹' },
-  { code: 'pl-PL', label: 'Polish', flag: '🇵🇱' },
-  { code: 'ro-RO', label: 'Romanian', flag: '🇷🇴' },
-  { code: 'ar-SA', label: 'Arabic', flag: '🇸🇦' },
+  { code: 'en-GB', label: 'English (UK)', flag: 'ðŸ‡¬ðŸ‡§' },
+  { code: 'en-US', label: 'English (US)', flag: 'ðŸ‡ºðŸ‡¸' },
+  { code: 'fr-FR', label: 'French', flag: 'ðŸ‡«ðŸ‡·' },
+  { code: 'es-ES', label: 'Spanish', flag: 'ðŸ‡ªðŸ‡¸' },
+  { code: 'de-DE', label: 'German', flag: 'ðŸ‡©ðŸ‡ª' },
+  { code: 'it-IT', label: 'Italian', flag: 'ðŸ‡®ðŸ‡¹' },
+  { code: 'pt-PT', label: 'Portuguese', flag: 'ðŸ‡µðŸ‡¹' },
+  { code: 'pl-PL', label: 'Polish', flag: 'ðŸ‡µðŸ‡±' },
+  { code: 'ro-RO', label: 'Romanian', flag: 'ðŸ‡·ðŸ‡´' },
+  { code: 'ar-SA', label: 'Arabic', flag: 'ðŸ‡¸ðŸ‡¦' },
 ];
 
 let _voiceLang = 'en-GB';
@@ -128,6 +131,7 @@ const INTELLIGENCE_STACKS: ProtocolStack[] = [
 ];
 
 export function StaffNotePage() {
+  const [activeTab, setActiveTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
   const [house, setHouse] = useState('Lingfield House');
   const [client, setClient] = useState('');
   const [freeText, setFreeText] = useState('');
@@ -213,7 +217,39 @@ export function StaffNotePage() {
   return (
     <div className="p-6 lg:p-12 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       
-      <div className="mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl">
+      {/* Segmented Control Switcher */}
+      <div className="w-full overflow-x-auto scrollbar-none mb-6">
+        <div className="inline-flex items-center p-1.5 rounded-[2rem] hc-clay-raised min-w-max">
+          <button
+            onClick={() => setActiveTab('dictation')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'dictation' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <MessageSquare size={13} /> Dictation Studio
+          </button>
+          <button
+            onClick={() => setActiveTab('workspace')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'workspace' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <Sparkles size={13} /> Note Workspace
+          </button>
+          <button
+            onClick={() => setActiveTab('templates')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              activeTab === 'templates' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
+            }`}
+          >
+            <Database size={13} /> Builder Templates
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'dictation' && (
+        <>
+          <div className="mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl">
         <div className="bg-hc-teal px-8 py-5 flex items-center justify-between">
            <div className="flex items-center gap-4">
               <Layers className="w-5 h-5 text-hc-bone" />
@@ -290,7 +326,7 @@ export function StaffNotePage() {
           <div className="p-8 space-y-6 bg-hc-teal/[0.01]">
             <div className="flex items-center justify-between">
                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Standardised Output Matrix</label>
-               {enhancedNote && <span className="pill pill-teal text-[9px] animate-pulse">✓ VERIFIED FORENSIC</span>}
+               {enhancedNote && <span className="pill pill-teal text-[9px] animate-pulse">âœ“ VERIFIED FORENSIC</span>}
             </div>
             <div className="hc-clay-inset p-8 min-h-[450px] bg-transparent overflow-y-auto scrollbar-thin">
               {enhancedNote ? (
@@ -324,7 +360,7 @@ export function StaffNotePage() {
          <div className="flex-1 min-w-[200px] space-y-3">
             <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Location Site</label>
             <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner bg-transparent">
-               {['Lingfield House', 'Church House', 'Laurel House'].map(h => <option key={h} value={h}>{h}</option>)}
+              {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
             </select>
          </div>
          <div className="px-8 py-5 hc-clay-inset flex flex-col items-center">
@@ -350,7 +386,7 @@ export function StaffNotePage() {
         </div>
         {shareLink && (
           <div className="mt-4 p-4 hc-clay-inset rounded-2xl">
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || '—'}</div>
+            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || 'â€”'}</div>
             <div className="text-[11px] font-bold text-hc-text break-all mb-3">{shareLink}</div>
             <button
               onClick={() => {
@@ -366,7 +402,12 @@ export function StaffNotePage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
+      {activeTab === 'workspace' && <div className="-mx-6 lg:-mx-12"><NoteWorkspace /></div>}
+      {activeTab === 'templates' && <div className="-mx-6 lg:-mx-12"><TemplatesPage weekData={null} /></div>}
     </div>
   );
 }
+

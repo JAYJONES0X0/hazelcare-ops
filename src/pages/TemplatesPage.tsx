@@ -74,15 +74,20 @@ const FOOTER_HTML = `
 function renderHeader(title: string, subtitle: string, color: string) {
   const t = ex(title).toUpperCase();
   const s = ex(subtitle).toUpperCase();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   return `
-  <div style="display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 4px solid ${color || '#0f172a'}; padding-bottom: 15px; margin-bottom: 25px;">
-    <div>
-      <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.04em; line-height: 1;">${t}</h1>
-      <p style="margin: 6px 0 0; font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 0.2em;">${s}</p>
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 4px solid ${color || '#0f172a'}; padding-bottom: 18px; margin-bottom: 28px;">
+    <div style="flex: 1;">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: -0.04em; line-height: 1;">${t}</h1>
+      <p style="margin: 6px 0 0; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.2em;">${s}</p>
+      <p style="margin: 10px 0 0; font-size: 9px; font-weight: 600; color: #94a3b8; letter-spacing: 0.1em;">Generated: ${dateStr} at ${timeStr} &nbsp;|&nbsp; CONFIDENTIAL — INTERNAL USE ONLY</p>
     </div>
-    <div style="text-align: right; border-left: 1px solid #e2e8f0; padding-left: 15px;">
-      <div style="font-weight: 900; font-size: 12px; color: #0f172a; letter-spacing: -0.02em;">HAZEL CARE LTD</div>
-      <div style="font-weight: 800; font-size: 7px; color: #94a3b8; letter-spacing: 0.3em; margin-top: 2px;">OPERATIONAL_DIAGNOSTIC</div>
+    <div style="text-align: right; padding-left: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+      <img src="/logo-formal.png" alt="Hazel Care Ltd" style="height: 44px; width: auto; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <div style="display:none; font-weight: 900; font-size: 14px; color: #0f172a; letter-spacing: -0.02em;">HAZEL CARE LTD</div>
+      <div style="font-size: 8px; font-weight: 700; color: #94a3b8; letter-spacing: 0.25em; text-transform: uppercase;">NC Hazelcare Operations</div>
     </div>
   </div>`;
 }

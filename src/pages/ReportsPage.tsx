@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import type { WeekSummary, Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
+import { generateRiskProfiles } from '../lib/risk-scores';
 import {
   FileText, Download, History, Activity, AlertTriangle, Clock, LayoutGrid
 } from 'lucide-react';
@@ -90,7 +91,40 @@ function buildStaffActivityHtml(weekData: WeekSummary): string {
     <p style="color:#64748b;font-size:12px">Generated: ${today} | ${byStaff.size} staff members</p>
     <table><thead><tr><th>Staff Member</th><th style="text-align:center">Entries</th><th style="text-align:center">Avg Chars</th><th style="text-align:center">Short Entry %</th></tr></thead>
     <tbody>${rows}</tbody></table></body></html>`;
+}function buildRiskMatrixHtml(weekData: WeekSummary): string {
+  const today = new Date().toLocaleDateString('en-GB');
+  const entries = flattenWeekEntries(weekData);
+  const profiles = generateRiskProfiles(entries);
+  const LEVEL_COLOR: Record<string, string> = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#22c55e' };
+  const rows = profiles.map(p => {
+    const color = LEVEL_COLOR[p.riskLevel] || '#64748b';
+    const topFlag = p.redFlags[0]?.entry?.slice(0, 80) || p.amberFlags[0]?.entry?.slice(0, 80) || '—';
+    return `<tr>
+      <td style="padding:9px 14px;font-weight:700;border-bottom:1px solid #e2e8f0">${p.name}</td>
+      <td style="padding:9px 14px;border-bottom:1px solid #e2e8f0">${p.house}</td>
+      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:900;color:${color}">${p.riskLevel.toUpperCase()}</td>
+      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#ef4444">${p.redFlags.length}</td>
+      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#f59e0b">${p.amberFlags.length}</td>
+      <td style="padding:9px 14px;font-size:10px;color:#64748b;border-bottom:1px solid #e2e8f0;max-width:220px">${topFlag}</td>
+    </tr>`;
+  }).join('');
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+    body{font-family:Arial,sans-serif;color:#1e293b;padding:36px;max-width:1100px;margin:0 auto}
+    h1{font-size:22px;text-transform:uppercase;letter-spacing:2px;border-bottom:3px solid #ef4444;padding-bottom:12px;margin-bottom:6px}
+    .meta{color:#64748b;font-size:11px;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{background:#1e293b;color:#fff;padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+    tr:nth-child(even) td{background:#f8fafc}
+    @media print{body{padding:20px}}
+  </style></head><body>
+  <h1>${ORG_CONFIG.name} — CQC Risk Matrix</h1>
+  <div class="meta">Generated: ${today} · ${profiles.length} clients assessed · Source: clinical diary intelligence</div>
+  <table><thead><tr>
+    <th>Client</th><th>Site</th><th>Risk Level</th><th>Critical Flags</th><th>Amber Flags</th><th>Lead Indicator</th>
+  </tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`;
 }
+
 
 function printHtml(html: string) {
   const blob = new Blob([html], { type: 'text/html' });
@@ -120,6 +154,7 @@ export function ReportsPage({ weekData }: Props) {
   const reportHtml = useMemo(() => {
     if (!weekData) return '';
     if (selectedReport === 'weekly_summary') return buildWeeklySummaryHtml(weekData);
+    if (selectedReport === 'risk_matrix') return buildRiskMatrixHtml(weekData);
     if (selectedReport === 'entry_log') return buildEntryLogHtml(weekData);
     if (selectedReport === 'staff_activity') return buildStaffActivityHtml(weekData);
     return '';
