@@ -26,7 +26,6 @@ import {
   type CoveragePlan,
 } from '../lib/coverage-plan';
 import {
-import {
   enrollInSequence,
   loadActiveSequences,
   advanceSequence,
@@ -37,6 +36,8 @@ import {
   detectGrowthAlerts,
   type ActiveSequence,
   type GrowthAlert,
+} from '../lib/staff-monitoring-store';
+
 import { HandoverPage } from './HandoverPage';
 import { NourishTaskPack } from './NourishTaskPack';
 
