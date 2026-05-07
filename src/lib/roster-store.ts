@@ -174,9 +174,6 @@ export function parseClientRosterCSV(text: string): RosterShift[] {
   // Find columns
   const isCarerFirst = iCarer < iClient;
 
-  let currentClient = '';
-  let currentClientRaw = '';
-  let currentDate = '';
   let currentCarerList: string[] = [];
 
   for (let i = 1; i < parsedRows.length; i++) {
