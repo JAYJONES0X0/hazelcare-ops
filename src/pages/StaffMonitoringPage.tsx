@@ -149,6 +149,38 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
 
   const STAFF_IDS = useMemo(() => snapshot.staff.map(s => s.carer), [snapshot.staff]);
 
+  const worstEntriesByCarer = useMemo(() => {
+    const map = new Map<string, CareEntry[]>();
+    if (!weekData) return map;
+
+    const scored = flattenWeekEntries(weekData).map(entry => ({
+      entry,
+      carer: (entry.carer || '').trim(),
+      score: scoreEntry(entry).total,
+    }));
+
+    const grouped = new Map<string, { entry: CareEntry; score: number }[]>();
+    for (const row of scored) {
+      if (!row.carer) continue;
+      if (row.score >= 70) continue;
+      const arr = grouped.get(row.carer) || [];
+      arr.push({ entry: row.entry, score: row.score });
+      grouped.set(row.carer, arr);
+    }
+
+    for (const [carer, rows] of grouped.entries()) {
+      map.set(
+        carer,
+        rows
+          .sort((a, b) => a.score - b.score)
+          .slice(0, 3)
+          .map(r => r.entry)
+      );
+    }
+
+    return map;
+  }, [weekData]);
+
   const coachRecord = useMemo<StaffScorecard | null>(
     () => coachStaff ? (snapshot.staff.find(s => s.carer === coachStaff) ?? null) : null,
     [coachStaff, snapshot.staff]
@@ -156,14 +188,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
 
   // Get the 3 worst-scoring entries for a carer from weekData
   function getWorstEntries(carer: string): CareEntry[] {
-    if (!weekData) return [];
-    const all = flattenWeekEntries(weekData).filter(e => (e.carer || '').trim() === carer);
-    return all
-      .map(e => ({ entry: e, score: scoreEntry(e).total }))
-      .filter(({ score }) => score < 70)
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 3)
-      .map(({ entry }) => entry);
+    return worstEntriesByCarer.get(carer) || [];
   }
 
   // Transform an entry into gold standard first-person format

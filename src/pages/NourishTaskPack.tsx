@@ -20,6 +20,7 @@ interface NourishTask {
   mandatory: boolean;
   source: string;
   domain: string;
+  evidence: string[];
 }
 
 const DAILY_DOMAIN_KEYWORDS = [
@@ -106,21 +107,34 @@ function buildTaskNotes(domain: CarePlanDomain): string {
   return parts.join('\n') + '\n\nRecord: actions taken, client response, any refusals, concerns, or escalations.';
 }
 
+function collectEvidence(domain: CarePlanDomain): string[] {
+  const evidence: string[] = [];
+  if (domain.identifiedNeed?.trim()) evidence.push(`Need: ${domain.identifiedNeed.trim()}`);
+  if (domain.riskTitle?.trim()) evidence.push(`Risk: ${domain.riskTitle.trim()}`);
+  if (domain.riskDescription?.trim()) evidence.push(`Risk detail: ${domain.riskDescription.trim()}`);
+  if (domain.riskMitigation?.trim()) evidence.push(`Mitigation: ${domain.riskMitigation.trim()}`);
+  if (domain.howToAchieve?.trim()) evidence.push(`Support method: ${domain.howToAchieve.trim()}`);
+  return evidence;
+}
+
 function generateTasksFromCarePlan(client: FullClient): NourishTask[] {
   if (!client.carePlan?.domains) return [];
 
   const enabledDomains = client.carePlan.domains.filter(d => d.enabled);
   if (enabledDomains.length === 0) return [];
 
-  return enabledDomains.map(domain => {
-    const name = buildTaskName(domain);
-    const notes = buildTaskNotes(domain);
-    const frequency = inferFrequency(domain.title);
-    const mandatory = isMandatoryTask(domain.title, notes);
-    const source = `Care Plan — ${domain.title}${domain.riskTitle ? ` / Risk: ${domain.riskTitle}` : ''}`;
+  return enabledDomains
+    .map(domain => {
+      const evidence = collectEvidence(domain);
+      const name = buildTaskName(domain);
+      const notes = buildTaskNotes(domain);
+      const frequency = inferFrequency(domain.title);
+      const mandatory = isMandatoryTask(domain.title, notes);
+      const source = `Care Plan - ${domain.title}${domain.riskTitle ? ` / Risk: ${domain.riskTitle}` : ''}`;
 
-    return { name, notes, frequency, mandatory, source, domain: domain.title };
-  });
+      return { name, notes, frequency, mandatory, source, domain: domain.title, evidence };
+    })
+    .filter(task => task.evidence.length > 0);
 }
 
 function formatForExport(client: FullClient, tasks: NourishTask[]): string {
@@ -129,15 +143,16 @@ function formatForExport(client: FullClient, tasks: NourishTask[]): string {
   const event = tasks.filter(t => t.frequency === 'event');
   const date = new Date().toLocaleDateString('en-GB');
 
-  let out = `NOTE TITLE: CarePlanner Personalised Tasks (Care Plan Aligned) — ${client.name}\n`;
-  out += `Generated: ${date} | Source: Hazel Care Ops — Care Plan Builder\n\n`;
+  let out = `NOTE TITLE: CarePlanner Personalised Tasks (Care Plan Aligned) - ${client.name}\n`;
+  out += `Generated: ${date} | Source: Hazel Care Ops - Care Plan Builder\n\n`;
   out += `PURPOSE\n`;
   out += `These tasks are derived directly from ${client.name}'s current care plans and risk assessments to evidence support delivery and ensure consistency across staff.\n\n`;
   out += `RULES\n`;
-  out += `• Build as Client Tasks in Nourish.\n`;
-  out += `• Set Task Notes mandatory for all tasks marked [MANDATORY].\n`;
-  out += `• Do not change tasks without updating the underlying care plan/risk assessment first.\n\n`;
-  out += `─────────────────────────────────────────────────────\n`;
+  out += `- Build as Client Tasks in Nourish.\n`;
+  out += `- Set Task Notes mandatory for all tasks marked [MANDATORY].\n`;
+  out += `- Do not change tasks without updating the underlying care plan/risk assessment first.\n`;
+  out += `- Do not create tasks without evidence from care plan or risk fields.\n\n`;
+  out += `-----------------------------------------------------\n`;
 
   if (daily.length > 0) {
     out += `DAILY TASKS\n\n`;
@@ -145,7 +160,12 @@ function formatForExport(client: FullClient, tasks: NourishTask[]): string {
       out += `${i + 1}. Task name: ${t.name}${t.mandatory ? ' [MANDATORY]' : ''}\n`;
       out += `   Frequency: Daily\n`;
       out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n\n`;
+      out += `   Source: ${t.source}\n`;
+      if (t.evidence.length) {
+        out += `   Evidence:\n`;
+        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
+      }
+      out += `\n`;
     });
   }
 
@@ -155,7 +175,12 @@ function formatForExport(client: FullClient, tasks: NourishTask[]): string {
       out += `${i + 1}. Task name: ${t.name}${t.mandatory ? ' [MANDATORY]' : ''}\n`;
       out += `   Frequency: Weekly\n`;
       out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n\n`;
+      out += `   Source: ${t.source}\n`;
+      if (t.evidence.length) {
+        out += `   Evidence:\n`;
+        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
+      }
+      out += `\n`;
     });
   }
 
@@ -165,21 +190,22 @@ function formatForExport(client: FullClient, tasks: NourishTask[]): string {
       out += `${i + 1}. Task name: ${t.name}\n`;
       out += `   Frequency: When triggered\n`;
       out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n\n`;
+      out += `   Source: ${t.source}\n`;
+      if (t.evidence.length) {
+        out += `   Evidence:\n`;
+        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
+      }
+      out += `\n`;
     });
   }
 
-  out += `─────────────────────────────────────────────────────\n`;
+  out += `-----------------------------------------------------\n`;
   out += `REVIEW\n`;
   out += `Review tasks at the next scheduled care plan review, or sooner if there is a significant change in risk, presentation, medication, or environmental safety.\n`;
 
   return out;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTS
-// ─────────────────────────────────────────────────────────────────────────────
-
 const FREQ_CONFIG = {
   daily: { label: 'Daily', icon: <Clock size={12} />, color: 'text-hc-teal', bg: 'bg-hc-teal/10 border-hc-teal/20' },
   weekly: { label: 'Weekly', icon: <Calendar size={12} />, color: 'text-flag-amber', bg: 'bg-flag-amber/10 border-flag-amber/20' },
@@ -235,6 +261,16 @@ function TaskCard({ task, index }: { task: NourishTask; index: number }) {
             <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Source</div>
             <div className="text-[10px] text-hc-muted font-bold">{task.source}</div>
           </div>
+          {task.evidence.length > 0 && (
+            <div>
+              <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Evidence</div>
+              <ul className="list-disc pl-4 space-y-1 text-[10px] text-hc-muted">
+                {task.evidence.map((ev, i) => (
+                  <li key={i}>{ev}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -530,3 +566,7 @@ export function NourishTaskPack() {
     </div>
   );
 }
+
+
+
+

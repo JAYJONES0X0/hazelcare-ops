@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Page } from '../lib/types';
 import type { Action, WeekSummary } from '../lib/types';
+import { MAIN_SECTIONS, getSectionByPage } from '../lib/navigation';
 
 import { ORG_CONFIG } from '../lib/config';
 
@@ -19,10 +20,8 @@ function useBrandAssets() {
   return { logo, avatar };
 }
 import {
-  LogOut, Sun, Moon, LayoutDashboard, MessageSquare, Upload, BookOpen, Shield,
-  Zap, AlertTriangle, BarChart3, Users, FileText, Briefcase, ClipboardCheck,
-  Database, Settings2, Sparkles, ChevronLeft, ChevronRight, Activity, HardDrive,
-  UserCheck, ShieldCheck, Cog, TrendingUp, ClipboardList
+  LogOut, Sun, Moon, LayoutDashboard, MessageSquare,
+  Users, FileText, ChevronLeft, ChevronRight, Activity, Cog
 } from 'lucide-react';
 
 interface Props {
@@ -35,86 +34,19 @@ interface Props {
   onSignOut: () => void;
 }
 
-interface NavSection {
-  label: string;
-  icon: ReactNode;
-  color: string;
-  items: { id: Page; label: string; icon: ReactNode }[];
-}
-
-const navSections: NavSection[] = [
-  {
-    label: 'Mission Control',
-    icon: <LayoutDashboard size={16} />,
-    color: 'text-hc-teal',
-    items: [
-      { id: 'briefing' as Page,        label: 'Strategy Briefing',  icon: <LayoutDashboard size={16} /> },
-      { id: 'dashboard',               label: 'Sitrep Center',      icon: <BarChart3 size={16} /> },
-      { id: 'empire-matrix' as Page,   label: 'Empire Matrix',      icon: <TrendingUp size={16} /> },
-      { id: 'communications' as Page,  label: 'Comms Intercept',    icon: <MessageSquare size={16} /> },
-    ],
-  },
-  {
-    label: 'Intelligence Core',
-    icon: <Activity size={16} />,
-    color: 'text-hc-teal-light',
-    items: [
-      { id: 'client-diary' as Page,    label: 'Live Feed',          icon: <BookOpen size={16} /> },
-      { id: 'client-docs' as Page,     label: 'Sovereign Vault',    icon: <HardDrive size={16} /> },
-      { id: 'risk' as Page,            label: 'Risk Matrix',        icon: <Activity size={16} /> },
-      { id: 'reports' as Page,         label: 'Regulatory Audit',   icon: <ClipboardCheck size={16} /> },
-    ],
-  },
-  {
-    label: 'Documentation Hub',
-    icon: <FileText size={16} />,
-    color: 'text-flag-amber',
-    items: [
-      { id: 'staff-monitoring' as Page, label: 'Force Protection',   icon: <Shield size={16} /> },
-      { id: 'notes' as Page,            label: 'Dictation Studio',   icon: <MessageSquare size={16} /> },
-      { id: 'training-hub' as Page,     label: 'Sovereign Trainer',  icon: <ShieldCheck size={16} /> },
-    ],
-  },
-  {
-    label: 'Personnel',
-    icon: <Users size={16} />,
-    color: 'text-hc-teal',
-    items: [
-      { id: 'staff',       label: 'Personnel Ledger', icon: <Users size={16} /> },
-      { id: 'compliance',  label: 'Personnel Audit',  icon: <UserCheck size={16} /> },
-    ],
-  },
-  {
-    label: 'Operations',
-    icon: <Zap size={16} />,
-    color: 'text-flag-red',
-    items: [
-      { id: 'actions',               label: 'Command Vectors',  icon: <Zap size={16} /> },
-      { id: 'incidents',             label: 'Incident Log',     icon: <AlertTriangle size={16} /> },
-      { id: 'agency' as Page,        label: 'External Support', icon: <Briefcase size={16} /> },
-      { id: 'upload',                label: 'Field Ingest',     icon: <Upload size={16} /> },
-    ],
-  },
-  {
-    label: 'Sovereign System',
-    icon: <Cog size={16} />,
-    color: 'text-hc-muted',
-    items: [
-      { id: 'settings' as Page,   label: 'System Settings',   icon: <Settings2 size={16} /> },
-      { id: 'admin' as Page,      label: 'Admin Matrix',      icon: <Shield size={16} /> },
-    ],
-  },
-];
+const sectionIcon: Record<string, ReactNode> = {
+  'Mission Control': <LayoutDashboard size={16} />,
+  'Clinical Intelligence': <Activity size={16} />,
+  'Forensic Documentation': <FileText size={16} />,
+  'Operations & Personnel': <Users size={16} />,
+  'System Governance': <Cog size={16} />,
+  Comms: <MessageSquare size={16} />,
+};
 
 export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onSignOut }: Props) {
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
-  });
-
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem('hc-sidebar-expanded');
-    return saved ? JSON.parse(saved) : { 'Mission Control': true, 'Documentation Hub': true };
   });
 
   const toggleSidebar = () => setCollapsed(c => {
@@ -123,30 +55,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
     return next;
   });
 
-  const toggleSection = (label: string) => {
-    if (collapsed) {
-      setCollapsed(false);
-      setExpandedSections(prev => ({ ...prev, [label]: true }));
-      return;
-    }
-    setExpandedSections(prev => {
-      const next = { ...prev, [label]: !prev[label] };
-      localStorage.setItem('hc-sidebar-expanded', JSON.stringify(next));
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    if (collapsed) return;
-    const ownerSection = navSections.find(s => s.items.some(i => i.id === page));
-    if (!ownerSection) return;
-    const next: Record<string, boolean> = {};
-    for (const s of navSections) next[s.label] = s.label === ownerSection.label;
-    try { localStorage.setItem('hc-sidebar-expanded', JSON.stringify(next)); } catch { /* ignore */ }
-    setExpandedSections(next);
-  }, [page, collapsed]);
-
-  const openActionsCount = actions.filter(a => a.status !== 'completed').length;
+  const activeSection = getSectionByPage(page);
 
   return (
     <div
@@ -175,69 +84,24 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
       </div>
 
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 scrollbar-none">
-        {navSections.map((section) => {
-          const isExpanded = expandedSections[section.label];
-          const hasActiveItem = section.items.some(item => page === item.id);
-
+        {MAIN_SECTIONS.map((section) => {
+          const active = activeSection.id === section.id;
           return (
-            <div 
-              key={section.label} 
-              className={`transition-all duration-300 ${
-                (hasActiveItem || isExpanded) && !collapsed 
-                  ? 'hc-clay-raised p-2 rounded-[2rem] mb-4 space-y-2' 
-                  : 'space-y-1 mb-2'
-              }`}
+            <button
+              key={section.id}
+              onClick={() => setPage(section.landing)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                collapsed ? 'justify-center' : 'justify-start'
+              } ${active ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/20' : 'hc-clay-raised text-hc-muted hover:text-hc-text'}`}
+              title={section.label}
             >
-              <button
-                onClick={() => toggleSection(section.label)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                  collapsed ? 'justify-center hc-clay-raised' : 'justify-between'
-                } ${hasActiveItem && collapsed ? 'hc-clay-pressed ' + section.color : 'text-hc-muted hover:text-hc-text'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`${hasActiveItem ? section.color : 'opacity-60'}`}>{section.icon}</span>
-                  {!collapsed && <span className={`text-[10px] font-black uppercase tracking-widest ${hasActiveItem ? section.color : ''}`}>{section.label}</span>}
-                </div>
-                {!collapsed && (
-                  <ChevronRight size={12} className={`text-hc-text opacity-20 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
-                )}
-              </button>
-
-              {isExpanded && !collapsed && (
-                <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
-                  {section.items.map((item) => {
-                    const active = page === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setPage(item.id)}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group active:hc-clay-pressed relative
-                          ${active
-                            ? 'hc-clay-pressed ' + section.color + ' shadow-inner shadow-black/20'
-                            : 'text-hc-text/60 hover:text-hc-text hover:hc-clay-raised/50'
-                          }`}
-                      >
-                        {active && (
-                          <div className={`absolute left-2 top-1/4 bottom-1/4 w-1 rounded-full animate-in fade-in duration-1000 ${section.color.replace('text-', 'bg-')}`} 
-                               style={{ boxShadow: `0 0 12px currentColor` }} />
-                        )}
-                        <div className="flex items-center gap-3">
-                          <span className={`${active ? section.color : 'opacity-40 group-hover:opacity-100'}`}>
-                            {item.icon}
-                          </span>
-                          <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                        </div>
-                        {item.id === 'actions' && openActionsCount > 0 && (
-                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${active ? 'bg-hc-teal text-hc-bone' : 'bg-hc-red text-hc-bone'}`}>
-                            {openActionsCount}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+              <span className={active ? 'text-hc-teal' : 'opacity-70'}>
+                {sectionIcon[section.label] ?? <LayoutDashboard size={16} />}
+              </span>
+              {!collapsed && (
+                <span className="text-[10px] font-black uppercase tracking-widest">{section.label}</span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

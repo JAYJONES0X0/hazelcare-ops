@@ -28,7 +28,7 @@
   --hc-surface: #f3efe0;
   --hc-surface-2: #dedad0;
   --hc-text:    #0d2d2d;
-  --hc-muted:   #6b6653;
+  --hc-muted:   #4f4a3d;
   --hc-border:  rgba(13, 45, 45, 0.06);
   --hc-teal-active: #1c4e4e;
   --hc-teal-glow:   #4c7c7c;
@@ -57,7 +57,7 @@
   --hc-surface: #0d2d2d;
   --hc-surface-2: #163a3a;
   --hc-text:    #f3efe0;
-  --hc-muted:   #8a8b82;
+  --hc-muted:   #a6a89f;
   --hc-border:  rgba(243, 239, 224, 0.04);
   --hc-teal-active: #40e0cf; /* Bright Electric Teal for Dark Mode */
   --hc-teal-glow:   #2dd4bf;
@@ -78,9 +78,16 @@
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-hc-bg text-hc-text transition-colors duration-1000 font-sans antialiased selection:bg-hc-teal/20 overflow-x-hidden;
     font-feature-settings: "ss01", "ss03", "cv01", "cv11";
+    line-height: 1.4;
   }
 }
 
@@ -172,9 +179,8 @@
   .pill-muted { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-muted/10 text-hc-muted border-hc-muted/20; }
 }
 
-/* ── HIGH DENSITY TEXT ── */
-[class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"] {
-  font-size: 10px !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.1em !important;
-}
+/* Keep utility font classes local to each component/page.
+   Global forced text overrides were causing cross-page zoom/sizing breakage. */
+
+
+

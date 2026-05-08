@@ -1,28 +1,5 @@
-﻿import { useState, useEffect, useCallback, Component, useRef, type ReactNode, type ErrorInfo } from 'react';
+import { useState, useEffect, useCallback, Component, useRef, lazy, Suspense, type ReactNode, type ErrorInfo } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './pages/Dashboard';
-import { UploadPage } from './pages/UploadPage';
-import { TemplatesPage } from './pages/TemplatesPage';
-import { ActionsPage } from './pages/ActionsPage';
-import { IncidentsPage } from './pages/IncidentsPage';
-import { StaffPage } from './pages/StaffPage';
-import { StaffNotePage } from './pages/StaffNotePage';
-import { HandoverPage } from './pages/HandoverPage';
-import { CommunicationsPage } from './pages/CommunicationsPage';
-import { BriefingPage } from './pages/BriefingPage';
-import { CompliancePage } from './pages/CompliancePage';
-import { ReportsPage } from './pages/ReportsPage';
-import { RiskScoresPage } from './pages/RiskScoresPage';
-import { ClientDocsPage } from './pages/ClientDocsPage';
-import { ClientDiaryPage } from './pages/ClientDiaryPage';
-import { AgencyPortalPage } from './pages/AgencyPortalPage';
-import { StaffMonitoringPage } from './pages/StaffMonitoringPage';
-import { NoteWorkspace } from './pages/NoteWorkspace';
-import { SettingsPage } from './pages/SettingsPage';
-import { AdminPage } from './pages/AdminPage';
-import { EmpireMatrix } from './pages/EmpireMatrix';
-import SovereignTrainingHub from './pages/SovereignTrainingHub';
-import { NourishTaskPack } from './pages/NourishTaskPack';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -32,6 +9,31 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { getSectionByPage } from './lib/navigation';
+
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const UploadPage = lazy(() => import('./pages/UploadPage').then(m => ({ default: m.UploadPage })));
+const TemplatesPage = lazy(() => import('./pages/TemplatesPage').then(m => ({ default: m.TemplatesPage })));
+const ActionsPage = lazy(() => import('./pages/ActionsPage').then(m => ({ default: m.ActionsPage })));
+const IncidentsPage = lazy(() => import('./pages/IncidentsPage').then(m => ({ default: m.IncidentsPage })));
+const StaffPage = lazy(() => import('./pages/StaffPage').then(m => ({ default: m.StaffPage })));
+const StaffNotePage = lazy(() => import('./pages/StaffNotePage').then(m => ({ default: m.StaffNotePage })));
+const HandoverPage = lazy(() => import('./pages/HandoverPage').then(m => ({ default: m.HandoverPage })));
+const CommunicationsPage = lazy(() => import('./pages/CommunicationsPage').then(m => ({ default: m.CommunicationsPage })));
+const BriefingPage = lazy(() => import('./pages/BriefingPage').then(m => ({ default: m.BriefingPage })));
+const CompliancePage = lazy(() => import('./pages/CompliancePage').then(m => ({ default: m.CompliancePage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const RiskScoresPage = lazy(() => import('./pages/RiskScoresPage').then(m => ({ default: m.RiskScoresPage })));
+const ClientDocsPage = lazy(() => import('./pages/ClientDocsPage').then(m => ({ default: m.ClientDocsPage })));
+const ClientDiaryPage = lazy(() => import('./pages/ClientDiaryPage').then(m => ({ default: m.ClientDiaryPage })));
+const AgencyPortalPage = lazy(() => import('./pages/AgencyPortalPage').then(m => ({ default: m.AgencyPortalPage })));
+const StaffMonitoringPage = lazy(() => import('./pages/StaffMonitoringPage').then(m => ({ default: m.StaffMonitoringPage })));
+const NoteWorkspace = lazy(() => import('./pages/NoteWorkspace').then(m => ({ default: m.NoteWorkspace })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const EmpireMatrix = lazy(() => import('./pages/EmpireMatrix').then(m => ({ default: m.EmpireMatrix })));
+const SovereignTrainingHub = lazy(() => import('./pages/SovereignTrainingHub'));
+const NourishTaskPack = lazy(() => import('./pages/NourishTaskPack').then(m => ({ default: m.NourishTaskPack })));
 
 
 export default function App() {
@@ -72,9 +74,11 @@ export default function App() {
   };
 
   const page = pageId;
+  const activeSection = getSectionByPage(page);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
+  const [buildTag, setBuildTag] = useState('unknown');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -87,6 +91,13 @@ export default function App() {
     document.documentElement.style.setProperty('--shadow-depth', String(shadowDepth / 3));
   }, [theme]);
 
+  useEffect(() => {
+    const script = document.querySelector('script[type="module"][src*="assets/index-"]') as HTMLScriptElement | null;
+    if (!script?.src) return;
+    const m = script.src.match(/assets\/(index-[^./]+)\.js/i);
+    if (m?.[1]) setBuildTag(m[1]);
+  }, []);
+
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
@@ -94,7 +105,7 @@ export default function App() {
   const [clients] = useState<FullClient[]>(() => loadClients());
 
   useEffect(() => {
-    // â”€â”€ MILITARY GRADE HYDRATION: Connect Offline Dashboards to Unlimited IndexedDB
+    // ── MILITARY GRADE HYDRATION: Connect Offline Dashboards to Unlimited IndexedDB
     getAllEntriesAsync().then(entries => {
       if (entries && entries.length > 0) {
         const generated = buildWeekSummary(entries);
@@ -206,29 +217,60 @@ export default function App() {
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full min-h-screen">
-              {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} setPage={setPage} />}
-              {page === 'dashboard' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
-              {page === 'communications' && <CommunicationsPage />}
-              {page === 'upload' && <UploadPage onDataParsed={handleDataParsed} setPage={setPage} />}
-              {page === 'templates' && <TemplatesPage weekData={weekData} />}
-              {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
-              {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
-              {page === 'staff' && <StaffPage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
-              {page === 'notes' && <StaffNotePage />}
-              {page === 'note-workspace' && <NoteWorkspace />}
-              {page === 'training-hub' && <SovereignTrainingHub />}
-              {page === 'handover' && <HandoverPage weekData={weekData} />}
-              {page === 'compliance' && <CompliancePage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
-              {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
-              {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
-              {page === 'client-docs' && <ClientDocsPage />}
-              {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
-              {page === 'agency' && <AgencyPortalPage />}
-              {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
-              {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
-              {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
-              {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} setPage={setPage} />}
-              {page === 'nourish-tasks' && <NourishTaskPack />}
+              <div className="sticky top-0 z-20 px-6 pt-4 pb-3 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1">
+                  {activeSection.tabs.map(tab => {
+                    const active = page === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setPage(tab.id)}
+                        className={`shrink-0 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          active
+                            ? 'hc-clay-pressed text-hc-teal border border-hc-teal/20'
+                            : 'hc-clay-raised text-hc-muted hover:text-hc-text'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                  </div>
+                  <span className="shrink-0 px-2.5 py-1 rounded-lg hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted border border-hc-border/20">
+                    Build {buildTag}
+                  </span>
+                </div>
+              </div>
+              <Suspense fallback={
+                <div className="px-6 py-10">
+                  <div className="w-10 h-10 rounded-full border-4 border-hc-teal/20 border-t-hc-teal animate-spin" />
+                </div>
+              }>
+                {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} setPage={setPage} />}
+                {page === 'dashboard' && <Dashboard weekData={weekData} setPage={setPage} actions={actions} incidents={incidents} />}
+                {page === 'communications' && <CommunicationsPage />}
+                {page === 'upload' && <UploadPage onDataParsed={handleDataParsed} setPage={setPage} />}
+                {page === 'templates' && <TemplatesPage weekData={weekData} />}
+                {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
+                {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
+                {page === 'staff' && <StaffPage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
+                {page === 'notes' && <StaffNotePage />}
+                {page === 'note-workspace' && <NoteWorkspace />}
+                {page === 'training-hub' && <SovereignTrainingHub />}
+                {page === 'handover' && <HandoverPage weekData={weekData} />}
+                {page === 'compliance' && <CompliancePage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
+                {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
+                {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
+                {page === 'client-docs' && <ClientDocsPage />}
+                {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
+                {page === 'agency' && <AgencyPortalPage />}
+                {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
+                {page === 'settings' && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
+                {page === 'admin' && <AdminPage weekData={weekData} clients={clients} />}
+                {page === 'empire-matrix' && <EmpireMatrix weekData={weekData} setPage={setPage} />}
+                {page === 'nourish-tasks' && <NourishTaskPack />}
+              </Suspense>
             </div>
 
             {/* Floating Navigation Hub */}
@@ -310,3 +352,4 @@ function LoginGate({ onUnlock }: { onUnlock: () => void }) {
     </div>
   );
 }
+

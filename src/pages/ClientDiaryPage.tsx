@@ -233,26 +233,42 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
     return d;
   }, [clientDiary, pdfEntries]);
 
+  const diaryStats = useMemo(() => {
+    const stats: Record<string, { red: number; amber: number; houses: Set<string> }> = {};
+    for (const [client, entries] of Object.entries(mergedDiary)) {
+      let red = 0;
+      let amber = 0;
+      const houses = new Set<string>();
+      for (const e of entries) {
+        if (e.severity === 'red') red++;
+        if (e.severity === 'amber') amber++;
+        if (e.house) houses.add(e.house.toLowerCase());
+      }
+      stats[client] = { red, amber, houses };
+    }
+    return stats;
+  }, [mergedDiary]);
+
   const allClients = useMemo(() =>
     Object.keys(mergedDiary)
       .filter(name => {
         if (!name || ['Maintenance', 'Station', 'On Call'].includes(name)) return false;
         if (houseFilter) {
-          const ce = mergedDiary[name];
-          if (!ce.some(e => e.house?.toLowerCase() === houseFilter.toLowerCase())) return false;
+          const stat = diaryStats[name];
+          if (!stat || !stat.houses.has(houseFilter.toLowerCase())) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        const ra = (mergedDiary[a] || []).filter(e => e.severity === 'red').length;
-        const rb = (mergedDiary[b] || []).filter(e => e.severity === 'red').length;
+        const ra = diaryStats[a]?.red || 0;
+        const rb = diaryStats[b]?.red || 0;
         if (rb !== ra) return rb - ra;
-        const aa = (mergedDiary[a] || []).filter(e => e.severity === 'amber').length;
-        const ab = (mergedDiary[b] || []).filter(e => e.severity === 'amber').length;
+        const aa = diaryStats[a]?.amber || 0;
+        const ab = diaryStats[b]?.amber || 0;
         if (ab !== aa) return ab - aa;
         return a.localeCompare(b);
       }),
-    [mergedDiary]
+    [mergedDiary, diaryStats, houseFilter]
   );
 
   const filteredClients = useMemo(() =>
@@ -375,8 +391,8 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {filteredClients.map(name => {
             const entries = mergedDiary[name] || [];
-            const red = entries.filter(e => e.severity === 'red').length;
-            const amber = entries.filter(e => e.severity === 'amber').length;
+            const red = diaryStats[name]?.red || 0;
+            const amber = diaryStats[name]?.amber || 0;
             const hasDocs = storedClients.some(n => n.includes(name.toLowerCase().split(' ')[0]));
             const isSelected = selectedClient === name;
             return (
