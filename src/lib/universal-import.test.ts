@@ -17,6 +17,50 @@ DATE OF BIRTH PLAN DATE
     expect(parsed.client.preferredName).toBe('Wayne');
   });
 
+  it('extracts emergency admission client name when header spans lines and ignores org line capture', () => {
+    const raw = `
+Emergency Admission Pack -
+Wayne Jefferson
+Report run on 15/05/2026
+Hazel Care Support Ltd 42 years 22 Sample Street, Bristol
+`;
+
+    const parsed = parseUniversalText(raw);
+    expect(parsed.client.name).toBe('Wayne Jefferson');
+    expect(parsed.client.preferredName).toBe('Wayne');
+  });
+
+  it('extracts clean identity fields from Nourish emergency admission basic profile tables', () => {
+    const raw = `
+Hazel Care Ltd
+Emergency Admission Pack\t- Wayne\tJefferson
+Report run on 15/05/2026 11:57
+BASIC PROFILE
+Title\tFirst Name\tLast Name
+Mr\tWayne\tJefferson
+Preferred Name\tGender Identity\tDate of Birth
+-\tmale\t26/09/1983
+Email\tNHS / CHI No.
+waynejeffersonhazelcare@gmail.com\t490 674 4699
+Quick notes
+Emergency Contact: John Kirby (Father) - 07990721120
+Contact Number
+a manual wheelchair; requests an electric
+07506279002
+wheelchair for better mobility.
+ACCOMMODATION CLEANLINESS
+Identified Need
+Wayne requires support to maintain his environment.
+`;
+
+    const parsed = parseUniversalText(raw);
+    expect(parsed.client.name).toBe('Wayne Jefferson');
+    expect(parsed.client.preferredName).toBe('Wayne');
+    expect(parsed.client.dob).toBe('26/09/1983');
+    expect(parsed.client.nhs).toBe('4906744699');
+    expect(parsed.client.phone).toBe('07506279002');
+  });
+
   it('parses standalone clinical risk assessments into risk items', () => {
     const raw = `
 HAZEL CARE CONFIDENTIAL Clinical Risk Assessment

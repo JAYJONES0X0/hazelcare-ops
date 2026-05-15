@@ -7,6 +7,18 @@ describe('detectProfile', () => {
     expect(result.type).toBe('support-plan');
   });
 
+  it('detects careplan PDFs by filename', () => {
+    const result = detectProfile('LJohnson CAREPLAN.pdf', '');
+    expect(result.type).toBe('admission');
+    expect(result.id).toBe('careplan-filename');
+  });
+
+  it('prioritizes admission parsing over generic support-plan phrases for careplan PDFs', () => {
+    const raw = 'Emergency Admission Pack - Lewis Johnson ... support plan ... report run on 15/05/2026';
+    const result = detectProfile('LJohnson CAREPLAN.pdf', raw);
+    expect(result.type).toBe('admission');
+  });
+
   it('detects clinical risk assessment PDFs by content', () => {
     const text = 'Clinical Risk Assessment Prepared for Mr X Risk Area 1: Falls risk RISK CONTROL PROTOCOL';
     const result = detectProfile('export.pdf', text);

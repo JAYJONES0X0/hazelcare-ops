@@ -92,7 +92,7 @@ ${CARE_PLAN_DOMAINS.join(', ')}
 RULES:
 1. Extract as much detail as possible. Do not summarize into single lines.
 2. If a domain is not mentioned, set "enabled": false.
-3. Be specific with "howToAchieve" — include de-escalation, communication styles, and physical support.
+3. Be specific with "howToAchieve" - include de-escalation, communication styles, and physical support.
 4. Ensure risk Likelihood and Impact are realistic (1: Rare/Negligible, 5: Almost Certain/Catastrophic).
 5. Identify GAPS where the source document is vague (e.g., "The source mentions medication but does not specify the dosage").
 6. Output valid JSON only. No preamble.`;
@@ -102,13 +102,13 @@ const ENHANCE_SYSTEM_PROMPT = `You are a senior support worker and clinical docu
 You write shift notes with three qualities: clinical precision, genuine human warmth, and professional accountability. You never sound robotic, bureaucratic, or template-filling. You sound like someone who genuinely knows this person and cares about them.
 
 RULES:
-1. UK ENGLISH only — summarise, recognise, behaviour, practise, centre, etc.
+1. UK ENGLISH only - summarise, recognise, behaviour, practise, centre, etc.
 2. PERSONA: Write in first person as the staff member who was on shift. You are documenting what you observed and did, not describing the client from a distance.
 3. TEMPLATE IS STRUCTURE ONLY: The [MANDATORY LAYOUT / TEMPLATE] is a HOLLOW SKELETON. You must mirror its headers, time-block patterns, and whitespace exactly, but you MUST NOT use any of the names, dates, times, or events described in it. If the template says "Jamie took meds at 12:00" but the raw data says "Sarah took meds at 09:00", you write "09:00: Sarah took meds".
 4. RAW DATA IS SOVEREIGN: The [RAW DATA TO PROCESS] is your only source of truth. If a fact is in the template but NOT in the raw data, it is a phantom and must be ignored.
 5. CLINICAL VACUUM: Treat the template as if it were written by a ghost. It provides the rhythm, you provide the reality.
 6. PRESERVE WHITESPACE: Mirror the exact line breaks, blank lines, and headers of the template.
-7. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" — instead write "he appeared settled" or "I found him in good spirits."
+7. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" - instead write "he appeared settled" or "I found him in good spirits."
 8. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
 9. Output ONLY the finished note. No preamble, no explanation.`;
 
@@ -194,7 +194,7 @@ async function fetchTokenByLinkId(linkId) {
 }
 
 export default async function handler(req, res) {
-  // Extract route from URL path — Vercel catch-all may not populate req.query.action
+  // Extract route from URL path - Vercel catch-all may not populate req.query.action
   const urlPath = (req.url || '').split('?')[0];
   const segments = urlPath.replace(/^\/api\/staff\/?/, '').split('/').filter(Boolean);
   const route = segments[0] || (req.query?.action ? (Array.isArray(req.query.action) ? req.query.action[0] : req.query.action) : null);
@@ -341,8 +341,8 @@ async function handleStaffSacStatus(req, res) {
   return res.json({ ok });
 }
 
-// ── Empire AI Router ────────────────────────────────────────────────────────
-// Priority: Gemini FREE (1M tokens/day, 1M ctx) → OpenRouter free → Groq
+// -- Empire AI Router ---------------------------------------------------------
+// Priority: Gemini FREE (1M tokens/day, 1M ctx) -> OpenRouter free -> Groq
 
 async function callGemini(messages, options = {}) {
   const key = process.env.GEMINI_API_KEY;
@@ -364,7 +364,7 @@ async function callGemini(messages, options = {}) {
     ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
   };
 
-  // Empire key supports 2.5-flash — use it first
+  // Empire key supports 2.5-flash - use it first
   const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-001'];
   const action = options.stream ? 'streamGenerateContent?alt=sse' : 'generateContent';
 
@@ -486,7 +486,7 @@ async function handleAnalyzeIntel(req, res) {
       { role: 'user', content: `Analyse this raw text and map it to the CQC structure:\n\n${text}` },
     ];
 
-    // For JSON analysis, use non-streaming — try Groq first (supports json_object), then OpenRouter, then Gemini
+    // For JSON analysis, use non-streaming - try Groq first (supports json_object), then OpenRouter, then Gemini
     let rawContent;
     try {
       const { res: groqRes } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false });
@@ -524,7 +524,7 @@ async function handleEnhanceNote(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput, clinicalContext } = req.body || {};
+  const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput, clinicalContext, includeEvidenceTrail } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
   if (text.length > 24_000) return res.status(413).send('Input too large');
 
@@ -541,22 +541,26 @@ async function handleEnhanceNote(req, res) {
   const safePrev = previousOutput
     ? previousOutput.slice(0, PREV_MAX)
     : '';
+  const evidenceInstruction = includeEvidenceTrail
+    ? `\n[EVIDENCE TRAIL REQUIREMENT]:\nAfter the completed note, append this section exactly:\nEvidence Trail:\n- Include 3 to 6 bullet points.\n- Each bullet must include a source label in brackets and a short quoted phrase copied from provided data.\n- Allowed labels: [RAW DATA], [CLINICAL CONTEXT], [PREVIOUS DRAFT], [SHIFT CONTEXT], [PREVIOUS SHIFT NOTE], [NEXT SHIFT NOTE], [DOCUMENT: filename].\n- Do not invent citations or source labels.\n`
+    : '';
 
   const userPrompt = [
     noteType ? `Note type: ${noteType}` : '',
     clientName ? `Client/subject: ${clientName}` : '',
-    safeContext ? `\n[ESSENTIAL CONTEXT — READ THIS AS YOUR STAFF KNOWLEDGE BEFORE WRITING]:\n${safeContext}\n` : '',
-    safeTemplate ? `\n[MANDATORY LAYOUT — USE STRUCTURE ONLY, IGNORE ITS CONTENT]:\n${safeTemplate}\n` : '',
+    safeContext ? `\n[ESSENTIAL CONTEXT - READ THIS AS YOUR STAFF KNOWLEDGE BEFORE WRITING]:\n${safeContext}\n` : '',
+    safeTemplate ? `\n[MANDATORY LAYOUT - USE STRUCTURE ONLY, IGNORE ITS CONTENT]:\n${safeTemplate}\n` : '',
     safePrev ? `\n[PREVIOUS DRAFT]:\n${safePrev}\n` : '',
-    refineInstructions ? `\n[REFINEMENT INSTRUCTION — PRIORITISE THIS]:\n${refineInstructions}\n` : '',
+    refineInstructions ? `\n[REFINEMENT INSTRUCTION - PRIORITISE THIS]:\n${refineInstructions}\n` : '',
     '',
     'TASK:',
     refineInstructions
       ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.'
       : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT]. Do NOT use any facts from the template itself.',
     'You must complete every template heading/time block. Return the full finished note, not a partial section.',
+    evidenceInstruction,
     '',
-    '[RAW DATA TO PROCESS — THIS IS WHAT HAPPENED ON SHIFT]:',
+    '[RAW DATA TO PROCESS - THIS IS WHAT HAPPENED ON SHIFT]:',
     text.trim(),
   ].filter((l) => l !== '').join('\n');
 
@@ -604,7 +608,7 @@ async function handleEnhanceNote(req, res) {
   } catch (e) {
     const msg = e?.message || '';
     const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
-      ? 'AI models are at capacity — wait 30 seconds and try again.'
+      ? 'AI models are at capacity - wait 30 seconds and try again.'
       : `Generation failed: ${msg}`;
     res.write(friendly);
   } finally {
@@ -618,11 +622,11 @@ RULES:
 - Write entirely in first-person as the support worker who was on shift
 - Never mention that notes were missing, that this is a reconstruction, or that you are AI
 - Do NOT invent clinical incidents, medication events, falls, or appointments unless evidenced in the context provided
-- Base the note on the client's known routines, clinical profile, and notes from surrounding dates — reconstruct a typical day for this person
+- Base the note on the client's known routines, clinical profile, and notes from surrounding dates - reconstruct a typical day for this person
 - The note must be CQC-compliant, professional, and indistinguishable from a genuine shift note written at the end of shift
 - Use UK English, past tense, write as if the shift just ended and you are handing over
 - Cover: mood and presentation on arrival, meals and hydration, activities and engagement, personal care (if relevant), any observations, handover status
-- Match the structure and format of the template provided — use its headings and sections exactly
+- Match the structure and format of the template provided - use its headings and sections exactly
 - Write with concrete operational detail in each section: what happened, staff response, client response, and outcome.
 - Avoid generic filler such as "support provided throughout shift" unless you also specify what support.
 - Minimum depth target: 350+ words unless source evidence is genuinely sparse.
@@ -639,7 +643,7 @@ async function handleGhostWrite(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext, shiftContext } = req.body || {};
+  const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext, shiftContext, includeEvidenceTrail } = req.body || {};
   if (!date || !clientName) return res.status(400).send('date and clientName required');
 
   const CTX_MAX = 60_000;
@@ -651,6 +655,9 @@ async function handleGhostWrite(req, res) {
   const safePrev = prevNote ? prevNote.slice(0, NOTE_MAX) : '';
   const safeNext = nextNote ? nextNote.slice(0, NOTE_MAX) : '';
   const safeShiftCtx = shiftContext ? shiftContext.slice(0, 2000) : '';
+  const evidenceInstruction = includeEvidenceTrail
+    ? `\nEVIDENCE TRAIL REQUIREMENT:\nAfter the note, append:\nEvidence Trail:\n- Provide 3 to 6 bullets.\n- Each bullet must include a source label and a short quoted phrase from supplied notes/context.\n- Allowed source labels: [SHIFT CONTEXT], [PREVIOUS SHIFT NOTE], [NEXT SHIFT NOTE], [CLINICAL CONTEXT], [DOCUMENT: filename], [RAW DATA].\n- No invented citations.\n`
+    : '';
 
   let dayLabel = '';
   try {
@@ -665,18 +672,19 @@ async function handleGhostWrite(req, res) {
     `CLIENT: ${clientName}`,
     `DATE: ${date}${dayLabel ? ` (${dayLabel})` : ''}`,
     '',
-    safeShiftCtx ? `[SPECIFIC SHIFT CONTEXT — follow these shift-specific details exactly]:\n${safeShiftCtx}` : '',
+    safeShiftCtx ? `[SPECIFIC SHIFT CONTEXT - follow these shift-specific details exactly]:\n${safeShiftCtx}` : '',
     '',
-    safePrev ? `[PREVIOUS SHIFT NOTE — evidence of what preceded this day]:\n${safePrev}` : '[PREVIOUS SHIFT NOTE]: Not available',
+    safePrev ? `[PREVIOUS SHIFT NOTE - evidence of what preceded this day]:\n${safePrev}` : '[PREVIOUS SHIFT NOTE]: Not available',
     '',
-    safeNext ? `[NEXT SHIFT NOTE — evidence of what followed this day]:\n${safeNext}` : '[NEXT SHIFT NOTE]: Not available',
+    safeNext ? `[NEXT SHIFT NOTE - evidence of what followed this day]:\n${safeNext}` : '[NEXT SHIFT NOTE]: Not available',
     '',
     safeContext ? `[INTELLIGENCE PROFILE & KNOWLEDGE BASE]:\n${safeContext}` : '',
     '',
-    safeTemplate ? `[NOTE STRUCTURE TO FOLLOW — use these headings and sections exactly]:\n${safeTemplate}` : '',
+    safeTemplate ? `[NOTE STRUCTURE TO FOLLOW - use these headings and sections exactly]:\n${safeTemplate}` : '',
     '',
     `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and intelligence knowledge, and any shift context provided to reconstruct the support provided. Write as the support worker on shift.`,
     `QUALITY BAR: Include clear specifics for each section (what happened, intervention, client response, end status). Avoid vague one-line summaries.`,
+    evidenceInstruction,
   ].filter(l => l !== undefined).join('\n');
 
   const messages = [
@@ -723,10 +731,11 @@ async function handleGhostWrite(req, res) {
   } catch (e) {
     const msg = e?.message || '';
     const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
-      ? 'AI models are at capacity — wait 30 seconds and try again.'
+      ? 'AI models are at capacity - wait 30 seconds and try again.'
       : `Generation failed: ${msg}`;
     res.write(friendly);
   } finally {
     res.end();
   }
 }
+

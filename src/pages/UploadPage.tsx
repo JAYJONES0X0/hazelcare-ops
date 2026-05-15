@@ -85,6 +85,14 @@ function findClientIdByNameHint(nameHint: string): string | null {
   return clients.find(c => c.name.trim().toLowerCase().includes(hint) || hint.includes(c.name.trim().toLowerCase()))?.id || null;
 }
 
+function buildEnvelopeWithExtractionGuard(fileName: string, text: string): NormalizedImportEnvelope {
+  const env = buildEnvelopeFromRaw(fileName, text);
+  if (!text.trim()) {
+    env.warnings.push('No extractable text found in this file. Detection used filename hints only.');
+  }
+  return env;
+}
+
 async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[]; readErrors: string[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter(entry => !entry.dir);
@@ -106,30 +114,27 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
       } else {
         text = await entry.async('text');
       }
-      if (text.trim()) {
-        const envelope = buildEnvelopeFromRaw(displayName, text);
-        return {
-          text: `\n\n--- FILE: ${displayName} ---\n${text}`,
-          row: {
-            id: `${entry.name}-${uid()}`,
-            fileName: displayName,
-            detectedType: envelope.source.detectedType,
-            parserProfile: envelope.source.parserProfile,
-            confidence: envelope.source.confidence,
-            suggestedTargets: envelope.suggestedTargets,
-            suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
-            envelope,
-            selectedTarget: envelope.suggestedTargets[0] || 'skip',
-            clientMode: 'global' as ClientMode,
-            selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
-            include: true,
-          }
-        };
-      }
+      const envelope = buildEnvelopeWithExtractionGuard(displayName, text);
+      return {
+        text: text.trim() ? `\n\n--- FILE: ${displayName} ---\n${text}` : '',
+        row: {
+          id: `${entry.name}-${uid()}`,
+          fileName: displayName,
+          detectedType: envelope.source.detectedType,
+          parserProfile: envelope.source.parserProfile,
+          confidence: envelope.source.confidence,
+          suggestedTargets: envelope.suggestedTargets,
+          suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
+          envelope,
+          selectedTarget: envelope.suggestedTargets[0] || 'skip',
+          clientMode: 'global' as ClientMode,
+          selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
+          include: true,
+        }
+      };
     } catch (e) {
       return { error: `${displayName}: failed` };
     }
-    return null;
   }));
 
   results.filter(r => r && !r.error).forEach(r => {
@@ -323,8 +328,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
           text = zip.combined;
         } else text = await file.text();
 
-        if (!text.trim()) continue;
-        const env = buildEnvelopeFromRaw(file.name, text);
+        const env = buildEnvelopeWithExtractionGuard(file.name, text);
         const item = { id: uid(), fileName: file.name, envelope: env, confidence: env.source.confidence };
         const nextBasket = [...sourceBasket, item];
         setSourceBasket(nextBasket);

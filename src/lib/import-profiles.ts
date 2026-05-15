@@ -92,6 +92,9 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   if (lowerName.includes('admission') || lowerName.includes('admission-pack')) {
     return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.85 };
   }
+  if (lowerName.includes('careplan') || lowerName.includes('care plan')) {
+    return { id: 'careplan-filename', type: 'admission', confidence: 0.86 };
+  }
   if (lowerName.includes('risk assessment') || lowerName.includes('risk-assessment')) {
     return { id: 'risk-assessment-pdf', type: 'admission', confidence: 0.93 };
   }
@@ -132,6 +135,16 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   if (
     ext === 'pdf' &&
     (
+      normalized.includes('emergency admission') ||
+      normalized.includes('report run on') ||
+      /(?:care plan|emergency admission pack)\s*[-â€“]\s*/i.test(normalized)
+    )
+  ) {
+    return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.9 };
+  }
+  if (
+    ext === 'pdf' &&
+    (
       normalized.includes('clinical risk assessment') ||
       normalized.includes('risk compatibility assessment') ||
       normalized.includes('compatibility risk assessment') ||
@@ -143,16 +156,6 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   }
   if (ext === 'pdf' && (normalized.includes('my support plan') || normalized.includes('support plan'))) {
     return { id: 'support-plan-pdf', type: 'support-plan', confidence: 0.86 };
-  }
-  if (
-    ext === 'pdf' &&
-    (
-      normalized.includes('emergency admission') ||
-      normalized.includes('report run on') ||
-      /(?:care plan|emergency admission pack)\s*[-â€“]\s*/i.test(normalized)
-    )
-  ) {
-    return { id: 'careplan-admission-pdf', type: 'admission', confidence: 0.9 };
   }
 
   // 4. Legacy & Generic CSV/PDF Diaries

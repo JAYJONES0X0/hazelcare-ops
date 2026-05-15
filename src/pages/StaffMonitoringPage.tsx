@@ -18,6 +18,7 @@ import { getAllEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import {
   DEFAULT_SUPPORT_WINDOWS,
+  SUPPORT_HOUR_CAP,
   computeCoverageSummary,
   formatSupportWindows,
   loadCoveragePlan,
@@ -517,13 +518,18 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
               { label: 'Found', value: String(coverage.totalActual) },
               { label: 'Missing', value: String(coverage.totalMissing) },
               { label: 'Coverage', value: `${coverage.coveragePct}%` },
-              { label: '1:1 Hours', value: `${coverage.totalHours}h` },
+              { label: `1:1 Hours (max ${SUPPORT_HOUR_CAP}h)`, value: `${coverage.totalHours}h` },
             ].map((item) => (
               <div key={item.label} className="hc-clay-inset rounded-xl px-4 py-3">
                 <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-1">{item.label}</div>
                 <div className={`text-lg font-black tabular-nums ${item.label === 'Missing' && coverage.totalMissing > 0 ? 'text-flag-amber' : 'text-hc-text'}`}>{item.value}</div>
               </div>
             ))}
+          </div>
+        )}
+        {coverage?.capApplied && (
+          <div className="mt-3 text-[9px] font-black text-flag-amber uppercase tracking-widest">
+            Raw plan projected {coverage.rawTotalHours}h. Enforcement capped this window to {coverage.hourCap}h.
           </div>
         )}
         {coverage && coverage.missingDays.length > 0 && (

@@ -39,7 +39,7 @@ export function ClientDocsPage() {
   const [copiedToken, setCopiedToken] = useState('');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [docUploadRef, setDocUploadRef] = useState<HTMLInputElement | null>(null);
+  const docUploadRef = useRef<HTMLInputElement>(null);
   const [sessionIntel, setSessionIntel] = useState<any>(null);
 
   const refresh = () => setClients(loadClients());

@@ -840,6 +840,50 @@ function preferredFromName(fullName: string): string {
   return tokens[0];
 }
 
+function normalizeOptionalField(value: string): string {
+  const cleaned = normalizeNameCandidate(value);
+  return cleaned === '-' ? '' : cleaned;
+}
+
+function cleanPhone(value: string): string {
+  const compact = value.replace(/[^\d+]/g, '');
+  if (compact.startsWith('+44') && compact.length >= 12) return `0${compact.slice(3)}`;
+  return compact;
+}
+
+function extractBasicProfileFields(text: string): Partial<FullClient> {
+  const normalized = normalizeSectionText(text);
+  const compact = normalized.replace(/\n/g, ' ');
+  const client: Partial<FullClient> = {};
+
+  const nameMatch = compact.match(/\bTitle\s+First Name\s+Last Name\s+(?:Mr|Mrs|Ms|Miss|Mx|Dr)\.?\s+([A-Z][A-Za-z'-]+)\s+([A-Z][A-Za-z'-]+)\b/i);
+  if (nameMatch) {
+    client.name = `${nameMatch[1]} ${nameMatch[2]}`;
+    client.preferredName = nameMatch[1];
+  }
+
+  const preferredDobMatch = compact.match(/\bPreferred Name\s+Gender Identity\s+Date of Birth\s+(.+?)\s+(?:male|female|non[-\s]?binary|other|not\s+known|prefer\s+not\s+to\s+say)\s+(\d{2}\/\d{2}\/\d{4})\b/i);
+  if (preferredDobMatch) {
+    const preferred = normalizeOptionalField(preferredDobMatch[1] || '');
+    if (preferred) client.preferredName = preferred;
+    client.dob = preferredDobMatch[2];
+  } else {
+    const dobMatch = compact.match(/\bDate of Birth\s+\S{0,40}?\s*(\d{2}\/\d{2}\/\d{4})\b/i);
+    if (dobMatch) client.dob = dobMatch[1];
+  }
+
+  const emailNhsMatch = compact.match(/\bEmail\s+NHS\s*\/\s*CHI No\.?\s+\S+@\S+\s+([\d\s]{10,16})(?=\s+Deprivation|\s+Gold|\s+Quick notes|$)/i);
+  if (emailNhsMatch) client.nhs = emailNhsMatch[1].replace(/\s+/g, '');
+
+  const contactSection = compact.match(/\bContact Number\s+(.{0,240})/i)?.[1] || compact;
+  const phoneMatches = [...contactSection.matchAll(/(?:\+44\s?\d{4}|\b0\d{4})[\s-]?\d{3}[\s-]?\d{3}\b/g)];
+  if (phoneMatches.length) {
+    client.phone = cleanPhone(phoneMatches[0][0]);
+  }
+
+  return client;
+}
+
 function extractPreparedForName(text: string): string {
   const prepared = text.match(/Prepared for\s+([^\n|]+)/i);
   if (!prepared) return '';
@@ -857,18 +901,28 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
 
   let name = '';
   let preferredName = '';
-  const headerMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)\s*Report run on/i);
+  const headerMatch = text.match(/(?:Care\s*Plan|Emergency\s+Admission\s+Pack)\s*[–—-]\s*([\s\S]{1,180}?)\s*Report\s*run\s*on/i);
   if (headerMatch) {
-    name = normalizeNameCandidate(headerMatch[1]);
-    preferredName = preferredFromName(name);
+    const candidate = normalizeNameCandidate(headerMatch[1]);
+    if (candidate && !/^hazel\s*care/i.test(candidate)) {
+      name = candidate;
+      preferredName = preferredFromName(name);
+    }
   }
 
   let address = '';
   const hcMatch = text.match(/(?:Hazel Care Support|Hazel Care)\s+(\w+)\s+\w+\s+(\w+)\s+(\d+)\s+years?\s+(.+?)(?:,\s*\d+\.\s*Needs|$)/i);
   if (hcMatch) {
+    const first = (hcMatch[1] || '').toLowerCase();
+    const second = (hcMatch[2] || '').toLowerCase();
+    const looksLikeOrgName =
+      ['hazel', 'care', 'support', 'operations', 'ops'].includes(first) ||
+      ['hazel', 'care', 'support', 'ltd', 'limited', 'operations', 'ops'].includes(second);
     if (!name) {
-      name = `${hcMatch[1]} ${hcMatch[2]}`.trim();
-      preferredName = preferredFromName(name);
+      if (!looksLikeOrgName) {
+        name = `${hcMatch[1]} ${hcMatch[2]}`.trim();
+        preferredName = preferredFromName(name);
+      }
     }
     address = hcMatch[4]?.trim() || '';
   }
@@ -970,7 +1024,7 @@ export function parseUniversalText(rawText: string): ParseResult {
     /adult\s*-\s*needs\s*re-?assessment/i.test(text) ||
     /assessment\s+summary\s+and\s+personal\s+outcomes/i.test(text);
 
-  const isCarePlanReport = /(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*.+Report run on/i.test(text);
+  const isCarePlanReport = /(?:Care\s*Plan|Emergency\s+Admission\s+Pack)[\s\S]{0,220}Report\s*run\s*on/i.test(text);
   const isRiskAssessmentReport =
     /clinical\s+risk\s+assessment/i.test(text) ||
     /risk\s+compatibility\s+assessment/i.test(text) ||
@@ -1043,16 +1097,18 @@ export function parseUniversalText(rawText: string): ParseResult {
   }
 
   // New Line Delimited Parser
+  const basicProfile = extractBasicProfileFields(text);
   const firstName = extractField(text, 'First Name\n', ['Last Name', 'Preferred Name']).split('\n')[0].trim();
   const lastName = extractField(text, 'Last Name\n', ['Preferred Name', 'Gender']).split('\n')[0].trim();
   let preferredNameNL = extractField(text, 'Preferred Name\n', ['Gender', 'Date of Birth']).split('\n')[0].trim();
   const dob = extractField(text, 'Date of Birth\n', ['Email', 'NHS']).split('\n')[0].trim();
   const nhs = extractField(text, 'NHS / CHI No.\n', ['Deprivation', 'Gold']).split('\n')[0].trim();
   const phone = extractField(text, 'Contact Number\n', ['Quick notes', 'CRITICAL']).split('\n')[0].trim();
-  let name = `${firstName} ${lastName}`.trim();
+  let name = basicProfile.name || `${firstName} ${lastName}`.trim();
+  preferredNameNL = basicProfile.preferredName || preferredNameNL;
 
   if (!name || name.length < 2) {
-    const hdrMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)(?:\n|Report run on)/i);
+    const hdrMatch = text.match(/(?:Care\s*Plan|Emergency\s+Admission\s+Pack)\s*[–—-]\s*([\s\S]{1,180}?)(?:\n|Report\s*run\s*on)/i);
     if (hdrMatch) {
       name = normalizeNameCandidate(hdrMatch[1]);
       preferredNameNL = preferredNameNL || preferredFromName(name);
@@ -1150,7 +1206,17 @@ export function parseUniversalText(rawText: string): ParseResult {
 
   const risk = buildRiskFromCarePlan(text, carePlan);
   return {
-    client: { name, preferredName: preferredNameNL, dob, address, nhs, phone, keyWorker, dateOfAdmission, risk },
+    client: {
+      name,
+      preferredName: preferredNameNL || preferredFromName(name),
+      dob: basicProfile.dob || dob,
+      address,
+      nhs: basicProfile.nhs || nhs,
+      phone: basicProfile.phone || phone,
+      keyWorker,
+      dateOfAdmission,
+      risk,
+    },
     carePlan,
     warnings,
   };

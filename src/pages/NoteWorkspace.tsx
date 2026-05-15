@@ -9,7 +9,8 @@ import { extractFileText } from '../lib/universal-extractor';
 import { getAllEntriesAsync, appendEntriesAsync, getStoreBoundsAsync, upsertEntryAsync, deleteEntriesByIdsAsync } from '../lib/entry-store';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { loadClients, saveClient, emptyClient, type FullClient, type VaultDoc } from '../lib/client-store';
-import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, clearCoveragePlan, type CoveragePlan } from '../lib/coverage-plan';
+import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, clearCoveragePlan, SUPPORT_HOUR_CAP, type CoveragePlan } from '../lib/coverage-plan';
+import { splitEvidenceTrail } from '../lib/evidence-trail';
 
 const INTERNAL_TEMPLATES = [
   {
@@ -187,10 +188,12 @@ export function NoteWorkspace() {
   }, []);
 
   const [rewriteMap, setRewriteMap] = useState<Record<string, string>>({});
+  const [rewriteEvidenceMap, setRewriteEvidenceMap] = useState<Record<string, string[]>>({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
   const [refineInputs, setRefineInputs] = useState<Record<string, string>>({});
   const [ghostMap, setGhostMap] = useState<Record<string, string>>({});
+  const [ghostEvidenceMap, setGhostEvidenceMap] = useState<Record<string, string[]>>({});
   const [ghostLoadingMap, setGhostLoadingMap] = useState<Record<string, boolean>>({});
   const [ghostCopiedMap, setGhostCopiedMap] = useState<Record<string, boolean>>({});
   const [ghostSavedMap, setGhostSavedMap] = useState<Record<string, boolean>>({});
@@ -367,6 +370,9 @@ export function NoteWorkspace() {
       coveragePct: totalExpected > 0 ? Math.round((totalActual / totalExpected) * 100) : 100,
       dailyHours: 0,
       totalHours: 0,
+      rawTotalHours: 0,
+      hourCap: SUPPORT_HOUR_CAP,
+      capApplied: false,
     };
   }, [entries, selectedClient, dateRange, expectedNotesPerDay, coveragePlan]);
 
@@ -375,7 +381,9 @@ export function NoteWorkspace() {
     setDisplayCount(30);
     setGhostContextMap({});
     setGhostMap({});
+    setGhostEvidenceMap({});
     setRewriteMap({});
+    setRewriteEvidenceMap({});
     setLoadingMap({});
     setGhostLoadingMap({});
   }, [selectedClient, dateRange]);
@@ -391,7 +399,11 @@ export function NoteWorkspace() {
       for (const day of reviewCoverage.missingDays) {
         const key = `audit-${day.date}`;
         if (!next[key]) {
-          next[key] = buildShiftContext(coveragePlan, day.date);
+          next[key] = buildShiftContext(
+            coveragePlan,
+            day.date,
+            day.missingWindows.length ? day.missingWindows : coveragePlan.windows,
+          );
           changed = true;
         }
       }
@@ -495,6 +507,7 @@ export function NoteWorkspace() {
     }
 
     setLoadingMap(prev => ({ ...prev, [entryKey]: true }));
+    setRewriteEvidenceMap(prev => ({ ...prev, [entryKey]: [] }));
     try {
       const groqRes = await fetch('/api/staff/enhance-note', {
         method: 'POST',
@@ -507,7 +520,8 @@ export function NoteWorkspace() {
           referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
           refineInstructions: finalInstructions,
           previousOutput: rewriteMap[entryKey],
-          clinicalContext: intelContext
+          clinicalContext: intelContext,
+          includeEvidenceTrail: true,
         })
       });
 
@@ -522,12 +536,15 @@ export function NoteWorkspace() {
         setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
       }
       result += decoder.decode();
-      setRewriteMap(prev => ({ ...prev, [entryKey]: result }));
+      const parsed = splitEvidenceTrail(result);
+      setRewriteMap(prev => ({ ...prev, [entryKey]: parsed.note }));
+      setRewriteEvidenceMap(prev => ({ ...prev, [entryKey]: parsed.evidence }));
       if (refineInstructions) {
         setRefineInputs(prev => ({ ...prev, [entryKey]: '' }));
       }
     } catch (e) {
       setRewriteMap(prev => ({ ...prev, [entryKey]: `Intelligence Failure: ${e instanceof Error ? e.message : 'Unknown Connection Error'}` }));
+      setRewriteEvidenceMap(prev => ({ ...prev, [entryKey]: [] }));
     } finally {
       setLoadingMap(prev => ({ ...prev, [entryKey]: false }));
     }
@@ -574,6 +591,7 @@ export function NoteWorkspace() {
 
     setGhostLoadingMap(prev => ({ ...prev, [gapId]: true }));
     setGhostMap(prev => ({ ...prev, [gapId]: '' }));
+    setGhostEvidenceMap(prev => ({ ...prev, [gapId]: [] }));
     try {
       const res = await fetch('/api/staff/ghost-write', {
         method: 'POST',
@@ -586,7 +604,8 @@ export function NoteWorkspace() {
           nextNote: nextEntry ? `[${nextEntry.date} — ${nextEntry.carer}]: ${nextEntry.entry}` : '',
           referenceTemplate: goldTemplate || INTERNAL_TEMPLATES[0].content,
           clinicalContext,
-          shiftContext
+          shiftContext,
+          includeEvidenceTrail: true,
         })
       });
       if (!res.ok) {
@@ -612,9 +631,12 @@ export function NoteWorkspace() {
         setGhostMap(prev => ({ ...prev, [gapId]: result }));
       }
       result += decoder.decode();
-      setGhostMap(prev => ({ ...prev, [gapId]: result }));
+      const parsed = splitEvidenceTrail(result);
+      setGhostMap(prev => ({ ...prev, [gapId]: parsed.note }));
+      setGhostEvidenceMap(prev => ({ ...prev, [gapId]: parsed.evidence }));
     } catch (e) {
       setGhostMap(prev => ({ ...prev, [gapId]: `Ghost write failed: ${e instanceof Error ? e.message : 'Unknown error'}` }));
+      setGhostEvidenceMap(prev => ({ ...prev, [gapId]: [] }));
     } finally {
       setGhostLoadingMap(prev => ({ ...prev, [gapId]: false }));
     }
@@ -744,6 +766,11 @@ export function NoteWorkspace() {
         delete next[ghostKey];
         return next;
       });
+      setGhostEvidenceMap(prev => {
+        const next = { ...prev };
+        delete next[ghostKey];
+        return next;
+      });
     } catch (e) {
       console.error('Failed to save ghost entry:', e);
     } finally {
@@ -769,6 +796,11 @@ export function NoteWorkspace() {
       await upsertEntryAsync(updated);
       setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
       setRewriteMap(prev => {
+        const next = { ...prev };
+        delete next[entryKey];
+        return next;
+      });
+      setRewriteEvidenceMap(prev => {
         const next = { ...prev };
         delete next[entryKey];
         return next;
@@ -806,6 +838,11 @@ export function NoteWorkspace() {
         return next;
       });
       setRewriteMap(prev => {
+        const next = { ...prev };
+        delete next[entryKey];
+        return next;
+      });
+      setRewriteEvidenceMap(prev => {
         const next = { ...prev };
         delete next[entryKey];
         return next;
@@ -1284,6 +1321,7 @@ export function NoteWorkspace() {
                 {reviewCoverage.totalHours > 0 && (
                   <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">
                     {reviewCoverage.totalHours} planned 1:1 hours
+                    {reviewCoverage.capApplied ? ` (capped at ${reviewCoverage.hourCap}h)` : ''}
                   </span>
                 )}
                 <span className={`text-[10px] font-black uppercase tracking-widest ${reviewCoverage.totalMissing > 0 ? 'text-flag-amber' : 'text-flag-green'}`}>
@@ -1361,6 +1399,20 @@ export function NoteWorkspace() {
                           ) : (
                             <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{ghostMap[`audit-${day.date}`]}</p>
                           )}
+                          {!ghostLoadingMap[`audit-${day.date}`]
+                            && !isGhostFailure(ghostMap[`audit-${day.date}`] || '')
+                            && (ghostEvidenceMap[`audit-${day.date}`] || []).length > 0 && (
+                              <div className="mt-4 rounded-xl border border-hc-border/20 bg-hc-bg/30 p-3">
+                                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-2">Evidence Trail</div>
+                                <div className="space-y-1.5">
+                                  {(ghostEvidenceMap[`audit-${day.date}`] || []).map((line, idx) => (
+                                    <div key={`${day.date}-ev-${idx}`} className="text-[10px] text-hc-muted leading-relaxed">
+                                      {line}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>
@@ -1374,6 +1426,7 @@ export function NoteWorkspace() {
             if (item.type === 'gap') {
               const g = item as ClinicalGap;
               const ghostResult = ghostMap[g.id];
+              const ghostEvidence = ghostEvidenceMap[g.id] || [];
               const ghostLoading = ghostLoadingMap[g.id];
               const ghostCopied = ghostCopiedMap[g.id];
               const gapClient = g.client || selectedClient || '';
@@ -1475,6 +1528,18 @@ export function NoteWorkspace() {
                         ) : (
                           <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{ghostResult}</p>
                         )}
+                        {!ghostLoading && !isGhostFailure(ghostResult || '') && ghostEvidence.length > 0 && (
+                          <div className="mt-4 rounded-xl border border-hc-border/20 bg-hc-bg/30 p-3">
+                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-2">Evidence Trail</div>
+                            <div className="space-y-1.5">
+                              {ghostEvidence.map((line, idx) => (
+                                <div key={`${g.id}-ev-${idx}`} className="text-[10px] text-hc-muted leading-relaxed">
+                                  {line}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1485,6 +1550,7 @@ export function NoteWorkspace() {
             const e = item as CareEntry;
             const key = e.id || `${e.date}-${e.carer}-${i}`;
             const rewrite = rewriteMap[key];
+            const rewriteEvidence = rewriteEvidenceMap[key] || [];
             const isLoading = loadingMap[key];
             const isCopied = copiedMap[key];
             const isReplacing = replaceLoadingMap[key];
@@ -1602,6 +1668,21 @@ export function NoteWorkspace() {
                           ) : (
                             <p className="text-[12px] font-medium text-hc-text leading-relaxed whitespace-pre-wrap">{rewrite}</p>
                           )}
+                          {!rewrite.startsWith('AI models are at capacity')
+                            && !rewrite.startsWith('Generation failed')
+                            && !rewrite.startsWith('Intelligence Failure')
+                            && rewriteEvidence.length > 0 && (
+                              <div className="mt-4 rounded-xl border border-hc-border/20 bg-hc-bg/30 p-3">
+                                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mb-2">Evidence Trail</div>
+                                <div className="space-y-1.5">
+                                  {rewriteEvidence.map((line, idx) => (
+                                    <div key={`${key}-ev-${idx}`} className="text-[10px] text-hc-muted leading-relaxed">
+                                      {line}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                         </div>
                         <div className="mt-6 pt-6 border-t border-hc-border/10 flex flex-wrap items-center justify-between gap-4 shrink-0">
                           <div className="flex items-center gap-2">

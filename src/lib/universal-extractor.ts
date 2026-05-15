@@ -1,17 +1,26 @@
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  // Use bundled worker URL so PDF parsing does not depend on external CDN availability.
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
 export async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({
-    data: arrayBuffer,
-    disableWorker: typeof window === 'undefined',
-  }).promise;
+  let pdf: Awaited<ReturnType<typeof pdfjs.getDocument>>['promise'] extends Promise<infer T> ? T : never;
+  if (typeof window === 'undefined') {
+    pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+  } else {
+    try {
+      pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: false }).promise;
+    } catch {
+      // Fallback path for environments where Worker setup is restricted.
+      pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+    }
+  }
   let fullText = '';
   const supportPlanFlowHint = /(need\s+description\s+need\s+comment\s+outcome\s+comment|my\s+support\s+plan|what\s+i\s+need\s+help\s+with|what\s+we['’]?\s*re\s+working\s+towards)/i;
   for (let i = 1; i <= pdf.numPages; i++) {

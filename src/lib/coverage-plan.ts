@@ -34,6 +34,9 @@ export interface CoverageSummary {
   coveragePct: number;
   dailyHours: number;
   totalHours: number;
+  rawTotalHours: number;
+  hourCap: number;
+  capApplied: boolean;
 }
 
 export const DEFAULT_SUPPORT_WINDOWS: SupportWindow[] = [
@@ -41,6 +44,7 @@ export const DEFAULT_SUPPORT_WINDOWS: SupportWindow[] = [
   { id: 'pm', label: 'Afternoon 1:1', start: '14:00', end: '15:00', hours: 1 },
   { id: 'eve', label: 'Evening 1:1', start: '17:00', end: '19:00', hours: 2 },
 ];
+export const SUPPORT_HOUR_CAP = 15;
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -122,8 +126,8 @@ export function clearCoveragePlan() {
   localStorage.removeItem(COVERAGE_PLAN_KEY);
 }
 
-export function buildShiftContext(plan: CoveragePlan, date: string): string {
-  const windows = plan.windows.map((w) => `${w.start}-${w.end} 1:1 support`).join('; ');
+export function buildShiftContext(plan: CoveragePlan, date: string, windowsForDay: SupportWindow[] = plan.windows): string {
+  const windows = windowsForDay.map((w) => `${w.start}-${w.end} 1:1 support`).join('; ');
   return `${plan.client} expected 1:1 support on ${date}: ${windows}. Use these exact support windows and evidence the support, intervention, client response, and handover outcome.`;
 }
 
@@ -134,6 +138,56 @@ export function isDailySupportEntry(entry: CareEntry): boolean {
     || haystack.includes('1:1')
     || haystack.includes('one to one')
     || haystack.includes('support');
+}
+
+function windowDurationMinutes(window: SupportWindow): number {
+  const start = parseClockToMinutes(window.start);
+  const end = parseClockToMinutes(window.end);
+  if (start !== null && end !== null && end > start) {
+    return end - start;
+  }
+  return Math.max(0, Math.round(window.hours * 60));
+}
+
+function cloneWindowWithDuration(window: SupportWindow, minutes: number): SupportWindow {
+  const duration = Math.max(1, minutes);
+  const start = parseClockToMinutes(window.start);
+  if (start === null) {
+    return {
+      ...window,
+      hours: Math.round((duration / 60) * 10) / 10,
+    };
+  }
+  const end = formatClock(start + duration);
+  return {
+    ...window,
+    end,
+    label: `${window.start}-${end} 1:1`,
+    hours: Math.round((duration / 60) * 10) / 10,
+  };
+}
+
+function allocateDayWindows(windows: SupportWindow[], remainingMinutes: number): { windows: SupportWindow[]; usedMinutes: number } {
+  if (remainingMinutes <= 0) return { windows: [], usedMinutes: 0 };
+  let remaining = remainingMinutes;
+  let used = 0;
+  const picked: SupportWindow[] = [];
+  for (const window of windows) {
+    if (remaining <= 0) break;
+    const duration = windowDurationMinutes(window);
+    if (duration <= 0) continue;
+    if (duration <= remaining) {
+      picked.push(window);
+      remaining -= duration;
+      used += duration;
+      continue;
+    }
+    picked.push(cloneWindowWithDuration(window, remaining));
+    used += remaining;
+    remaining = 0;
+    break;
+  }
+  return { windows: picked, usedMinutes: used };
 }
 
 export function computeCoverageSummary(entries: CareEntry[], plan: CoveragePlan | null): CoverageSummary | null {
@@ -155,17 +209,24 @@ export function computeCoverageSummary(entries: CareEntry[], plan: CoveragePlan 
   const days: CoverageDay[] = [];
   const cursor = new Date(fromIso);
   const end = new Date(toIso);
+  const rawDailyHours = Math.round((plan.windows.reduce((sum, w) => sum + windowDurationMinutes(w), 0) / 60) * 10) / 10;
+  let remainingCapMinutes = Math.round(SUPPORT_HOUR_CAP * 60);
+  let cappedMinutes = 0;
   while (cursor <= end) {
     const iso = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`;
     const actual = byDay.get(iso)?.length || 0;
-    const expected = plan.windows.length;
+    const allocation = allocateDayWindows(plan.windows, remainingCapMinutes);
+    const expectedWindows = allocation.windows;
+    const expected = expectedWindows.length;
     const missing = Math.max(0, expected - actual);
+    remainingCapMinutes = Math.max(0, remainingCapMinutes - allocation.usedMinutes);
+    cappedMinutes += allocation.usedMinutes;
     days.push({
       date: fromIsoDate(iso),
       expected,
       actual,
       missing,
-      missingWindows: plan.windows.slice(actual, actual + missing),
+      missingWindows: expectedWindows.slice(actual, actual + missing),
     });
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -173,7 +234,8 @@ export function computeCoverageSummary(entries: CareEntry[], plan: CoveragePlan 
   const totalExpected = days.reduce((sum, day) => sum + day.expected, 0);
   const totalActual = days.reduce((sum, day) => sum + Math.min(day.actual, day.expected), 0);
   const totalMissing = Math.max(0, totalExpected - totalActual);
-  const dailyHours = plan.windows.reduce((sum, w) => sum + w.hours, 0);
+  const totalHours = Math.round((cappedMinutes / 60) * 10) / 10;
+  const rawTotalHours = Math.round(rawDailyHours * days.length * 10) / 10;
   return {
     days,
     missingDays: days.filter((day) => day.missing > 0),
@@ -181,7 +243,10 @@ export function computeCoverageSummary(entries: CareEntry[], plan: CoveragePlan 
     totalActual,
     totalMissing,
     coveragePct: totalExpected > 0 ? Math.round((totalActual / totalExpected) * 100) : 100,
-    dailyHours,
-    totalHours: Math.round(dailyHours * days.length * 10) / 10,
+    dailyHours: rawDailyHours,
+    totalHours,
+    rawTotalHours,
+    hourCap: SUPPORT_HOUR_CAP,
+    capApplied: rawTotalHours > SUPPORT_HOUR_CAP && totalHours < rawTotalHours,
   };
 }
