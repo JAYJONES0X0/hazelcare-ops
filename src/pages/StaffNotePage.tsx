@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import { NoteWorkspace } from './NoteWorkspace';
@@ -39,16 +39,30 @@ const SpeechRecognitionAPI =
 const speechSupported = !!SpeechRecognitionAPI;
 
 export const VOICE_LANGUAGES = [
-  { code: 'en-GB', label: 'English (UK)', flag: 'ðŸ‡¬ðŸ‡§' },
-  { code: 'en-US', label: 'English (US)', flag: 'ðŸ‡ºðŸ‡¸' },
-  { code: 'fr-FR', label: 'French', flag: 'ðŸ‡«ðŸ‡·' },
-  { code: 'es-ES', label: 'Spanish', flag: 'ðŸ‡ªðŸ‡¸' },
-  { code: 'de-DE', label: 'German', flag: 'ðŸ‡©ðŸ‡ª' },
-  { code: 'it-IT', label: 'Italian', flag: 'ðŸ‡®ðŸ‡¹' },
-  { code: 'pt-PT', label: 'Portuguese', flag: 'ðŸ‡µðŸ‡¹' },
-  { code: 'pl-PL', label: 'Polish', flag: 'ðŸ‡µðŸ‡±' },
-  { code: 'ro-RO', label: 'Romanian', flag: 'ðŸ‡·ðŸ‡´' },
-  { code: 'ar-SA', label: 'Arabic', flag: 'ðŸ‡¸ðŸ‡¦' },
+  { code: 'en-GB', label: 'English (UK)', tag: 'UK' },
+  { code: 'en-US', label: 'English (US)', tag: 'US' },
+  { code: 'en-IE', label: 'English (Ireland)', tag: 'IE' },
+  { code: 'fr-FR', label: 'French', tag: 'FR' },
+  { code: 'es-ES', label: 'Spanish', tag: 'ES' },
+  { code: 'de-DE', label: 'German', tag: 'DE' },
+  { code: 'it-IT', label: 'Italian', tag: 'IT' },
+  { code: 'pt-PT', label: 'Portuguese', tag: 'PT' },
+  { code: 'pl-PL', label: 'Polish', tag: 'PL' },
+  { code: 'ro-RO', label: 'Romanian', tag: 'RO' },
+  { code: 'ar-SA', label: 'Arabic', tag: 'AR' },
+  { code: 'hi-IN', label: 'Hindi', tag: 'HI' },
+  { code: 'bn-BD', label: 'Bengali (Bangladesh)', tag: 'BN' },
+  { code: 'ur-PK', label: 'Urdu', tag: 'UR' },
+  { code: 'pa-IN', label: 'Punjabi', tag: 'PA' },
+  { code: 'gu-IN', label: 'Gujarati', tag: 'GU' },
+  { code: 'ta-IN', label: 'Tamil', tag: 'TA' },
+  { code: 'te-IN', label: 'Telugu', tag: 'TE' },
+  { code: 'mr-IN', label: 'Marathi', tag: 'MR' },
+  { code: 'ne-NP', label: 'Nepali', tag: 'NE' },
+  { code: 'yo-NG', label: 'Yoruba', tag: 'YO' },
+  { code: 'ig-NG', label: 'Igbo', tag: 'IG' },
+  { code: 'sw-KE', label: 'Swahili', tag: 'SW' },
+  { code: 'sn-ZW', label: 'Shona', tag: 'SN' },
 ];
 
 let _voiceLang = 'en-GB';
@@ -81,15 +95,15 @@ function useSpeechToText(onResult: (transcript: string) => void) {
   return { listening, toggle: () => listening ? stop() : start() };
 }
 
-function MicButton({ fieldKey, onTranscript }: { fieldKey: string; onTranscript: (key: string, text: string) => void }) {
+function MicButton({ fieldKey, voiceLang, onTranscript }: { fieldKey: string; voiceLang: string; onTranscript: (key: string, text: string) => void }) {
   const { listening, toggle } = useSpeechToText(t => onTranscript(fieldKey, t));
-  const lang = VOICE_LANGUAGES[0];
+  const lang = VOICE_LANGUAGES.find(v => v.code === voiceLang) || VOICE_LANGUAGES[0];
   if (!speechSupported) return null;
   return (
     <button type="button" onClick={toggle} className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl
         ${listening ? 'bg-flag-red/20 border-2 border-flag-red text-flag-red animate-pulse' : 'hc-clay-raised border border-hc-teal/20 text-hc-teal hover:bg-hc-teal/5'}`}>
       <div className={`w-2 h-2 rounded-full ${listening ? 'bg-flag-red animate-ping' : 'bg-hc-teal'}`} />
-      <span>{listening ? 'LISTENING...' : `${lang?.flag} DICTATE`}</span>
+      <span>{listening ? 'LISTENING...' : `${lang?.tag} DICTATE`}</span>
     </button>
   );
 }
@@ -146,6 +160,7 @@ export function StaffNotePage() {
   const [shareLink, setShareLink] = useState('');
   const [shareCode, setShareCode] = useState('');
   const [copiedShare, setCopiedShare] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const setVoiceLangUi = (lang: string) => {
     setVoiceLangState(lang);
@@ -260,9 +275,9 @@ export function StaffNotePage() {
            </div>
            
            <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowStackPicker(!showStackPicker)}
-                className="flex items-center gap-3 px-6 py-2.5 hc-clay-raised bg-hc-bone/10 border-white/10 text-[10px] font-black uppercase tracking-widest text-hc-bone hover:bg-white/20 transition-all rounded-xl shadow-xl active:scale-95"
+                className="flex items-center gap-3 px-6 py-2.5 rounded-xl bg-hc-surface border border-hc-border/50 text-[10px] font-black uppercase tracking-widest text-hc-text hover:bg-hc-bone transition-all shadow-md active:scale-95"
               >
                 <LayoutGrid size={14} />
                 Load Intelligence Stack
@@ -305,10 +320,10 @@ export function StaffNotePage() {
                     onChange={(e) => setVoiceLangUi(e.target.value)}
                     className="bg-transparent text-[10px] font-black uppercase tracking-widest text-hc-text outline-none"
                   >
-                    {VOICE_LANGUAGES.map(v => <option key={v.code} value={v.code}>{v.flag} {v.label}</option>)}
+                    {VOICE_LANGUAGES.map(v => <option key={v.code} value={v.code}>{v.tag} {v.label}</option>)}
                   </select>
                 </div>
-                <MicButton fieldKey="freetext" onTranscript={(_, t) => setFreeText(prev => prev + ' ' + t)} />
+                <MicButton fieldKey="freetext" voiceLang={voiceLang} onTranscript={(_, t) => setFreeText(prev => prev + ' ' + t)} />
               </div>
             </div>
             <textarea
@@ -326,7 +341,7 @@ export function StaffNotePage() {
           <div className="p-8 space-y-6 bg-hc-teal/[0.01]">
             <div className="flex items-center justify-between">
                <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Standardised Output Matrix</label>
-               {enhancedNote && <span className="pill pill-teal text-[9px] animate-pulse">âœ“ VERIFIED FORENSIC</span>}
+               {enhancedNote && <span className="pill pill-teal text-[9px] animate-pulse">VERIFIED FORENSIC</span>}
             </div>
             <div className="hc-clay-inset p-8 min-h-[450px] bg-transparent overflow-y-auto scrollbar-thin">
               {enhancedNote ? (
@@ -352,56 +367,71 @@ export function StaffNotePage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto hc-clay-raised p-8 flex flex-wrap gap-8 items-end">
-         <div className="flex-1 min-w-[200px] space-y-3">
-            <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Service User Focus</label>
-            <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full Name..." className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner" />
-         </div>
-         <div className="flex-1 min-w-[200px] space-y-3">
-            <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Location Site</label>
-            <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner bg-transparent">
-              {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-            </select>
-         </div>
-         <div className="px-8 py-5 hc-clay-inset flex flex-col items-center">
-            <span className="text-[10px] font-black text-hc-muted uppercase opacity-60 mb-1">Volume</span>
-            <span className="text-xl font-black text-hc-teal tabular-nums">{wordCount} WDS</span>
-         </div>
+      <div className="max-w-4xl mx-auto mt-6">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(v => !v)}
+          className="w-full hc-clay-raised px-6 py-4 rounded-2xl text-left flex items-center justify-between"
+        >
+          <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Advanced Staff Context</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-hc-teal">{showAdvanced ? 'Hide' : 'Show'}</span>
+        </button>
       </div>
 
-      <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-6">
-        <div className="flex flex-wrap items-center gap-4 justify-between">
-          <div>
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Staff Share Link</div>
-            <div className="text-[11px] font-bold text-hc-text">Secure one-time access for remote dictation</div>
+      {showAdvanced && (
+        <>
+          <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-8 flex flex-wrap gap-8 items-end">
+            <div className="flex-1 min-w-[200px] space-y-3">
+              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Service User Focus</label>
+              <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full Name..." className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner" />
+            </div>
+            <div className="flex-1 min-w-[200px] space-y-3">
+              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Location Site</label>
+              <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner bg-transparent">
+                {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+              </select>
+            </div>
+            <div className="px-8 py-5 hc-clay-inset flex flex-col items-center">
+              <span className="text-[10px] font-black text-hc-muted uppercase opacity-60 mb-1">Volume</span>
+              <span className="text-xl font-black text-hc-teal tabular-nums">{wordCount} WDS</span>
+            </div>
           </div>
-          <button
-            onClick={() => void issueStaffLink()}
-            disabled={sharing}
-            className="px-5 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
-          >
-            <Link2 className={`w-3.5 h-3.5 ${sharing ? 'animate-pulse' : ''}`} />
-            {sharing ? 'Generating...' : 'Generate Staff Link'}
-          </button>
-        </div>
-        {shareLink && (
-          <div className="mt-4 p-4 hc-clay-inset rounded-2xl">
-            <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || 'â€”'}</div>
-            <div className="text-[11px] font-bold text-hc-text break-all mb-3">{shareLink}</div>
-            <button
-              onClick={() => {
-                void navigator.clipboard.writeText(shareLink);
-                setCopiedShare(true);
-                setTimeout(() => setCopiedShare(false), 2000);
-              }}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${copiedShare ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
-            >
-              {copiedShare ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedShare ? 'Copied' : 'Copy Link'}
-            </button>
+
+          <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-6">
+            <div className="flex flex-wrap items-center gap-4 justify-between">
+              <div>
+                <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Staff Share Link</div>
+                <div className="text-[11px] font-bold text-hc-text">Secure one-time access for remote dictation</div>
+              </div>
+              <button
+                onClick={() => void issueStaffLink()}
+                disabled={sharing}
+                className="px-5 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+              >
+                <Link2 className={`w-3.5 h-3.5 ${sharing ? 'animate-pulse' : ''}`} />
+                {sharing ? 'Generating...' : 'Generate Staff Link'}
+              </button>
+            </div>
+            {shareLink && (
+              <div className="mt-4 p-4 hc-clay-inset rounded-2xl">
+                <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || '-'}</div>
+                <div className="text-[11px] font-bold text-hc-text break-all mb-3">{shareLink}</div>
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(shareLink);
+                    setCopiedShare(true);
+                    setTimeout(() => setCopiedShare(false), 2000);
+                  }}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${copiedShare ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
+                >
+                  {copiedShare ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedShare ? 'Copied' : 'Copy Link'}
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
       </>
       )}
 
@@ -410,4 +440,5 @@ export function StaffNotePage() {
     </div>
   );
 }
+
 

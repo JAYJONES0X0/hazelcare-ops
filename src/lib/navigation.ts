@@ -41,6 +41,7 @@ export const MAIN_SECTIONS: MainSection[] = [
       { id: 'client-docs', label: 'Sovereign Vault' },
       { id: 'risk', label: 'Risk Matrix' },
       { id: 'reports', label: 'Regulatory Audit' },
+      { id: 'staff-tools', label: 'Staff Tools' },
     ],
   },
   {
@@ -51,7 +52,6 @@ export const MAIN_SECTIONS: MainSection[] = [
       { id: 'staff-monitoring', label: 'Force Protection' },
       { id: 'handover', label: 'Shift Handovers' },
       { id: 'nourish-tasks', label: 'Nourish Task Packs' },
-      { id: 'notes', label: 'Dictation Studio' },
       { id: 'note-workspace', label: 'AI Note Workspace' },
       { id: 'templates', label: 'Builder Templates' },
       { id: 'training-hub', label: 'Sovereign Trainer' },

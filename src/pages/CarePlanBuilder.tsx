@@ -6,10 +6,12 @@ import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { loadWeekData } from '../lib/storage';
 import { parseUniversalText } from '../lib/universal-import';
 import { getAllEntries } from '../lib/entry-store';
+import { mergeCarePlanData } from '../lib/intel-merge';
 import { Sparkles, ChevronRight, Download } from 'lucide-react';
 import type { FullClient, CarePlanDomain } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 import { extractFileText } from '../lib/universal-extractor';
+import { mergeClientIdentity } from '../lib/client-identity-merge';
 
 interface Props {
   clientId: string;
@@ -331,14 +333,15 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
     try {
       const rawText = await extractFileText(file);
       const parsed = parseUniversalText(rawText);
-      const next: FullClient = {
-        ...client,
-        ...parsed.client,
-        carePlan: parsed.carePlan || client.carePlan,
-      };
-      saveClient(next);
-      setClient(next);
-      setImportStatus(`Dataset imported. ${parsed.carePlan.domains.filter((d) => d.enabled).length} domain(s) detected.`);
+
+      setClient(prev => {
+        const base = mergeClientIdentity(prev, parsed.client);
+        const mergedCarePlan = mergeCarePlanData(prev.carePlan, parsed.carePlan, today);
+        const next: FullClient = { ...base, carePlan: mergedCarePlan };
+        saveClient(next);
+        return next;
+      });
+      setImportStatus(`Dataset imported and merged. ${parsed.carePlan?.domains?.filter((d) => d.enabled).length || 0} domain(s) detected.`);
     } catch (err: any) {
       setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
     } finally {

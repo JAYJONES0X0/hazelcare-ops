@@ -41,7 +41,9 @@ describe('storage session week data', () => {
   });
 
   it('keeps weekData in session memory only', async () => {
-    const localStorage = createLocalStorageMock();
+    const localStorage = createLocalStorageMock({
+      'hc-schema-v': '3',
+    });
     vi.stubGlobal('localStorage', localStorage);
 
     const storage = await import('./storage');
@@ -55,6 +57,7 @@ describe('storage session week data', () => {
 
   it('excludes weekData from exported backup snapshots', async () => {
     const localStorage = createLocalStorageMock({
+      'hc-schema-v': '3',
       'hazelcare-ops': JSON.stringify({ actions: [{ id: 'a1' }], incidents: [], staff: [] }),
       'hc-clients-v2': JSON.stringify([{ id: 'c1' }]),
     });
@@ -72,6 +75,7 @@ describe('storage session week data', () => {
 
   it('normalizes legacy persisted app state and clears session week data on restore', async () => {
     const localStorage = createLocalStorageMock({
+      'hc-schema-v': '3',
       'hazelcare-ops': JSON.stringify({
         weekData: makeWeekSummary(),
         actions: [{ id: 'a1' }],

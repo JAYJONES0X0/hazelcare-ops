@@ -1,7 +1,7 @@
 // ============================================================
 // HAZEL CARE UNIVERSAL IMPORT — Intelligent Data Mapping
 // ============================================================
-import type { FullClient, CarePlanData, SupportPlanData, SupportPlanNeed, RiskData, RiskItem } from './client-store';
+import type { FullClient, CarePlanData, CarePlanDomain, SupportPlanData, SupportPlanNeed, RiskData, RiskItem } from './client-store';
 import { emptyCarePlan, emptyRisk, emptyRisk_item, CARE_PLAN_DOMAINS } from './client-store';
 
 // Maps legacy industry jargon to Premium Hazel Care Domains
@@ -258,6 +258,598 @@ function extractFieldSmart(text: string, field: string, nextFields: string[]): s
   return result.split('\n')[0].trim();
 }
 
+function normalizeSectionText(input: string): string {
+  return input
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function findFirstRegexIndex(text: string, patterns: RegExp[]): number {
+  let best = -1;
+  for (const pattern of patterns) {
+    const m = text.match(pattern);
+    if (!m || m.index === undefined) continue;
+    if (best === -1 || m.index < best) best = m.index;
+  }
+  return best;
+}
+
+function extractSectionByMarkers(text: string, startPattern: RegExp, endPatterns: RegExp[]): string {
+  const startMatch = text.match(startPattern);
+  if (!startMatch || startMatch.index === undefined) return '';
+  const from = startMatch.index + startMatch[0].length;
+  const tail = text.slice(from);
+  const endRel = findFirstRegexIndex(tail, endPatterns);
+  return normalizeSectionText(endRel === -1 ? tail : tail.slice(0, endRel));
+}
+
+function parseListFromSection(section: string): string[] {
+  const normalized = normalizeSectionText(section).replace(/\s+•/g, '\n•');
+  return dedupe(
+    normalized
+      .split(/\n|•/g)
+      .map((line) => line.replace(/^[\-\u2022]+\s*/, '').trim())
+      .filter(Boolean)
+  );
+}
+
+function parseLikelihoodImpactFromSection(section: string): { likelihood: number; impact: number } {
+  const scoreForm = section.match(/Score\s*[:=]?\s*(\d)\s*\(\s*Likelihood\s*\)\s*[x×]\s*(\d)\s*\(\s*Impact\s*\)/i);
+  if (scoreForm) {
+    return { likelihood: clampRiskScore(Number(scoreForm[1])), impact: clampRiskScore(Number(scoreForm[2])) };
+  }
+
+  const alt = section.match(/Likelihood[^0-9]{0,40}(\d)[\s\S]{0,40}Impact[^0-9]{0,40}(\d)/i);
+  if (alt) {
+    return { likelihood: clampRiskScore(Number(alt[1])), impact: clampRiskScore(Number(alt[2])) };
+  }
+
+  const triplet = parseNumericTriplet(section);
+  if (triplet) {
+    return { likelihood: clampRiskScore(triplet.likelihood), impact: clampRiskScore(triplet.impact) };
+  }
+
+  return { likelihood: 3, impact: 3 };
+}
+
+function parseRiskItemsFromAssessment(text: string): RiskItem[] {
+  const normalized = normalizeSectionText(text);
+  const markers = [...normalized.matchAll(/Risk\s*Area\s*(\d+)\s*:/gi)];
+  if (!markers.length) return [];
+
+  const out: RiskItem[] = [];
+  for (let i = 0; i < markers.length; i += 1) {
+    const current = markers[i];
+    if (current.index === undefined) continue;
+    const start = current.index;
+    const end = i + 1 < markers.length && markers[i + 1].index !== undefined
+      ? markers[i + 1].index!
+      : normalized.length;
+    const chunk = normalized.slice(start, end);
+
+    const titleTail = chunk.replace(/^Risk\s*Area\s*\d+\s*:\s*/i, '');
+    const title = normalizeSectionText(
+      titleTail.split(/(?:RISK\s+DESCRIPTION|SIGNIFICANT\s+RISK|RISK\s+STRATIFICATION|RISK\s+CONTROL\s+PROTOCOL)/i)[0] || ''
+    ).slice(0, 180);
+    if (!title) continue;
+
+    const description = extractSectionByMarkers(chunk, /RISK\s+DESCRIPTION/i, [
+      /TRIGGERS?\s*(?:&|AND)?\s*(?:CONTEXT|WARNING)/i,
+      /SECONDARY\s+RISKS/i,
+      /RISK\s+STRATIFICATION/i,
+      /RISK\s+CONTROL\s+PROTOCOL/i,
+    ]).slice(0, 1500);
+
+    const triggersRaw = extractSectionByMarkers(chunk, /TRIGGERS?\s*(?:&|AND)?\s*(?:CONTEXT|WARNING SIGNS?)?/i, [
+      /SECONDARY\s+RISKS/i,
+      /RISK\s+STRATIFICATION/i,
+      /RISK\s+CONTROL\s+PROTOCOL/i,
+    ]);
+    const secondaryRisk = extractSectionByMarkers(chunk, /SECONDARY\s+RISKS/i, [
+      /RISK\s+STRATIFICATION/i,
+      /RISK\s+CONTROL\s+PROTOCOL/i,
+      /PRIMARY\s+CONTROLS/i,
+    ]);
+    const controlsRaw = extractSectionByMarkers(chunk, /PRIMARY\s+CONTROLS/i, [
+      /DYNAMIC\s+CONTROLS/i,
+      /CONTINGENCY\s+PLAN/i,
+      /REVIEW\s+TRIGGERS/i,
+    ]);
+    const dynamicRaw = extractSectionByMarkers(chunk, /DYNAMIC\s+CONTROLS/i, [
+      /CONTINGENCY\s+PLAN/i,
+      /REVIEW\s+TRIGGERS/i,
+      /AFFECTED\s+PEOPLE/i,
+    ]);
+    const contingencyPlan = extractSectionByMarkers(chunk, /CONTINGENCY\s+PLAN/i, [
+      /REVIEW\s+TRIGGERS/i,
+      /AFFECTED\s+PEOPLE/i,
+      /REGULATORY\s+COMPLIANCE/i,
+    ]);
+    const reviewTrigger = extractSectionByMarkers(chunk, /REVIEW\s+TRIGGERS/i, [
+      /AFFECTED\s+PEOPLE/i,
+      /REGULATORY\s+COMPLIANCE/i,
+      /SIGNATURES/i,
+    ]);
+    const affectedRaw = extractSectionByMarkers(chunk, /AFFECTED\s+PEOPLE/i, [
+      /REGULATORY\s+COMPLIANCE/i,
+      /SIGNATURES/i,
+      /Risk\s*Area\s*\d+\s*:/i,
+    ]);
+
+    const triggerLines = parseListFromSection(triggersRaw);
+    const earlyWarnings = triggerLines.filter((line) => /warning|sign|early|pacing|muttering|refusal|hostility|agitation|shouting|clenched/i.test(line));
+    const triggers = triggerLines.filter((line) => !earlyWarnings.includes(line));
+    const controls = parseListFromSection(controlsRaw);
+    const dynamicControls = parseListFromSection(dynamicRaw);
+    const affectedPeople = parseListFromSection(affectedRaw);
+    const { likelihood, impact } = parseLikelihoodImpactFromSection(chunk);
+
+    out.push({
+      ...emptyRisk_item(),
+      title,
+      description,
+      triggers: triggers.length ? triggers : ['See source risk note for triggers.'],
+      earlyWarnings: earlyWarnings.length ? earlyWarnings : ['See source risk note for warning signs.'],
+      controls: controls.length ? controls : ['Follow source plan controls and escalation pathway.'],
+      dynamicControls: dynamicControls.length ? dynamicControls : emptyRisk_item().dynamicControls,
+      secondaryRisk: secondaryRisk || '',
+      contingencyPlan: contingencyPlan || '',
+      reviewTrigger: reviewTrigger || 'Review after incident, refusal pattern change, or professional update.',
+      affectedPeople: affectedPeople.length ? affectedPeople : emptyRisk_item().affectedPeople,
+      likelihood,
+      impact,
+    });
+  }
+  return out;
+}
+
+function parseRiskAssessmentReport(text: string): ParseResult {
+  const normalized = normalizeSectionText(text);
+  const warnings: string[] = [];
+  const today = new Date().toLocaleDateString('en-GB');
+  const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+  const planDate = (normalized.match(/PLAN\s*DATE\s*(\d{2}\/\d{2}\/\d{4})/i)?.[1] || today).trim();
+  const parsedReviewDate = (normalized.match(/REVIEW\s*DATE\s*(\d{2}\/\d{2}\/\d{4})/i)?.[1] || reviewDate).trim();
+  const name = extractPreparedForName(normalized);
+  const preferredName = preferredFromName(name);
+  const dob = (normalized.match(/DATE\s*OF\s*BIRTH[^0-9]{0,20}(\d{2}\/\d{2}\/\d{4})/i)?.[1] || '').trim();
+  const keyWorkerRaw = extractSectionByMarkers(normalized, /KEY\s*WORKER/i, [/PLAN\s*DATE/i, /REVIEW\s*DATE/i]).split(/\n/)[0] || '';
+  const keyWorker = /^[-–—\s]*$/.test(keyWorkerRaw) ? '' : keyWorkerRaw.trim();
+
+  const carePlan = emptyCarePlan(planDate, parsedReviewDate);
+  const risk = emptyRisk(planDate);
+  const parsedRiskItems = parseRiskItemsFromAssessment(normalized);
+  const noteRiskItems = parsedRiskItems.length ? [] : parseRiskItemsFromNotes(normalized);
+  const combinedRiskItems = parsedRiskItems.length ? parsedRiskItems : noteRiskItems;
+  if (combinedRiskItems.length) {
+    risk.risks = combinedRiskItems;
+    warnings.push(`Imported ${combinedRiskItems.length} risk area(s) from clinical risk assessment.`);
+  } else {
+    warnings.push('Risk assessment detected but no structured risk areas were parsed. Review manually.');
+  }
+
+  const leastRestrictive = extractSectionByMarkers(normalized, /LEAST\s+RESTRICTIVE\s+PRACTICE\s+STATEMENT/i, [
+    /EMERGENCY\s+ESCALATION\s+PROCEDURE/i,
+    /REVIEW\s+CYCLE/i,
+    /Risk\s*Area\s*1\s*:/i,
+  ]);
+  const escalation = extractSectionByMarkers(normalized, /EMERGENCY\s+ESCALATION\s+PROCEDURE/i, [
+    /REVIEW\s+CYCLE/i,
+    /2\.\s*MULTI\s*-\s*AGENCY/i,
+    /Risk\s*Area\s*1\s*:/i,
+  ]);
+  const reviewCycle = extractSectionByMarkers(normalized, /REVIEW\s+CYCLE/i, [
+    /2\.\s*MULTI\s*-\s*AGENCY/i,
+    /Risk\s*Area\s*1\s*:/i,
+    /SIGNATURES/i,
+  ]);
+
+  if (leastRestrictive) risk.leastRestrictivePractice = leastRestrictive.slice(0, 2000);
+  if (escalation) risk.escalationProcedure = escalation.slice(0, 2000);
+  if (reviewCycle) risk.reviewSchedule = reviewCycle.slice(0, 1400);
+
+  return {
+    client: {
+      name,
+      preferredName,
+      dob,
+      keyWorker,
+      reviewDate: parsedReviewDate,
+      risk,
+    },
+    carePlan,
+    warnings,
+  };
+}
+
+function sentenceSummary(text: string, maxSentences = 3, maxChars = 1200): string {
+  const cleaned = normalizeSectionText(text).replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9])/g)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 12);
+  const selected = dedupe(sentences).slice(0, maxSentences);
+  const result = selected.join(' ');
+  return result.slice(0, maxChars).trim();
+}
+
+function riskScoreFromText(text: string): { likelihood: number; impact: number } {
+  const t = text.toLowerCase();
+  let likelihood = 2;
+  let impact = 2;
+
+  if (/\b(risk|unsafe|unable|needs support|requires support|vulnerab|problem|concern|difficult|struggle)\b/i.test(t)) {
+    likelihood = 3;
+  }
+  if (/\b(safeguard|exploit|abuse|neglect|debt|fall|overdose|injury|harm|crisis|self-neglect|temperature|breath|reflux|anxiety|depression)\b/i.test(t)) {
+    impact = 4;
+  }
+  if (/\b(always|significant|serious|high|cannot|unable to|at risk|scamming|financial exploitation)\b/i.test(t)) {
+    likelihood = Math.max(likelihood, 4);
+  }
+  if (/\b(emergency|hospital|multi-agency|safeguarding|overdose|serious harm)\b/i.test(t)) {
+    impact = Math.max(impact, 5);
+  }
+
+  return {
+    likelihood: clampRiskScore(likelihood),
+    impact: clampRiskScore(impact),
+  };
+}
+
+function riskTitleFromReassessment(title: string, text: string): string {
+  const t = text.toLowerCase();
+  if (/safeguard|exploit|abuse|neglect|vulnerab/.test(t)) return `Risk of safeguarding / vulnerability in ${title.toLowerCase()}`;
+  if (/budget|debt|money|finance|bills/.test(t)) return 'Risk of financial instability and debt';
+  if (/nutrition|meal|food|drink|eat|swallow|reflux|hernia/.test(t)) return 'Risk of poor nutrition / reflux / meal safety';
+  if (/personal care|hygiene|shower|bath|temperature|shave|laundry/.test(t)) return 'Risk of hygiene support failure or temperature injury';
+  if (/toilet|continence|toileting/.test(t)) return 'Risk related to continence and toileting support';
+  if (/habitable home|domestic|clean|safe living environment/.test(t)) return 'Risk of environmental neglect or unsafe home conditions';
+  if (/breath|mobility|moving around|out and about|shopping/.test(t)) return 'Risk of fatigue, breathlessness, or unsafe community access';
+  if (/relationship|partner|family|emotion|mood|anxious|depress|personality disorder/.test(t)) return 'Risk of emotional / relational vulnerability';
+  if (/medication|health|smoker|smoke|medical history/.test(t)) return 'Risk of unmanaged health conditions';
+  return `Risk linked to ${title}`;
+}
+
+function sectionBlock(text: string, start: RegExp, ends: RegExp[], maxChars = 3000): string {
+  return extractSectionByMarkers(text, start, ends).slice(0, maxChars);
+}
+
+function setCarePlanDomainFromText(
+  carePlan: CarePlanData,
+  title: string,
+  rawSection: string,
+  overrides?: Partial<Pick<CarePlanDomain, 'riskTitle' | 'riskLikelihood' | 'riskImpact'>>
+) {
+  const idx = carePlan.domains.findIndex((d) => d.title === title);
+  if (idx === -1) return false;
+
+  const summary = sentenceSummary(rawSection, 3, 1400);
+  const desiredOutcome = normalizeSectionText(
+    rawSection.match(/desired outcome\/what does the person want to achieve\?\s*([\s\S]{0,1200}?)(?=(?:the needs identified above|are these needs being currently met|outcomes\s*[-–]\s*|assessment summary and personal outcomes|risk assessments|other needs|$))/i)?.[1] || ''
+  ).replace(/\s+/g, ' ').trim().slice(0, 1000);
+  const supportLead = sentenceSummary(rawSection, 2, 900);
+  const { likelihood, impact } = riskScoreFromText(rawSection);
+
+  carePlan.domains[idx] = {
+    ...carePlan.domains[idx],
+    identifiedNeed: desiredOutcome || summary || supportLead,
+    plannedOutcomes: desiredOutcome || summary,
+    howToAchieve: summary || desiredOutcome,
+    riskTitle: overrides?.riskTitle || riskTitleFromReassessment(title, rawSection),
+    riskLikelihood: overrides?.riskLikelihood || likelihood,
+    riskImpact: overrides?.riskImpact || impact,
+    reviewNote: sentenceSummary(rawSection, 2, 900) || carePlan.domains[idx].reviewNote,
+    enabled: true,
+  };
+
+  return true;
+}
+
+function parseNeedsReassessmentCarePlan(text: string): CarePlanData {
+  const today = new Date().toLocaleDateString('en-GB');
+  const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+  const carePlan = emptyCarePlan(today, reviewDate);
+  const normalized = normalizeSectionText(text);
+
+  carePlan.biography = sentenceSummary(
+    extractSectionByMarkers(normalized, /Background Information/i, [
+      /Outcomes - Managing Nutrition/i,
+      /Reported health conditions leading to social care needs/i,
+      /Assessment Summary and Personal Outcomes/i,
+    ]),
+    4,
+    1600
+  );
+
+  carePlan.criticalInfo = sentenceSummary(
+    extractSectionByMarkers(normalized, /Medical history/i, [
+      /Outcomes - Managing Nutrition/i,
+      /Reported health conditions leading to social care needs/i,
+      /Outcomes - Personal Care/i,
+    ]),
+    4,
+    1600
+  );
+
+  carePlan.emergencyInfo = sentenceSummary(
+    extractSectionByMarkers(normalized, /Risk Assessments/i, [
+      /Managing Finances/i,
+      /Risks - emotional wellbeing/i,
+      /Worker Recommendation/i,
+    ]),
+    4,
+    1200
+  );
+
+  const sectionSpecs: Array<{
+    title: string;
+    start: RegExp;
+    ends: RegExp[];
+    riskTitle?: string;
+    riskLikelihood?: number;
+    riskImpact?: number;
+  }> = [
+    {
+      title: 'Nutrition, Hydration & Diet',
+      start: /Outcomes - Managing Nutrition/i,
+      ends: [/Outcomes - Personal Care/i, /Outcomes - Practical Aspects of Daily Living/i, /Managing Nutrition/i],
+      riskTitle: 'Risk of poor nutrition / reflux / meal safety',
+    },
+    {
+      title: 'Personal Care & Physical Presentation',
+      start: /Outcomes - Personal Care/i,
+      ends: [/Managing Toileting Needs/i, /Outcomes - Practical Aspects of Daily Living/i],
+      riskTitle: 'Risk of hygiene support failure or temperature injury',
+    },
+    {
+      title: 'Continence & Personal Hygiene',
+      start: /Managing Toileting Needs/i,
+      ends: [/Dressing\/Undressing/i, /Outcomes - Practical Aspects of Daily Living/i],
+      riskTitle: 'Risk related to continence and toileting support',
+    },
+    {
+      title: 'Personal Care & Physical Presentation',
+      start: /Dressing\/Undressing/i,
+      ends: [/Outcomes - Practical Aspects of Daily Living/i, /Maintaining a Habitable Home Environment/i],
+      riskTitle: 'Risk of clothing / presentation support failure',
+    },
+    {
+      title: 'Adaptive Living Environment',
+      start: /Maintaining a Habitable Home Environment/i,
+      ends: [/Moving around and staying comfortable/i, /Getting out and about/i],
+      riskTitle: 'Risk of environmental neglect or unsafe home conditions',
+    },
+    {
+      title: 'Mobility, Movement & Exercise',
+      start: /Moving around and staying comfortable/i,
+      ends: [/Getting out and about/i, /Outcomes - Engaging with Others/i],
+      riskTitle: 'Risk of fatigue, breathlessness, or unsafe community access',
+    },
+    {
+      title: 'Rights, Choice & Inclusion',
+      start: /Getting out and about/i,
+      ends: [/Outcomes - Engaging with Others/i, /Maintaining Family Relationships/i],
+      riskTitle: 'Risk of isolation or reduced community access',
+    },
+    {
+      title: 'Social Engagement & Relationships',
+      start: /Maintaining Family Relationships/i,
+      ends: [/Assessment Summary and Personal Outcomes/i, /Other Needs/i],
+      riskTitle: 'Risk of emotional / relational vulnerability',
+    },
+    {
+      title: 'Financial Management & Autonomy',
+      start: /Managing Finances/i,
+      ends: [/Risk Assessments/i, /Risks - emotional wellbeing/i, /Worker Recommendation/i],
+      riskTitle: 'Risk of financial instability and debt',
+    },
+    {
+      title: 'Holistic Health & Vitality',
+      start: /Medical history/i,
+      ends: [/Outcomes - Managing Nutrition/i, /Reported health conditions leading to social care needs/i],
+      riskTitle: 'Risk of unmanaged health conditions',
+    },
+    {
+      title: 'Mental Health & Emotional Wellbeing',
+      start: /Background Information/i,
+      ends: [/Outcomes - Managing Nutrition/i, /Reported health conditions leading to social care needs/i, /Assessment Summary and Personal Outcomes/i],
+      riskTitle: 'Risk of emotional / relational vulnerability',
+    },
+    {
+      title: 'Environment & Physical Safety',
+      start: /Risk Assessments/i,
+      ends: [/Managing Finances/i, /Risks - emotional wellbeing/i],
+      riskTitle: 'Risk of safeguarding concern or exploitation',
+    },
+  ];
+
+  for (const spec of sectionSpecs) {
+    const block = sectionBlock(normalized, spec.start, spec.ends);
+    if (!block) continue;
+    setCarePlanDomainFromText(carePlan, spec.title, block, {
+      riskTitle: spec.riskTitle,
+      riskLikelihood: spec.riskLikelihood,
+      riskImpact: spec.riskImpact,
+    });
+  }
+
+  const reassessmentSummary = sentenceSummary(
+    extractSectionByMarkers(normalized, /Assessment Summary and Personal Outcomes/i, [
+      /Your Current or Informal Support/i,
+      /Other Needs/i,
+      /Risk Assessments/i,
+    ]),
+    6,
+    1800
+  );
+  if (reassessmentSummary) {
+    carePlan.biography = [carePlan.biography, reassessmentSummary].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  return carePlan;
+}
+
+function parseReassessmentRiskItems(text: string): RiskItem[] {
+  const normalized = normalizeSectionText(text);
+  const items: RiskItem[] = [];
+
+  const add = (title: string, description: string, extra: Partial<RiskItem> = {}) => {
+    if (!title && !description) return;
+    items.push({
+      ...emptyRisk_item(),
+      title,
+      description,
+      triggers: extra.triggers || ['See reassessment notes.'],
+      earlyWarnings: extra.earlyWarnings || ['See reassessment notes.'],
+      controls: extra.controls || ['Follow support plan and reassessment actions.'],
+      likelihood: extra.likelihood || 3,
+      impact: extra.impact || 3,
+      reviewTrigger: extra.reviewTrigger || 'Review after change in presentation or annual reassessment.',
+      ...extra,
+    });
+  };
+
+  const sections = [
+    {
+      start: /Risk Assessments/i,
+      end: [/Managing Finances/i, /Risks - emotional wellbeing/i, /Worker Recommendation/i],
+    },
+    {
+      start: /Managing Finances/i,
+      end: [/Risks - emotional wellbeing/i, /Case Progression Meeting/i, /Worker Recommendation/i],
+    },
+    {
+      start: /Risks - emotional wellbeing/i,
+      end: [/Case Progression Meeting/i, /Worker Recommendation/i, /Page 28 of 31/i],
+    },
+  ];
+
+  for (const section of sections) {
+    const block = sectionBlock(normalized, section.start, section.end, 4000);
+    if (!block) continue;
+    const lower = block.toLowerCase();
+
+    if (/safeguard|exploit|abuse|scam|coercion|cuckooing|financial affairs|vulnerab/.test(lower)) {
+      add(
+        'Risk of financial exploitation / safeguarding',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['New acquaintances', 'Sharing sensitive information', 'Financial pressure'],
+          earlyWarnings: ['Giving out details', 'Anxiety about money', 'Escalating safeguarding concern'],
+          controls: ['Discuss boundaries and safe disclosure', 'Escalate safeguarding concerns', 'Monitor finances'],
+          likelihood: 4,
+          impact: 4,
+        }
+      );
+    }
+
+    if (/nutrition|meal|food|drink|swallow|reflux|hernia|dentist|kitchen|cook/i.test(lower)) {
+      add(
+        'Risk of poor nutrition / reflux / meal safety',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['Low mood', 'Distraction', 'Poor meal planning', 'Unsafe kitchen practice'],
+          earlyWarnings: ['Skipping meals', 'Reduced intake', 'Digestive discomfort'],
+          controls: ['Support meal planning', 'Promote soft diet', 'Monitor medication before breakfast'],
+          likelihood: 3,
+          impact: 4,
+        }
+      );
+    }
+
+    if (/personal care|hygiene|shower|bath|temperature|laundry|shave/i.test(lower)) {
+      add(
+        'Risk of hygiene support failure or temperature injury',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['Poor prompting', 'Temperature not checked', 'Low motivation'],
+          earlyWarnings: ['Missed personal care', 'Unsafe water temperature', 'Dirty laundry'],
+          controls: ['Prompt hygiene tasks', 'Set safe water temperature', 'Support shaving and laundry'],
+          likelihood: 3,
+          impact: 3,
+        }
+      );
+    }
+
+    if (/budget|debt|money|bills|financial|invoiced|citizens advice/i.test(lower)) {
+      add(
+        'Risk of financial instability and debt',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['Budgeting pressure', 'Difficulty reading/writing', 'Debt history'],
+          earlyWarnings: ['Missed bills', 'Anxiety about money', 'Poor understanding of invoices'],
+          controls: ['Support budgeting', 'Provide admin support', 'Escalate debt concerns early'],
+          likelihood: 3,
+          impact: 4,
+        }
+      );
+    }
+
+    if (/relationship|partner|family|social|partner being in his life|vulnerable position/i.test(lower)) {
+      add(
+        'Risk of emotional / relational vulnerability',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['New relationships', 'Sensitivity around personal information', 'Trauma history'],
+          earlyWarnings: ['Withdrawing', 'Anxiety', 'Sharing private details'],
+          controls: ['Provide safe relationship guidance', 'Use reflective support', 'Monitor safeguarding concerns'],
+          likelihood: 3,
+          impact: 4,
+        }
+      );
+    }
+
+    if (/breath|smoker|lung capacity|out of breathe|mobility|moving around|community access|walk/i.test(lower)) {
+      add(
+        'Risk of fatigue, breathlessness, or unsafe community access',
+        sentenceSummary(block, 3, 900),
+        {
+          triggers: ['Physical exertion', 'Smoking', 'Long distances'],
+          earlyWarnings: ['Breathlessness', 'Fatigue', 'Slowed pace'],
+          controls: ['Pace activity', 'Support community access', 'Monitor breathlessness'],
+          likelihood: 3,
+          impact: 3,
+        }
+      );
+    }
+  }
+
+  return items;
+}
+
+function normalizeNameCandidate(input: string): string {
+  return input
+    .replace(/\s+/g, ' ')
+    .replace(/\s+\(1:1\)\s*$/i, '')
+    .replace(/\s+—\s*$/, '')
+    .trim();
+}
+
+function preferredFromName(fullName: string): string {
+  const tokens = normalizeNameCandidate(fullName).split(/\s+/).filter(Boolean);
+  if (!tokens.length) return '';
+  const title = tokens[0].toLowerCase().replace('.', '');
+  if (['mr', 'mrs', 'ms', 'miss', 'mx', 'dr'].includes(title)) {
+    return tokens[1] || tokens[0];
+  }
+  return tokens[0];
+}
+
+function extractPreparedForName(text: string): string {
+  const prepared = text.match(/Prepared for\s+([^\n|]+)/i);
+  if (!prepared) return '';
+  const candidate = normalizeNameCandidate(prepared[1] || '');
+  if (!candidate) return '';
+  if (/^hazel\s*care/i.test(candidate)) return '';
+  if (/^(clinical risk assessment|my support plan|positive behaviour support plan)$/i.test(candidate)) return '';
+  return candidate;
+}
+
 function parseCarePlanReport(text: string): { client: Partial<FullClient>; carePlan: CarePlanData } {
   const today = new Date().toLocaleDateString('en-GB');
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
@@ -267,8 +859,8 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
   let preferredName = '';
   const headerMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)\s*Report run on/i);
   if (headerMatch) {
-    name = headerMatch[1].trim();
-    preferredName = name.split(' ')[0];
+    name = normalizeNameCandidate(headerMatch[1]);
+    preferredName = preferredFromName(name);
   }
 
   let address = '';
@@ -276,9 +868,17 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
   if (hcMatch) {
     if (!name) {
       name = `${hcMatch[1]} ${hcMatch[2]}`.trim();
-      preferredName = hcMatch[1];
+      preferredName = preferredFromName(name);
     }
     address = hcMatch[4]?.trim() || '';
+  }
+
+  if (!name) {
+    const preparedFor = extractPreparedForName(text);
+    if (preparedFor) {
+      name = preparedFor;
+      preferredName = preferredFromName(preparedFor);
+    }
   }
 
   const dateMatch = text.match(/Report run on\s+(\d{2}\/\d{2}\/\d{4})/);
@@ -366,8 +966,50 @@ export function parseUniversalText(rawText: string): ParseResult {
   const warnings: string[] = [];
   const text = rawText.replace(/\r\n/g, '\n');
   const flat = isFlat(text);
+  const isNeedsReassessment =
+    /adult\s*-\s*needs\s*re-?assessment/i.test(text) ||
+    /assessment\s+summary\s+and\s+personal\s+outcomes/i.test(text);
 
   const isCarePlanReport = /(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*.+Report run on/i.test(text);
+  const isRiskAssessmentReport =
+    /clinical\s+risk\s+assessment/i.test(text) ||
+    /risk\s+compatibility\s+assessment/i.test(text) ||
+    /compatibility\s+risk\s+assessment/i.test(text) ||
+    /Risk\s*Area\s*\d+\s*:/i.test(text);
+
+  if (isNeedsReassessment) {
+    const today = new Date().toLocaleDateString('en-GB');
+    const planDate = (text.match(/DATE\s+ASSESSMENT\s+COMmenced\s*(\d{2}\/\d{2}\/\d{4})/i)?.[1] || text.match(/Date Assessment Commenced\s*(\d{2}\/\d{2}\/\d{4})/i)?.[1] || today).trim();
+    const reassessmentCarePlan = parseNeedsReassessmentCarePlan(text);
+    const risk = emptyRisk(planDate);
+    risk.risks = parseReassessmentRiskItems(text);
+    if (risk.risks.length === 0) {
+      risk.risks = buildRiskFromCarePlan(text, reassessmentCarePlan).risks;
+    }
+
+    const client: Partial<FullClient> = {
+      name: text.match(/Person Name:\s*([^\n]+)/i)?.[1]?.replace(/\s+Person ID:.*/, '').trim() || '',
+      preferredName: text.match(/\bMr\s+([A-Za-z'-]+)/i)?.[1] || text.match(/\bMrs\s+([A-Za-z'-]+)/i)?.[1] || text.match(/\bMs\s+([A-Za-z'-]+)/i)?.[1] || '',
+      dob: text.match(/Date of Birth\s*(\d{2}\/\d{2}\/\d{4})/i)?.[1] || '',
+      address: text.match(/Permanent Address[\s\S]{0,160}?([0-9][^\n]+(?:\n[^\n]+){0,2})/i)?.[1]?.replace(/\n+/g, ', ').trim() || '',
+      nhs: text.match(/NHS No\.?\s*(\d[\d\s]{6,})/i)?.[1]?.replace(/\s+/g, '') || '',
+      risk,
+      supportPlan: parseSupportPlanText(text),
+    };
+
+    const enabledCount = reassessmentCarePlan.domains.filter((d) => d.enabled).length;
+    warnings.push(enabledCount > 0
+      ? `Identified ${enabledCount} reassessment care domains for this profile.`
+      : 'No support plan areas detected — verify text format.');
+    if (risk.risks.length > 0) {
+      warnings.push(`Imported ${risk.risks.length} risk assessment item(s) from reassessment notes.`);
+    }
+    return { client, carePlan: reassessmentCarePlan, warnings };
+  }
+
+  if (isRiskAssessmentReport && !isCarePlanReport) {
+    return parseRiskAssessmentReport(text);
+  }
 
   if (isCarePlanReport && flat) {
     const result = parseCarePlanReport(text);
@@ -412,8 +1054,16 @@ export function parseUniversalText(rawText: string): ParseResult {
   if (!name || name.length < 2) {
     const hdrMatch = text.match(/(?:Care Plan|Emergency Admission Pack)\s*[–-]\s*(.+?)(?:\n|Report run on)/i);
     if (hdrMatch) {
-      name = hdrMatch[1].trim();
-      preferredNameNL = preferredNameNL || name.split(' ')[0];
+      name = normalizeNameCandidate(hdrMatch[1]);
+      preferredNameNL = preferredNameNL || preferredFromName(name);
+    }
+  }
+
+  if (!name || name.length < 2) {
+    const preparedFor = extractPreparedForName(text);
+    if (preparedFor) {
+      name = preparedFor;
+      preferredNameNL = preferredNameNL || preferredFromName(preparedFor);
     }
   }
 
@@ -522,13 +1172,68 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
   let risks = '';
   let howToSupport = '';
 
+  const cleanSupportText = (value: string, max = 1400): string =>
+    normalizeSectionText(value)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, max);
+
+  const parseSmartLines = (section: string, maxItems = 8): string[] => {
+    const listLike = parseListFromSection(section)
+      .map((line) => cleanSupportText(line, 260))
+      .filter((line) => line.length > 12)
+      .filter((line) => !/^section\s*\d+/i.test(line));
+    if (listLike.length >= 2) return listLike.slice(0, maxItems);
+
+    const linear = cleanSupportText(section, 6000);
+    const sentenceLike = linear
+      .split(/(?<=[.!?])\s+(?=[A-Z0-9])/g)
+      .map((line) => cleanSupportText(line, 260))
+      .filter((line) => line.length > 12)
+      .filter((line) => !/^section\s*\d+/i.test(line));
+    return dedupe(sentenceLike).slice(0, maxItems);
+  };
+
+  const pushNeed = (need: SupportPlanNeed) => {
+    const area = cleanSupportText(need.area, 120);
+    const canDoMyself = cleanSupportText(need.canDoMyself, 1100);
+    const needRisks = cleanSupportText(need.risks, 800);
+    const support = cleanSupportText(need.howToSupport, 1300);
+    if (!area) return;
+    if (!canDoMyself && !needRisks && !support) return;
+
+    const mergePipeText = (a: string, b: string, max = 1200): string => {
+      const left = cleanSupportText(a, max);
+      const right = cleanSupportText(b, max);
+      if (!left) return right;
+      if (!right) return left;
+      if (left.toLowerCase() === right.toLowerCase()) return left;
+      const merged = dedupe([...left.split('|'), ...right.split('|')].map((s) => s.trim())).join(' | ');
+      return cleanSupportText(merged, max);
+    };
+
+    const existingIdx = needs.findIndex((n) => n.area.toLowerCase() === area.toLowerCase());
+    if (existingIdx >= 0) {
+      const existing = needs[existingIdx];
+      needs[existingIdx] = {
+        area,
+        canDoMyself: canDoMyself.length > (existing.canDoMyself || '').length ? canDoMyself : existing.canDoMyself,
+        risks: mergePipeText(existing.risks || '', needRisks, 900),
+        howToSupport: support.length > (existing.howToSupport || '').length ? support : existing.howToSupport,
+      };
+      return;
+    }
+
+    needs.push({ area, canDoMyself, risks: needRisks, howToSupport: support });
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     const lineLower = line.toLowerCase();
     const isNewArea = areaPatterns.some(p => lineLower.includes(p.toLowerCase()));
     if (isNewArea && line.length < 100) {
       if (currentArea && (canDo || risks || howToSupport)) {
-        needs.push({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+        pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
       }
       currentArea = line;
       canDo = ''; risks = ''; howToSupport = '';
@@ -537,13 +1242,325 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
     if (line.includes('|')) {
       const cols = line.split('|').map(c => c.trim()).filter(Boolean);
       if (cols.length >= 4) {
-        if (currentArea) needs.push({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+        if (currentArea) pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
         currentArea = cols[0]; canDo = cols[1]; risks = cols[2]; howToSupport = cols[3];
       }
     }
   }
   if (currentArea && (canDo || risks || howToSupport)) {
-    needs.push({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+    pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
   }
+
+  // Council / Care Act style fallback parser (e.g. "Need Description / Need Comment / Outcome Comment").
+  if (needs.length === 0) {
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const compact = text.replace(/\r\n/g, '\n');
+    const sectionStart = compact.search(/Need Description\s+Need Comment\s+Outcome Comment/i);
+    const sectionEndCandidates = [
+      compact.search(/Services Brokerage To Source/i),
+      compact.search(/Risk Screening/i),
+    ].filter((idx) => idx > sectionStart);
+    const sectionEnd = sectionEndCandidates.length ? Math.min(...sectionEndCandidates) : compact.length;
+    const needSection = sectionStart >= 0 ? compact.slice(sectionStart, sectionEnd) : '';
+
+    const careActNeedTitles = [
+      'Managing and maintaining nutrition',
+      'Maintaining personal hygiene',
+      'Managing toilet needs',
+      'Being appropriately clothed',
+      'Maintaining a habitable home environment',
+      'Being able to make use of the home safely',
+      'Developing and maintaining family or other personal relationships',
+      'Accessing and engaging in work, training, education or volunteering',
+      'Making use of necessary facilities or services in the local community including public transport and recreational facilities or services',
+      'Carrying out any caring responsibilities the adult has for a child',
+    ];
+
+    if (needSection) {
+      const matches = careActNeedTitles
+        .map((title) => {
+          const tokenPattern = title.split(/\s+/).map(escapeRegExp).join('\\s+');
+          const re = new RegExp(tokenPattern, 'i');
+          const m = needSection.match(re);
+          return m && m.index !== undefined ? { title, index: m.index } : null;
+        })
+        .filter((m): m is { title: string; index: number } => !!m)
+        .sort((a, b) => a.index - b.index);
+
+      for (let i = 0; i < matches.length; i += 1) {
+        const currentMatch = matches[i];
+        const nextMatch = matches[i + 1];
+        const from = currentMatch.index + currentMatch.title.length;
+        const to = nextMatch ? nextMatch.index : needSection.length;
+        const block = needSection.slice(from, to).replace(/\s+/g, ' ').trim();
+        if (!block) continue;
+
+        const outcomeIdx = block.search(/(?:-For|To have|To continue to|No needs identified\.)/i);
+        const needComment = (outcomeIdx > -1 ? block.slice(0, outcomeIdx) : block).replace(/\s+/g, ' ').trim();
+        const outcomeComment = (outcomeIdx > -1 ? block.slice(outcomeIdx) : '').replace(/\s+/g, ' ').trim();
+        const noNeeds = /no needs identified/i.test(block);
+
+        pushNeed({
+          area: currentMatch.title,
+          canDoMyself: noNeeds ? 'No needs identified' : needComment.slice(0, 900),
+          risks: '',
+          howToSupport: (outcomeComment || needComment).slice(0, 1200),
+        });
+      }
+    }
+  }
+
+  // Extra council fallback: recover structured Care Act needs from linearized OCR text.
+  if (needs.length < 3) {
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const careActNeedTitles = [
+      'Managing and maintaining nutrition',
+      'Maintaining personal hygiene',
+      'Managing toilet needs',
+      'Being appropriately clothed',
+      'Maintaining a habitable home environment',
+      'Being able to make use of the home safely',
+      'Developing and maintaining family or other personal relationships',
+      'Accessing and engaging in work, training, education or volunteering',
+      'Making use of necessary facilities or services in the local community including public transport and recreational facilities or services',
+      'Carrying out any caring responsibilities the adult has for a child',
+    ];
+    const linear = text.replace(/\s+/g, ' ').trim();
+    const hits = careActNeedTitles
+      .map((title) => {
+        const pattern = new RegExp(title.split(/\s+/).map(escapeRegExp).join('\\s+'), 'i');
+        const m = linear.match(pattern);
+        return m && m.index !== undefined ? { title, index: m.index, length: m[0].length } : null;
+      })
+      .filter((m): m is { title: string; index: number; length: number } => !!m)
+      .sort((a, b) => a.index - b.index);
+
+    for (let i = 0; i < hits.length; i += 1) {
+      const current = hits[i];
+      const next = hits[i + 1];
+      if (needs.some(n => n.area.toLowerCase() === current.title.toLowerCase())) continue;
+      const from = current.index + current.length;
+      const to = next ? next.index : Math.min(linear.length, from + 2000);
+      const block = linear.slice(from, to).trim();
+      if (!block) continue;
+      const outcomeIdx = block.search(/(?:-For|To have|To continue to|No needs identified\.)/i);
+      const needComment = (outcomeIdx > -1 ? block.slice(0, outcomeIdx) : block).replace(/\s+/g, ' ').trim();
+      const outcomeComment = (outcomeIdx > -1 ? block.slice(outcomeIdx) : '').replace(/\s+/g, ' ').trim();
+      pushNeed({
+        area: current.title,
+        canDoMyself: needComment.slice(0, 900),
+        risks: '',
+        howToSupport: (outcomeComment || needComment).slice(0, 1200),
+      });
+    }
+  }
+
+  // Hazel/Nourish "My Support Plan" fallback parser (AREA 1/2/3 block layout).
+  if (needs.length === 0) {
+    const compact = normalizeSectionText(text.replace(/\t/g, ' '));
+    const areaMarkers = [...compact.matchAll(/A\s*R\s*E\s*A\s*\d+/gi)];
+    for (let i = 0; i < areaMarkers.length; i += 1) {
+      const current = areaMarkers[i];
+      if (current.index === undefined) continue;
+      const from = current.index;
+      const to = i + 1 < areaMarkers.length && areaMarkers[i + 1].index !== undefined
+        ? areaMarkers[i + 1].index!
+        : compact.length;
+      const chunk = compact.slice(from, to);
+
+      const title = (chunk.match(/A\s*R\s*E\s*A\s*\d+\s+([A-Za-z][A-Za-z,&'’\/\-\s]{3,100}?)(?=\s+WHAT\s+I\s+NEED\s+HELP\s+WITH|\s+WHAT\s+WE\s*['’]?\s*RE\s+WORKING\s+TOWARDS|$)/i)?.[1] || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!title) continue;
+
+      const canDoMyself = extractSectionByMarkers(
+        chunk,
+        /WHAT\s+I\s+NEED\s+HELP\s+WITH/i,
+        [/WHAT\s+WE\s*['’]?\s*RE\s+WORKING\s+TOWARDS/i, /RISK\s+LEVEL/i, /A\s*R\s*E\s*A\s*\d+/i]
+      ).slice(0, 1200);
+
+      const howToSupport = extractSectionByMarkers(
+        chunk,
+        /WHAT\s+WE\s*['’]?\s*RE\s+WORKING\s+TOWARDS/i,
+        [/RISK\s+LEVEL/i, /A\s*R\s*E\s*A\s*\d+/i]
+      ).slice(0, 1400);
+
+      const risks = extractSectionByMarkers(
+        chunk,
+        /RISK\s+LEVEL/i,
+        [/A\s*R\s*E\s*A\s*\d+/i]
+      ).slice(0, 700);
+
+      if (canDoMyself || howToSupport || risks) {
+        pushNeed({
+          area: title,
+          canDoMyself,
+          risks,
+          howToSupport,
+        });
+      }
+    }
+  }
+
+  // Care Act re-assessment fallback: parse "Outcomes - ..." sectioned assessments from LA exports/pasted text.
+  if (
+    /adult\s*-\s*needs\s*re-?assessment/i.test(text) ||
+    /assessment\s+summary\s+and\s+personal\s+outcomes/i.test(text)
+  ) {
+    const compact = normalizeSectionText(text.replace(/\t/g, ' ')).replace(/\n+/g, ' ');
+    const sections: Array<{ area: string; patterns: RegExp[] }> = [
+      { area: 'Managing and maintaining nutrition', patterns: [/outcomes\s*[-–]\s*managing\s+nutrition/i, /\bmanaging and maintaining nutrition\b/i, /\bmanaging nutrition\b/i] },
+      { area: 'Maintaining personal hygiene', patterns: [/maintaining\s+personal\s+hygiene/i, /outcomes\s*[-–]\s*personal\s+care/i] },
+      { area: 'Managing toilet needs', patterns: [/managing\s+toilet(?:ing)?\s+needs/i] },
+      { area: 'Being appropriately clothed', patterns: [/dressing\s*\/\s*undressing/i, /being appropriately clothed/i] },
+      { area: 'Maintaining a habitable home environment', patterns: [/maintaining\s+a\s+habitable\s+home\s+environment/i] },
+      { area: 'Being able to make use of the home safely', patterns: [/moving\s+around\s+and\s+staying\s+comfortable/i, /being able to make use of (?:the )?home safely/i] },
+      { area: 'Making use of necessary facilities or services in the local community including public transport and recreational facilities or services', patterns: [/getting\s+out\s+and\s+about/i, /making use of necessary facilities or services in the local community/i] },
+      { area: 'Developing and maintaining family or other personal relationships', patterns: [/maintaining\s+family\s+relationships/i, /developing and maintaining family or other personal relationships/i] },
+      { area: 'Accessing and engaging in work, training, education or volunteering', patterns: [/accessing and engaging in work,\s*training,\s*education or volunteering/i] },
+      { area: 'Carrying out any caring responsibilities the adult has for a child', patterns: [/carrying out any caring responsibilities/i] },
+    ];
+
+    const findHeading = (patterns: RegExp[]): { index: number; length: number } | null => {
+      let best: { index: number; length: number } | null = null;
+      for (const pattern of patterns) {
+        const m = compact.match(pattern);
+        if (!m || m.index === undefined) continue;
+        if (!best || m.index < best.index) best = { index: m.index, length: m[0].length };
+      }
+      return best;
+    };
+
+    const hits = sections
+      .map((section) => {
+        const pos = findHeading(section.patterns);
+        return pos ? { area: section.area, index: pos.index, length: pos.length } : null;
+      })
+      .filter((x): x is { area: string; index: number; length: number } => !!x)
+      .sort((a, b) => a.index - b.index);
+
+    for (let i = 0; i < hits.length; i += 1) {
+      const current = hits[i];
+      const next = hits[i + 1];
+      const from = current.index + current.length;
+      const to = next ? next.index : Math.min(compact.length, from + 2600);
+      const block = compact.slice(from, to).trim();
+      if (!block) continue;
+
+      const desired = cleanSupportText(
+        block.match(/desired outcome\/what does the person want to achieve\?\s*([\s\S]{0,1200}?)(?=(?:the needs identified above|are these needs being currently met|outcomes\s*[-–]\s*|assessment summary and personal outcomes|condition\s*\d|risks?\s*[-–]|$))/i)?.[1] || '',
+        950
+      );
+
+      const supportLines = parseSmartLines(block, 9).filter((line) =>
+        /needs|support|requires|prompt|assist|encourage|maintain|safe|safely|appointment|community|budget|hygiene|meal|diet|relationship|boundary|toileting|clothes/i.test(line)
+      );
+      const risks = supportLines
+        .filter((line) => /risk|exploit|abuse|neglect|lost|debt|safeguard|harm|vulnerab/i.test(line))
+        .slice(0, 4)
+        .join(' | ');
+
+      const primaryNeed = desired || supportLines.slice(0, 2).join(' | ') || cleanSupportText(block, 800);
+      const supportPlan = supportLines.slice(0, 6).join(' | ') || cleanSupportText(block, 1200);
+
+      pushNeed({
+        area: current.area,
+        canDoMyself: primaryNeed,
+        risks,
+        howToSupport: supportPlan,
+      });
+    }
+  }
+
+  // PBS fallback parser: derive support needs from sectioned Positive Behaviour Support plans.
+  if (
+    needs.length < 3 &&
+    (
+      /positive\s+behaviour\s+support\s+plan/i.test(text) ||
+      /section\s*4\s*[—-]\s*proactive\s+strategies/i.test(text) ||
+      /section\s*6\s*[—-]\s*reactive\s+strategies/i.test(text)
+    )
+  ) {
+    const compact = normalizeSectionText(text.replace(/\t/g, ' '));
+    const envStrategies = extractSectionByMarkers(compact, /4\.1\s*Environmental\s+Strategies/i, [
+      /4\.2\s*Routine\s+and\s+Structure/i,
+      /4\.3\s*Relationship(?:-|\s*)Based\s+Strategies/i,
+      /Section\s*5/i,
+    ]);
+    const routineStrategies = extractSectionByMarkers(compact, /4\.2\s*Routine\s+and\s+Structure/i, [
+      /4\.3\s*Relationship(?:-|\s*)Based\s+Strategies/i,
+      /4\.4\s*Communication\s+Strategies/i,
+      /Section\s*5/i,
+    ]);
+    const relationshipStrategies = extractSectionByMarkers(compact, /4\.3\s*Relationship(?:-|\s*)Based\s+Strategies/i, [
+      /4\.4\s*Communication\s+Strategies/i,
+      /Section\s*5/i,
+    ]);
+    const communicationStrategies = extractSectionByMarkers(compact, /4\.4\s*Communication\s+Strategies/i, [
+      /Section\s*5/i,
+      /Section\s*6/i,
+    ]);
+    const earlyWarnings = extractSectionByMarkers(compact, /Section\s*5\s*[—-]\s*Early\s+Warning\s+Signs/i, [
+      /Section\s*6/i,
+    ]);
+    const reactive = extractSectionByMarkers(compact, /Section\s*6\s*[—-]\s*Reactive\s+Strategies/i, [
+      /Section\s*7/i,
+    ]);
+    const postIncident = extractSectionByMarkers(compact, /Section\s*7\s*[—-]\s*Post-?Incident\s+Support/i, [
+      /Section\s*8/i,
+      /Section\s*9/i,
+    ]);
+    const whatWorks = extractSectionByMarkers(compact, /Section\s*8\s*[—-]\s*What\s+Works[\s\S]*?What\s+Does\s+NOT\s+Work/i, [
+      /Section\s*9/i,
+      /Section\s*11/i,
+    ]);
+
+    const proactiveLines = [
+      ...parseSmartLines(envStrategies, 4),
+      ...parseSmartLines(routineStrategies, 4),
+      ...parseSmartLines(relationshipStrategies, 4),
+      ...parseSmartLines(communicationStrategies, 4),
+    ];
+    const warningLines = parseSmartLines(earlyWarnings, 6);
+    const reactiveLines = parseSmartLines(reactive, 8);
+    const postIncidentLines = parseSmartLines(postIncident, 7);
+    const whatWorksLines = parseSmartLines(whatWorks, 7);
+
+    pushNeed({
+      area: 'Behaviour Support - Proactive Strategies',
+      canDoMyself: 'Use predictable routines, calm communication, and collaborative choices to prevent escalation.',
+      risks: warningLines.slice(0, 3).join(' | '),
+      howToSupport: dedupe(proactiveLines).join(' | '),
+    });
+
+    pushNeed({
+      area: 'Behaviour Support - Early Warning Signs',
+      canDoMyself: 'Observe and record early signs before behaviour escalates.',
+      risks: warningLines.join(' | '),
+      howToSupport: 'Lower demands, offer space, use calm tone, and document trigger/context at handover.',
+    });
+
+    pushNeed({
+      area: 'Behaviour Support - Reactive Response',
+      canDoMyself: 'During escalation, prioritise safety and de-escalation over confrontation.',
+      risks: 'Escalation can involve verbal aggression, threats, refusal, or unsafe exit from placement.',
+      howToSupport: reactiveLines.join(' | '),
+    });
+
+    pushNeed({
+      area: 'Behaviour Support - Post Incident',
+      canDoMyself: 'When calm, reflect with the person and agree preventative steps for next time.',
+      risks: 'Risk of repeated incidents if debrief and plan updates are missed.',
+      howToSupport: postIncidentLines.join(' | '),
+    });
+
+    pushNeed({
+      area: 'Behaviour Support - What Works',
+      canDoMyself: 'Reinforce known calming supports and avoid known escalation triggers.',
+      risks: 'Using non-recommended approaches can increase distress and incident risk.',
+      howToSupport: whatWorksLines.join(' | '),
+    });
+  }
+
   return { needs, planDate: new Date().toLocaleDateString('en-GB') };
 }

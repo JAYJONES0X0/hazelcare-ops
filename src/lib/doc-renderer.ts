@@ -15,6 +15,22 @@ const RED = '#ef4444';
 const AMBER = '#f59e0b';
 const GREEN = '#22c55e';
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function docTitle(client: FullClient, docLabel: string): string {
+  const fallback = 'Client';
+  const raw = (client.name || fallback).replace(/\s+/g, ' ').trim();
+  const safeName = raw.replace(/[<>:"/\\|?*]/g, '').trim() || fallback;
+  return `${safeName} — ${docLabel}`;
+}
+
 export function riskInfo(likelihood: number, impact: number) {
   const score = likelihood * impact;
   let color: string;
@@ -235,7 +251,7 @@ function riskMatrix(likelihood: number, impact: number) {
 export function buildPBSHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const pbs = client.pbs;
   if (!pbs) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(docTitle(client, 'PBS Plan'))}</title><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('Positive Behaviour Support Plan', client, pbs.planDate);
 
   html += `<div class="page">
@@ -280,7 +296,7 @@ export function buildPBSHtml(client: FullClient, sigs?: Sig[], layout: ExportLay
 export function buildRiskHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const risk = client.risk;
   if (!risk) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(docTitle(client, 'Risk Assessment'))}</title><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('Clinical Risk Assessment', client, risk.planDate);
 
   const risks = risk.risks && risk.risks.length ? risk.risks : [];
@@ -383,7 +399,7 @@ export function buildRiskHtml(client: FullClient, sigs?: Sig[], layout: ExportLa
 export function buildCarePlanHtml(client: FullClient, sigs?: Sig[], layout: ExportLayout = 'portrait'): string {
   const cp = client.carePlan;
   if (!cp) return 'No data';
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${baseStyles(layout)}</style></head><body>`;
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(docTitle(client, 'Care Plan'))}</title><style>${baseStyles(layout)}</style></head><body>`;
   html += renderCover('My Support Plan', client, cp.planDate);
 
   html += `<div class="page">
@@ -478,7 +494,7 @@ export function buildEasyReadHtml(client: FullClient, layout: ExportLayout = 'po
   };
 
   const size = pageSize(layout);
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(docTitle(client, 'Easy Read Support Plan'))}</title><style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     @page { size: A4 ${layout}; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }

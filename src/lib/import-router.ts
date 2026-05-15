@@ -1,5 +1,7 @@
 import type { FullClient } from './client-store';
 import { emptyClient, loadClients, resolveClientMatch, saveClient } from './client-store';
+import { mergeClientIdentity } from './client-identity-merge';
+import { mergeCarePlanData, mergeRiskData, mergeSupportPlanData } from './intel-merge';
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
 import type { TemplateType } from './types';
 import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData, loadShifts, saveShifts } from './storage';
@@ -103,6 +105,7 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       if (envelope.admission || envelope.supportPlan) {
         const picked = preValidatedPick || pickClient(envelope, opts);
         const client = picked.client;
+        const today = new Date().toLocaleDateString('en-GB');
         requiresManualClientSelection = picked.requiresManualSelection;
 
         if (envelope.clientCandidates[0]?.name && !client.name) {
@@ -111,14 +114,24 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
         }
 
         if (envelope.admission) {
-          Object.assign(client, envelope.admission.client);
-          client.carePlan = envelope.admission.carePlan;
-          messages.push(`${client.name || 'Client'} ${picked.existed ? 'updated' : 'created'} from admission/care-plan data.`);
+          const mergedIdentity = mergeClientIdentity(client as FullClient, envelope.admission.client);
+          Object.assign(client, mergedIdentity);
+          
+          // ADDITIVE MERGE for Care Plan and Risk
+          client.carePlan = mergeCarePlanData(client.carePlan || null, envelope.admission.carePlan, today);
+          if (envelope.admission.client.risk) {
+            client.risk = mergeRiskData(client.risk || null, envelope.admission.client.risk, today);
+          }
+          
+          messages.push(`${client.name || 'Client'} ${picked.existed ? 'merged' : 'created'} from admission/risk/care-plan data.`);
         }
 
         if (envelope.supportPlan) {
-          client.supportPlan = envelope.supportPlan;
-          messages.push(`${client.name || 'Client'} support plan imported (${envelope.supportPlan.needs.length} areas).`);
+          const previousCount = client.supportPlan?.needs?.length || 0;
+          client.supportPlan = mergeSupportPlanData(client.supportPlan || null, envelope.supportPlan);
+          const mergedCount = client.supportPlan?.needs?.length || 0;
+          const delta = Math.max(0, mergedCount - previousCount);
+          messages.push(`${client.name || 'Client'} support plan merged (${mergedCount} areas, +${delta} new).`);
         }
 
         saveClient(client as FullClient);

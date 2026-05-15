@@ -1,10 +1,13 @@
-import { useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, deleteClient, emptyClient, type ClientDocument, type FullClient } from '../lib/client-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { analyzeIntel, analyzeIntelFallback } from '../lib/intelligence';
+import { mergeClientIdentity } from '../lib/client-identity-merge';
+import { mergeCarePlanData, mergePBSData, mergeRiskData } from '../lib/intel-merge';
+import { buildClusterNote, buildClusterTitle, clusterRiskItems } from '../lib/risk-assistant';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
@@ -32,6 +35,8 @@ export function ClientDocsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [copiedToken, setCopiedToken] = useState('');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [docUploadRef, setDocUploadRef] = useState<HTMLInputElement | null>(null);
@@ -144,7 +149,8 @@ export function ClientDocsPage() {
       }
 
       setImportText(fullText);
-      setImportResult(['Document text extracted. Use "Clinical AI Analysis" for best results.']);
+      setImportResult(['Document text extracted. Use "Basic Pattern Sync" for the deterministic pass, or "Use AI" for the optional assistant.']);
+      setShowAiPanel(false);
     } catch (err) {
       console.error('PDF extract error:', err);
       setImportResult(['Failed to read PDF. Try copy-pasting the text manually instead.']);
@@ -195,22 +201,43 @@ export function ClientDocsPage() {
     setSessionIntel(result);
   };
 
+  const riskItems = sessionIntel?.risk?.risks || [];
+  const riskClusters = useMemo(() => clusterRiskItems(riskItems), [riskItems]);
+
+  const copyText = async (token: string, text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedToken(token);
+    window.setTimeout(() => setCopiedToken((current) => (current === token ? '' : current)), 1600);
+  };
+
+  const openAiPanel = async () => {
+    if (!importText.trim()) return;
+    await handlePreview(true);
+    setShowAiPanel(true);
+  };
+
   const handleImport = () => {
     const result = sessionIntel;
     if (!result) return;
+    const today = new Date().toLocaleDateString('en-GB');
 
     if (importTarget) {
       const all = loadClients();
       const existing = all.find(c => c.id === importTarget);
       if (existing) {
-        const updated = {
-          ...existing,
-          ...result.client,
-          name: existing.name || result.client.name || '',
-          carePlan: result.carePlan,
-          risk: result.risk,
+        const identity = mergeClientIdentity(existing, result.client);
+        
+        const mergedCarePlan = mergeCarePlanData(existing.carePlan, result.carePlan, today);
+        const mergedRisk = mergeRiskData(existing.risk, result.risk, today);
+        const mergedPbs = mergePBSData(existing.pbs, result.pbs || null);
+        
+        const updated: FullClient = {
+          ...identity,
+          carePlan: mergedCarePlan,
+          risk: mergedRisk,
+          pbs: mergedPbs,
         };
-        saveClient(updated as FullClient);
+        saveClient(updated);
         refresh();
         setImportText('');
         setImportPreview(null);
@@ -218,9 +245,11 @@ export function ClientDocsPage() {
       }
     } else {
       const client = emptyClient();
-      Object.assign(client, result.client);
+      const mergedIdentity = mergeClientIdentity(client, result.client);
+      Object.assign(client, mergedIdentity);
       client.carePlan = result.carePlan;
       client.risk = result.risk;
+      client.pbs = result.pbs || client.pbs;
       saveClient(client);
       refresh();
       setImportText('');
@@ -300,18 +329,18 @@ export function ClientDocsPage() {
           </div>
         )}
 
-        <div className="hc-clay-inset rounded-2xl p-1 mb-6 overflow-hidden">
+        <div className={`hc-clay-inset rounded-2xl p-1 overflow-hidden ${importPreview ? 'mb-4' : 'mb-6'}`}>
           <textarea
             value={importText}
             onChange={e => setImportText(e.target.value)}
-            rows={12}
+            rows={importPreview ? 8 : 12}
             placeholder="Paste raw unstructured clinical text here..."
-            className="w-full bg-transparent p-6 text-hc-text font-mono text-sm leading-relaxed resize-y placeholder:text-hc-muted/60 focus:outline-none scrollbar-thin"
+            className={`w-full bg-transparent p-6 text-hc-text font-mono text-sm leading-relaxed resize-y placeholder:text-hc-muted/60 focus:outline-none scrollbar-thin ${importPreview ? 'max-h-[220px]' : 'min-h-[320px]'}`}
           />
         </div>
 
         {importResult.length > 0 && (
-          <div className="bg-hc-border/10 border border-hc-border/30 rounded-2xl px-6 py-4 mb-6 space-y-1">
+          <div className={`bg-hc-border/10 border border-hc-border/30 rounded-2xl px-6 py-4 space-y-1 ${importPreview ? 'mb-4' : 'mb-6'}`}>
             {importResult.map((w, i) => (
               <p key={i} className="text-xs font-bold text-hc-muted uppercase tracking-wide leading-relaxed flex items-center gap-2">
                 {w.includes('AI Analysis Complete') || w.includes('Clinical analysis complete')
@@ -325,61 +354,179 @@ export function ClientDocsPage() {
         )}
 
         {importPreview && (
-          <div className="hc-clay-raised border-2 border-hc-teal/30 rounded-[2rem] p-8 mb-8 animate-in zoom-in-95 duration-500 glow-teal relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
-            <div className="relative z-10">
-              <p className="section-header text-[10px] mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-hc-teal animate-pulse" />
-                Detected Profile Structure
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="hc-clay-inset rounded-2xl p-4">
-                  <div className="section-header text-xs mb-1">Clinical Designation</div>
-                  <div className="text-sm font-black text-hc-text truncate">{importPreview.name}</div>
+          <div className={`grid gap-6 mb-8 ${showAiPanel ? 'lg:grid-cols-[1.45fr_0.95fr]' : 'grid-cols-1'}`}>
+            <div className="hc-clay-raised border-2 border-hc-teal/30 rounded-[2rem] p-8 animate-in zoom-in-95 duration-500 glow-teal relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-hc-teal/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+              <div className="relative z-10">
+                <p className="section-header text-[10px] mb-6 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-hc-teal animate-pulse" />
+                  Detected Profile Structure
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                  <div className="hc-clay-inset rounded-2xl p-4">
+                    <div className="section-header text-xs mb-1">Clinical Designation</div>
+                    <div className="text-sm font-black text-hc-text truncate">{importPreview.name}</div>
+                  </div>
+                  <div className="hc-clay-inset rounded-2xl p-4">
+                    <div className="section-header text-xs mb-1">Temporal ID</div>
+                    <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
+                  </div>
+                  <div className="hc-clay-inset rounded-2xl p-4">
+                    <div className="section-header text-xs mb-1">CQC Domains</div>
+                    <div className="text-sm font-black text-hc-teal tabular-nums">{importPreview.domainsDetected} / 21</div>
+                  </div>
+                  <div className="hc-clay-inset rounded-2xl p-4">
+                    <div className="section-header text-xs mb-1">Risk Logic</div>
+                    <div className="text-sm font-black text-hc-teal">{riskClusters.length ? `${riskClusters.length} clusters` : 'ENABLED'}</div>
+                  </div>
                 </div>
-                <div className="hc-clay-inset rounded-2xl p-4">
-                  <div className="section-header text-xs mb-1">Temporal ID</div>
-                  <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
+
+                {riskClusters.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="section-header text-[10px] flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-flag-amber animate-pulse" />
+                        Risk Hotspots
+                      </div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                        {riskClusters.filter((cluster) => cluster.hotspot).length} clusters at 3+
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {riskClusters.map((cluster) => {
+                        const title = buildClusterTitle(cluster);
+                        const note = buildClusterNote(cluster);
+                        const token = `cluster:${cluster.key}`;
+                        return (
+                          <div
+                            key={cluster.key}
+                            className={`rounded-2xl p-4 border transition-all ${cluster.hotspot ? 'bg-flag-amber/8 border-flag-amber/30 shadow-[0_0_0_1px_rgba(250,204,21,0.05)]' : 'bg-hc-bone/50 border-hc-border/20'}`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-hc-text truncate">
+                                  {title}
+                                </div>
+                                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mt-1">
+                                  {cluster.hotspot ? 'Hotspot cluster' : 'Cluster building'}
+                                </div>
+                              </div>
+                              <span className={`shrink-0 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${cluster.hotspot ? 'bg-flag-amber/15 text-flag-amber border border-flag-amber/25' : 'bg-hc-border/15 text-hc-muted border border-hc-border/20'}`}>
+                                {cluster.count}
+                              </span>
+                            </div>
+                            <div className="mt-3 text-[10px] text-hc-text/70 leading-relaxed max-h-24 overflow-hidden whitespace-pre-line">
+                              {note}
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <button
+                                onClick={() => copyText(`${token}:title`, title)}
+                                className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hc-clay-raised text-hc-muted hover:text-hc-teal transition-colors"
+                              >
+                                {copiedToken === `${token}:title` ? 'Copied title' : 'Copy title'}
+                              </button>
+                              <button
+                                onClick={() => copyText(`${token}:note`, note)}
+                                className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hc-clay-raised text-hc-muted hover:text-hc-teal transition-colors"
+                              >
+                                {copiedToken === `${token}:note` ? 'Copied note' : 'Copy note'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-4">
+                  <button onClick={handleImport}
+                    className="flex-1 btn-tactical text-[11px] py-4 rounded-xl">
+                    Commit Intelligence to Profile
+                  </button>
+                  <button onClick={() => setImportPreview(null)}
+                    className="px-8 btn-clay text-[11px] py-4 rounded-xl">
+                    Discard
+                  </button>
                 </div>
-                <div className="hc-clay-inset rounded-2xl p-4">
-                  <div className="section-header text-xs mb-1">CQC Domains</div>
-                  <div className="text-sm font-black text-hc-teal tabular-nums">{importPreview.domainsDetected} / 21</div>
-                </div>
-                <div className="hc-clay-inset rounded-2xl p-4">
-                  <div className="section-header text-xs mb-1">Risk Logic</div>
-                  <div className="text-sm font-black text-hc-teal">ENABLED</div>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <button onClick={handleImport}
-                  className="flex-1 btn-tactical text-[11px] py-4 rounded-xl">
-                  Commit Intelligence to Profile
-                </button>
-                <button onClick={() => setImportPreview(null)}
-                  className="px-8 btn-clay text-[11px] py-4 rounded-xl">
-                  Discard
-                </button>
               </div>
             </div>
+
+            {showAiPanel && (
+              <div className="hc-clay-raised border-2 border-hc-teal/20 rounded-[2rem] p-6 animate-in fade-in slide-in-from-right-4 duration-500 bg-hc-bone/90">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-hc-teal">AI Sidecar</div>
+                    <div className="text-[11px] text-hc-muted font-medium">Appears only when you click Use AI.</div>
+                  </div>
+                  <button
+                    onClick={() => setShowAiPanel(false)}
+                    className="w-9 h-9 rounded-xl hc-clay-inset text-hc-muted hover:text-hc-text transition-colors"
+                    title="Close AI panel"
+                  >
+                    <X className="w-4 h-4 mx-auto" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">What I can see</div>
+                    <div className="text-[11px] text-hc-text/75 leading-relaxed">
+                      {sessionIntel
+                        ? `I can see ${riskClusters.length} risk cluster${riskClusters.length === 1 ? '' : 's'} and ${riskClusters.filter((cluster) => cluster.hotspot).length} hotspot${riskClusters.filter((cluster) => cluster.hotspot).length === 1 ? '' : 's'} in the extracted document.`
+                        : 'Click "Use AI" to run the optional analysis pass and compare it with the deterministic cluster view.'}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">Recommended move</div>
+                    <div className="text-[11px] text-hc-text/75 leading-relaxed">
+                      Build out the hotspot categories first, then paste each generated note into Nourish under the matching category heading. That keeps the pack readable when printed and gives you a fast manual fallback if AI is not needed.
+                    </div>
+                  </div>
+
+                  {sessionIntel?.gaps?.length > 0 && (
+                    <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
+                      <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">AI gap cues</div>
+                      <div className="space-y-1">
+                        {sessionIntel.gaps.slice(0, 4).map((gap: string, idx: number) => (
+                          <div key={idx} className="text-[10px] text-hc-text/70 leading-relaxed">
+                            • {gap}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={openAiPanel}
+                    disabled={isAnalyzing || !importText.trim()}
+                    className="w-full btn-tactical text-[10px] py-3 rounded-xl flex items-center justify-center gap-3 disabled:opacity-40"
+                  >
+                    {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {isAnalyzing ? 'Thinking...' : 'Re-run AI'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {!importPreview && (
           <div className="flex flex-col md:flex-row items-center gap-6">
             <button
-              onClick={() => handlePreview(true)}
-              disabled={!importText.trim() || isAnalyzing}
-              className="w-full md:w-auto btn-tactical disabled:opacity-20 disabled:grayscale text-[11px] px-10 py-4 rounded-xl flex items-center justify-center gap-3 group"
-            >
-              {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
-              {isAnalyzing ? 'Clinical AI Working...' : 'Initiate Clinical AI Analysis'}
-            </button>
-            <button
               onClick={() => handlePreview(false)}
               disabled={!importText.trim() || isAnalyzing}
               className="w-full md:w-auto btn-clay disabled:opacity-20 text-[11px] px-8 py-4 rounded-xl"
             >
               Basic Pattern Sync
+            </button>
+            <button
+              onClick={openAiPanel}
+              disabled={!importText.trim() || isAnalyzing}
+              className="w-full md:w-auto btn-clay disabled:opacity-20 text-[11px] px-8 py-4 rounded-xl border border-hc-teal/20 text-hc-teal"
+            >
+              Use AI
             </button>
             {!importTarget && (
               <div className="flex items-center gap-4 hc-clay-inset px-5 py-3 rounded-2xl ml-auto">

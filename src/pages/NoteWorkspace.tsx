@@ -126,6 +126,16 @@ function buildClientIntelContext(profile: FullClient, maxChars = 72_000): string
   return parts.join('\n\n');
 }
 
+function summariseVaultBriefing(docs: VaultDoc[]): string {
+  if (!docs.length) return '';
+  const preview = docs
+    .slice(0, 4)
+    .map((doc) => `${doc.name} (${Math.max(1, Math.round(doc.text.length / 1000))}K)`)
+    .join('; ');
+  const suffix = docs.length > 4 ? ` +${docs.length - 4} more` : '';
+  return `Vault docs: ${docs.length} file${docs.length === 1 ? '' : 's'} · ${preview}${suffix}`;
+}
+
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
   const [importInfo, setImportInfo] = useState('');
@@ -192,6 +202,7 @@ export function NoteWorkspace() {
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
   const [coveragePlan, setCoveragePlan] = useState<CoveragePlan | null>(() => loadCoveragePlan());
+  const hasVaultContext = Boolean(clientProfile?.vaultDocs?.length || clientProfile?.clinicalBriefing);
 
   // Reload client profile whenever selection changes
   useEffect(() => {
@@ -441,8 +452,8 @@ export function NoteWorkspace() {
         uploadedAt: new Date().toISOString(),
       };
       profile.vaultDocs = [...(profile.vaultDocs || []), newDoc];
-      // Keep clinicalBriefing in sync for legacy ghost-write compat
-      profile.clinicalBriefing = profile.vaultDocs.map(d => `━━━ ${d.name} ━━━\n${d.text}`).join('\n\n');
+      // Keep only a compact compatibility summary in clinicalBriefing.
+      profile.clinicalBriefing = summariseVaultBriefing(profile.vaultDocs);
       saveClient(profile);
       // Reload clientProfile so UI updates immediately
       setClientProfile({ ...profile });
@@ -462,9 +473,7 @@ export function NoteWorkspace() {
     const profile = clients.find(c => c.name.toLowerCase().trim() === selectedClient.toLowerCase().trim());
     if (!profile) return;
     profile.vaultDocs = (profile.vaultDocs || []).filter(d => d.id !== docId);
-    profile.clinicalBriefing = profile.vaultDocs.length
-      ? profile.vaultDocs.map(d => `━━━ ${d.name} ━━━\n${d.text}`).join('\n\n')
-      : '';
+    profile.clinicalBriefing = summariseVaultBriefing(profile.vaultDocs);
     saveClient(profile);
     setClientProfile({ ...profile });
   };
@@ -932,20 +941,20 @@ export function NoteWorkspace() {
                   {/* INTELLIGENCE VAULT: Active when client selected */}
                   {selectedClient === client && (
                     <div className="px-5 pb-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
-                      <div className={`p-3 rounded-xl border space-y-2 transition-colors ${clientProfile?.clinicalBriefing ? 'bg-flag-green/5 border-flag-green/20' : 'bg-hc-teal/5 border-hc-teal/20'}`}>
+                      <div className={`p-3 rounded-xl border space-y-2 transition-colors ${hasVaultContext ? 'bg-flag-green/5 border-flag-green/20' : 'bg-hc-teal/5 border-hc-teal/20'}`}>
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <Shield className={`w-3 h-3 ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`}>
+                            <Shield className={`w-3 h-3 ${hasVaultContext ? 'text-flag-green' : 'text-hc-teal'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${hasVaultContext ? 'text-flag-green' : 'text-hc-teal'}`}>
                               Intelligence Vault
                             </span>
                           </div>
-                          {clientProfile?.clinicalBriefing && (
+                          {hasVaultContext && (
                             <div className="w-1.5 h-1.5 rounded-full bg-flag-green animate-pulse" />
                           )}
                         </div>
 
-                        {(clientProfile?.vaultDocs?.length || clientProfile?.clinicalBriefing) ? (
+                        {hasVaultContext ? (
                           <div className="space-y-1.5">
                             {/* Per-document list */}
                             {(clientProfile.vaultDocs?.length
@@ -992,9 +1001,9 @@ export function NoteWorkspace() {
                         <button
                           onClick={() => document.getElementById('intel-doc-upload')?.click()}
                           disabled={importLoading}
-                          className={`w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${clientProfile?.clinicalBriefing ? 'bg-flag-green/10 hover:bg-flag-green/20 text-flag-green border-flag-green/10' : 'bg-hc-teal/10 hover:bg-hc-teal/20 text-hc-teal border-hc-teal/10'}`}
+                          className={`w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${hasVaultContext ? 'bg-flag-green/10 hover:bg-flag-green/20 text-flag-green border-flag-green/10' : 'bg-hc-teal/10 hover:bg-hc-teal/20 text-hc-teal border-hc-teal/10'}`}
                         >
-                          {importLoading ? 'Reading...' : clientProfile?.clinicalBriefing ? '+ Add More Docs' : '+ Add Context Doc'}
+                          {importLoading ? 'Reading...' : hasVaultContext ? '+ Add More Docs' : '+ Add Context Doc'}
                         </button>
                         <input
                           type="file"
@@ -1063,10 +1072,10 @@ export function NoteWorkspace() {
                 </div>
                 
                 {selectedClient && (
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg animate-in fade-in duration-500 ${clientProfile?.clinicalBriefing ? 'bg-flag-green/10' : 'bg-hc-teal/10'}`}>
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${clientProfile?.clinicalBriefing ? 'bg-flag-green' : 'bg-hc-teal'}`} />
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${clientProfile?.clinicalBriefing ? 'text-flag-green' : 'text-hc-teal'}`}>
-                      {clientProfile?.clinicalBriefing ? 'Vault Active' : 'Client Selected'}
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg animate-in fade-in duration-500 ${hasVaultContext ? 'bg-flag-green/10' : 'bg-hc-teal/10'}`}>
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${hasVaultContext ? 'bg-flag-green' : 'bg-hc-teal'}`} />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${hasVaultContext ? 'text-flag-green' : 'text-hc-teal'}`}>
+                      {hasVaultContext ? 'Vault Active' : 'Client Selected'}
                     </span>
                   </div>
                 )}

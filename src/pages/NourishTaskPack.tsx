@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type MouseEvent } from 'react';
 import { loadClients, type FullClient, type CarePlanDomain } from '../lib/client-store';
 import {
   ClipboardList, Copy, Check, ChevronDown, ChevronRight,
@@ -21,6 +21,13 @@ interface NourishTask {
   source: string;
   domain: string;
   evidence: string[];
+}
+
+function cleanLine(input: string, max = 220): string {
+  const normalized = (input || '').replace(/\s+/g, ' ').trim();
+  if (!normalized) return '';
+  if (normalized.length <= max) return normalized;
+  return normalized.slice(0, max - 1).trimEnd() + '…';
 }
 
 const DAILY_DOMAIN_KEYWORDS = [
@@ -88,23 +95,13 @@ function buildTaskName(domain: CarePlanDomain): string {
 }
 
 function buildTaskNotes(domain: CarePlanDomain): string {
+  const supportLine = cleanLine(domain.howToAchieve || domain.plannedOutcomes || domain.identifiedNeed, 180);
+  const riskLine = cleanLine(domain.riskMitigation || domain.riskTitle, 160);
   const parts: string[] = [];
-  if (domain.identifiedNeed?.trim()) {
-    parts.push(`Identified need: ${domain.identifiedNeed.trim()}`);
-  }
-  if (domain.howToAchieve?.trim()) {
-    parts.push(`How to support: ${domain.howToAchieve.trim()}`);
-  }
-  if (domain.plannedOutcomes?.trim()) {
-    parts.push(`Planned outcome: ${domain.plannedOutcomes.trim()}`);
-  }
-  if (domain.riskMitigation?.trim()) {
-    parts.push(`Risk mitigation: ${domain.riskMitigation.trim()}`);
-  }
-  if (parts.length === 0) {
-    return 'Record support provided, client response, and any concerns or actions taken.';
-  }
-  return parts.join('\n') + '\n\nRecord: actions taken, client response, any refusals, concerns, or escalations.';
+  if (supportLine) parts.push(`Support: ${supportLine}`);
+  if (riskLine) parts.push(`Risk focus: ${riskLine}`);
+  parts.push('Record: task completed, response, refusal/escalation if any.');
+  return parts.join('\n');
 }
 
 function collectEvidence(domain: CarePlanDomain): string[] {
@@ -137,6 +134,88 @@ function generateTasksFromCarePlan(client: FullClient): NourishTask[] {
     .filter(task => task.evidence.length > 0);
 }
 
+function generateTasksFromRiskAssessment(client: FullClient): NourishTask[] {
+  const risk = client.risk;
+  if (!risk?.risks?.length) return [];
+
+  return risk.risks
+    .filter(r => (r.title || '').trim().length > 0)
+    .map(riskItem => {
+      const controls = (riskItem.controls || []).map(c => cleanLine(c, 120)).filter(Boolean);
+      const description = cleanLine(riskItem.description, 160);
+      const notesLines: string[] = [];
+      if (description) notesLines.push(`Risk context: ${description}`);
+      if (controls.length) notesLines.push(`Controls: ${controls.slice(0, 2).join(' | ')}`);
+      notesLines.push('Record: trigger observed, action taken, client response, escalation if needed.');
+
+      return {
+        name: `Risk Response - ${cleanLine(riskItem.title, 72)}`,
+        notes: notesLines.join('\n'),
+        frequency: 'event' as TaskFrequency,
+        mandatory: true,
+        source: `Risk Assessment - ${riskItem.title}`,
+        domain: 'Risk Assessment',
+        evidence: [
+          `Risk: ${riskItem.title}`,
+          ...controls.map(c => `Control: ${c}`),
+        ],
+      };
+    });
+}
+
+function generateTasksFromSupportPlan(client: FullClient): NourishTask[] {
+  const needs = client.supportPlan?.needs || [];
+  if (!needs.length) return [];
+
+  return needs
+    .filter(need => (need.area || '').trim().length > 0)
+    .map(need => {
+      const area = cleanLine(need.area, 90);
+      const support = cleanLine(need.howToSupport || need.canDoMyself, 170);
+      const risk = cleanLine(need.risks, 140);
+      const notes: string[] = [];
+      if (support) notes.push(`Support: ${support}`);
+      if (risk) notes.push(`Risk focus: ${risk}`);
+      notes.push('Record: what was done, client response, refusal/escalation.');
+
+      const sourceText = [need.canDoMyself, need.howToSupport, need.risks].join(' ').toLowerCase();
+      const mandatory = /risk|safeguard|medication|aggress|falls|self-harm|incident/i.test(sourceText);
+
+      return {
+        name: `Support Plan - ${area}`,
+        notes: notes.join('\n'),
+        frequency: inferFrequency(area),
+        mandatory,
+        source: `Support Plan - ${area}`,
+        domain: area,
+        evidence: [
+          need.canDoMyself ? `Need: ${cleanLine(need.canDoMyself, 180)}` : '',
+          need.howToSupport ? `Support method: ${cleanLine(need.howToSupport, 180)}` : '',
+          need.risks ? `Risk: ${cleanLine(need.risks, 150)}` : '',
+        ].filter(Boolean),
+      };
+    });
+}
+
+function dedupeTasks(tasks: NourishTask[]): NourishTask[] {
+  const seen = new Set<string>();
+  const out: NourishTask[] = [];
+  for (const task of tasks) {
+    const key = task.name.toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(task);
+  }
+  return out;
+}
+
+function generateTasksForClient(client: FullClient): NourishTask[] {
+  const fromCarePlan = generateTasksFromCarePlan(client);
+  const fromRisk = generateTasksFromRiskAssessment(client);
+  const fromSupportPlan = generateTasksFromSupportPlan(client);
+  return dedupeTasks([...fromCarePlan, ...fromRisk, ...fromSupportPlan]).filter(task => task.evidence.length > 0);
+}
+
 function formatForExport(client: FullClient, tasks: NourishTask[]): string {
   const daily = tasks.filter(t => t.frequency === 'daily');
   const weekly = tasks.filter(t => t.frequency === 'weekly');
@@ -146,12 +225,12 @@ function formatForExport(client: FullClient, tasks: NourishTask[]): string {
   let out = `NOTE TITLE: CarePlanner Personalised Tasks (Care Plan Aligned) - ${client.name}\n`;
   out += `Generated: ${date} | Source: Hazel Care Ops - Care Plan Builder\n\n`;
   out += `PURPOSE\n`;
-  out += `These tasks are derived directly from ${client.name}'s current care plans and risk assessments to evidence support delivery and ensure consistency across staff.\n\n`;
+  out += `These tasks are derived directly from ${client.name}'s current care plans, support plans and risk assessments to evidence support delivery and ensure consistency across staff.\n\n`;
   out += `RULES\n`;
   out += `- Build as Client Tasks in Nourish.\n`;
   out += `- Set Task Notes mandatory for all tasks marked [MANDATORY].\n`;
   out += `- Do not change tasks without updating the underlying care plan/risk assessment first.\n`;
-  out += `- Do not create tasks without evidence from care plan or risk fields.\n\n`;
+  out += `- Do not create tasks without evidence from care plan, support plan, or risk fields.\n\n`;
   out += `-----------------------------------------------------\n`;
 
   if (daily.length > 0) {
@@ -214,13 +293,29 @@ const FREQ_CONFIG = {
 
 function TaskCard({ task, index }: { task: NourishTask; index: number }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState<'name' | 'notes' | ''>('');
   const freq = FREQ_CONFIG[task.frequency];
+
+  const copyValue = async (kind: 'name' | 'notes', text: string, e?: MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
+    await navigator.clipboard.writeText(text);
+    setCopied(kind);
+    window.setTimeout(() => setCopied((current) => (current === kind ? '' : current)), 1500);
+  };
 
   return (
     <div className={`hc-clay-raised rounded-2xl overflow-hidden border ${task.mandatory ? 'border-flag-red/20' : 'border-hc-border/5'} transition-all`}>
-      <button
+      <div
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/[0.02] transition-all"
+        className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/[0.02] transition-all cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded((current) => !current);
+          }
+        }}
       >
         {/* Index */}
         <span className="w-6 h-6 rounded-lg hc-clay-inset flex items-center justify-center text-[10px] font-black text-hc-muted shrink-0 mt-0.5">
@@ -236,6 +331,20 @@ function TaskCard({ task, index }: { task: NourishTask; index: number }) {
               </span>
             )}
           </div>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <button
+              onClick={(e) => copyValue('name', task.name, e)}
+              className="px-2.5 py-1 rounded-lg hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-teal transition-colors"
+            >
+              {copied === 'name' ? 'Copied name' : 'Copy name'}
+            </button>
+            <button
+              onClick={(e) => copyValue('notes', task.notes, e)}
+              className="px-2.5 py-1 rounded-lg hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-teal transition-colors"
+            >
+              {copied === 'notes' ? 'Copied notes' : 'Copy notes'}
+            </button>
+          </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${freq.bg} ${freq.color}`}>
               {freq.icon} {freq.label}
@@ -247,7 +356,7 @@ function TaskCard({ task, index }: { task: NourishTask; index: number }) {
         <span className="text-hc-muted shrink-0 mt-1">
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-hc-border/10 pt-3 animate-in slide-in-from-top-2 duration-200">
@@ -256,6 +365,12 @@ function TaskCard({ task, index }: { task: NourishTask; index: number }) {
             <div className="hc-clay-inset rounded-xl p-3 text-[11px] text-hc-text/80 leading-relaxed whitespace-pre-line">
               {task.notes}
             </div>
+            <button
+              onClick={(e) => copyValue('notes', task.notes, e)}
+              className="mt-2 text-[9px] font-black uppercase tracking-widest text-hc-teal hover:underline"
+            >
+              {copied === 'notes' ? 'Copied notes' : 'Copy notes'}
+            </button>
           </div>
           <div>
             <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Source</div>
@@ -323,9 +438,13 @@ function FreqSection({
 
 export function NourishTaskPack() {
   const [clients] = useState<FullClient[]>(() => loadClients());
+  const clientHasTaskSources = (client: FullClient) =>
+    !!client.carePlan?.domains?.some(d => d.enabled) ||
+    !!client.supportPlan?.needs?.some(n => (n.area || '').trim().length > 0) ||
+    !!client.risk?.risks?.some(r => (r.title || '').trim().length > 0);
   const [selectedId, setSelectedId] = useState<string>(() => {
-    // Default to first client with a care plan
-    const first = clients.find(c => c.carePlan?.domains?.some(d => d.enabled));
+    // Default to first client with usable care/risk sources.
+    const first = clients.find(c => clientHasTaskSources(c));
     return first?.id || clients[0]?.id || '';
   });
   const [copied, setCopied] = useState(false);
@@ -336,7 +455,7 @@ export function NourishTaskPack() {
   );
 
   const tasks = useMemo(
-    () => (selectedClient ? generateTasksFromCarePlan(selectedClient) : []),
+    () => (selectedClient ? generateTasksForClient(selectedClient) : []),
     [selectedClient]
   );
 
@@ -367,8 +486,8 @@ export function NourishTaskPack() {
     URL.revokeObjectURL(url);
   };
 
-  const clientsWithPlans = clients.filter(c => c.carePlan?.domains?.some(d => d.enabled));
-  const clientsNoPlan = clients.filter(c => !c.carePlan?.domains?.some(d => d.enabled));
+  const clientsWithPlans = clients.filter(c => clientHasTaskSources(c));
+  const clientsNoPlan = clients.filter(c => !clientHasTaskSources(c));
 
   return (
     <div className="flex h-full min-h-screen">
@@ -383,15 +502,15 @@ export function NourishTaskPack() {
         {clientsWithPlans.length === 0 && (
           <div className="hc-clay-raised rounded-2xl p-4 text-center">
             <Info size={20} className="text-hc-muted mx-auto mb-2" />
-            <p className="text-[10px] font-black text-hc-muted uppercase tracking-wide">No care plans found</p>
-            <p className="text-[9px] text-hc-muted/60 mt-1">Build a care plan in the Care Plan Builder first</p>
+            <p className="text-[10px] font-black text-hc-muted uppercase tracking-wide">No care/risk/support data</p>
+            <p className="text-[9px] text-hc-muted/60 mt-1">Import or build care plan/support plan/risk data first</p>
           </div>
         )}
 
         {clientsWithPlans.length > 0 && (
           <div className="space-y-1">
             <div className="text-[8px] font-black text-hc-teal uppercase tracking-widest px-1 mb-2">
-              Has Care Plan ({clientsWithPlans.length})
+              Task-Ready Profiles ({clientsWithPlans.length})
             </div>
             {clientsWithPlans.map(c => {
               const taskCount = generateTasksFromCarePlan(c).length;
@@ -421,7 +540,7 @@ export function NourishTaskPack() {
         {clientsNoPlan.length > 0 && (
           <div className="space-y-1 opacity-40">
             <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest px-1 mb-2">
-              No Care Plan Yet ({clientsNoPlan.length})
+              Missing Source Data ({clientsNoPlan.length})
             </div>
             {clientsNoPlan.map(c => (
               <div key={c.id} className="flex items-center gap-2 px-4 py-3">
@@ -444,8 +563,8 @@ export function NourishTaskPack() {
             </h1>
             <p className="text-[10px] text-hc-muted font-bold">
               {selectedClient
-                ? `${tasks.length} tasks derived from ${selectedClient.name}'s care plan`
-                : 'Select a client to generate their care-plan-aligned task pack'}
+                ? `${tasks.length} tasks derived from ${selectedClient.name}'s care plan + risk assessment`
+                : 'Select a client to generate their care/risk aligned task pack'}
             </p>
           </div>
 
@@ -487,9 +606,9 @@ export function NourishTaskPack() {
           <div className="hc-clay-raised rounded-3xl p-12 text-center space-y-4">
             <RefreshCw size={32} className="text-hc-muted/30 mx-auto" />
             <div>
-              <p className="text-[11px] font-black text-hc-text uppercase tracking-widest">No enabled care plan domains</p>
+              <p className="text-[11px] font-black text-hc-text uppercase tracking-widest">No usable care/risk fields</p>
               <p className="text-[10px] text-hc-muted mt-1">
-                Go to the Care Plan Builder and enable domains for {selectedClient.name} first.
+                Add care plan domains or risk items for {selectedClient.name} first.
               </p>
             </div>
           </div>

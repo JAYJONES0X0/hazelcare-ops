@@ -255,7 +255,7 @@ export default function App() {
                 {page === 'actions' && <ActionsPage actions={actions} onUpdate={(u) => { setActions(u); saveActions(u); }} />}
                 {page === 'incidents' && <IncidentsPage incidents={incidents} onUpdate={(u) => { setIncidents(u); saveIncidents(u); }} />}
                 {page === 'staff' && <StaffPage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
-                {page === 'notes' && <StaffNotePage />}
+                {(page === 'staff-tools' || page === 'notes') && <StaffNotePage />}
                 {page === 'note-workspace' && <NoteWorkspace />}
                 {page === 'training-hub' && <SovereignTrainingHub />}
                 {page === 'handover' && <HandoverPage weekData={weekData} />}

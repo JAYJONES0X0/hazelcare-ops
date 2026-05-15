@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
-import * as pdfjs from 'pdfjs-dist';
 import { loadClients, saveClient, emptyPBS } from '../lib/client-store';
 import { buildPBSHtml } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
 import { getAllEntries } from '../lib/entry-store';
+import { extractFileText } from '../lib/universal-extractor';
+import { mergeClientIdentity } from '../lib/client-identity-merge';
+import { mergePBSData } from '../lib/intel-merge';
 import { Sparkles, ChevronRight, ArrowLeft, Plus, Printer, Trash2, CheckCircle } from 'lucide-react';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
@@ -29,8 +31,6 @@ const SECTIONS = [
   'Reviews & Professionals',
   'Sign-Off',
 ];
-
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 // ─── SHARED FIELD COMPONENTS ─────────────────────────────────────────────────
 
@@ -273,38 +273,36 @@ export function PBSBuilder({ clientId, onBack }: Props) {
     setImporting(true);
     setImportStatus('Reading dataset...');
     try {
-      let rawText = '';
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'pdf') {
-        const ab = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: ab }).promise;
-        for (let i = 1; i <= pdf.numPages; i += 1) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          rawText += (content.items as any[]).map((it) => it?.str || '').join(' ') + '\n';
-        }
-      } else {
-        rawText = await file.text();
-      }
+      const rawText = await extractFileText(file);
       const parsed = parseUniversalText(rawText);
       const sourceRisk = parsed.client.risk;
       const sourceCarePlan = parsed.carePlan;
-      const nextPbs = { ...(client.pbs || emptyPBS(today)) };
-      if (sourceCarePlan?.biography && !nextPbs.aboutText) nextPbs.aboutText = sourceCarePlan.biography;
-      if (sourceRisk?.risks?.length) {
-        const titles = sourceRisk.risks.map((r) => r.title).filter(Boolean);
-        if (titles.length) nextPbs.findsDifficult = Array.from(new Set([...(nextPbs.findsDifficult || []), ...titles])).slice(0, 7);
-        const warnings = sourceRisk.risks.flatMap((r) => r.earlyWarnings || []).filter(Boolean).slice(0, 8);
-        if (warnings.length) nextPbs.warningSignRows = warnings.map((w) => ({ sign: w, staffAction: 'Follow de-escalation and escalation procedure.' }));
-      }
-      const next: FullClient = {
-        ...client,
-        ...parsed.client,
-        pbs: nextPbs,
-      };
-      saveClient(next);
-      setClient(next);
-      setImportStatus('Dataset imported into PBS draft. Review each section before print.');
+
+      setClient(prev => {
+        const nextPbs = mergePBSData(prev.pbs, parsed.pbs || null) || { ...(prev.pbs || emptyPBS(today)) };
+
+        if (sourceCarePlan?.biography && !nextPbs.aboutText) nextPbs.aboutText = sourceCarePlan.biography;
+        if (sourceRisk?.risks?.length) {
+          const titles = sourceRisk.risks.map((r) => r.title).filter(Boolean);
+          if (titles.length) nextPbs.findsDifficult = Array.from(new Set([...(nextPbs.findsDifficult || []), ...titles])).slice(0, 7);
+          const warnings = sourceRisk.risks.flatMap((r) => r.earlyWarnings || []).filter(Boolean).slice(0, 8);
+          if (warnings.length) {
+            const newRows = warnings.map((w) => ({ sign: w, staffAction: 'Follow de-escalation and escalation procedure.' }));
+            const existingSigns = new Set(nextPbs.warningSignRows.map(r => r.sign.toLowerCase().trim()));
+            for (const row of newRows) {
+              if (!existingSigns.has(row.sign.toLowerCase().trim())) {
+                nextPbs.warningSignRows.push(row);
+              }
+            }
+          }
+        }
+
+        const base = mergeClientIdentity(prev, parsed.client);
+        const next: FullClient = { ...base, pbs: nextPbs };
+        saveClient(next);
+        return next;
+      });
+      setImportStatus('Dataset imported and merged into PBS draft. Review each section before print.');
     } catch (err: any) {
       setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
     } finally {

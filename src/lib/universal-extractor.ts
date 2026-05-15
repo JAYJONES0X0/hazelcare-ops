@@ -2,17 +2,31 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+}
 
 export async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjs.getDocument({
+    data: arrayBuffer,
+    disableWorker: typeof window === 'undefined',
+  }).promise;
   let fullText = '';
+  const supportPlanFlowHint = /(need\s+description\s+need\s+comment\s+outcome\s+comment|my\s+support\s+plan|what\s+i\s+need\s+help\s+with|what\s+we['’]?\s*re\s+working\s+towards)/i;
   for (let i = 1; i <= pdf.numPages; i++) {
     if (onProgress) onProgress(Math.round((i / pdf.numPages) * 100));
     const page = await pdf.getPage(i);
     const tc = await page.getTextContent();
     const items = tc.items as any[];
+
+    // Natural item-flow extraction can outperform row snapping on council/support-plan tables.
+    const flowText = items
+      .map((it) => (it.str || '').trim())
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     
     // Improved row-based extraction for tabular data (CSVs inside PDFs)
     const rowMap = new Map<number, { x: number; str: string }[]>();
@@ -23,11 +37,15 @@ export async function extractPdfText(file: File, onProgress?: (p: number) => voi
       rowMap.get(y)!.push({ x: it.transform?.[4] ?? 0, str: it.str });
     }
     
-    const sortedRows = [...rowMap.entries()]
+    const rowText = [...rowMap.entries()]
       .sort((a, b) => b[0] - a[0])
       .map(([, cells]) => cells.sort((a, b) => a.x - b.x).map(c => c.str.trim()).filter(Boolean).join('\t'));
-    
-    fullText += sortedRows.join('\n') + '\n';
+
+    if (supportPlanFlowHint.test(flowText)) {
+      fullText += flowText + '\n';
+    } else {
+      fullText += rowText.join('\n') + '\n';
+    }
   }
   return fullText;
 }

@@ -23,18 +23,18 @@
 }
 
 :root {
-  /* LIGHT: SUPERVISORY CALM — bg is darker so surface cards visually lift off */
-  --hc-bg:      #e8e4d5;
-  --hc-surface: #f3efe0;
-  --hc-surface-2: #dedad0;
+  /* LIGHT: WARM BONE CLAY (restored boney-brownie tone) */
+  --hc-bg:      #ddd8c8;
+  --hc-surface: #ebe5d4;
+  --hc-surface-2: #d4cdbc;
   --hc-text:    #0d2d2d;
   --hc-muted:   #4f4a3d;
   --hc-border:  rgba(13, 45, 45, 0.06);
   --hc-teal-active: #1c4e4e;
   --hc-teal-glow:   #4c7c7c;
 
-  --hc-shadow-dark:  rgba(13, 45, 45, 0.22);
-  --hc-shadow-light: rgba(255, 255, 255, 0.98);
+  --hc-shadow-dark:  rgba(13, 45, 45, 0.24);
+  --hc-shadow-light: rgba(255, 255, 255, 0.88);
 
   --hc-red: #d94e4e; --hc-amber: #d9974e; --hc-green: #4e8d4e;
 

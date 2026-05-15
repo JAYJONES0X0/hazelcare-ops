@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive, Users } from 'lucide-react';
 import JSZip from 'jszip';
-import { loadClients } from '../lib/client-store';
+import { emptyClient, loadClients, type FullClient } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
 import type { WeekSummary, Page } from '../lib/types';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
 import { emptyEnvelope } from '../lib/import-intelligence';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { routeImport, type ClientMode } from '../lib/import-router';
+import { mergeClientIdentity } from '../lib/client-identity-merge';
+import { mergeCarePlanData, mergeRiskData, mergeSupportPlanData } from '../lib/intel-merge';
+import type { ParseResult } from '../lib/universal-import';
 import { extractFileText } from '../lib/universal-extractor';
 import { appendEntries } from '../lib/entry-store';
 import { parseClientRosterCSV, saveRosterShifts, getRosterSummary, type RosterSummary } from '../lib/roster-store';
@@ -171,11 +174,37 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
 
 function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImportEnvelope {
   const merged = emptyEnvelope('Batch', envelopes.map(e => e.source.fileName).join(', '));
+  const today = new Date().toLocaleDateString('en-GB');
+
+  const mergeAdmissionPayload = (base: ParseResult | null, incoming: ParseResult): ParseResult => {
+    if (!base) return incoming;
+    const identitySeed = { ...emptyClient(), ...base.client } as FullClient;
+    const mergedIdentity = mergeClientIdentity(identitySeed, incoming.client);
+    const mergedCarePlan = mergeCarePlanData(base.carePlan || null, incoming.carePlan || null, today) || base.carePlan;
+    const mergedRisk = mergeRiskData(base.client.risk || null, incoming.client.risk || null, today);
+    return {
+      client: {
+        ...base.client,
+        ...incoming.client,
+        name: mergedIdentity.name,
+        preferredName: mergedIdentity.preferredName,
+        dob: mergedIdentity.dob,
+        nhs: mergedIdentity.nhs,
+        address: mergedIdentity.address,
+        phone: mergedIdentity.phone,
+        keyWorker: mergedIdentity.keyWorker,
+        dateOfAdmission: mergedIdentity.dateOfAdmission,
+        risk: mergedRisk,
+      },
+      carePlan: mergedCarePlan,
+      warnings: [...(base.warnings || []), ...(incoming.warnings || [])],
+    };
+  };
+
   envelopes.forEach(e => {
     if (e.weekSummary) merged.weekSummary = mergeWeekSummaries(merged.weekSummary, e.weekSummary);
-    // Carry admission / supportPlan from first envelope that has them
-    if (e.admission && !merged.admission) merged.admission = e.admission;
-    if (e.supportPlan && !merged.supportPlan) merged.supportPlan = e.supportPlan;
+    if (e.admission) merged.admission = mergeAdmissionPayload(merged.admission, e.admission);
+    if (e.supportPlan) merged.supportPlan = mergeSupportPlanData(merged.supportPlan, e.supportPlan);
     merged.diaryEntries.push(...e.diaryEntries);
     merged.shifts.push(...(e.shifts || []));
     merged.clientCandidates.push(...e.clientCandidates);
@@ -241,6 +270,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const [clientMode, setClientMode] = useState<ClientMode>('global');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [rosterStatus, setRosterStatus] = useState<RosterSummary | null>(null);
+  const [manualText, setManualText] = useState('');
+  const [manualName, setManualName] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const clients = loadClients();
 
@@ -251,7 +282,33 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
   const reset = () => {
     setStep('choose'); setPreview(null); setProgress(0); setErrorMsg('');
     setSourceBasket([]); setZipGuidance([]);
+    setManualText(''); setManualName('');
     if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const handlePastedText = () => {
+    const raw = manualText.trim();
+    if (!raw) {
+      setErrorMsg('Paste text first, then run intake.');
+      setStep('error');
+      return;
+    }
+
+    try {
+      const stamp = new Date().toISOString().slice(0, 10);
+      const fileName = (manualName.trim() || `pasted-intake-${stamp}.txt`).replace(/\s+/g, ' ').trim();
+      const env = buildEnvelopeFromRaw(fileName, raw);
+      const item = { id: uid(), fileName, envelope: env, confidence: env.source.confidence };
+      const nextBasket = [...sourceBasket, item];
+      setSourceBasket(nextBasket);
+      const combined = mergeEnvelopes(nextBasket.map(i => i.envelope));
+      setPreview(buildPreview(combined));
+      setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['client-docs']);
+      setStep('preview');
+    } catch (e: any) {
+      setErrorMsg(`Text intake failed: ${e?.message || 'unknown error'}`);
+      setStep('error');
+    }
   };
 
   const handleFiles = async (files: FileList | File[]) => {
@@ -423,6 +480,29 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       <div className="text-[11px] font-black uppercase tracking-widest">Buffer Empty</div>
                    </div>
                 )}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-hc-muted/10">
+                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-hc-muted mb-3">Raw Text Intake</div>
+                <input
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  placeholder="Optional label e.g. Lewis reassessment"
+                  className="w-full hc-clay-inset rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-wider text-hc-text mb-3 focus:outline-none"
+                />
+                <textarea
+                  value={manualText}
+                  onChange={(e) => setManualText(e.target.value)}
+                  rows={7}
+                  placeholder="Paste council assessment, support-plan text, or copied document text here..."
+                  className="w-full hc-clay-inset rounded-xl px-4 py-3 text-[10px] font-black tracking-wide text-hc-text resize-y focus:outline-none"
+                />
+                <button
+                  onClick={handlePastedText}
+                  className="mt-3 w-full py-3 rounded-xl btn-tactical text-hc-bg text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+                >
+                  Parse Pasted Text
+                </button>
               </div>
             </div>
           </div>

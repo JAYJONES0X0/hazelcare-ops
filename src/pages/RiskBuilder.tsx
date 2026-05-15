@@ -1,12 +1,15 @@
-import { useState, useRef, useCallback } from 'react';
-import * as pdfjs from 'pdfjs-dist';
+import { useState, useRef, useCallback, type MouseEvent } from 'react';
 import { loadClients, saveClient, emptyRisk, emptyRisk_item } from '../lib/client-store';
 import { buildRiskHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
 import { SignaturePanel, emptySignatories } from '../components/SignaturePad';
 import { parseUniversalText } from '../lib/universal-import';
 import { getAllEntries } from '../lib/entry-store';
-import { Sparkles, ChevronRight, Download, Shield } from 'lucide-react';
+import { extractFileText } from '../lib/universal-extractor';
+import { mergeClientIdentity } from '../lib/client-identity-merge';
+import { mergeRiskData } from '../lib/intel-merge';
+import { buildRiskItemCopy } from '../lib/risk-assistant';
+import { Sparkles, ChevronRight, Download, Shield, Check } from 'lucide-react';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 
@@ -44,8 +47,6 @@ function normalizeImportedRiskItems(items: RiskItem[]): RiskItem[] {
     };
   });
 }
-
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 function Field({ label, value, onChange, area = false, rows = 3, placeholder = '' }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -123,8 +124,15 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
   onRemove: () => void; defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [copied, setCopied] = useState<'title' | 'note' | ''>('');
   const { score, color, label } = riskInfo(risk.likelihood, risk.impact);
   const up = (patch: Partial<RiskItem>) => onUpdate({ ...risk, ...patch });
+  const copyText = async (kind: 'title' | 'note', text: string, e?: MouseEvent<HTMLButtonElement>) => {
+    e?.stopPropagation();
+    await navigator.clipboard.writeText(text);
+    setCopied(kind);
+    window.setTimeout(() => setCopied((current) => (current === kind ? '' : current)), 1500);
+  };
 
   return (
     <div className={`hc-clay-raised transition-all duration-500 rounded-[2.5rem] mb-6 overflow-hidden border border-hc-muted/5
@@ -157,7 +165,21 @@ function RiskCard({ risk, index, onUpdate, onRemove, defaultOpen }: {
               </span>
             </div>
           )}
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => copyText('title', risk.title || 'Imported Risk', e)}
+              className="w-9 h-9 rounded-xl hc-clay-raised border border-hc-muted/5 flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all shadow-lg"
+              title="Copy risk title"
+            >
+              {copied === 'title' ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4 rotate-90" />}
+            </button>
+            <button
+              onClick={(e) => copyText('note', buildRiskItemCopy(risk), e)}
+              className="w-9 h-9 rounded-xl hc-clay-raised border border-hc-muted/5 flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all shadow-lg"
+              title="Copy generated note"
+            >
+              {copied === 'note' ? <Check className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+            </button>
             <button onClick={e => { e.stopPropagation(); onRemove(); }}
               className="w-9 h-9 rounded-xl hc-clay-raised border border-hc-muted/5 flex items-center justify-center text-hc-muted hover:text-flag-red transition-all shadow-lg group/del">
               <svg className="w-4 h-4 group-hover/del:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -415,39 +437,22 @@ export function RiskBuilder({ clientId, onBack }: Props) {
     setImporting(true);
     setImportStatus('Reading dataset...');
     try {
-      let rawText = '';
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'pdf') {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-        for (let i = 1; i <= pdf.numPages; i += 1) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          rawText += (content.items as any[]).map((it) => it?.str || '').join(' ') + '\n';
-        }
-      } else {
-        rawText = await file.text();
-      }
+      const rawText = await extractFileText(file);
       const parsed = parseUniversalText(rawText);
       const importedRisk = parsed.client.risk;
       if (!importedRisk) {
         setImportStatus('No risk dataset detected in file.');
         return;
       }
-      const normalizedRiskItems = normalizeImportedRiskItems(importedRisk.risks || []);
-      const next: FullClient = {
-        ...client,
-        ...parsed.client,
-        risk: {
-          ...(client.risk || emptyRisk(today)),
-          ...importedRisk,
-          risks: normalizedRiskItems.length ? normalizedRiskItems : [emptyRisk_item()],
-          planDate: importedRisk.planDate || client.risk?.planDate || today,
-        },
-      };
-      saveClient(next);
-      setClient(next);
-      setImportStatus(`Imported ${next.risk?.risks.filter((r) => r.title).length || 0} risk area(s) from dataset.`);
+
+      setClient(prev => {
+        const base = mergeClientIdentity(prev, parsed.client);
+        const mergedRisk = mergeRiskData(prev.risk, importedRisk, today);
+        const next: FullClient = { ...base, risk: mergedRisk };
+        saveClient(next);
+        return next;
+      });
+      setImportStatus(`Imported and merged ${importedRisk.risks?.length || 0} risk area(s) from dataset.`);
     } catch (err: any) {
       setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
     } finally {

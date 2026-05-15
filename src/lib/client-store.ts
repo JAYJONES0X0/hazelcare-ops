@@ -196,6 +196,79 @@ export interface FullClient extends ClientBasic {
 // ─── STORAGE ───────────────────────────────────────────────────────────────────
 const KEY = 'hc-clients-v2';
 
+function isQuotaError(e: unknown): boolean {
+  return (
+    e instanceof DOMException &&
+    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)
+  );
+}
+
+function cleanText(value: string | undefined | null, max = 1200): string {
+  return (value || '').replace(/\u0000/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function compactVaultDocs(docs: VaultDoc[] | undefined | null, aggressive = false): VaultDoc[] | undefined {
+  if (!docs || !docs.length) return docs || undefined;
+  const limit = aggressive ? 2 : 4;
+  const textLimit = aggressive ? 1200 : 6000;
+  return docs.slice(0, limit).map((doc) => ({
+    ...doc,
+    name: cleanText(doc.name, 140),
+    text: cleanText(doc.text, textLimit),
+  }));
+}
+
+function compactClientForStorage(client: FullClient, aggressive = false): FullClient {
+  const clinicalBriefing = client.clinicalBriefing
+    ? cleanText(client.clinicalBriefing, aggressive ? 600 : 2500)
+    : client.vaultDocs?.length
+      ? cleanText(
+          client.vaultDocs
+            .slice(0, aggressive ? 2 : 4)
+            .map((doc) => `${doc.name}: ${cleanText(doc.text, aggressive ? 300 : 800)}`)
+            .join(' | '),
+          aggressive ? 1200 : 4000
+        )
+      : undefined;
+
+  return {
+    ...client,
+    name: cleanText(client.name, 180),
+    preferredName: cleanText(client.preferredName, 120),
+    dob: cleanText(client.dob, 32),
+    address: cleanText(client.address, 240),
+    nhs: cleanText(client.nhs, 32),
+    phone: cleanText(client.phone, 32),
+    diagnoses: Array.isArray(client.diagnoses) ? client.diagnoses.map((d) => cleanText(d, 160)).filter(Boolean) : [],
+    keyWorker: cleanText(client.keyWorker, 120),
+    responsible: cleanText(client.responsible, 120),
+    completedBy: cleanText(client.completedBy, 120),
+    dateOfAdmission: cleanText(client.dateOfAdmission, 32),
+    reviewDate: cleanText(client.reviewDate, 32),
+    pbs: client.pbs,
+    risk: client.risk,
+    carePlan: client.carePlan,
+    supportPlan: client.supportPlan,
+    documents: Array.isArray(client.documents)
+      ? client.documents.map((doc) => ({
+          ...doc,
+          name: cleanText(doc.name, 160),
+          url: cleanText(doc.url, 400),
+          type: cleanText(doc.type, 80),
+          uploadedAt: cleanText(doc.uploadedAt, 40),
+        }))
+      : [],
+    vaultDocs: compactVaultDocs(client.vaultDocs, aggressive),
+    clinicalBriefing,
+    updatedAt: cleanText(client.updatedAt, 40),
+    createdAt: cleanText(client.createdAt, 40),
+  };
+}
+
+function tryPersistClients(clients: FullClient[]) {
+  localStorage.setItem(KEY, JSON.stringify(clients));
+}
+
 export function loadClients(): FullClient[] {
   try {
     const raw = localStorage.getItem(KEY);
@@ -206,7 +279,18 @@ export function loadClients(): FullClient[] {
 }
 
 export function saveClients(clients: FullClient[]) {
-  localStorage.setItem(KEY, JSON.stringify(clients));
+  const compacted = clients.map((client) => compactClientForStorage(client));
+  try {
+    tryPersistClients(compacted);
+  } catch (e) {
+    if (!isQuotaError(e)) throw e;
+    try {
+      tryPersistClients(compacted.map((client) => compactClientForStorage(client, true)));
+    } catch {
+      // Final fallback: keep the app alive, even if persistence has to be dropped.
+      try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+    }
+  }
 }
 
 export function saveClient(client: FullClient) {

@@ -10,7 +10,7 @@ import {
 import { scoreEntry } from '../lib/entry-rubric';
 import { auditTaskNotes, type TaskNoteCarerSummary, type TaskNoteGap } from '../lib/task-note-auditor';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
-import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert, ClipboardCheck, ChevronDown } from 'lucide-react';
+import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert, ClipboardCheck, ClipboardList, ChevronDown } from 'lucide-react';
 import type { StaffScorecard } from '../lib/staff-monitoring';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';

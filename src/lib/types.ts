@@ -226,7 +226,7 @@ export interface AppState {
   shifts: Shift[];
 }
 
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'staff-tools' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks';
 
 // Moved here from lib/staff-monitoring.ts to break circular dep with staff-monitoring-store.ts
 export type EscalationTier = 1 | 2 | 3;
