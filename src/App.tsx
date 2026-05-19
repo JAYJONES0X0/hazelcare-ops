@@ -75,7 +75,10 @@ export default function App() {
 
   const page = pageId;
   const activeSection = getSectionByPage(page);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('hc-theme') as 'dark' | 'light') || 'dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('hc-theme');
+    return saved === 'dark' ? 'dark' : 'light';
+  });
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
   const [buildTag, setBuildTag] = useState('unknown');

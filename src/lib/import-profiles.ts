@@ -74,6 +74,32 @@ function extractSupportPlanCandidate(rawText: string, fileName: string): string 
   return inferNameFromFileName(fileName);
 }
 
+function looksLikeDelimitedDiaryText(rawText: string): boolean {
+  const lines = rawText
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 3) return false;
+
+  const delimiters: Array<',' | '|' | '\t'> = [',', '|', '\t'];
+  const diaryHeaders = /(date|entry|note|notes|carer|client|house|time|type)\b/i;
+  const leadingDateRows = lines.filter((line) => /^\s*\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}(\s*[,|\t]|\s*$)/.test(line) || /^\s*date\s*[,|\t]/i.test(line)).length;
+
+  for (const delimiter of delimiters) {
+    const delimiterLines = lines.filter((line) => line.includes(delimiter));
+    if (delimiterLines.length < 3) continue;
+
+    const multiCellLines = delimiterLines.filter((line) => line.split(delimiter).length >= 3).length;
+    const hasHeaderSignal = lines.some((line) => diaryHeaders.test(line));
+
+    if (multiCellLines >= 3 && hasHeaderSignal && leadingDateRows >= 2) return true;
+  }
+
+  return false;
+}
+
 const TARGETS_BY_TYPE: Record<ImportType, ImportTarget[]> = {
   diary: ['reports', 'templates'],
   admission: ['client-docs', 'templates'],
@@ -222,7 +248,7 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
 
   // 7. Generic Fallbacks
   if (ext === 'csv') return { id: 'generic-csv-diary', type: 'diary', confidence: 0.65 };
-  if (ext !== 'pdf' && /\d{2}\/\d{2}\/\d{4}/.test(rawText) && (rawText.includes(',') || rawText.includes('|') || rawText.includes('\t'))) {
+  if (ext !== 'pdf' && looksLikeDelimitedDiaryText(rawText) && /\d{2}\/\d{2}\/\d{4}/.test(rawText)) {
     return { id: 'generic-delimited-diary', type: 'diary', confidence: 0.58 };
   }
   

@@ -1230,6 +1230,16 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
     'Medication', 'Nutrition', 'Personal hygiene', 'Keeping Warm', 'Toilet needs',
     'Going to bed', 'Managing finance', 'Safety', 'Education', 'Social inclusion',
     'Communication', 'Transport',
+    'Being part of the Community', 'Having work and learning opportunities',
+    'Making important decisions and planning your life', 'Running your home', 'Running a home',
+    'Eating, drinking and preparing meals', 'Personal care', 'Persona hygiene',
+    'Dressing', 'Isolation', 'Preparing meals', 'Shopping', 'Managing bills & correspondences',
+    'Managing appointments', 'Access- areas of the home', 'Access to the community',
+    'Awareness roads & routes', 'Vehicle- safety', 'Road & pavements safety',
+    'Managing crowds/passer-by’s', 'Managing personal space', 'Lifts/escalators',
+    'Managing medical procedures', 'College', 'Paid work', 'Voluntary work', 'Hobbies',
+    'Other interest', 'Forming friendships', 'Use of internet/social media', 'Going on holiday',
+    'My wishes about dying', 'My end of life care', 'My, money and estate', 'My funeral',
   ];
 
   const lines = text.split('\n');
@@ -1237,6 +1247,7 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
   let canDo = '';
   let risks = '';
   let howToSupport = '';
+  let currentBody = '';
 
   const cleanSupportText = (value: string, max = 1400): string =>
     normalizeSectionText(value)
@@ -1293,28 +1304,49 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
     needs.push({ area, canDoMyself, risks: needRisks, howToSupport: support });
   };
 
+  const findAreaMatch = (line: string): { area: string; remainder: string } | null => {
+    const lower = line.toLowerCase();
+    for (const pattern of areaPatterns) {
+      const idx = lower.indexOf(pattern.toLowerCase());
+      if (idx === -1) continue;
+      const area = line.slice(idx, idx + pattern.length).trim();
+      const remainder = line.slice(idx + pattern.length).trim();
+      return { area: area || pattern, remainder };
+    }
+    return null;
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     const lineLower = line.toLowerCase();
-    const isNewArea = areaPatterns.some(p => lineLower.includes(p.toLowerCase()));
-    if (isNewArea && line.length < 100) {
-      if (currentArea && (canDo || risks || howToSupport)) {
-        pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+    const areaMatch = findAreaMatch(line);
+    if (areaMatch) {
+      if (currentArea && (canDo || currentBody || risks || howToSupport)) {
+        pushNeed({ area: currentArea, canDoMyself: currentBody || canDo, risks, howToSupport: howToSupport || currentBody });
       }
-      currentArea = line;
-      canDo = ''; risks = ''; howToSupport = '';
+      currentArea = areaMatch.area;
+      canDo = '';
+      risks = '';
+      howToSupport = '';
+      currentBody = areaMatch.remainder;
       continue;
     }
     if (line.includes('|')) {
       const cols = line.split('|').map(c => c.trim()).filter(Boolean);
       if (cols.length >= 4) {
-        if (currentArea) pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+        if (currentArea) pushNeed({ area: currentArea, canDoMyself: currentBody || canDo, risks, howToSupport: howToSupport || currentBody });
         currentArea = cols[0]; canDo = cols[1]; risks = cols[2]; howToSupport = cols[3];
+        currentBody = '';
       }
+      continue;
+    }
+
+    if (currentArea && line && !/^page\s+\d+\s+of\s+\d+/i.test(line) && !/^section\s*\d+/i.test(line)) {
+      currentBody = currentBody ? `${currentBody} ${line}` : line;
     }
   }
-  if (currentArea && (canDo || risks || howToSupport)) {
-    pushNeed({ area: currentArea, canDoMyself: canDo, risks, howToSupport });
+  if (currentArea && (canDo || currentBody || risks || howToSupport)) {
+    pushNeed({ area: currentArea, canDoMyself: currentBody || canDo, risks, howToSupport: howToSupport || currentBody });
   }
 
   // Council / Care Act style fallback parser (e.g. "Need Description / Need Comment / Outcome Comment").

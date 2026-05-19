@@ -86,7 +86,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
       {/* ── MISSION HEADER ── */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-10 pb-12 border-b border-hc-border">
         <div>
-          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Hazel Care // Service Intelligence</div>
+          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">CareOps // Service Intelligence</div>
           <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Mission Briefing</h1>
         </div>
         

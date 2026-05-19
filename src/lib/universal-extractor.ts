@@ -61,6 +61,18 @@ export async function extractPdfText(file: File, onProgress?: (p: number) => voi
 
 export async function extractDocxText(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
+  // Mammoth uses different input shapes in Node vs browser.
+  // In Node-based tests/imports, Buffer is the reliable path; in the browser,
+  // arrayBuffer is the supported input.
+  if (typeof Buffer !== 'undefined') {
+    try {
+      const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
+      return result.value;
+    } catch {
+      // Fall through to the browser-compatible path if Node buffering fails.
+    }
+  }
+
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value;
 }

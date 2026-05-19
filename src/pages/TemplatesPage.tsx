@@ -85,9 +85,9 @@ function renderHeader(title: string, subtitle: string, color: string) {
       <p style="margin: 10px 0 0; font-size: 9px; font-weight: 600; color: #94a3b8; letter-spacing: 0.1em;">Generated: ${dateStr} at ${timeStr} &nbsp;|&nbsp; CONFIDENTIAL — INTERNAL USE ONLY</p>
     </div>
     <div style="text-align: right; padding-left: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-      <img src="/logo-formal.png" alt="Hazel Care Ltd" style="height: 44px; width: auto; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <img src="/logo-formal.png" alt="CareOps" style="height: 44px; width: auto; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
       <div style="display:none; font-weight: 900; font-size: 14px; color: #0f172a; letter-spacing: -0.02em;">HAZEL CARE LTD</div>
-      <div style="font-size: 8px; font-weight: 700; color: #94a3b8; letter-spacing: 0.25em; text-transform: uppercase;">NC Hazelcare Operations</div>
+      <div style="font-size: 8px; font-weight: 700; color: #94a3b8; letter-spacing: 0.25em; text-transform: uppercase;">NC CareOps Operations</div>
     </div>
   </div>`;
 }

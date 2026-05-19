@@ -57,7 +57,7 @@ export function careEntriesToEvidenceCsv(entries: CareEntry[]): string {
 
 export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
   const lines: string[] = [
-    '# HAZEL CARE — COORDINATOR EVIDENCE PACK',
+    '# CAREOPS — COORDINATOR EVIDENCE PACK',
     `Generated (UTC): ${meta.generatedAt}`,
     `Source: ${meta.source === 'upload-hub' ? 'Upload Hub' : 'Staff Intelligence'}`,
     `Window: ${meta.windowLabel}`,
@@ -85,7 +85,7 @@ export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
   lines.push('- HTML: print to PDF for meetings / handover packs.');
   lines.push('');
   lines.push('---');
-  lines.push('HAZEL CARE LTD — AUTHORISED PERSONNEL ONLY');
+  lines.push('CAREOPS — AUTHORISED PERSONNEL ONLY');
   return lines.join('\n');
 }
 
@@ -126,7 +126,7 @@ export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: Coordin
   <div style="border-bottom:6px solid #1c4e4e;padding-bottom:24px;margin-bottom:30px;display:flex;justify-content:between;align-items:end;">
     <div style="flex:1;">
       <h1 style="margin:0;font-size:24px;color:#0d2d2d;text-transform:uppercase;letter-spacing:0.1em;font-weight:900;">${ex(title)}</h1>
-      <p style="margin:8px 0 0;font-size:11px;font-weight:700;color:#8a8b82;text-transform:uppercase;letter-spacing:0.2em;">Hazel Care Operations Portal // Evidence Pack</p>
+      <p style="margin:8px 0 0;font-size:11px;font-weight:700;color:#8a8b82;text-transform:uppercase;letter-spacing:0.2em;">CareOps Operations Portal // Evidence Pack</p>
     </div>
     <div style="text-align:right;">
       <p style="margin:0;font-size:10px;font-weight:900;color:#1c4e4e;">WINDOW: ${ex(meta.windowLabel)}</p>
@@ -146,7 +146,7 @@ export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: Coordin
   </table>
 
   <div class="footer">
-    HAZEL CARE LTD — Precision Care Operations Portals
+    CAREOPS — Precision Care Operations Portals
   </div>
 </body></html>`;
 }

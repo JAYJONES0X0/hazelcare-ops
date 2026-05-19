@@ -4,9 +4,9 @@
  */
 
 export const ORG_CONFIG = {
-  name: 'Hazel Care',
-  fullName: 'Hazel Care Ltd',
-  shortName: 'HC',
+  name: 'CareOps',
+  fullName: 'CareOps',
+  shortName: 'CO',
   domain: 'hazelcare.co.uk',
   supportEmail: 'support@hazelcare.co.uk',
   tagline: 'Precision Care Operations',
