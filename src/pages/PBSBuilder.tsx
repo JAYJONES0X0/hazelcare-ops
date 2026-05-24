@@ -303,8 +303,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
         return next;
       });
       setImportStatus('Dataset imported and merged into PBS draft. Review each section before print.');
-    } catch (err: any) {
-      setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
+    } catch (err) {
+      setImportStatus(`Import failed: ${err instanceof Error ? err.message : 'unknown error'}`);
     } finally {
       setImporting(false);
       if (importFileRef.current) importFileRef.current.value = '';

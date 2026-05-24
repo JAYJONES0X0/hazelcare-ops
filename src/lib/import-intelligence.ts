@@ -1,4 +1,4 @@
-import type { WeekSummary, CareEntry } from './types';
+import type { WeekSummary, CareEntry, Shift } from './types';
 import type { ParseResult } from './universal-import';
 import type { SupportPlanData } from './client-store';
 
@@ -28,7 +28,7 @@ export interface NormalizedImportEnvelope {
   weekSummary: WeekSummary | null;
   admission: ParseResult | null;
   supportPlan: SupportPlanData | null;
-  shifts: any[]; // Use any temporarily, will type-check with Shift in parser
+  shifts: Shift[];
   warnings: string[];
   unmappedFields: string[];
   suggestedTargets: ImportTarget[];

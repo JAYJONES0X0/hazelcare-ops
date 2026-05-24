@@ -8,6 +8,11 @@ if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
+type PdfTextItem = {
+  str?: string;
+  transform?: number[];
+};
+
 export async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   let pdf: Awaited<ReturnType<typeof pdfjs.getDocument>>['promise'] extends Promise<infer T> ? T : never;
@@ -27,7 +32,7 @@ export async function extractPdfText(file: File, onProgress?: (p: number) => voi
     if (onProgress) onProgress(Math.round((i / pdf.numPages) * 100));
     const page = await pdf.getPage(i);
     const tc = await page.getTextContent();
-    const items = tc.items as any[];
+    const items = tc.items as PdfTextItem[];
 
     // Natural item-flow extraction can outperform row snapping on council/support-plan tables.
     const flowText = items

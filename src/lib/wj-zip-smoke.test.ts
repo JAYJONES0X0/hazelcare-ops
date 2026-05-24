@@ -38,7 +38,7 @@ describe('WJ zip smoke parse', () => {
     }
 
     expect(failures).toEqual([]);
-    // eslint-disable-next-line no-console
+     
     console.log('[WJ zip smoke]', { files: supported.length, types: typeCounts });
   }, 60000);
 });

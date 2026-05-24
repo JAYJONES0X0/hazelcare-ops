@@ -129,7 +129,7 @@ describe('stress corpus import audit', () => {
 
     // Print a compact summary for manual inspection during the stress run.
     // This is useful when the corpus changes and a new file starts classifying oddly.
-    // eslint-disable-next-line no-console
+     
     console.log('[stress corpus] cases=', cases.length, 'types=', typeCounts);
   }, 120000);
 });

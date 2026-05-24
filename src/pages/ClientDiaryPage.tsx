@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry, Page } from '../lib/types';
+import type { WeekSummary, CareEntry, Page, PageContext } from '../lib/types';
 import { loadClients } from '../lib/client-store';
 
 // ── PDF import types ──────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ async function parseDiaryPdf(file: File): Promise<PdfDiaryEntry[]> {
 interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
-  pageCtx?: { client?: string; house?: string; severity?: string };
+  pageCtx?: PageContext | null;
   onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
 }
 
@@ -205,7 +205,7 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
 
   const storedClients = useMemo(() => loadClients().map(c => c.name.toLowerCase()), []);
 
-  const clientDiary = weekData?.clientDiary || {};
+  const clientDiary = useMemo(() => weekData?.clientDiary || {}, [weekData?.clientDiary]);
 
   // Merge PDF entries into clientDiary view
   const mergedDiary = useMemo(() => {

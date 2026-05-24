@@ -23,7 +23,7 @@ export interface AuditEntry {
   action: AuditAction;
   userId: string; // "manager" or "senior" for local-first
   details: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   lineage?: EvidenceLineage[];
 }
 
@@ -38,7 +38,7 @@ export function loadAuditTrail(): AuditEntry[] {
   }
 }
 
-export function logAuditAction(action: AuditAction, details: string, metadata?: Record<string, any>, lineage?: EvidenceLineage[]) {
+export function logAuditAction(action: AuditAction, details: string, metadata?: Record<string, unknown>, lineage?: EvidenceLineage[]) {
   const trail = loadAuditTrail();
   const entry: AuditEntry = {
     id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { WeekSummary, Page } from '../lib/types';
+import type { WeekSummary, Page, PageContext } from '../lib/types';
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { computeStaffMonitoring, flattenWeekEntries } from '../lib/staff-monitoring';
@@ -10,7 +10,7 @@ import {
 
 interface Props {
   weekData: WeekSummary | null;
-  setPage?: (p: Page, ctx?: any) => void;
+  setPage?: (p: Page, ctx?: PageContext) => void;
 }
 
 export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {

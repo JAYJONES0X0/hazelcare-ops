@@ -211,7 +211,8 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
 
   // STEP 2 — Only run heuristics if we have NO entry column at all
   // (this prevents treating notes-in-cells as client names)
-  let gDate = iDate, gType = iType, gCarer = iCarer, gClient = iClient, gEntry = iEntry, gHouse = iHouse;
+  let gDate = iDate, gCarer = iCarer, gClient = iClient, gEntry = iEntry;
+  const gType = iType, gHouse = iHouse;
 
   if (gEntry < 0) {
     // True headerless file — scan a data row for the longest text block

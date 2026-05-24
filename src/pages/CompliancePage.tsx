@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import type { StaffMember } from '../lib/types';
+import type { HouseSummary, StaffMember, WeekSummary } from '../lib/types';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import { ORG_CONFIG } from '../lib/config';
 import { Shield, ChevronRight, Search, FileCheck, UserPlus } from 'lucide-react';
@@ -14,10 +14,20 @@ interface Props {
   onUpdate: (staff: StaffMember[]) => void;
 }
 
+interface ComplianceStaffRow {
+  id: string;
+  name: string;
+  house: string;
+  qualityScore: number;
+  entryCount: number;
+  lastEntry: string;
+  status: 'Registered' | 'Discovered';
+}
+
 export function CompliancePage({ staff }: Props) {
   const [search, setSearch] = useState('');
   const [houseFilter, setHouseFilter] = useState('all');
-  const [dbStaff, setDbStaff] = useState<any[]>([]);
+  const [dbStaff, setDbStaff] = useState<ComplianceStaffRow[]>([]);
   const [booting, setBooting] = useState(true);
   const [gaps, setGaps] = useState<ClinicalGap[]>([]);
   const [tab, setTab] = useState<'personnel' | 'integrity'>('integrity');
@@ -26,16 +36,23 @@ export function CompliancePage({ staff }: Props) {
     void getAllEntriesAsync().then(all => {
       if (all.length === 0) { setBooting(false); return; }
       
-      const summary: any = { 
+      const summary: WeekSummary = {
         totalEntries: all.length,
-        dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {}, 
-        houses: {} as any 
+        dateFrom: '',
+        dateTo: '',
+        allFlags: { red: [], amber: [], green: [] },
+        entryTypes: {},
+        clients: [],
+        carers: [],
+        clientDiary: {},
+        houses: {}
       };
       all.forEach(e => {
         const h = e.house || 'UNASSIGNED';
         if (!summary.houses[h]) {
-          summary.houses[h] = { 
+          summary.houses[h] = {
             name: h, 
+            coordinator: '',
             entries: [],
             incidents: [],
             safeguarding: [],
@@ -45,9 +62,19 @@ export function CompliancePage({ staff }: Props) {
             handovers: [],
             dailySupport: [],
             flags: { red: 0, amber: 0, green: 0 }
-          };
+          } satisfies HouseSummary;
         }
         summary.houses[h].entries.push(e);
+        summary.entryTypes[e.type] = (summary.entryTypes[e.type] || 0) + 1;
+        if (e.client && !summary.clients.includes(e.client)) summary.clients.push(e.client);
+        if (e.carer && !summary.carers.includes(e.carer)) summary.carers.push(e.carer);
+        if (e.client) {
+          if (!summary.clientDiary[e.client]) summary.clientDiary[e.client] = [];
+          summary.clientDiary[e.client].push(e);
+        }
+        if (e.severity === 'red' || e.severity === 'amber' || e.severity === 'green') {
+          summary.allFlags[e.severity].push(e);
+        }
         if (e.severity === 'red') summary.houses[h].flags.red++;
         if (e.severity === 'amber') summary.houses[h].flags.amber++;
         if (e.severity === 'green') summary.houses[h].flags.green++;

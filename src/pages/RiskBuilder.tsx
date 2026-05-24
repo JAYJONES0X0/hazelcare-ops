@@ -453,8 +453,8 @@ export function RiskBuilder({ clientId, onBack }: Props) {
         return next;
       });
       setImportStatus(`Imported and merged ${importedRisk.risks?.length || 0} risk area(s) from dataset.`);
-    } catch (err: any) {
-      setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
+    } catch (err) {
+      setImportStatus(`Import failed: ${err instanceof Error ? err.message : 'unknown error'}`);
     } finally {
       setImporting(false);
       if (importFileRef.current) importFileRef.current.value = '';

@@ -4,7 +4,7 @@ import { loadClients, saveClient, deleteClient, emptyClient, type ClientDocument
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
-import { analyzeIntel, analyzeIntelFallback } from '../lib/intelligence';
+import { analyzeIntel, analyzeIntelFallback, type IntelAnalysisResult } from '../lib/intelligence';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
 import { mergeCarePlanData, mergePBSData, mergeRiskData } from '../lib/intel-merge';
 import { buildClusterNote, buildClusterTitle, clusterRiskItems } from '../lib/risk-assistant';
@@ -19,6 +19,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'import';
+type PdfTextItem = { str?: string; transform?: number[] };
 
 export function ClientDocsPage() {
   const [subView, setSubView] = useState<SubView>('list');
@@ -40,7 +41,7 @@ export function ClientDocsPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const docUploadRef = useRef<HTMLInputElement>(null);
-  const [sessionIntel, setSessionIntel] = useState<any>(null);
+  const [sessionIntel, setSessionIntel] = useState<IntelAnalysisResult | null>(null);
 
   const refresh = () => setClients(loadClients());
 
@@ -134,7 +135,7 @@ export function ClientDocsPage() {
         const content = await page.getTextContent();
         let lastY: number | null = null;
         let pageText = '';
-        for (const item of content.items as any[]) {
+        for (const item of content.items as PdfTextItem[]) {
           if (!item.str) continue;
           const y = item.transform ? item.transform[5] : null;
           if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
@@ -177,8 +178,8 @@ export function ClientDocsPage() {
           domainsDetected,
         });
         setSessionIntel(result);
-      } catch (err: any) {
-        setImportResult(['AI Intelligence failed: ' + err.message, 'Switching to pattern-match fallback...']);
+      } catch (err) {
+        setImportResult(['AI Intelligence failed: ' + (err instanceof Error ? err.message : 'Unknown error'), 'Switching to pattern-match fallback...']);
         runLegacyPreview();
       } finally {
         setIsAnalyzing(false);
@@ -201,7 +202,7 @@ export function ClientDocsPage() {
     setSessionIntel(result);
   };
 
-  const riskItems = sessionIntel?.risk?.risks || [];
+  const riskItems = useMemo(() => sessionIntel?.risk?.risks || [], [sessionIntel?.risk?.risks]);
   const riskClusters = useMemo(() => clusterRiskItems(riskItems), [riskItems]);
 
   const copyText = async (token: string, text: string) => {

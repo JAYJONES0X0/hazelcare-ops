@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import type { WeekSummary, Action, Page } from '../lib/types';
+import type { WeekSummary, Action, Page, PageContext } from '../lib/types';
 import { detectTrends } from '../lib/trends';
 import { useCollapseStore } from '../lib/collapse-store';
 import { Activity, ChevronRight, TrendingUp, AlertTriangle, Upload } from 'lucide-react';
@@ -9,7 +9,7 @@ import { buildWeekSummary } from '../lib/universal-parser';
 interface Props {
   weekData: WeekSummary | null;
   actions: Action[];
-  setPage: (p: Page, ctx?: any) => void;
+  setPage: (p: Page, ctx?: PageContext) => void;
 }
 
 export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props) {

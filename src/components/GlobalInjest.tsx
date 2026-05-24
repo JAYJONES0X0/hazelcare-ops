@@ -9,17 +9,16 @@ import { appendEntries } from '../lib/entry-store';
 import { enrichEntriesWithRoster, parseClientRosterCSV, saveRosterShifts } from '../lib/roster-store';
 import { parseRosterCSV as parseGroupedRosterCSV } from '../lib/universal-parser';
 import type { NormalizedImportEnvelope } from '../lib/import-intelligence';
-import type { Page } from '../lib/types';
+import type { WeekSummary } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 
 interface Props {
   file: File | null;
   onClose: () => void;
-  onDataParsed: (data: any) => void;
-  setPage: (p: Page) => void;
+  onDataParsed: (data: WeekSummary) => void;
 }
 
-export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
+export function GlobalInjest({ file, onClose, onDataParsed }: Props) {
   const [loading, setLoading] = useState(false);
   const [envelope, setEnvelope] = useState<NormalizedImportEnvelope | null>(null);
   const [zipEnvelopes, setZipEnvelopes] = useState<NormalizedImportEnvelope[]>([]);

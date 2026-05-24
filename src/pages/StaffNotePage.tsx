@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
-import type { Page } from '../lib/types';
+import type { Page, PageContext } from '../lib/types';
 import { assessNoteStandard, buildProfessionalNoteDirective } from '../lib/note-quality-standard';
 import { loadClients } from '../lib/client-store';
 import { getAllEntriesAsync } from '../lib/entry-store';
@@ -156,7 +156,7 @@ const INTELLIGENCE_STACKS: ProtocolStack[] = [
   }
 ];
 
-export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: any) => void } = {}) {
+export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageContext) => void } = {}) {
   const [activeTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
   const [house, setHouse] = useState('Lingfield House');
   const [client, setClient] = useState('');

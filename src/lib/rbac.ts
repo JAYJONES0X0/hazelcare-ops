@@ -24,7 +24,7 @@ const PAGE_ACCESS: Record<Page, UserRole[]> = {
   agency: ['admin', 'manager'],
   'staff-monitoring': ['admin', 'manager', 'senior'],
   settings: ['admin', 'manager'],
-  admin: ['admin'],
+  admin: ['admin', 'manager'],
   'empire-matrix': ['admin', 'manager'],
   'nourish-tasks': ['admin', 'manager', 'senior'],
 };

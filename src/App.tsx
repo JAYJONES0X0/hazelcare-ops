@@ -4,7 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
 
-import type { WeekSummary, Action, Incident, StaffMember, Page } from './lib/types';
+import type { WeekSummary, Action, Incident, StaffMember, Page, PageContext } from './lib/types';
 import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
@@ -47,10 +47,10 @@ export default function App() {
     const role = normalizeUserRole(localStorage.getItem('hc-user-role'));
     return canAccessPage(role, saved) ? saved : 'briefing';
   });
-  const [pageCtx, setPageCtx] = useState<any>(null);
+  const [pageCtx, setPageCtx] = useState<PageContext | null>(null);
   const mainRef = useRef<HTMLElement>(null);
 
-  const setPage = useCallback((p: Page, ctx?: any) => {
+  const setPage = useCallback((p: Page, ctx?: PageContext) => {
     if (!canAccessPage(userRole, p)) {
       setPageId('briefing');
       setPageCtx(null);
@@ -62,13 +62,14 @@ export default function App() {
     localStorage.setItem('hc_current_page', p);
   }, [userRole]);
 
+  const page = canAccessPage(userRole, pageId) ? pageId : 'briefing';
+  const activePageCtx = page === pageId ? pageCtx : null;
+
   useEffect(() => {
-    if (!canAccessPage(userRole, pageId)) {
-      setPageId('briefing');
-      setPageCtx(null);
-      localStorage.setItem('hc_current_page', 'briefing');
+    if (page !== pageId) {
+      localStorage.setItem('hc_current_page', page);
     }
-  }, [userRole, pageId]);
+  }, [page, pageId]);
 
   useEffect(() => {
     if (mainRef.current) {
@@ -94,7 +95,6 @@ export default function App() {
     }
   };
 
-  const page = pageId;
   const activeSection = getSectionByPage(page);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('hc-theme');
@@ -102,7 +102,12 @@ export default function App() {
   });
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
-  const [buildTag, setBuildTag] = useState('unknown');
+  const [buildTag] = useState(() => {
+    const script = document.querySelector('script[type="module"][src*="assets/index-"]') as HTMLScriptElement | null;
+    if (!script?.src) return 'unknown';
+    const match = script.src.match(/assets\/(index-[^./]+)\.js/i);
+    return match?.[1] || 'unknown';
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -114,13 +119,6 @@ export default function App() {
     document.documentElement.classList.toggle('compact-density', isCompact);
     document.documentElement.style.setProperty('--shadow-depth', String(shadowDepth / 3));
   }, [theme]);
-
-  useEffect(() => {
-    const script = document.querySelector('script[type="module"][src*="assets/index-"]') as HTMLScriptElement | null;
-    if (!script?.src) return;
-    const m = script.src.match(/assets\/(index-[^./]+)\.js/i);
-    if (m?.[1]) setBuildTag(m[1]);
-  }, []);
 
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
@@ -165,7 +163,13 @@ export default function App() {
   }, [setGlobalInjestFile, setIsDraggingFile]);
 
   useEffect(() => {
-    fetch('/api/auth/session', { credentials: 'include' })
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+      setSessionLoaded(true);
+    }, 8000);
+
+    fetch('/api/auth/session', { credentials: 'include', signal: controller.signal })
       .then((r) => r.json())
       .then((d) => {
         if (d?.authed) {
@@ -176,7 +180,13 @@ export default function App() {
         }
         setSessionLoaded(true);
       })
-      .catch(() => setSessionLoaded(true));
+      .catch(() => setSessionLoaded(true))
+      .finally(() => window.clearTimeout(timeoutId));
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleSignOut = async () => {
@@ -250,7 +260,7 @@ export default function App() {
       <Analytics />
       <ErrorBoundary>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar page={page} setPage={setPage} weekData={weekData} actions={actions} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />
+          <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full min-h-screen ">
@@ -300,7 +310,7 @@ export default function App() {
                 {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
                 {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
                 {page === 'client-docs' && <ClientDocsPage />}
-                {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={pageCtx} onQuickAction={() => {}} />}
+                {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={() => {}} />}
                 {page === 'agency' && <AgencyPortalPage />}
                 {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
                 {page === 'settings' && canAccessPage(userRole, 'settings') && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}
@@ -348,7 +358,6 @@ export default function App() {
           file={globalInjestFile}
           onClose={() => setGlobalInjestFile(null)}
           onDataParsed={handleDataParsed}
-          setPage={setPage}
         />
       )}
     </div>

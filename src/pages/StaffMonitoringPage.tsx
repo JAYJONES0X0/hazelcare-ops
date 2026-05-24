@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry, Page } from '../lib/types';
+import type { WeekSummary, CareEntry, Page, PageContext } from '../lib/types';
 import { useCollapseStore } from '../lib/collapse-store';
 import {
   computeStaffMonitoring,
@@ -43,7 +43,7 @@ import {
 interface Props {
   weekData: WeekSummary | null;
   onDataParsed: (data: WeekSummary) => void;
-  setPage?: (p: Page, ctx?: any) => void;
+  setPage?: (p: Page, ctx?: PageContext) => void;
 }
 
 export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) {

@@ -3,7 +3,7 @@ import { emptyClient, loadClients, resolveClientMatch, saveClient } from './clie
 import { mergeClientIdentity } from './client-identity-merge';
 import { mergeCarePlanData, mergeRiskData, mergeSupportPlanData } from './intel-merge';
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
-import type { TemplateType } from './types';
+import type { StaffMember, TemplateType } from './types';
 import { exportOpsSnapshot, importOpsSnapshot, loadWeekData, mergeWeekSummaries, saveWeekData, loadShifts, saveShifts } from './storage';
 import type { Page } from './types';
 
@@ -182,12 +182,17 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       const existingShifts = loadShifts();
       const staff = (() => {
         try {
-          return JSON.parse(localStorage.getItem('hazelcare-staff') || '[]');
+          return JSON.parse(localStorage.getItem('hazelcare-staff') || '[]') as Partial<StaffMember>[];
         } catch { return []; }
       })();
 
       const resolvedShifts = envelope.shifts.map(s => {
-        const found = staff.find((sm: any) => sm.name.toLowerCase().includes(s.staffId.toLowerCase()) || s.staffId.toLowerCase().includes(sm.name.toLowerCase()));
+        const staffName = s.staffId || '';
+        const found = staff.find((sm) => {
+          const candidateName = sm.name || '';
+          if (!staffName || !candidateName) return false;
+          return candidateName.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(candidateName.toLowerCase());
+        });
         return {
           ...s,
           staffId: found ? found.id : s.staffId // fallback to name if not found

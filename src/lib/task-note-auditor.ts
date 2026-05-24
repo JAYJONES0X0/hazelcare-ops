@@ -323,8 +323,6 @@ export function auditTaskNotes(entries: CareEntry[]): TaskNoteAuditResult {
   // 3. If there are daily 1:1 notes, are they of sufficient quality?
 
   // Build a lookup: clientKey → set of dates with qualifying narratives
-  const qualifyingNarrativesByClientDate = new Map<string, Set<string>>();
-
   // Index daily 1:1 notes by client+date
   const daily1to1ByClientDate = new Map<string, CareEntry[]>();
   for (const entry of daily1to1Notes) {

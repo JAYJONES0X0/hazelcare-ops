@@ -8,11 +8,10 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  root: __dirname,
   base: './',
   plugins: [react(), tailwindcss()],
   build: {
-    outDir: path.resolve(__dirname, 'dist'),
+    outDir: 'dist',
     emptyOutDir: true,
     chunkSizeWarningLimit: 2500,
   }

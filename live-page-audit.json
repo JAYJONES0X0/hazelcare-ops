@@ -1,0 +1,145 @@
+{
+  "startedAt": "2026-05-24T16:17:02.837Z",
+  "pages": [
+    {
+      "name": "Command Centre > Dashboard",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1511
+    },
+    {
+      "name": "Command Centre > Import Hub",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1498
+    },
+    {
+      "name": "Command Centre > Briefing",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1494
+    },
+    {
+      "name": "Command Centre > Care Logs",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1508
+    },
+    {
+      "name": "Command Centre > Staff Monitoring",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1495
+    },
+    {
+      "name": "Client Care > Client Records",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1510
+    },
+    {
+      "name": "Client Care > Task Packs",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1496
+    },
+    {
+      "name": "Client Care > Risk & PBS",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1488
+    },
+    {
+      "name": "Client Care > Audit Reports",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1488
+    },
+    {
+      "name": "Staff & Shifts > Staff Directory",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1496
+    },
+    {
+      "name": "Staff & Shifts > Handovers",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1473
+    },
+    {
+      "name": "Staff & Shifts > Training & DBS",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1482
+    },
+    {
+      "name": "Staff & Shifts > Agency Cover",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1502
+    },
+    {
+      "name": "Staff & Shifts > Action Log",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1496
+    },
+    {
+      "name": "Staff & Shifts > Incidents",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1505
+    },
+    {
+      "name": "Notes & Documents > Staff Note",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1499
+    },
+    {
+      "name": "Notes & Documents > Note Workspace",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1504
+    },
+    {
+      "name": "Notes & Documents > Writing Coach",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1500
+    },
+    {
+      "name": "Notes & Documents > Templates",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1491
+    },
+    {
+      "name": "Notes & Documents > Comms",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1500
+    },
+    {
+      "name": "System > Settings",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1504
+    },
+    {
+      "name": "System > Admin & Backup",
+      "ok": false,
+      "reasons": [
+        "tab missing"
+      ],
+      "loadMs": 351
+    },
+    {
+      "name": "System > Regional Overview",
+      "ok": true,
+      "reasons": [],
+      "loadMs": 1498
+    }
+  ]
+}

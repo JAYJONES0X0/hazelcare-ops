@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
 import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw, Users, FileText, Clock } from 'lucide-react';
-import type { WeekSummary, Action, Incident, Page } from '../lib/types';
+import type { WeekSummary, Action, Incident, Page, PageContext } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { useCollapseStore } from '../lib/collapse-store';
@@ -8,7 +8,7 @@ import { detectClinicalGaps } from '../lib/continuity-engine';
 
 interface Props {
   weekData: WeekSummary | null;
-  setPage: (p: Page, ctx?: any) => void;
+  setPage: (p: Page, ctx?: PageContext) => void;
   actions: Action[];
   incidents: Incident[];
 }

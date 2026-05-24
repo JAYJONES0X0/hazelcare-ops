@@ -342,8 +342,8 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
         return next;
       });
       setImportStatus(`Dataset imported and merged. ${parsed.carePlan?.domains?.filter((d) => d.enabled).length || 0} domain(s) detected.`);
-    } catch (err: any) {
-      setImportStatus(`Import failed: ${err?.message || 'unknown error'}`);
+    } catch (err) {
+      setImportStatus(`Import failed: ${err instanceof Error ? err.message : 'unknown error'}`);
     } finally {
       setImporting(false);
       if (importFileRef.current) importFileRef.current.value = '';

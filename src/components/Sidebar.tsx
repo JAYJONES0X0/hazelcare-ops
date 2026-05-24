@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Page } from '../lib/types';
-import type { Action, WeekSummary } from '../lib/types';
+import type { WeekSummary } from '../lib/types';
 import { MAIN_SECTIONS, getSectionByPage } from '../lib/navigation';
 
 import { ORG_CONFIG } from '../lib/config';
@@ -28,7 +28,6 @@ interface Props {
   page: Page;
   setPage: (p: Page) => void;
   weekData: WeekSummary | null;
-  actions: Action[];
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
   onSignOut: () => void;
@@ -43,7 +42,7 @@ const sectionIcon: Record<string, ReactNode> = {
   Comms: <MessageSquare size={16} />,
 };
 
-export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onSignOut }: Props) {
+export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }: Props) {
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
   const [compactViewport, setCompactViewport] = useState(() => {
     try { return window.innerWidth < 640; } catch { return false; }

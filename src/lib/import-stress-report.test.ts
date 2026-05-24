@@ -182,7 +182,7 @@ describe('import stress report', () => {
     fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
     fs.writeFileSync(REPORT_PATH, JSON.stringify({ generatedAt: new Date().toISOString(), totals, results }, null, 2));
 
-    // eslint-disable-next-line no-console
+     
     console.log('[import stress report]', totals);
 
     expect(results.length).toBeGreaterThan(0);

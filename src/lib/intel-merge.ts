@@ -1,4 +1,4 @@
-import type { FullClient, CarePlanData, CarePlanDomain, RiskData, RiskItem, PBSData, DiagnosisRow, FunctionRow, WarningSignRow, MedicationRow, AgencyRow, SupportPlanData, SupportPlanNeed } from './client-store';
+import type { CarePlanData, CarePlanDomain, RiskData, RiskItem, PBSData, SupportPlanData, SupportPlanNeed } from './client-store';
 import { emptyRisk, emptyRisk_item } from './client-store';
 
 /**

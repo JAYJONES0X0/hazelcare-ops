@@ -1318,7 +1318,6 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const lineLower = line.toLowerCase();
     const areaMatch = findAreaMatch(line);
     if (areaMatch) {
       if (currentArea && (canDo || currentBody || risks || howToSupport)) {

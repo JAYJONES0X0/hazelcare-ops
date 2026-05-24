@@ -210,7 +210,7 @@ export function NoteWorkspace() {
       alive = false;
       window.clearTimeout(bootGuard);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   useEffect(() => {
