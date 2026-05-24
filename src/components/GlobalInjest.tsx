@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, FileText, CheckCircle, AlertTriangle, Sparkles, Zap, ArrowRight, X } from 'lucide-react';
+import { RefreshCw, FileText, CheckCircle, AlertTriangle, Sparkles, Zap, ArrowRight, X, Archive } from 'lucide-react';
+import JSZip from 'jszip';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { extractFileText } from '../lib/universal-extractor';
 import { routeImport } from '../lib/import-router';
 import { loadWeekData } from '../lib/storage';
+import { appendEntries } from '../lib/entry-store';
+import { enrichEntriesWithRoster, parseClientRosterCSV, saveRosterShifts } from '../lib/roster-store';
+import { parseRosterCSV as parseGroupedRosterCSV } from '../lib/universal-parser';
 import type { NormalizedImportEnvelope } from '../lib/import-intelligence';
 import type { Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
@@ -18,8 +22,10 @@ interface Props {
 export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
   const [loading, setLoading] = useState(false);
   const [envelope, setEnvelope] = useState<NormalizedImportEnvelope | null>(null);
+  const [zipEnvelopes, setZipEnvelopes] = useState<NormalizedImportEnvelope[]>([]);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [resultSummary, setResultSummary] = useState('');
 
   useEffect(() => {
     if (file) {
@@ -31,35 +37,140 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
     setLoading(true);
     setError('');
     try {
-      const text = await extractFileText(f);
-      const env = buildEnvelopeFromRaw(f.name, text);
-      setEnvelope(env);
+      const ext = f.name.split('.').pop()?.toLowerCase();
+      if (ext === 'zip') {
+        const zip = await JSZip.loadAsync(await f.arrayBuffer());
+        const entries = Object.values(zip.files).filter(entry => !entry.dir);
+        const supported = entries.filter(entry => /\.(txt|csv|tsv|md|pdf|docx|xlsx|xls|xlsm)$/i.test(entry.name));
+        
+        if (!supported.length) {
+          throw new Error('No supported clinical files found in this ZIP.');
+        }
+
+        const envs: NormalizedImportEnvelope[] = [];
+        for (const entry of supported) {
+          const displayName = entry.name.split('/').pop() || entry.name;
+          let text = '';
+          const entryExt = entry.name.split('.').pop()?.toLowerCase();
+          
+          if (entryExt === 'pdf' || entryExt === 'docx' || entryExt === 'xlsx' || entryExt === 'xls' || entryExt === 'xlsm') {
+            const blob = await entry.async('blob');
+            const nestedFile = new File([blob], displayName);
+            text = await extractFileText(nestedFile);
+          } else {
+            text = await entry.async('text');
+          }
+          
+          const env = buildEnvelopeFromRaw(displayName, text);
+          envs.push(env);
+        }
+        setZipEnvelopes(envs);
+        // Create a summary envelope for the UI.
+        const summary = buildEnvelopeFromRaw(f.name, '');
+        summary.source.detectedType = 'unknown';
+        summary.source.confidence = 1.0;
+        setEnvelope(summary);
+      } else {
+        const text = await extractFileText(f);
+        const env = buildEnvelopeFromRaw(f.name, text);
+        setEnvelope(env);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Vector extraction failed');
+      setError(e instanceof Error ? e.message : 'File extraction failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRoute = (target: 'reports' | 'templates' | 'client-docs') => {
-    if (!envelope) return;
-    const res = routeImport(envelope, { 
-      targets: [target], 
-      clientMode: 'auto' 
-    });
+  const mapBatchTargets = (env: NormalizedImportEnvelope, fallback: 'reports' | 'templates' | 'client-docs') => {
+    if (env.source.detectedType === 'roster' || env.shifts?.length) return ['roster' as const];
+    if (env.diaryEntries?.length || env.weekSummary) return ['reports' as const];
+    if (env.admission || env.supportPlan) return ['client-docs' as const];
+    return [fallback];
+  };
+
+  const saveRosterEnvelope = async (env: NormalizedImportEnvelope) => {
+    let shifts = parseClientRosterCSV(env.rawText || '');
+    if (shifts.length === 0) {
+      const grouped = parseGroupedRosterCSV(env.rawText || '', env.source.fileName);
+      shifts = grouped.map(shift => ({
+        id: shift.id,
+        client: shift.house || shift.staffId || 'Unassigned',
+        clientRaw: shift.house || shift.staffId || 'Unassigned',
+        house: '',
+        date: shift.date,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        carers: shift.staffId ? [shift.staffId] : [],
+        durationHours: shift.hours,
+        shiftType: shift.type === 'long_day' ? 'long' : shift.type,
+      }));
+    }
+    if (shifts.length) await saveRosterShifts(shifts);
+    return shifts.length;
+  };
+
+  const handleRoute = async (target: 'reports' | 'templates' | 'client-docs') => {
+    if (!envelope && !zipEnvelopes.length) return;
     
-    if (res.ok) {
-      if (target === 'reports') {
-        const data = loadWeekData();
-        if (data) onDataParsed(data);
+    setLoading(true);
+    try {
+      if (zipEnvelopes.length > 0) {
+        let totalAdded = 0;
+        let totalShifts = 0;
+        let successCount = 0;
+        
+        for (const env of zipEnvelopes) {
+          const targets = mapBatchTargets(env, target);
+          if (targets.includes('roster')) {
+            const added = await saveRosterEnvelope(env);
+            if (added > 0) {
+              totalShifts += added;
+              successCount++;
+            }
+            continue;
+          }
+
+          const res = routeImport(env, { targets, clientMode: 'auto' });
+          if (res.ok) {
+            successCount++;
+            if (env.diaryEntries?.length) {
+              const enriched = await enrichEntriesWithRoster(env.diaryEntries);
+              totalAdded += appendEntries(enriched);
+            }
+          }
+        }
+        
+        setResultSummary(`Batch processed: ${successCount} files, ${totalAdded} entries and ${totalShifts} roster shifts added.`);
+        if (target === 'reports') {
+          const data = loadWeekData();
+          if (data) onDataParsed(data);
+        }
+      } else if (envelope) {
+        const res = routeImport(envelope, { targets: [target], clientMode: 'auto' });
+        if (res.ok) {
+          if (envelope.diaryEntries?.length) {
+            const enriched = await enrichEntriesWithRoster(envelope.diaryEntries);
+            appendEntries(enriched);
+          }
+          if (target === 'reports') {
+            const data = loadWeekData();
+            if (data) onDataParsed(data);
+          }
+          setResultSummary(res.messages[0] || 'Ingest successful');
+        } else {
+          throw new Error(res.warnings[0] || 'Routing failed');
+        }
       }
+      
       setDone(true);
       setTimeout(() => {
-        setPage(res.page);
         onClose();
-      }, 1500);
-    } else {
-      setError(res.warnings[0] || 'Routing failed');
+      }, 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Routing failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,8 +190,8 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
               <Zap className={`w-6 h-6 text-hc-teal ${loading ? 'animate-pulse' : ''}`} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase leading-none">Intelligence Injest</h2>
-              <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1.5 opacity-60">Field Vector Detected: {file.name}</p>
+              <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase leading-none">Quick Import</h2>
+              <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-1.5 opacity-60">File detected: {file.name}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-hc-muted hover:text-hc-text transition-colors">
@@ -107,9 +218,14 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
           {envelope && !loading && !done && (
             <div className="animate-in fade-in duration-700 space-y-10">
               <div className="grid grid-cols-2 gap-4">
-                <div className="hc-clay-inset p-5">
-                   <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Vector Type</div>
-                   <div className="text-sm font-black text-hc-teal uppercase tracking-tighter">{envelope.source.detectedType}</div>
+                <div className="hc-clay-inset p-5 flex items-center gap-4">
+                   {zipEnvelopes.length > 0 ? <Archive className="w-5 h-5 text-hc-teal" /> : <Zap className="w-5 h-5 text-hc-teal" />}
+                   <div>
+                     <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Import Type</div>
+                     <div className="text-sm font-black text-hc-teal uppercase tracking-tighter">
+                       {zipEnvelopes.length > 0 ? `ZIP BATCH (${zipEnvelopes.length})` : envelope.source.detectedType}
+                     </div>
+                   </div>
                 </div>
                 <div className="hc-clay-inset p-5">
                    <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Confidence</div>
@@ -117,15 +233,26 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
                 </div>
               </div>
 
+              {zipEnvelopes.length > 0 && (
+                <div className="hc-clay-inset p-4 max-h-[120px] overflow-y-auto scrollbar-thin space-y-2">
+                   {zipEnvelopes.map((env, i) => (
+                     <div key={i} className="flex items-center justify-between text-[9px] font-black uppercase text-hc-muted">
+                        <span className="truncate max-w-[70%]">{env.source.fileName}</span>
+                        <span className="text-hc-teal">{env.source.detectedType}</span>
+                     </div>
+                   ))}
+                </div>
+              )}
+
               <div className="space-y-4">
-                <p className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] opacity-40 px-1">Select Dispatch Target</p>
+                <p className="text-[10px] font-black text-hc-text uppercase tracking-[0.3em] opacity-40 px-1">Choose where this should go</p>
                 <div className="flex flex-col gap-3">
                   <button onClick={() => handleRoute('reports')}
                     className="w-full p-6 hc-clay-raised hover:border-hc-teal/40 group flex items-center justify-between transition-all active:scale-[0.98]">
                     <div className="flex items-center gap-5">
                       <FileText className="w-5 h-5 text-hc-teal" />
                       <div className="text-left">
-                        <div className="text-xs font-black text-hc-text uppercase tracking-widest">Update Live Ledger</div>
+                        <div className="text-xs font-black text-hc-text uppercase tracking-widest">Add to Live Records</div>
                         <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">Route to Client Diaries & Quality Monitoring</div>
                       </div>
                     </div>
@@ -137,7 +264,7 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
                     <div className="flex items-center gap-5">
                       <Sparkles className="w-5 h-5 text-hc-teal" />
                       <div className="text-left">
-                        <div className="text-xs font-black text-hc-text uppercase tracking-widest">Clinical Document Suite</div>
+                        <div className="text-xs font-black text-hc-text uppercase tracking-widest">Client Documents</div>
                         <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">Update Care Plans, Risk Matrices & PBS Protocols</div>
                       </div>
                     </div>
@@ -154,8 +281,9 @@ export function GlobalInjest({ file, onClose, onDataParsed, setPage }: Props) {
                 <CheckCircle className="w-12 h-12 text-flag-green" strokeWidth={3} />
               </div>
               <div className="text-center">
-                <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase">Injest Vector Active</h3>
-                <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-2">OS state synchronized with {ORG_CONFIG.name} registration</p>
+                <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase">Import Complete</h3>
+                <p className="text-[10px] font-black text-flag-green uppercase tracking-[0.2em] mt-2 font-mono italic">{resultSummary}</p>
+                <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-4">OS state synchronized with {ORG_CONFIG.name} registration</p>
               </div>
             </div>
           )}

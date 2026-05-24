@@ -26,7 +26,7 @@ const PLACEHOLDER_TOKENS = new Set([
 
 function clean(input: unknown): string {
   if (typeof input !== 'string') return '';
-  return input.replace(/\u0000/g, '').replace(/\s+/g, ' ').trim();
+  return input.split('\u0000').join('').replace(/\s+/g, ' ').trim();
 }
 
 function isPlaceholderValue(input: string): boolean {

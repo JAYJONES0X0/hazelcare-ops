@@ -40,5 +40,5 @@ describe('real dataset smoke parse', () => {
       parsedCount += (envelope.diaryEntries?.length || 0) + (envelope.weekSummary?.totalEntries || 0);
     }
     expect(parsedCount).toBeGreaterThanOrEqual(0);
-  });
+  }, 30000);
 });

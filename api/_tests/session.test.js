@@ -46,7 +46,7 @@ describe('/api/session scope flags', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.jsonBody).toEqual({ authed: true, staffScoped: true });
+    expect(res.jsonBody).toEqual({ authed: true, staffScoped: true, role: 'manager', email: '' });
   });
 
   it('returns no scope when no cookies are provided', async () => {
@@ -58,6 +58,6 @@ describe('/api/session scope flags', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.jsonBody).toEqual({ authed: false, staffScoped: false });
+    expect(res.jsonBody).toEqual({ authed: false, staffScoped: false, role: 'manager', email: '' });
   });
 });

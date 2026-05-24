@@ -3,6 +3,7 @@ import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember, S
 const STORAGE_KEY = 'hazelcare-ops';
 const WEEK_DATA_KEY = 'hc-week-data-v2';
 const CLIENTS_KEY = 'hc-clients-v2';
+const STAFF_KEY = 'hc-staff-register-v1';
 const STAFF_NOTES_KEY = 'hazelcare-staff-notes';
 const SCHEMA_VERSION_KEY = 'hc-schema-v';
 const CURRENT_SCHEMA = '3';
@@ -113,13 +114,21 @@ function dedupeEntries(entries: CareEntry[]): CareEntry[] {
 }
 
 function parseDDMMYYYY(s: string): number {
-  const parts = s.split('/');
+  if (!s) return 0;
+  const parts = s.split(/[ /.-]/);
   if (parts.length === 3) {
-    const [day, month, year] = parts.map(Number);
-    const t = new Date(year, month - 1, day).getTime();
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    let y = parseInt(parts[2], 10);
+    if (y < 100) y += 2000;
+    if (parts[0].length === 4) { // YYYY-MM-DD
+       const [yr, mo, dy] = parts.map(Number);
+       return new Date(yr, mo - 1, dy).getTime();
+    }
+    const t = new Date(y, m - 1, d).getTime();
     if (!Number.isNaN(t)) return t;
   }
-  return Date.parse(s);
+  return Date.parse(s) || 0;
 }
 
 function compareDateAsc(a: string, b: string): number {
@@ -228,11 +237,24 @@ export function saveIncidents(incidents: Incident[]) {
 }
 
 export function loadStaff(): StaffMember[] {
-  return load().staff;
+  try {
+    const raw = localStorage.getItem(STAFF_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function saveStaff(staff: StaffMember[]) {
-  save({ staff });
+  try {
+    localStorage.setItem(STAFF_KEY, JSON.stringify(staff));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('hc-staff-updated'));
+    }
+  } catch (e) {
+    if (!isQuotaError(e)) throw e;
+    localStorage.removeItem(STAFF_KEY);
+  }
 }
 
 export function loadShifts(): Shift[] {

@@ -1,0 +1,2236 @@
+{
+  "startedAt": "2026-05-24T15:17:16.284Z",
+  "url": "https://hazelcare-ops.vercel.app/CareOps",
+  "authenticated": true,
+  "console": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "responses4xx5xx": [],
+  "pageResults": [
+    {
+      "label": "Initial/Home",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nNO DATA YET\n\nDROP IN A CAREPLANNER OR NOURISH CSV EXPORT TO INITIALISE THE BRIEFING.\n\nIMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ]
+    },
+    {
+      "label": "Dashboard",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nINTELLIGENCE FEED OFFLINE\n\nIMPORT A CLINICAL FILE, ROSTER, ZIP PACK, OR PASTED ASSESSMENT TO START THE DASHBOARD.\n\nOPEN IMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Import Hub",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nIMPORT HUB\n\nHIGH-DENSITY OPERATIONAL INTAKE PROTOCOL\n\nNO ROSTER LOADED · UPLOAD ROSTER FIRST\nCOMMAND CENTER\nPURGE BUFFER\nINITIALISE INTAKE STREAM\n\nDROP ZIP PACKS, PDF ASSESSMENTS, CSV/EXCEL DIARY EXPORTS,\nOR ROSTER FILES\n\n.ZIP\n.CSV\n.XLSX\n.PDF\n.TXT\n.DOCX\nINGEST BUFFER [0]\nBUFFER EMPTY\nRAW TEXT INTAKE\nPARSE PASTED TEXT\nIMPORT EXTRACTION AUDIT // LOCAL BROWSER PROCESSING",
+      "buttonCount": 18,
+      "linkCount": 0,
+      "inputCount": 3,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input multiple=\"\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Briefing",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nNO DATA YET\n\nDROP IN A CAREPLANNER OR NOURISH CSV EXPORT TO INITIALISE THE BRIEFING.\n\nIMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Care Logs",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nCLIENT DIARY\nDrop a diary PDF here\nDrop a CarePlanner diary export (PDF) directly here. No redirects.\nOR CLICK TO BROWSE\nOR SYNC FROM GLOBAL IMPORT",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input accept=\".pdf\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Monitoring",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nDASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nFORCE PROTECTION\n\nCLINICAL ANALYSIS OF DIARY EXPORTS Â· SCORED TO PROTECT REGISTRATION.\n\nCOLLAPSE ALL MATRIX\nSYNC DAILY CSV\nALL TIME\nTHIS WEEK\nLAST WEEK\nTHIS MONTH\nLAST MONTH\nCUSTOM\nCLIENT COVERAGE TARGET\nAll clients\nEXPECTED 1:1 WINDOWS\nSAVE TARGET\nWORK MISSING NOTES\nINTELLIGENCE WINDOW\n–\nSCORED ENTRIES\n0\nCLINICAL FRESHNESS\nâ€”\nSNAPSHOT TIME\n16:17\nHANDOVER QUALITY\n0\n1:1 EVIDENCE AUDIT\nOPEN SHIFT HANDOVERS\nOPEN NOURISH TASK PACKS\nCRITICAL REVIEW Â· 0\nCOMMAND AWAITING INPUT\n\nSELECT PERSONNEL RECORD TO INITIALISE STUDIO.",
+      "buttonCount": 29,
+      "linkCount": 0,
+      "inputCount": 3,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input accept=\".csv,.txt,.tsv\" class=\"hidden\" id=\"daily-sync-input\" type=\"file\" style=\"\">",
+        "<select class=\"w-full hc-clay-inset rounded-xl px-4 py-3 text-[11px] font-black text-hc-text bg-hc-surface focus:outline-none\"><option value=\"\">All clients</opt"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Client Records",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nCLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nPeople & Support Plans\n0 PEOPLE\n0 PBS PROFILES\n0 RISK MATRICES\n0 SUPPORT PLANS\nPortrait\nLandscape\nINTELLIGENCE SYNC\nADD PERSON\n👥\nNO PEOPLE ADDED YET\nCLICK \"ADD PERSON\" TO GET STARTED\nCLEAR ALL DATA\n\nDelete all people, support plans, and documents from this device. This cannot be undone.\n\nCLEAR ALL",
+      "buttonCount": 17,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"bg-hc-bone border border-hc-border/30 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none\" ti",
+        "<input accept=\".pdf,.doc,.docx\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Task Packs",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nCLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nSELECT CLIENT\nNOURISH TASK PACK GENERATOR\n\nSelect a client to generate their care/risk aligned task pack",
+      "buttonCount": 14,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Risk & PBS",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nCLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nRISK OVERVIEW\nRISK STRATIFICATION\n\nREVIEWING RISK LEVELS ACROSS ALL RESIDENCES\n\nFILTER MAGNITUDE\nALL RESIDENCES\nCRITICAL0\nHIGH0\nMEDIUM0\nLOW0\nNO STRATEGIC MATCHES\nCLEAR FILTERS TO RESTORE VISIBILITY",
+      "buttonCount": 19,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Audit Reports",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nCLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nDIAGNOSTIC REPORTS\n\n0 ENTRIES · 0 HOUSES · 0 STAFF · 0 FLAGS\n\nEXPORT FULL PACK\nREVIEW COMPLETE\nAVAILABLE VECTORS\nWEEKLY CLINICAL SUMMARY\nHOUSE-BY-HOUSE CLINICAL OVERVIEW AND FLAG REPORT.\nCQC RISK MATRIX\nIMPACT/LIKELIHOOD MAPPING FOR ALL ACTIVE RISKS.\nPERSONNEL ENTRY LOG\nCONSOLIDATED AUDIT TRAIL OF ALL STAFF DOCUMENTATION.\nOPERATIONAL KPI REPORT\nSTAFF QUALITY SCORES, SHORT ENTRY RATIOS, AND COACHING EVENTS.\n0 HOUSES · 0 ENTRIES · 24/05/2026\nPDF",
+      "buttonCount": 20,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input type=\"checkbox\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Directory",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nPERSONNEL LEDGER\n\nORGANISATIONAL ASSET OVERSIGHT & STABILITY MATRIX\n\nENROLL NEW UNIT\nACTIVE_PERSONNEL\n0\nOFF_SICK\n0\nSICKNESS_LOAD\n0\nLATENCY_EVENTS\n0\nSECTOR_LOCK:\nALL SECTORS\nLingfield House\nChurch House\nLaurel House\nStation House\nCanterbury\nGlenfrome House\nWoburn House\nHazelbury House\nCourtney Lodge\nCottrell House\n👥\nPERSONNEL DATABASE EMPTY\nCLEAR SECTOR FILTERS OR ENROLL A NEW UNIT TO ACTIVATE INTELLIGENCE.",
+      "buttonCount": 17,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"hc-clay-inset px-6 py-4 text-[11px] font-black uppercase tracking-widest text-hc-text min-w-[200px]\"><option value=\"all\">ALL SECTORS</option><opt"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Handovers",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nSHIFT HANDOVER REPORT\nSHIFT CONTINUITY\n\nPREPARING INFORMATION FOR THE NEXT SHIFT TEAM\n\n1. OPERATIONAL META-DATA\nSITE / HOUSE\nLingfield House\nChurch House\nLaurel House\nStation House\nCanterbury\nGlenfrome House\nWoburn House\nHazelbury House\nCourtney Lodge\nCottrell House\nTRANSITION\nDAY\nNIGHT\nOUTGOING\nINCOMING\nCRITICAL RED FLAGS\nCLIENTS OF CONCERN\nINCIDENT\nMEDICATION\nPERSON UPDATE\nOUTSTANDING TASK\nGENERAL\nADD ITEM\nHANDOVER PREVIEW\n0 CLINICAL NODES ACTIVE\nCOPY\nLOG\n// Report stream awaiting intelligence...",
+      "buttonCount": 29,
+      "linkCount": 0,
+      "inputCount": 6,
+      "unlabeledButtons": [
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all hc-clay-raised scale-110\"><div class=\"w-3 h-3 rounded-full bg-hc-muted\"></di",
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-20 hover:opacity-100 grayscale\"><div class=\"w-3 h-3 rounded-full bg-",
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-20 hover:opacity-100 grayscale\"><div class=\"w-3 h-3 rounded-full bg-"
+      ],
+      "unlabeledInputs": [
+        "<select class=\"w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner bg-transparent\"><option value=\"Lingfield H"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Training & DBS",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nREGULATORY AUDIT\n\nPERSONNEL COMPLIANCE & CREDENTIALING MATRIX — CAREOPS GOVERNANCE STANDARD.\n\nNETWORK HEALTH\n0%\nMISSING DOCS\n0\nPENDING REVIEW\n0\nCLINICAL INTEGRITY AUDIT\nPERSONNEL COMPLIANCE\nEVIDENCE CONTINUITY GAPS\n0 GAPS DETECTED\nFORENSIC INTEGRITY: 100% — NO COVERAGE GAPS FOUND.\nAUDIT CONTEXT\n\nTHE SOVEREIGN CONTINUITY ENGINE SCANS CROSS-CLIENT TELEMETRY. IF ANDREW HAS A GAP, BUT SARAH WAS RECORDING NOTES FOR OTHER CLIENTS, THE SYSTEM IDENTIFIES SARAH AS THE WITNESS FOR THAT MISSING SHIFT.\n\nDATABASE SCAN RANK\nFORENSIC GRADE\nCROSS-INFERENCE\nACTIVE\nRECOV",
+      "buttonCount": 18,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Agency Cover",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nAgency Staff\n\nMonitoring shift coverage, worker bookings, and agency compliance across all houses.\n\n0\nActive Gaps\n0\nIn Scan\n0\nApproved Hubs\nSHIFT BOARD\nWORKER PIPELINE\nAGENCY LIST\nRATE CARDS\n0\nOpen Shifts\nSHIFTS NEEDING COVER\n0\nCritical Gaps\nIMMEDIATE FILL REQUIRED\n0\nConfirmed Cover\nSHIFTS FILLED\n0H\nNetwork Hours\nTOTAL HOURS BOOKED\n+ LOG NEW SHIFT\nENTIRE FEED\nOPEN\nSUBMITTED\nCONFIRMED",
+      "buttonCount": 25,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Open Shifts SHIFTS NEEDING COVER",
+          "clientWidth": 257,
+          "scrollWidth": 305
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Critical Gaps IMMEDIATE FILL REQUIRED",
+          "clientWidth": 257,
+          "scrollWidth": 305
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Confirmed Cover SHIFTS FILLED",
+          "clientWidth": 257,
+          "scrollWidth": 305
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0H Network Hours TOTAL HOURS BOOKED",
+          "clientWidth": 257,
+          "scrollWidth": 305
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Action Log",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nCOMMAND VECTORS\nACTION TRACKER\n0 OPEN · 0 CRITICAL\nCOLLAPSE ALL\nNEW ACTION\nALL\n0\nOPEN\n0\nIN PROGRESS\n0\nBLOCKED\n0\nCOMPLETED\n0\nOVERDUE\n0\n🎯\nALL CLEAR\nNO ACTIONS MATCHING THIS FILTER",
+      "buttonCount": 24,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Incidents",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nSTABILITY VECTOR HUB\nSTATION_STATUS:\nOPERATIONAL // ENFORCED\nVECTOR_LOAD:\n0 ACTIVE\nCRITICAL_FAULTS:\n0 INTERCEPTS\nSYS_REF: NC-STB-001\n1: INGESTED / LOGGED\n0\nZERO_VECTORS\n2: CLINICAL INVESTIGATION\n0\nZERO_VECTORS\n3: INTERNAL RESOLUTION\n0\nZERO_VECTORS\n4: STATUTORY REPORTING\n0\nZERO_VECTORS\n5: FORENSIC ARCHIVE\n0\nZERO_VECTORS",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 flex overflow-x-auto overflow-y-hidden p-4 gap-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transpa",
+          "text": "1: INGESTED / LOGGED 0 ZERO_VECTORS 2: CLINICAL INVESTIGATION 0 ZERO_VECTORS 3: INTERNAL RESOLUTION 0 ZERO_VECTORS 4: ST",
+          "clientWidth": 1152,
+          "scrollWidth": 1696
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Note",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nDICTATION STUDIO\nOPEN NOTE WORKSPACE\nOPEN BUILDER TEMPLATES\nINTELLIGENCE PROTOCOL ASSEMBLER\nACTIVE STACK: NONE LOADED\nLOAD INTELLIGENCE STACK\nINTELLIGENCE INPUT STREAM\nUK English (UK)\nUS English (US)\nIE English (Ireland)\nFR French\nES Spanish\nDE German\nIT Italian\nPT Portuguese\nPL Polish\nRO Romanian\nAR Arabic\nHI Hindi\nBN Bengali (Bangladesh)\nUR Urdu\nPA Punjabi\nGU Gujarati\nTA Tamil\nTE Telugu\nMR Marathi\nNE Nepali\nYO Yoruba\nIG Igbo\nSW Swahili\nSN Shona\nUK DICTATE\nGOLDEN STRUCTURE CHECK\n13% STANDARD\nMISSING TIME OR SHIFT POINT\nMISSING WHO WAS INVOLVED\nMISSING WHAT HAPPENED\nMISSI",
+      "buttonCount": 22,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"bg-transparent text-[10px] font-black uppercase tracking-widest text-hc-text outline-none\"><option value=\"en-GB\">UK English (UK)</option><option "
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Note Workspace",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\n0 CLIENTS\nIMPORT CSV / EXCEL\nNO DATA LOADED\nImport a diary CSV or ZIP to begin\nALL CLIENTS\nNOTE WORKSPACE\n\n0 ENTRIES IN VIEW\n\nALL TIME\nTHIS WEEK\nLAST WEEK\nTHIS MONTH\nLAST MONTH\nCUSTOM\n0 in range\nSHOW GOLD STANDARD ASSISTANT\nIMPORT A DIARY EXPORT TO BEGIN\n\nSUPPORTS CSV, EXCEL, PDF, ZIP — ONE IMPORT COVERS ALL CLIENTS\n\nENTRY DENSITY:\n0 Records\nCONTINUITY GAPS: 0",
+      "buttonCount": 23,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input id=\"workspace-upload\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Writing Coach",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nSTAFF WRITING COACH | PRACTICE ARENA\nDOCUMENTATION\nOR MALPRACTICE?\n\nPRACTICE SAFER, CLEARER SUPPORT NOTES BEFORE THEY BECOME PART OF A FORMAL RECORD.\n\nA\nATTRIBUTABLE\n\nWHO DID IT? IS THE CARER IDENTITY CLEAR?\n\nL\nLEGIBLE\n\nIS THE NARRATIVE CLEAR AND PROFESSIONAL?\n\nC\nCONTEMPORANEOUS\n\nIS THE TIMING OF EVENTS RECORDED PRECISELY?\n\nO\nORIGINAL\n\nIS IT AN UNIQUE OBSERVATION, NOT JUST A COPY-PASTE?\n\nA\nACCURATE\n\nDOES IT REFLECT THE CLINICAL REALITY AND RISKS?\n\nDOCUMENTATION ARENA\nWRITE YOUR RAW SHIFT NOTE HERE:\nREVIEW THIS NOTE\nPRACTICE CASE STUDIES\nMEDICATION REFUSAL\n\nPrompted him to",
+      "buttonCount": 19,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Templates",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSTAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nSYNTHESIS MATRIX\nDOCUMENT ASSEMBLY STATION\n22 PROTOCOLS LOADED\nPROTOCOL SELECTION\nOPERATIONAL QUALITY SITREP\nFRIDAY WEEKLY OPS REVIEW\nMORNING VECTOR BRIEFING\nMORNING OPS BRIEFING\nINCIDENT LOG & ANALYSIS\nINDIVIDUAL INCIDENT DOCUMENTATION\nUNIT ROTATION HANDOVER\nNIGHT/DAY SHIFT HANDOVER\nPERSONNEL READINESS AUDIT\nSTAFF 1:1 SUPERVISION NOTES\nTRUST & SAFETY INTERCEPT\nSAFEGUARDING CONCERN DOCUMENTATION\nPHARMACOLOGICAL AUDIT\nMEDICATION REVIEW & AUDIT\nFISCAL OPERATIONS REVIEW\nBUDGET & FINANCE REVIEW\nCLIENT STABILITY REVIEW\nCLIENT CARE PLAN REVIEW\nFEEDBACK & RECTIFICATION\nCOMPLAINT",
+      "buttonCount": 37,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Settings",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSETTINGS\nREGIONAL OVERVIEW\nBUILD INDEX-DK3BS_1V\nSECURITY VAULT\n\nAUTHORISATION REQUIRED FOR SYSTEM CORE\n\nUNLOCK SOVEREIGN CORE\nE2E FIELD-LOCKED ENCRYPTION",
+      "buttonCount": 13,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Admin & Backup",
+      "viewportName": "desktop",
+      "ok": false,
+      "reason": "nav item not found"
+    },
+    {
+      "label": "Regional Overview",
+      "viewportName": "desktop",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "OPERATIONAL CORE\nCAREOPS\nCOMMAND CENTRE\nCLIENT CARE\nSTAFF & SHIFTS\nNOTES & DOCUMENTS\nSYSTEM\nSTATUS\n0 SITES ACTIVE\nA\nADMIN\nADMIN ACCESS\nEXIT CORE\nSETTINGS\nREGIONAL OVERVIEW\nBUILD INDEX-DK3BS_1V\nMULTI-SITE GOVERNANCE\nEMPIRE MATRIX\n\nCROSS-SITE QUALITY INTELLIGENCE · 0 SITES IN SCOPE\n\nLIVE · 0 PERSONNEL SCORED\nACTIVE SITES\n0\nINTEL STREAMS\n0\nPERSONNEL SCORED\n0\nAVG DOC QUALITY\n0%\nSITES CRITICAL\n0\nSITES UNDER REVIEW\n0\nSITE PERFORMANCE LEAGUE · RANKED BY RISK\nREGIONAL QUALITY OVERVIEW · SOURCED FROM STAFF MONITORING",
+      "buttonCount": 12,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 1440,
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-64 lg:w-72",
+          "text": "OPERATIONAL CORE CAREOPS COMMAND CENTRE CLIENT CARE STAFF & SHIFTS NOTES & DOCUMENTS SYSTEM STATUS 0 SITES ACTIVE A ADMI",
+          "clientWidth": 288,
+          "scrollWidth": 300
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Initial/Home",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nNO DATA YET\n\nDROP IN A CAREPLANNER OR NOURISH CSV EXPORT TO INITIALISE THE BRIEFING.\n\nIMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        }
+      ]
+    },
+    {
+      "label": "Dashboard",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nINTELLIGENCE FEED OFFLINE\n\nIMPORT A CLINICAL FILE, ROSTER, ZIP PACK, OR PASTED ASSESSMENT TO START THE DASHBOARD.\n\nOPEN IMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Import Hub",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nIMPORT HUB\n\nHIGH-DENSITY OPERATIONAL INTAKE PROTOCOL\n\nNO ROSTER LOADED · UPLOAD ROSTER FIRST\nCOMMAND CENTER\nPURGE BUFFER\nINITIALISE INTAKE STREAM\n\nDROP ZIP PACKS, PDF ASSESSMENTS, CSV/EXCEL DIARY EXPORTS,\nOR ROSTER FILES\n\n.ZIP\n.CSV\n.XLSX\n.PDF\n.TXT\n.DOCX\nINGEST BUFFER [0]\nBUFFER EMPTY\nRAW TEXT INTAKE\nPARSE PASTED TEXT\nIMPORT EXTRACTION AUDIT // LOCAL BROWSER PROCESSING",
+      "buttonCount": 18,
+      "linkCount": 0,
+      "inputCount": 3,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input multiple=\"\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 overflow-y-auto scrollbar-thin p-12",
+          "text": "IMPORT HUB HIGH-DENSITY OPERATIONAL INTAKE PROTOCOL NO ROSTER LOADED · UPLOAD ROSTER FIRST COMMAND CENTER PURGE BUFFER I",
+          "clientWidth": 311,
+          "scrollWidth": 542
+        },
+        {
+          "tag": "div",
+          "className": "mb-12 pb-10 border-b border-hc-border/30 flex items-center justify-between",
+          "text": "IMPORT HUB HIGH-DENSITY OPERATIONAL INTAKE PROTOCOL NO ROSTER LOADED · UPLOAD ROSTER FIRST COMMAND CENTER PURGE BUFFER",
+          "clientWidth": 215,
+          "scrollWidth": 494
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col lg:flex-row gap-10 animate-in slide-in-from-bottom-4 duration-700",
+          "text": "INITIALISE INTAKE STREAM DROP ZIP PACKS, PDF ASSESSMENTS, CSV/EXCEL DIARY EXPORTS, OR ROSTER FILES .ZIP .CSV .XLSX .PDF ",
+          "clientWidth": 215,
+          "scrollWidth": 295
+        },
+        {
+          "tag": "label",
+          "className": "flex-[3] group relative flex flex-col items-center justify-center border-4 border-dashed border-hc-muted/10 bg-black/[0.",
+          "text": "INITIALISE INTAKE STREAM DROP ZIP PACKS, PDF ASSESSMENTS, CSV/EXCEL DIARY EXPORTS, OR ROSTER FILES .ZIP .CSV .XLSX .PDF ",
+          "clientWidth": 207,
+          "scrollWidth": 291
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Briefing",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nNO DATA YET\n\nDROP IN A CAREPLANNER OR NOURISH CSV EXPORT TO INITIALISE THE BRIEFING.\n\nIMPORT HUB",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Care Logs",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nCLIENT DIARY\nDrop a diary PDF here\nDrop a CarePlanner diary export (PDF) directly here. No redirects.\nOR CLICK TO BROWSE\nOR SYNC FROM GLOBAL IMPORT",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input accept=\".pdf\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Monitoring",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "DASHBOARD\nIMPORT HUB\nBRIEFING\nCARE LOGS\nSTAFF MONITORING\nBUILD INDEX-DK3BS_1V\nFORCE PROTECTION\n\nCLINICAL ANALYSIS OF DIARY EXPORTS Â· SCORED TO PROTECT REGISTRATION.\n\nCOLLAPSE ALL MATRIX\nSYNC DAILY CSV\nALL TIME\nTHIS WEEK\nLAST WEEK\nTHIS MONTH\nLAST MONTH\nCUSTOM\nCLIENT COVERAGE TARGET\nAll clients\nEXPECTED 1:1 WINDOWS\nSAVE TARGET\nWORK MISSING NOTES\nINTELLIGENCE WINDOW\n–\nSCORED ENTRIES\n0\nCLINICAL FRESHNESS\nâ€”\nSNAPSHOT TIME\n16:19\nHANDOVER QUALITY\n0\n1:1 EVIDENCE AUDIT\nOPEN SHIFT HANDOVERS\nOPEN NOURISH TASK PACKS\nCRITICAL REVIEW Â· 0\nCOMMAND AWAITING INPUT\n\nSELECT PERSONNEL RECORD TO INITIALISE STUDIO.",
+      "buttonCount": 29,
+      "linkCount": 0,
+      "inputCount": 3,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input accept=\".csv,.txt,.tsv\" class=\"hidden\" id=\"daily-sync-input\" type=\"file\" style=\"\">",
+        "<select class=\"w-full hc-clay-inset rounded-xl px-4 py-3 text-[11px] font-black text-hc-text bg-hc-surface focus:outline-none\"><option value=\"\">All clients</opt"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING BUILD INDEX-DK3BS_1V FORCE PROTECTION CLINICAL ANALYSIS OF DIAR",
+          "clientWidth": 311,
+          "scrollWidth": 325
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING BUILD INDEX-DK3BS_1V FORCE PROTECTION CLINICAL ANALYSIS OF DIAR",
+          "clientWidth": 311,
+          "scrollWidth": 325
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "DASHBOARD IMPORT HUB BRIEFING CARE LOGS STAFF MONITORING",
+          "clientWidth": 104,
+          "scrollWidth": 549
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 w-full max-w-[2560px] mx-auto animate-in fade-in duration-500",
+          "text": "FORCE PROTECTION CLINICAL ANALYSIS OF DIARY EXPORTS Â· SCORED TO PROTECT REGISTRATION. COLLAPSE ALL MATRIX SYNC DAILY CS",
+          "clientWidth": 311,
+          "scrollWidth": 325
+        },
+        {
+          "tag": "div",
+          "className": "mb-8 hc-clay-raised border border-hc-teal/20 rounded-2xl p-5",
+          "text": "CLIENT COVERAGE TARGET All clients EXPECTED 1:1 WINDOWS SAVE TARGET WORK MISSING NOTES",
+          "clientWidth": 261,
+          "scrollWidth": 300
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col xl:flex-row gap-4 xl:items-end",
+          "text": "CLIENT COVERAGE TARGET All clients EXPECTED 1:1 WINDOWS SAVE TARGET WORK MISSING NOTES",
+          "clientWidth": 221,
+          "scrollWidth": 280
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]",
+          "text": "INTELLIGENCE WINDOW –",
+          "clientWidth": 118,
+          "scrollWidth": 139
+        },
+        {
+          "tag": "div",
+          "className": "text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3",
+          "text": "INTELLIGENCE WINDOW",
+          "clientWidth": 54,
+          "scrollWidth": 107
+        },
+        {
+          "tag": "div",
+          "className": "text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3",
+          "text": "SCORED ENTRIES",
+          "clientWidth": 54,
+          "scrollWidth": 63
+        },
+        {
+          "tag": "div",
+          "className": "text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3",
+          "text": "CLINICAL FRESHNESS",
+          "clientWidth": 54,
+          "scrollWidth": 84
+        },
+        {
+          "tag": "div",
+          "className": "text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-3",
+          "text": "SNAPSHOT TIME",
+          "clientWidth": 54,
+          "scrollWidth": 80
+        },
+        {
+          "tag": "div",
+          "className": "w-full overflow-x-auto scrollbar-none mb-6",
+          "text": "HANDOVER QUALITY 0 1:1 EVIDENCE AUDIT OPEN SHIFT HANDOVERS OPEN NOURISH TASK PACKS",
+          "clientWidth": 263,
+          "scrollWidth": 882
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Client Records",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "CLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nPeople & Support Plans\n0 PEOPLE\n0 PBS PROFILES\n0 RISK MATRICES\n0 SUPPORT PLANS\nPortrait\nLandscape\nINTELLIGENCE SYNC\nADD PERSON\n👥\nNO PEOPLE ADDED YET\nCLICK \"ADD PERSON\" TO GET STARTED\nCLEAR ALL DATA\n\nDelete all people, support plans, and documents from this device. This cannot be undone.\n\nCLEAR ALL",
+      "buttonCount": 17,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"bg-hc-bone border border-hc-border/30 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-hc-text focus:outline-none\" ti",
+        "<input accept=\".pdf,.doc,.docx\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V People & Support Plans 0 PEOPLE 0 PBS PROFILES 0",
+          "clientWidth": 311,
+          "scrollWidth": 447
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V People & Support Plans 0 PEOPLE 0 PBS PROFILES 0",
+          "clientWidth": 311,
+          "scrollWidth": 447
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS",
+          "clientWidth": 104,
+          "scrollWidth": 457
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700",
+          "text": "People & Support Plans 0 PEOPLE 0 PBS PROFILES 0 RISK MATRICES 0 SUPPORT PLANS Portrait Landscape INTELLIGENCE SYNC ADD ",
+          "clientWidth": 311,
+          "scrollWidth": 447
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6",
+          "text": "People & Support Plans 0 PEOPLE 0 PBS PROFILES 0 RISK MATRICES 0 SUPPORT PLANS Portrait Landscape INTELLIGENCE SYNC ADD ",
+          "clientWidth": 263,
+          "scrollWidth": 423
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-3",
+          "text": "Portrait Landscape INTELLIGENCE SYNC ADD PERSON",
+          "clientWidth": 263,
+          "scrollWidth": 423
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Task Packs",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "CLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nSELECT CLIENT\nNOURISH TASK PACK GENERATOR\n\nSelect a client to generate their care/risk aligned task pack",
+      "buttonCount": 14,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V SELECT CLIENT NOURISH TASK PACK GENERATOR Select",
+          "clientWidth": 311,
+          "scrollWidth": 336
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V SELECT CLIENT NOURISH TASK PACK GENERATOR Select",
+          "clientWidth": 311,
+          "scrollWidth": 336
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS",
+          "clientWidth": 104,
+          "scrollWidth": 457
+        },
+        {
+          "tag": "div",
+          "className": "flex h-full min-h-screen",
+          "text": "SELECT CLIENT NOURISH TASK PACK GENERATOR Select a client to generate their care/risk aligned task pack",
+          "clientWidth": 311,
+          "scrollWidth": 336
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto p-6 pb-32 space-y-6",
+          "text": "NOURISH TASK PACK GENERATOR Select a client to generate their care/risk aligned task pack",
+          "clientWidth": 48,
+          "scrollWidth": 102
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Risk & PBS",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "CLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nRISK OVERVIEW\nRISK STRATIFICATION\n\nREVIEWING RISK LEVELS ACROSS ALL RESIDENCES\n\nFILTER MAGNITUDE\nALL RESIDENCES\nCRITICAL0\nHIGH0\nMEDIUM0\nLOW0\nNO STRATEGIC MATCHES\nCLEAR FILTERS TO RESTORE VISIBILITY",
+      "buttonCount": 19,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS",
+          "clientWidth": 104,
+          "scrollWidth": 457
+        },
+        {
+          "tag": "div",
+          "className": "max-w-7xl mx-auto",
+          "text": "RISK OVERVIEW RISK STRATIFICATION REVIEWING RISK LEVELS ACROSS ALL RESIDENCES FILTER MAGNITUDE ALL RESIDENCES CRITICAL0 ",
+          "clientWidth": 215,
+          "scrollWidth": 226
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12",
+          "text": "RISK OVERVIEW RISK STRATIFICATION REVIEWING RISK LEVELS ACROSS ALL RESIDENCES",
+          "clientWidth": 215,
+          "scrollWidth": 226
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Audit Reports",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "CLIENT RECORDS\nTASK PACKS\nRISK & PBS\nAUDIT REPORTS\nBUILD INDEX-DK3BS_1V\nDIAGNOSTIC REPORTS\n\n0 ENTRIES · 0 HOUSES · 0 STAFF · 0 FLAGS\n\nEXPORT FULL PACK\nREVIEW COMPLETE\nAVAILABLE VECTORS\nWEEKLY CLINICAL SUMMARY\nHOUSE-BY-HOUSE CLINICAL OVERVIEW AND FLAG REPORT.\nCQC RISK MATRIX\nIMPACT/LIKELIHOOD MAPPING FOR ALL ACTIVE RISKS.\nPERSONNEL ENTRY LOG\nCONSOLIDATED AUDIT TRAIL OF ALL STAFF DOCUMENTATION.\nOPERATIONAL KPI REPORT\nSTAFF QUALITY SCORES, SHORT ENTRY RATIOS, AND COACHING EVENTS.\n0 HOUSES · 0 ENTRIES · 24/05/2026\nPDF",
+      "buttonCount": 20,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input type=\"checkbox\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V DIAGNOSTIC REPORTS 0 ENTRIES · 0 HOUSES · 0 STAF",
+          "clientWidth": 311,
+          "scrollWidth": 338
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS BUILD INDEX-DK3BS_1V DIAGNOSTIC REPORTS 0 ENTRIES · 0 HOUSES · 0 STAF",
+          "clientWidth": 311,
+          "scrollWidth": 338
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "CLIENT RECORDS TASK PACKS RISK & PBS AUDIT REPORTS",
+          "clientWidth": 104,
+          "scrollWidth": 457
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 max-w-[2560px] mx-auto animate-in fade-in duration-700",
+          "text": "DIAGNOSTIC REPORTS 0 ENTRIES · 0 HOUSES · 0 STAFF · 0 FLAGS EXPORT FULL PACK REVIEW COMPLETE AVAILABLE VECTORS WEEKLY CL",
+          "clientWidth": 311,
+          "scrollWidth": 338
+        },
+        {
+          "tag": "div",
+          "className": "mb-6 flex items-center gap-3",
+          "text": "REVIEW COMPLETE",
+          "clientWidth": 263,
+          "scrollWidth": 314
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Directory",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nPERSONNEL LEDGER\n\nORGANISATIONAL ASSET OVERSIGHT & STABILITY MATRIX\n\nENROLL NEW UNIT\nACTIVE_PERSONNEL\n0\nOFF_SICK\n0\nSICKNESS_LOAD\n0\nLATENCY_EVENTS\n0\nSECTOR_LOCK:\nALL SECTORS\nLingfield House\nChurch House\nLaurel House\nStation House\nCanterbury\nGlenfrome House\nWoburn House\nHazelbury House\nCourtney Lodge\nCottrell House\n👥\nPERSONNEL DATABASE EMPTY\nCLEAR SECTOR FILTERS OR ENROLL A NEW UNIT TO ACTIVATE INTELLIGENCE.",
+      "buttonCount": 17,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"hc-clay-inset px-6 py-4 text-[11px] font-black uppercase tracking-widest text-hc-text min-w-[200px]\"><option value=\"all\">ALL SECTORS</option><opt"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V PERSONNEL LEDGER ORGANIS",
+          "clientWidth": 311,
+          "scrollWidth": 348
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V PERSONNEL LEDGER ORGANIS",
+          "clientWidth": 311,
+          "scrollWidth": 348
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "p-10 flex flex-col gap-12 bg-hc-bg",
+          "text": "PERSONNEL LEDGER ORGANISATIONAL ASSET OVERSIGHT & STABILITY MATRIX ENROLL NEW UNIT ACTIVE_PERSONNEL 0 OFF_SICK 0 SICKNES",
+          "clientWidth": 311,
+          "scrollWidth": 348
+        },
+        {
+          "tag": "div",
+          "className": "grid grid-cols-2 lg:grid-cols-4 gap-8",
+          "text": "ACTIVE_PERSONNEL 0 OFF_SICK 0 SICKNESS_LOAD 0 LATENCY_EVENTS 0",
+          "clientWidth": 231,
+          "scrollWidth": 308
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised p-8 flex flex-col gap-4",
+          "text": "ACTIVE_PERSONNEL 0",
+          "clientWidth": 98,
+          "scrollWidth": 195
+        },
+        {
+          "tag": "div",
+          "className": "text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]",
+          "text": "ACTIVE_PERSONNEL",
+          "clientWidth": 34,
+          "scrollWidth": 163
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised p-8 flex flex-col gap-4",
+          "text": "OFF_SICK 0",
+          "clientWidth": 98,
+          "scrollWidth": 108
+        },
+        {
+          "tag": "div",
+          "className": "text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]",
+          "text": "OFF_SICK",
+          "clientWidth": 34,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised p-8 flex flex-col gap-4",
+          "text": "SICKNESS_LOAD 0",
+          "clientWidth": 98,
+          "scrollWidth": 163
+        },
+        {
+          "tag": "div",
+          "className": "text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]",
+          "text": "SICKNESS_LOAD",
+          "clientWidth": 34,
+          "scrollWidth": 131
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised p-8 flex flex-col gap-4",
+          "text": "LATENCY_EVENTS 0",
+          "clientWidth": 98,
+          "scrollWidth": 175
+        },
+        {
+          "tag": "div",
+          "className": "text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]",
+          "text": "LATENCY_EVENTS",
+          "clientWidth": 34,
+          "scrollWidth": 143
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Handovers",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nSHIFT HANDOVER REPORT\nSHIFT CONTINUITY\n\nPREPARING INFORMATION FOR THE NEXT SHIFT TEAM\n\n1. OPERATIONAL META-DATA\nSITE / HOUSE\nLingfield House\nChurch House\nLaurel House\nStation House\nCanterbury\nGlenfrome House\nWoburn House\nHazelbury House\nCourtney Lodge\nCottrell House\nTRANSITION\nDAY\nNIGHT\nOUTGOING\nINCOMING\nCRITICAL RED FLAGS\nCLIENTS OF CONCERN\nINCIDENT\nMEDICATION\nPERSON UPDATE\nOUTSTANDING TASK\nGENERAL\nADD ITEM\nHANDOVER PREVIEW\n0 CLINICAL NODES ACTIVE\nCOPY\nLOG\n// Report stream awaiting intelligence...",
+      "buttonCount": 29,
+      "linkCount": 0,
+      "inputCount": 6,
+      "unlabeledButtons": [
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all hc-clay-raised scale-110\"><div class=\"w-3 h-3 rounded-full bg-hc-muted\"></di",
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-20 hover:opacity-100 grayscale\"><div class=\"w-3 h-3 rounded-full bg-",
+        "<button class=\"w-10 h-10 rounded-lg flex items-center justify-center transition-all opacity-20 hover:opacity-100 grayscale\"><div class=\"w-3 h-3 rounded-full bg-"
+      ],
+      "unlabeledInputs": [
+        "<select class=\"w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner bg-transparent\"><option value=\"Lingfield H"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V SHIFT HANDOVER REPORT SH",
+          "clientWidth": 311,
+          "scrollWidth": 322
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V SHIFT HANDOVER REPORT SH",
+          "clientWidth": 311,
+          "scrollWidth": 322
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700",
+          "text": "SHIFT HANDOVER REPORT SHIFT CONTINUITY PREPARING INFORMATION FOR THE NEXT SHIFT TEAM 1. OPERATIONAL META-DATA SITE / HOU",
+          "clientWidth": 311,
+          "scrollWidth": 322
+        },
+        {
+          "tag": "div",
+          "className": "grid grid-cols-1 lg:grid-cols-5 gap-10",
+          "text": "1. OPERATIONAL META-DATA SITE / HOUSE Lingfield House Church House Laurel House Station House Canterbury Glenfrome House",
+          "clientWidth": 263,
+          "scrollWidth": 298
+        },
+        {
+          "tag": "div",
+          "className": "lg:col-span-3 space-y-10",
+          "text": "1. OPERATIONAL META-DATA SITE / HOUSE Lingfield House Church House Laurel House Station House Canterbury Glenfrome House",
+          "clientWidth": 263,
+          "scrollWidth": 298
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised p-8",
+          "text": "INCIDENT MEDICATION PERSON UPDATE OUTSTANDING TASK GENERAL ADD ITEM",
+          "clientWidth": 261,
+          "scrollWidth": 297
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col md:flex-row gap-6",
+          "text": "ADD ITEM",
+          "clientWidth": 197,
+          "scrollWidth": 265
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-row md:flex-col gap-4",
+          "text": "ADD ITEM",
+          "clientWidth": 197,
+          "scrollWidth": 265
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised overflow-hidden shadow-2xl border border-hc-teal/10",
+          "text": "HANDOVER PREVIEW 0 CLINICAL NODES ACTIVE COPY LOG // Report stream awaiting intelligence...",
+          "clientWidth": 261,
+          "scrollWidth": 311
+        },
+        {
+          "tag": "div",
+          "className": "p-8 bg-hc-teal/[0.03] border-b border-hc-border/10 flex items-center justify-between",
+          "text": "HANDOVER PREVIEW 0 CLINICAL NODES ACTIVE COPY LOG",
+          "clientWidth": 261,
+          "scrollWidth": 311
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Training & DBS",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nREGULATORY AUDIT\n\nPERSONNEL COMPLIANCE & CREDENTIALING MATRIX — CAREOPS GOVERNANCE STANDARD.\n\nNETWORK HEALTH\n0%\nMISSING DOCS\n0\nPENDING REVIEW\n0\nCLINICAL INTEGRITY AUDIT\nPERSONNEL COMPLIANCE\nEVIDENCE CONTINUITY GAPS\n0 GAPS DETECTED\nFORENSIC INTEGRITY: 100% — NO COVERAGE GAPS FOUND.\nAUDIT CONTEXT\n\nTHE SOVEREIGN CONTINUITY ENGINE SCANS CROSS-CLIENT TELEMETRY. IF ANDREW HAS A GAP, BUT SARAH WAS RECORDING NOTES FOR OTHER CLIENTS, THE SYSTEM IDENTIFIES SARAH AS THE WITNESS FOR THAT MISSING SHIFT.\n\nDATABASE SCAN RANK\nFORENSIC GRADE\nCROSS-INFERENCE\nACTIVE\nRECOVERY PROTOCOL\n\nUSE THE IDENTIFIED WITNESS LIST TO INITIATE \"LEGACY RECONSTRUCTION\" SESSIONS WITH RELEVANT PERSONNEL TO CLOSE ALL CLINICAL GAPS.",
+      "buttonCount": 18,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V REGULATORY AUDIT PERSONN",
+          "clientWidth": 311,
+          "scrollWidth": 346
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V REGULATORY AUDIT PERSONN",
+          "clientWidth": 311,
+          "scrollWidth": 346
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 max-w-[2560px] mx-auto animate-in fade-in duration-700",
+          "text": "REGULATORY AUDIT PERSONNEL COMPLIANCE & CREDENTIALING MATRIX — CAREOPS GOVERNANCE STANDARD. NETWORK HEALTH 0% MISSING DO",
+          "clientWidth": 311,
+          "scrollWidth": 346
+        },
+        {
+          "tag": "div",
+          "className": "flex gap-4 mb-12 border-b border-hc-border/10",
+          "text": "CLINICAL INTEGRITY AUDIT PERSONNEL COMPLIANCE",
+          "clientWidth": 263,
+          "scrollWidth": 322
+        },
+        {
+          "tag": "div",
+          "className": "text-[11px] font-black text-hc-teal uppercase tracking-[0.5em]",
+          "text": "FORENSIC INTEGRITY: 100% — NO COVERAGE GAPS FOUND.",
+          "clientWidth": 101,
+          "scrollWidth": 118
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Agency Cover",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nAgency Staff\n\nMonitoring shift coverage, worker bookings, and agency compliance across all houses.\n\n0\nActive Gaps\n0\nIn Scan\n0\nApproved Hubs\nSHIFT BOARD\nWORKER PIPELINE\nAGENCY LIST\nRATE CARDS\n0\nOpen Shifts\nSHIFTS NEEDING COVER\n0\nCritical Gaps\nIMMEDIATE FILL REQUIRED\n0\nConfirmed Cover\nSHIFTS FILLED\n0H\nNetwork Hours\nTOTAL HOURS BOOKED\n+ LOG NEW SHIFT\nENTIRE FEED\nOPEN\nSUBMITTED\nCONFIRMED",
+      "buttonCount": 25,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V Agency Staff Monitoring ",
+          "clientWidth": 311,
+          "scrollWidth": 541
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V Agency Staff Monitoring ",
+          "clientWidth": 311,
+          "scrollWidth": 541
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "p-6 lg:p-10 max-w-[1700px] mx-auto animate-in fade-in duration-700",
+          "text": "Agency Staff Monitoring shift coverage, worker bookings, and agency compliance across all houses. 0 Active Gaps 0 In Sca",
+          "clientWidth": 311,
+          "scrollWidth": 541
+        },
+        {
+          "tag": "div",
+          "className": "flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6",
+          "text": "Agency Staff Monitoring shift coverage, worker bookings, and agency compliance across all houses. 0 Active Gaps 0 In Sca",
+          "clientWidth": 263,
+          "scrollWidth": 392
+        },
+        {
+          "tag": "div",
+          "className": "flex gap-4",
+          "text": "0 Active Gaps 0 In Scan 0 Approved Hubs",
+          "clientWidth": 263,
+          "scrollWidth": 392
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10",
+          "text": "0 Open Shifts SHIFTS NEEDING COVER 0 Critical Gaps IMMEDIATE FILL REQUIRED 0 Confirmed Cover SHIFTS FILLED 0H Network Ho",
+          "clientWidth": 263,
+          "scrollWidth": 479
+        },
+        {
+          "tag": "div",
+          "className": "space-y-4 lg:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700",
+          "text": "0 Open Shifts SHIFTS NEEDING COVER 0 Critical Gaps IMMEDIATE FILL REQUIRED 0 Confirmed Cover SHIFTS FILLED 0H Network Ho",
+          "clientWidth": 263,
+          "scrollWidth": 479
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Open Shifts SHIFTS NEEDING COVER",
+          "clientWidth": 124,
+          "scrollWidth": 172
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Critical Gaps IMMEDIATE FILL REQUIRED",
+          "clientWidth": 124,
+          "scrollWidth": 172
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0 Confirmed Cover SHIFTS FILLED",
+          "clientWidth": 124,
+          "scrollWidth": 172
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised border border-white/5 rounded-xl lg:rounded-2xl p-4 lg:p-5 shadow-xl transition-all duration-500 hover:sc",
+          "text": "0H Network Hours TOTAL HOURS BOOKED",
+          "clientWidth": 124,
+          "scrollWidth": 172
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Action Log",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nCOMMAND VECTORS\nACTION TRACKER\n0 OPEN · 0 CRITICAL\nCOLLAPSE ALL\nNEW ACTION\nALL\n0\nOPEN\n0\nIN PROGRESS\n0\nBLOCKED\n0\nCOMPLETED\n0\nOVERDUE\n0\n🎯\nALL CLEAR\nNO ACTIONS MATCHING THIS FILTER",
+      "buttonCount": 24,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V COMMAND VECTORS ACTION T",
+          "clientWidth": 311,
+          "scrollWidth": 487
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V COMMAND VECTORS ACTION T",
+          "clientWidth": 311,
+          "scrollWidth": 487
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "min-h-screen flex flex-col animate-in fade-in duration-500",
+          "text": "COMMAND VECTORS ACTION TRACKER 0 OPEN · 0 CRITICAL COLLAPSE ALL NEW ACTION ALL 0 OPEN 0 IN PROGRESS 0 BLOCKED 0 COMPLETE",
+          "clientWidth": 311,
+          "scrollWidth": 487
+        },
+        {
+          "tag": "div",
+          "className": "shrink-0 border-b border-hc-border/30 px-8 py-6 flex items-center justify-between gap-8",
+          "text": "COMMAND VECTORS ACTION TRACKER 0 OPEN · 0 CRITICAL COLLAPSE ALL NEW ACTION",
+          "clientWidth": 311,
+          "scrollWidth": 487
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Incidents",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF DIRECTORY\nHANDOVERS\nTRAINING & DBS\nAGENCY COVER\nACTION LOG\nINCIDENTS\nBUILD INDEX-DK3BS_1V\nSTABILITY VECTOR HUB\nSTATION_STATUS:\nOPERATIONAL // ENFORCED\nVECTOR_LOAD:\n0 ACTIVE\nCRITICAL_FAULTS:\n0 INTERCEPTS\nSYS_REF: NC-STB-001\n1: INGESTED / LOGGED\n0\nZERO_VECTORS\n2: CLINICAL INVESTIGATION\n0\nZERO_VECTORS\n3: INTERNAL RESOLUTION\n0\nZERO_VECTORS\n4: STATUTORY REPORTING\n0\nZERO_VECTORS\n5: FORENSIC ARCHIVE\n0\nZERO_VECTORS",
+      "buttonCount": 16,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "main",
+          "className": "flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V STABILITY VECTOR HUB STA",
+          "clientWidth": 311,
+          "scrollWidth": 571
+        },
+        {
+          "tag": "div",
+          "className": "relative z-10 w-full min-h-screen ",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS BUILD INDEX-DK3BS_1V STABILITY VECTOR HUB STA",
+          "clientWidth": 311,
+          "scrollWidth": 571
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF DIRECTORY HANDOVERS TRAINING & DBS AGENCY COVER ACTION LOG INCIDENTS",
+          "clientWidth": 104,
+          "scrollWidth": 698
+        },
+        {
+          "tag": "div",
+          "className": "min-h-screen flex flex-col bg-transparent text-hc-text font-mono",
+          "text": "STABILITY VECTOR HUB STATION_STATUS: OPERATIONAL // ENFORCED VECTOR_LOAD: 0 ACTIVE CRITICAL_FAULTS: 0 INTERCEPTS SYS_REF",
+          "clientWidth": 311,
+          "scrollWidth": 571
+        },
+        {
+          "tag": "div",
+          "className": "flex-none p-4 lg:p-6 border-b border-hc-border hc-clay-raised",
+          "text": "STABILITY VECTOR HUB STATION_STATUS: OPERATIONAL // ENFORCED VECTOR_LOAD: 0 ACTIVE CRITICAL_FAULTS: 0 INTERCEPTS SYS_REF",
+          "clientWidth": 309,
+          "scrollWidth": 570
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center justify-between",
+          "text": "STABILITY VECTOR HUB STATION_STATUS: OPERATIONAL // ENFORCED VECTOR_LOAD: 0 ACTIVE CRITICAL_FAULTS: 0 INTERCEPTS SYS_REF",
+          "clientWidth": 277,
+          "scrollWidth": 554
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 flex overflow-x-auto overflow-y-hidden p-4 gap-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transpa",
+          "text": "1: INGESTED / LOGGED 0 ZERO_VECTORS 2: CLINICAL INVESTIGATION 0 ZERO_VECTORS 3: INTERNAL RESOLUTION 0 ZERO_VECTORS 4: ST",
+          "clientWidth": 311,
+          "scrollWidth": 1696
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Staff Note",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nDICTATION STUDIO\nOPEN NOTE WORKSPACE\nOPEN BUILDER TEMPLATES\nINTELLIGENCE PROTOCOL ASSEMBLER\nACTIVE STACK: NONE LOADED\nLOAD INTELLIGENCE STACK\nINTELLIGENCE INPUT STREAM\nUK English (UK)\nUS English (US)\nIE English (Ireland)\nFR French\nES Spanish\nDE German\nIT Italian\nPT Portuguese\nPL Polish\nRO Romanian\nAR Arabic\nHI Hindi\nBN Bengali (Bangladesh)\nUR Urdu\nPA Punjabi\nGU Gujarati\nTA Tamil\nTE Telugu\nMR Marathi\nNE Nepali\nYO Yoruba\nIG Igbo\nSW Swahili\nSN Shona\nUK DICTATE\nGOLDEN STRUCTURE CHECK\n13% STANDARD\nMISSING TIME OR SHIFT POINT\nMISSING WHO WAS INVOLVED\nMISSING WHAT HAPPENED\nMISSING WHY SUPPORT WAS NEEDED\nMISSING HOW SUPPORT WAS PROVIDED\nMISSING OUTCOME OR ENDING\nASSEMBLE GOLD STANDARD NARRATIVE\nSTANDARDISED OUTPUT MATRIX\n",
+      "buttonCount": 22,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<select class=\"bg-transparent text-[10px] font-black uppercase tracking-widest text-hc-text outline-none\"><option value=\"en-GB\">UK English (UK)</option><option "
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF NOTE NOTE WORKSPACE WRITING COACH TEMPLATES COMMS",
+          "clientWidth": 104,
+          "scrollWidth": 551
+        },
+        {
+          "tag": "div",
+          "className": "mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl",
+          "text": "INTELLIGENCE PROTOCOL ASSEMBLER ACTIVE STACK: NONE LOADED LOAD INTELLIGENCE STACK INTELLIGENCE INPUT STREAM UK English (",
+          "clientWidth": 261,
+          "scrollWidth": 333
+        },
+        {
+          "tag": "div",
+          "className": "bg-hc-teal px-8 py-5 flex items-center justify-between",
+          "text": "INTELLIGENCE PROTOCOL ASSEMBLER ACTIVE STACK: NONE LOADED LOAD INTELLIGENCE STACK",
+          "clientWidth": 261,
+          "scrollWidth": 333
+        },
+        {
+          "tag": "div",
+          "className": "grid grid-cols-1 lg:grid-cols-2 divide-x divide-hc-border/20 p-2",
+          "text": "INTELLIGENCE INPUT STREAM UK English (UK) US English (US) IE English (Ireland) FR French ES Spanish DE German IT Italian",
+          "clientWidth": 261,
+          "scrollWidth": 274
+        },
+        {
+          "tag": "div",
+          "className": "p-8 space-y-6",
+          "text": "INTELLIGENCE INPUT STREAM UK English (UK) US English (US) IE English (Ireland) FR French ES Spanish DE German IT Italian",
+          "clientWidth": 244,
+          "scrollWidth": 266
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center justify-between gap-4 flex-wrap",
+          "text": "INTELLIGENCE INPUT STREAM UK English (UK) US English (US) IE English (Ireland) FR French ES Spanish DE German IT Italian",
+          "clientWidth": 180,
+          "scrollWidth": 234
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Note Workspace",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\n0 CLIENTS\nIMPORT CSV / EXCEL\nNO DATA LOADED\nImport a diary CSV or ZIP to begin\nALL CLIENTS\nNOTE WORKSPACE\n\n0 ENTRIES IN VIEW\n\nALL TIME\nTHIS WEEK\nLAST WEEK\nTHIS MONTH\nLAST MONTH\nCUSTOM\n0 in range\nSHOW GOLD STANDARD ASSISTANT\nIMPORT A DIARY EXPORT TO BEGIN\n\nSUPPORTS CSV, EXCEL, PDF, ZIP — ONE IMPORT COVERS ALL CLIENTS\n\nENTRY DENSITY:\n0 Records\nCONTINUITY GAPS: 0",
+      "buttonCount": 23,
+      "linkCount": 0,
+      "inputCount": 2,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [
+        "<input id=\"workspace-upload\" class=\"hidden\" type=\"file\" style=\"\">"
+      ],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF NOTE NOTE WORKSPACE WRITING COACH TEMPLATES COMMS",
+          "clientWidth": 104,
+          "scrollWidth": 551
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 flex flex-col overflow-hidden",
+          "text": "ALL CLIENTS NOTE WORKSPACE 0 ENTRIES IN VIEW ALL TIME THIS WEEK LAST WEEK THIS MONTH LAST MONTH CUSTOM 0 in range SHOW G",
+          "clientWidth": 23,
+          "scrollWidth": 242
+        },
+        {
+          "tag": "div",
+          "className": "px-8 py-5 border-b border-hc-border/20 flex items-center justify-between gap-6 shrink-0",
+          "text": "ALL CLIENTS NOTE WORKSPACE 0 ENTRIES IN VIEW",
+          "clientWidth": 64,
+          "scrollWidth": 242
+        },
+        {
+          "tag": "div",
+          "className": "px-8 py-4 border-b border-hc-border/20 flex flex-col gap-4 shrink-0 bg-hc-bg/80 backdrop-blur-xl sticky top-0 z-40 shado",
+          "text": "ALL TIME THIS WEEK LAST WEEK THIS MONTH LAST MONTH CUSTOM 0 in range SHOW GOLD STANDARD ASSISTANT",
+          "clientWidth": 64,
+          "scrollWidth": 121
+        },
+        {
+          "tag": "div",
+          "className": "hc-clay-raised rounded-2xl flex flex-wrap items-center gap-3 p-3",
+          "text": "ALL TIME THIS WEEK LAST WEEK THIS MONTH LAST MONTH CUSTOM 0 in range",
+          "clientWidth": 24,
+          "scrollWidth": 88
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative scroll-smooth",
+          "text": "IMPORT A DIARY EXPORT TO BEGIN SUPPORTS CSV, EXCEL, PDF, ZIP — ONE IMPORT COVERS ALL CLIENTS ENTRY DENSITY: 0 Records CO",
+          "clientWidth": 64,
+          "scrollWidth": 288
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-6 mb-8 px-4",
+          "text": "ENTRY DENSITY: 0 Records CONTINUITY GAPS: 0",
+          "clientWidth": 32,
+          "scrollWidth": 256
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Writing Coach",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nSTAFF WRITING COACH | PRACTICE ARENA\nDOCUMENTATION\nOR MALPRACTICE?\n\nPRACTICE SAFER, CLEARER SUPPORT NOTES BEFORE THEY BECOME PART OF A FORMAL RECORD.\n\nA\nATTRIBUTABLE\n\nWHO DID IT? IS THE CARER IDENTITY CLEAR?\n\nL\nLEGIBLE\n\nIS THE NARRATIVE CLEAR AND PROFESSIONAL?\n\nC\nCONTEMPORANEOUS\n\nIS THE TIMING OF EVENTS RECORDED PRECISELY?\n\nO\nORIGINAL\n\nIS IT AN UNIQUE OBSERVATION, NOT JUST A COPY-PASTE?\n\nA\nACCURATE\n\nDOES IT REFLECT THE CLINICAL REALITY AND RISKS?\n\nDOCUMENTATION ARENA\nWRITE YOUR RAW SHIFT NOTE HERE:\nREVIEW THIS NOTE\nPRACTICE CASE STUDIES\nMEDICATION REFUSAL\n\nPrompted him to use his inhaler, which he refused.\n\nBEHAVIORAL INCIDENT\n\nJamie was angry and shouted at staff. We stayed away.\n\nCOMMUNITY ACCESS\n\nWent to the sh",
+      "buttonCount": 19,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF NOTE NOTE WORKSPACE WRITING COACH TEMPLATES COMMS",
+          "clientWidth": 104,
+          "scrollWidth": 551
+        },
+        {
+          "tag": "div",
+          "className": "bg-[#0f172a] text-white py-16 px-8 relative overflow-hidden",
+          "text": "STAFF WRITING COACH | PRACTICE ARENA DOCUMENTATION OR MALPRACTICE? PRACTICE SAFER, CLEARER SUPPORT NOTES BEFORE THEY BEC",
+          "clientWidth": 311,
+          "scrollWidth": 442
+        },
+        {
+          "tag": "div",
+          "className": "max-w-6xl mx-auto relative z-10",
+          "text": "STAFF WRITING COACH | PRACTICE ARENA DOCUMENTATION OR MALPRACTICE? PRACTICE SAFER, CLEARER SUPPORT NOTES BEFORE THEY BEC",
+          "clientWidth": 247,
+          "scrollWidth": 410
+        },
+        {
+          "tag": "h1",
+          "className": "text-5xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-4",
+          "text": "DOCUMENTATION OR MALPRACTICE?",
+          "clientWidth": 247,
+          "scrollWidth": 410
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center justify-between",
+          "text": "DOCUMENTATION ARENA",
+          "clientWidth": 181,
+          "scrollWidth": 195
+        },
+        {
+          "tag": "p",
+          "className": "text-[11px] text-hc-muted truncate",
+          "text": "Prompted him to use his inhaler, which he refused.",
+          "clientWidth": 155,
+          "scrollWidth": 245
+        },
+        {
+          "tag": "p",
+          "className": "text-[11px] text-hc-muted truncate",
+          "text": "Jamie was angry and shouted at staff. We stayed away.",
+          "clientWidth": 155,
+          "scrollWidth": 265
+        },
+        {
+          "tag": "p",
+          "className": "text-[11px] text-hc-muted truncate",
+          "text": "Went to the shop and bought snacks. Came back fine.",
+          "clientWidth": 155,
+          "scrollWidth": 261
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Templates",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "STAFF NOTE\nNOTE WORKSPACE\nWRITING COACH\nTEMPLATES\nCOMMS\nBUILD INDEX-DK3BS_1V\nSYNTHESIS MATRIX\nDOCUMENT ASSEMBLY STATION\n22 PROTOCOLS LOADED\nPROTOCOL SELECTION\nOPERATIONAL QUALITY SITREP\nFRIDAY WEEKLY OPS REVIEW\nMORNING VECTOR BRIEFING\nMORNING OPS BRIEFING\nINCIDENT LOG & ANALYSIS\nINDIVIDUAL INCIDENT DOCUMENTATION\nUNIT ROTATION HANDOVER\nNIGHT/DAY SHIFT HANDOVER\nPERSONNEL READINESS AUDIT\nSTAFF 1:1 SUPERVISION NOTES\nTRUST & SAFETY INTERCEPT\nSAFEGUARDING CONCERN DOCUMENTATION\nPHARMACOLOGICAL AUDIT\nMEDICATION REVIEW & AUDIT\nFISCAL OPERATIONS REVIEW\nBUDGET & FINANCE REVIEW\nCLIENT STABILITY REVIEW\nCLIENT CARE PLAN REVIEW\nFEEDBACK & RECTIFICATION\nCOMPLAINTS & CONCERNS LOG\nSTATUTORY COMPLIANCE\nCQC REGULATORY DOCUMENTATION\nUNIT TEAM BRIEFING\nHOUSE-LEVEL TEAM MEETING\nFAMILY FEEDBACK MATRIX\nCLIENT & FA",
+      "buttonCount": 37,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "STAFF NOTE NOTE WORKSPACE WRITING COACH TEMPLATES COMMS",
+          "clientWidth": 104,
+          "scrollWidth": 551
+        },
+        {
+          "tag": "div",
+          "className": "flex-1 flex flex-col overflow-hidden",
+          "text": "📄 SELECT A TEMPLATE TO SYNTHESISE",
+          "clientWidth": 23,
+          "scrollWidth": 71
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Settings",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "SETTINGS\nREGIONAL OVERVIEW\nBUILD INDEX-DK3BS_1V\nSECURITY VAULT\n\nAUTHORISATION REQUIRED FOR SYSTEM CORE\n\nUNLOCK SOVEREIGN CORE\nE2E FIELD-LOCKED ENCRYPTION",
+      "buttonCount": 13,
+      "linkCount": 0,
+      "inputCount": 1,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "SETTINGS REGIONAL OVERVIEW",
+          "clientWidth": 104,
+          "scrollWidth": 242
+        }
+      ],
+      "ok": true
+    },
+    {
+      "label": "Admin & Backup",
+      "viewportName": "mobile",
+      "ok": false,
+      "reason": "nav item not found"
+    },
+    {
+      "label": "Regional Overview",
+      "viewportName": "mobile",
+      "url": "https://hazelcare-ops.vercel.app/CareOps",
+      "title": "CareOps",
+      "textStart": "SETTINGS\nREGIONAL OVERVIEW\nBUILD INDEX-DK3BS_1V\nMULTI-SITE GOVERNANCE\nEMPIRE MATRIX\n\nCROSS-SITE QUALITY INTELLIGENCE · 0 SITES IN SCOPE\n\nLIVE · 0 PERSONNEL SCORED\nACTIVE SITES\n0\nINTEL STREAMS\n0\nPERSONNEL SCORED\n0\nAVG DOC QUALITY\n0%\nSITES CRITICAL\n0\nSITES UNDER REVIEW\n0\nSITE PERFORMANCE LEAGUE · RANKED BY RISK\nREGIONAL QUALITY OVERVIEW · SOURCED FROM STAFF MONITORING",
+      "buttonCount": 12,
+      "linkCount": 0,
+      "inputCount": 0,
+      "unlabeledButtons": [],
+      "unlabeledInputs": [],
+      "badLinks": [],
+      "horizontalOverflow": false,
+      "viewportWidth": 375,
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "div",
+          "className": "h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative w-16 sm:w-20",
+          "text": "",
+          "clientWidth": 64,
+          "scrollWidth": 76
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 flex-col",
+          "text": "",
+          "clientWidth": 22,
+          "scrollWidth": 31
+        },
+        {
+          "tag": "div",
+          "className": "flex items-center gap-2 overflow-x-auto scrollbar-none flex-1",
+          "text": "SETTINGS REGIONAL OVERVIEW",
+          "clientWidth": 104,
+          "scrollWidth": 242
+        }
+      ],
+      "ok": true
+    }
+  ],
+  "finishedAt": "2026-05-24T15:21:41.584Z"
+}

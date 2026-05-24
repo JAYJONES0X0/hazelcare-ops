@@ -35,19 +35,19 @@ function extractSupportPlanCandidate(rawText: string, fileName: string): string 
     if (cleaned && !/^prepared for$/i.test(cleaned)) return cleaned;
   }
 
-  const personNameHeader = rawText.match(/person\s*name\s*[:\-]\s*([A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){1,3})\s+person\s*id/i);
+  const personNameHeader = rawText.match(/person\s*name\s*[:-]\s*([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})\s+person\s*id/i);
   if (personNameHeader?.[1]) {
     const cleaned = cleanCandidateName(personNameHeader[1]);
     if (cleaned) return cleaned;
   }
 
-  const nameKnownAs = rawText.match(/\bname\s+(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){1,3})\s+known\s+as\b/i);
+  const nameKnownAs = rawText.match(/\bname\s+(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})\s+known\s+as\b/i);
   if (nameKnownAs?.[1]) {
     const cleaned = cleanCandidateName(nameKnownAs[1]);
     if (cleaned) return cleaned;
   }
 
-  const serviceUser = rawText.match(/service\s*user\s*name\s+([A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){1,3})(?=\s+(date\s*of\s*birth|dob|address|nhs)\b|$)/i);
+  const serviceUser = rawText.match(/service\s*user\s*name\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})(?=\s+(date\s*of\s*birth|dob|address|nhs)\b|$)/i);
   if (serviceUser?.[1]) {
     const cleaned = cleanCandidateName(serviceUser[1]);
     if (cleaned) return cleaned;
@@ -65,7 +65,7 @@ function extractSupportPlanCandidate(rawText: string, fileName: string): string 
     if (cleaned) return cleaned;
   }
 
-  const fullNameRow = rawText.match(/full\s*name[\s:\-]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)(?=\s+(date|dob|nhs|gender|deceased)\b|$)/i);
+  const fullNameRow = rawText.match(/full\s*name[\s:-]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)(?=\s+(date|dob|nhs|gender|deceased)\b|$)/i);
   if (fullNameRow?.[1]) {
     const cleaned = cleanCandidateName(fullNameRow[1]);
     if (cleaned) return cleaned;
@@ -84,8 +84,8 @@ function looksLikeDelimitedDiaryText(rawText: string): boolean {
   if (lines.length < 3) return false;
 
   const delimiters: Array<',' | '|' | '\t'> = [',', '|', '\t'];
-  const diaryHeaders = /(date|entry|note|notes|carer|client|house|time|type)\b/i;
-  const leadingDateRows = lines.filter((line) => /^\s*\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}(\s*[,|\t]|\s*$)/.test(line) || /^\s*date\s*[,|\t]/i.test(line)).length;
+  const diaryHeaders = /(date|entry|note|notes|carer|client|house|time|type|comment|body|text|timestamp|tag|personnel|subject|patient)\b/i;
+  const leadingDateRows = lines.filter((line) => /^\s*\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}(\s*[,|\t]|\s*$)/.test(line) || /^\s*date\s*[,|\t]/i.test(line)).length;
 
   for (const delimiter of delimiters) {
     const delimiterLines = lines.filter((line) => line.includes(delimiter));

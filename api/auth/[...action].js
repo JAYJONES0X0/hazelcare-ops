@@ -1,8 +1,8 @@
 import crypto from 'crypto';
-import { attachHcSessionCookie } from '../_lib/attach-session.js';
-import { getAllowedLoginEmails, isLoginEmailAllowed } from '../_lib/auth-login-allowlist.js';
+import { attachHcSessionCookie, attachHcSessionCookieWithClaims } from '../_lib/attach-session.js';
+import { getAllowedLoginEmails, getRoleForLoginEmail, isLoginEmailAllowed } from '../_lib/auth-login-allowlist.js';
 import { consumeOnce } from '../_lib/durable-once.js';
-import { HC_SESSION_COOKIE, verifyHcSession, secureCookieSuffix } from '../_lib/hc-session.js';
+import { HC_SESSION_COOKIE, readHcSessionClaims, verifyHcSession, secureCookieSuffix } from '../_lib/hc-session.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
 import { STAFF_SAC_COOKIE, verifyAnyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 
@@ -19,6 +19,13 @@ const RECOVERY_CODES = (process.env.AUTH_RECOVERY_CODES || '')
   .filter(Boolean);
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET || '';
+const AUTH_DEFAULT_ROLE = (process.env.AUTH_DEFAULT_ROLE || 'manager').toLowerCase();
+const VALID_ROLES = new Set(['admin', 'manager', 'senior', 'viewer']);
+
+function sanitizeRole(role) {
+  const r = String(role || '').trim().toLowerCase();
+  return VALID_ROLES.has(r) ? r : 'manager';
+}
 
 const rateLimitBuckets = new Map();
 
@@ -169,8 +176,9 @@ async function handleLogin(req, res) {
   if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
   if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false, recognized: true, error: 'Incorrect password' });
 
-  attachHcSessionCookie(res);
-  return res.json({ ok: true, skip2fa: AUTH_EMERGENCY_BYPASS });
+  const mappedRole = sanitizeRole(getRoleForLoginEmail(normalizedEmail, AUTH_DEFAULT_ROLE));
+  attachHcSessionCookieWithClaims(res, { email: normalizedEmail, role: mappedRole });
+  return res.json({ ok: true, skip2fa: AUTH_EMERGENCY_BYPASS, role: mappedRole, email: normalizedEmail });
 }
 
 async function handleSendCode(req, res) {
@@ -291,6 +299,7 @@ async function handleSession(req, res) {
   }
 
   const cookies = parseCookies(req);
+  const claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Surrogate-Control', 'no-store');
   res.setHeader('Pragma', 'no-cache');
@@ -298,8 +307,10 @@ async function handleSession(req, res) {
   res.setHeader('Vary', 'Origin, Cookie');
 
   return res.json({
-    authed: verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET),
+    authed: !!claims,
     staffScoped: verifyAnyStaffSacCookie(cookies[STAFF_SAC_COOKIE], STAFF_LINK_SECRET),
+    role: claims?.role ? sanitizeRole(claims.role) : sanitizeRole(AUTH_DEFAULT_ROLE),
+    email: claims?.email || '',
   });
 }
 

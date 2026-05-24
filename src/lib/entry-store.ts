@@ -44,6 +44,36 @@ function fingerprint(e: CareEntry): string {
     .join('|').toLowerCase().trim();
 }
 
+function asText(value: unknown): string {
+  return typeof value === 'string' ? value : value == null ? '' : String(value);
+}
+
+function normalizeStoredEntry(value: unknown): CareEntry | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Partial<CareEntry> & Record<string, unknown>;
+  const id = asText(raw.id);
+  const entry = asText(raw.entry);
+  if (!id || !entry) return null;
+  const severity = raw.severity === 'red' || raw.severity === 'amber' || raw.severity === 'green' || raw.severity === 'none'
+    ? raw.severity
+    : 'none';
+  const category = typeof raw.category === 'string' ? raw.category : 'other';
+  return {
+    ...raw,
+    id,
+    date: asText(raw.date),
+    time: asText(raw.time),
+    type: asText(raw.type),
+    house: asText(raw.house),
+    carer: asText(raw.carer),
+    client: asText(raw.client),
+    entry,
+    category: category as CareEntry['category'],
+    severity,
+    flags: Array.isArray(raw.flags) ? raw.flags.map(asText).filter(Boolean) : [],
+  } as CareEntry;
+}
+
 // ─── ASYNC API ─────────────────────────────────────────────────────────────────
 
 export async function getAllEntriesAsync(): Promise<CareEntry[]> {
@@ -53,7 +83,7 @@ export async function getAllEntriesAsync(): Promise<CareEntry[]> {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const req = tx.objectStore(STORE_NAME).getAll();
       req.onsuccess = () => {
-        const all = (req.result as CareEntry[]).sort(
+        const all = (req.result as unknown[]).map(normalizeStoredEntry).filter((x): x is CareEntry => !!x).sort(
           (a, b) => parseDateMs(b.date) - parseDateMs(a.date)
         );
         resolve(all);
@@ -178,7 +208,9 @@ export function getAllEntries(): CareEntry[] {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return [];
-    return (JSON.parse(raw) as CareEntry[]).sort(
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeStoredEntry).filter((x): x is CareEntry => !!x).sort(
       (a, b) => parseDateMs(b.date) - parseDateMs(a.date)
     );
   } catch { return []; }

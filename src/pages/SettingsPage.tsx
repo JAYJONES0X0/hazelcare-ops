@@ -61,7 +61,12 @@ function useImageUpload(storageKey: string) {
 function OrgSection() {
   const [form, setForm] = useState<OrgSettingsOverride>(() => loadRawOrgSettings());
   const [saved, setSaved] = useState(false);
-  const logo = useImageUpload('hc-org-logo');
+  const {
+    src: logoSrc,
+    inputRef: logoInputRef,
+    handleFile: handleLogoFile,
+    clear: clearLogo,
+  } = useImageUpload('hc-org-logo');
 
   const fields: { key: keyof OrgSettingsOverride; label: string; placeholder: string }[] = [
     { key: 'name', label: 'Organisation Name', placeholder: ORG_CONFIG.name },
@@ -92,20 +97,20 @@ function OrgSection() {
         </div>
         <div className="flex items-center gap-6">
           <div className="w-20 h-20 rounded-2xl hc-clay-inset flex items-center justify-center overflow-hidden shrink-0">
-            {logo.src
-              ? <img src={logo.src} alt="Logo" className="w-full h-full object-contain p-2" />
+            {logoSrc
+              ? <img src={logoSrc} alt="Logo" className="w-full h-full object-contain p-2" />
               : <img src={ORG_CONFIG.logoIcon} alt="Logo" className="w-10 h-10 opacity-40" />
             }
           </div>
           <div className="flex flex-col gap-3 flex-1">
-            <input ref={logo.inputRef} type="file" accept="image/*" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) logo.handleFile(f); }} />
-            <button onClick={() => logo.inputRef.current?.click()}
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoFile(f); }} />
+            <button onClick={() => logoInputRef.current?.click()}
               className="px-6 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-fit">
               <Upload size={13} /> Upload Logo
             </button>
-            {logo.src && (
-              <button onClick={logo.clear}
+            {logoSrc && (
+              <button onClick={clearLogo}
                 className="px-6 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-flag-red border border-flag-red/20 hover:bg-flag-red/5 transition-all w-fit">
                 Remove
               </button>

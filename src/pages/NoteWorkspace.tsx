@@ -11,8 +11,16 @@ import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
 import { loadClients, saveClient, emptyClient, type FullClient, type VaultDoc } from '../lib/client-store';
 import { buildShiftContext, computeCoverageSummary, loadCoveragePlan, clearCoveragePlan, SUPPORT_HOUR_CAP, type CoveragePlan } from '../lib/coverage-plan';
 import { splitEvidenceTrail } from '../lib/evidence-trail';
+import { assessNoteStandard, buildProfessionalNoteDirective } from '../lib/note-quality-standard';
+import { buildOsIntelligenceContextFromState } from '../lib/os-intelligence-context';
+import { getAllRosterShifts, type RosterShift } from '../lib/roster-store';
 
 const INTERNAL_TEMPLATES = [
+  {
+    id: 'hazel-golden-structure',
+    name: 'Hazel Golden Structure',
+    content: buildProfessionalNoteDirective()
+  },
   {
     id: 'narrative-v2',
     name: 'Story-Led Narrative',
@@ -137,6 +145,29 @@ function summariseVaultBriefing(docs: VaultDoc[]): string {
   return `Vault docs: ${docs.length} file${docs.length === 1 ? '' : 's'} · ${preview}${suffix}`;
 }
 
+function loadUserTemplates(): { name: string; content: string }[] {
+  try {
+    const saved = localStorage.getItem('hc_user_templates');
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is { name: string; content: string } => (
+      item
+      && typeof item.name === 'string'
+      && typeof item.content === 'string'
+    ));
+  } catch {
+    try { localStorage.removeItem('hc_user_templates'); } catch { /* ignore */ }
+    return [];
+  }
+}
+
+function saveUserTemplates(templates: { name: string; content: string }[]) {
+  try {
+    localStorage.setItem('hc_user_templates', JSON.stringify(templates));
+  } catch { /* ignore local persistence failures */ }
+}
+
 export function NoteWorkspace() {
   const [importLoading, setImportLoading] = useState(false);
   const [importInfo, setImportInfo] = useState('');
@@ -150,23 +181,36 @@ export function NoteWorkspace() {
   const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [goldTemplate, setGoldTemplate] = useState('');
   const [showGoldSuite, setShowGoldSuite] = useState(false);
-  const [userTemplates, setUserTemplates] = useState<{name: string, content: string}[]>(() => {
-    const saved = localStorage.getItem('hc_user_templates');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [userTemplates, setUserTemplates] = useState<{name: string, content: string}[]>(loadUserTemplates);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
+    // Fail-safe: never block the full workspace UI indefinitely on hydration.
+    const bootGuard = window.setTimeout(() => {
+      if (alive) setBooting(false);
+    }, 2500);
+
     void getAllEntriesAsync().then(rows => {
       if (!alive) return;
       setEntries(rows);
       setBooting(false);
+    }).catch(() => {
+      if (alive) setBooting(false);
     });
-    void getStoreBoundsAsync().then(b => { if (alive) setStoreBounds(b); });
-    return () => { alive = false; };
+    void getStoreBoundsAsync()
+      .then(b => { if (alive) setStoreBounds(b); })
+      .catch(() => { if (alive) setStoreBounds(null); });
+    void getAllRosterShifts()
+      .then(shifts => { if (alive) setRosterShifts(shifts); })
+      .catch(() => { if (alive) setRosterShifts([]); });
+    return () => {
+      alive = false;
+      window.clearTimeout(bootGuard);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -205,6 +249,7 @@ export function NoteWorkspace() {
   const [displayCount, setDisplayCount] = useState(30);
   const [clientProfile, setClientProfile] = useState<FullClient | null>(null);
   const [coveragePlan, setCoveragePlan] = useState<CoveragePlan | null>(() => loadCoveragePlan());
+  const [rosterShifts, setRosterShifts] = useState<RosterShift[]>([]);
   const hasVaultContext = Boolean(clientProfile?.vaultDocs?.length || clientProfile?.clinicalBriefing);
 
   // Reload client profile whenever selection changes
@@ -493,14 +538,26 @@ export function NoteWorkspace() {
   const runRewrite = async (entryKey: string, text: string, clientName: string, refineInstructions?: string) => {
     const clients = loadClients();
     const profile = clients.find(c => c.name.toLowerCase().trim() === clientName.toLowerCase().trim());
-    const intelContext = profile ? buildClientIntelContext(profile, 72_000) : '';
 
     const entry = entries.find(e => e.id === entryKey);
+    const intelContext = buildOsIntelligenceContextFromState({
+      clientName,
+      entry,
+      entries,
+      clientProfile: profile || null,
+      rosterShifts,
+      refineInstructions,
+      maxChars: 72_000,
+    });
     let finalInstructions = refineInstructions || '';
+    finalInstructions = [
+      buildProfessionalNoteDirective(clientName),
+      finalInstructions,
+    ].filter(Boolean).join('\n\n');
     if (entry && (entry.carer.toLowerCase().includes('region') || entry.carer.toLowerCase().includes('unassigned'))) {
-      const rostered = activeRoster
-        .filter(s => s.date === entry.date && (s.staffId || s.id))
-        .map(s => s.staffId || 'Unknown Carer');
+      const rostered = (rosterShifts.length ? rosterShifts : activeRoster)
+        .filter(s => s.date === entry.date && ((s as any).staffId || (s as any).id || ((s as any).carers?.length)))
+        .flatMap(s => (Array.isArray((s as any).carers) && (s as any).carers.length) ? (s as any).carers : [(s as any).staffId || 'Unknown Carer']);
       if (rostered.length > 0) {
         finalInstructions = `${finalInstructions}\nNOTE: The original record lists a generic carer ('${entry.carer}'), but the official roster for this date (${entry.date}) indicates the staff member on shift was: ${rostered.join(', ')}. Please update the narrative to reflect the correct personnel identity in the first person.`.trim();
       }
@@ -578,7 +635,14 @@ export function NoteWorkspace() {
 
     const clients = loadClients();
     const profile = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
-    const clinicalContext = profile ? buildClientIntelContext(profile, 55_000) : '';
+    const clinicalContext = buildOsIntelligenceContextFromState({
+      clientName: client,
+      entry: null,
+      entries,
+      clientProfile: profile || null,
+      rosterShifts,
+      maxChars: 55_000,
+    });
 
     const shiftContextRaw = ghostContextMap[gapId]?.trim() || '';
     
@@ -709,7 +773,7 @@ export function NoteWorkspace() {
     return [...selected];
   };
 
-  const useSuggestedLinks = (groupEntries: CareEntry[]) => {
+  const applySuggestedLinks = (groupEntries: CareEntry[]) => {
     const suggested = getSuggestedLinkedIds(groupEntries);
     if (suggested.length < 2) return;
     setLinkedEntryIds(prev => {
@@ -862,7 +926,7 @@ export function NoteWorkspace() {
     if (!goldTemplate || !newTemplateName) return;
     const updated = [...userTemplates, { name: newTemplateName, content: goldTemplate }];
     setUserTemplates(updated);
-    localStorage.setItem('hc_user_templates', JSON.stringify(updated));
+    saveUserTemplates(updated);
     setNewTemplateName('');
     setShowTemplateMenu(false);
   };
@@ -870,7 +934,7 @@ export function NoteWorkspace() {
   const deleteUserTemplate = (index: number) => {
     const updated = userTemplates.filter((_, i) => i !== index);
     setUserTemplates(updated);
-    localStorage.setItem('hc_user_templates', JSON.stringify(updated));
+    saveUserTemplates(updated);
   };
 
   const hasData = entries.length > 0;
@@ -925,7 +989,7 @@ export function NoteWorkspace() {
 
         {/* Client list */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          {booting ? (
+          {booting && hasData ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-hc-muted text-center animate-pulse">
               <Sparkles className="w-10 h-10 text-hc-teal/40 mb-4 animate-spin-slow" />
               <div className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Hydrating...</div>
@@ -1236,15 +1300,14 @@ export function NoteWorkspace() {
           className="flex-1 overflow-y-auto scrollbar-thin p-8 space-y-6 relative scroll-smooth"
         >
           {booting && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
-                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Booting Intelligence Matrix</div>
-                <div className="text-[10px] text-hc-muted uppercase mt-2">Hydrating 13,000+ clinical records</div>
+            <div className="sticky top-2 z-30 flex justify-center pointer-events-none">
+              <div className="hc-clay-raised px-4 py-2 rounded-xl flex items-center gap-2">
+                <div className="w-3.5 h-3.5 border-2 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin" />
+                <div className="text-[10px] font-black text-hc-teal uppercase tracking-widest">Hydrating records in background...</div>
               </div>
             </div>
           )}
-          {!booting && !hasData && (
+          {!hasData && (
             <div className="flex flex-col items-center justify-center h-full text-hc-muted text-center">
               <FileText className="w-16 h-16 text-hc-muted mb-6" />
               <div className="text-sm font-black text-hc-text uppercase tracking-[0.2em]">Import a diary export to begin</div>
@@ -1560,6 +1623,7 @@ export function NoteWorkspace() {
             const suggestedLinkedIds = sameDay ? getSuggestedLinkedIds(sameDay.entries) : [];
             const hasSuggested = suggestedLinkedIds.length > 1;
             const isMergeActionLoading = mergeActionLoadingMap[key];
+            const noteAssessment = assessNoteStandard(e.entry || '');
             const bestId = sameDay
               ? sameDay.entries.slice().sort((a, b) => scoreEntryQuality(b) - scoreEntryQuality(a))[0]?.id
               : null;
@@ -1598,6 +1662,15 @@ export function NoteWorkspace() {
                     )}
                     {e.severity === 'red' && <span className="pill pill-red text-[11px] font-black px-2.5 py-1">FLAG</span>}
                     {e.severity === 'amber' && <span className="pill pill-amber text-[11px] font-black px-2.5 py-1">AMBER</span>}
+                    <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${
+                      noteAssessment.status === 'strong'
+                        ? 'bg-flag-green/10 text-flag-green border border-flag-green/20'
+                        : noteAssessment.status === 'needs-review'
+                          ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/20'
+                          : 'bg-flag-red/10 text-flag-red border border-flag-red/20'
+                    }`}>
+                      {noteAssessment.score}% note
+                    </span>
                   </div>
                 </div>
 
@@ -1624,7 +1697,7 @@ export function NoteWorkspace() {
                       <button
                         type="button"
                         disabled={!hasSuggested || isLoading}
-                        onClick={() => useSuggestedLinks(sameDay.entries)}
+                        onClick={() => applySuggestedLinks(sameDay.entries)}
                         className="px-4 py-1.5 rounded-xl hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text disabled:opacity-40"
                       >
                         Use Suggested
@@ -1653,6 +1726,25 @@ export function NoteWorkspace() {
                   <div className="p-6 space-y-3">
                     <div className="text-[11px] font-black text-hc-muted uppercase tracking-widest">Original</div>
                     <p className="text-[12px] font-medium text-hc-text/80 leading-relaxed">{e.entry}</p>
+                    {(noteAssessment.missingIds.length > 0 || noteAssessment.risks.length > 0) && (
+                      <div className="rounded-xl border border-hc-border/20 bg-hc-bg/30 p-3 space-y-2">
+                        <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Golden Structure Review</div>
+                        {noteAssessment.risks.map((risk) => (
+                          <div key={risk.id} className="text-[10px] font-bold text-flag-amber leading-relaxed">
+                            {risk.label}: {risk.guidance}
+                          </div>
+                        ))}
+                        {noteAssessment.missingIds.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {noteAssessment.checks.filter(check => !check.passed).slice(0, 5).map((check) => (
+                              <span key={check.id} className="px-2 py-1 rounded-lg bg-hc-border/20 text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                                Missing {check.label}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-6 space-y-3 bg-hc-teal/[0.02] flex flex-col">

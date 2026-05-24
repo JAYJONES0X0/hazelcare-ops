@@ -67,7 +67,7 @@ export default function SovereignTrainingHub() {
         })
       });
 
-      if (!res.ok) throw new Error('Intelligence Link Failed');
+      if (!res.ok) throw new Error('Writing support failed');
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error('Stream Failed');
@@ -132,13 +132,13 @@ export default function SovereignTrainingHub() {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-hc-teal/30 bg-hc-teal/10 text-hc-teal mb-6">
             <Shield className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Sovereign Training Hub | Forensic Arena</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Staff Writing Coach | Practice Arena</span>
           </div>
           <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-4">
             Documentation <br /> <span className="text-hc-teal">Or Malpractice?</span>
           </h1>
           <p className="text-hc-teal/50 text-sm font-bold uppercase tracking-[0.3em] max-w-xl">
-            Live Intelligence Training: Master the ALCOA+ standard before your words are tested in a courtroom or inquest.
+            Practice safer, clearer support notes before they become part of a formal record.
           </p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function SovereignTrainingHub() {
                 className="w-full btn-tactical flex items-center justify-center gap-3 py-4 rounded-2xl group disabled:opacity-50"
               >
                 {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Microscope className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                {loading ? 'Consulting Clinical Matrix...' : 'Run Forensic Audit'}
+                {loading ? 'Reviewing note...' : 'Review This Note'}
               </button>
 
               <div className="pt-6 border-t border-hc-border/10">
@@ -226,7 +226,7 @@ export default function SovereignTrainingHub() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-black uppercase tracking-widest text-hc-muted">Awaiting Evidence</h3>
                   <p className="text-[11px] text-hc-muted/60 font-medium uppercase tracking-wider max-w-xs mx-auto">
-                    Submit a note to activate the Sovereign Intelligence Audit.
+                    Submit a note to get a practical quality review.
                   </p>
                 </div>
               </div>
@@ -276,7 +276,7 @@ export default function SovereignTrainingHub() {
                     <div className="px-8 py-4 border-b border-hc-border/20 bg-hc-teal/[0.03] flex items-center justify-between">
                        <div className="flex items-center gap-3">
                          <Sparkles className="w-4 h-4 text-hc-teal" />
-                         <span className="text-[10px] font-black text-hc-teal uppercase tracking-widest">Sovereign Standard (Gold)</span>
+                         <span className="text-[10px] font-black text-hc-teal uppercase tracking-widest">Improved Version</span>
                        </div>
                        <button
                          onClick={() => handleCopy(eliteVersion)}
@@ -347,7 +347,7 @@ export default function SovereignTrainingHub() {
       </div>
 
       <footer className="py-12 border-t border-hc-border/20 text-center bg-white">
-        <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.5em]">CareOps Â· Sovereign Operational Excellence 2026</span>
+        <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.5em]">CareOps · Clinical Documentation Practice</span>
       </footer>
     </div>
   );

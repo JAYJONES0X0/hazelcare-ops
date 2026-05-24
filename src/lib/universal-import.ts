@@ -291,7 +291,7 @@ function parseListFromSection(section: string): string[] {
   return dedupe(
     normalized
       .split(/\n|•/g)
-      .map((line) => line.replace(/^[\-\u2022]+\s*/, '').trim())
+      .map((line) => line.replace(/^[-\u2022]+\s*/, '').trim())
       .filter(Boolean)
   );
 }
@@ -1466,7 +1466,7 @@ export function parseSupportPlanText(rawText: string): SupportPlanData {
         : compact.length;
       const chunk = compact.slice(from, to);
 
-      const title = (chunk.match(/A\s*R\s*E\s*A\s*\d+\s+([A-Za-z][A-Za-z,&'’\/\-\s]{3,100}?)(?=\s+WHAT\s+I\s+NEED\s+HELP\s+WITH|\s+WHAT\s+WE\s*['’]?\s*RE\s+WORKING\s+TOWARDS|$)/i)?.[1] || '')
+      const title = (chunk.match(/A\s*R\s*E\s*A\s*\d+\s+([A-Za-z][A-Za-z,&'’/-\s]{3,100}?)(?=\s+WHAT\s+I\s+NEED\s+HELP\s+WITH|\s+WHAT\s+WE\s*['’]?\s*RE\s+WORKING\s+TOWARDS|$)/i)?.[1] || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!title) continue;

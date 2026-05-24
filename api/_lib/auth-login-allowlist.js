@@ -10,6 +10,29 @@ export function getAllowedLoginEmails() {
     .filter(Boolean);
 }
 
+export function getLoginRoleMap() {
+  const mapped = (process.env.AUTH_LOGIN_EMAIL_ROLES || '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((pair) => {
+      const [email, role] = pair.split(':').map((v) => (v || '').trim().toLowerCase());
+      return { email, role };
+    })
+    .filter((x) => x.email && x.role);
+
+  const out = new Map();
+  for (const item of mapped) {
+    out.set(item.email, item.role);
+  }
+  return out;
+}
+
+export function getRoleForLoginEmail(normalizedEmail, fallbackRole = 'manager') {
+  const map = getLoginRoleMap();
+  return map.get(normalizedEmail) || fallbackRole;
+}
+
 export function isLoginAllowlistConfigured() {
   return getAllowedLoginEmails().length > 0;
 }

@@ -2,10 +2,16 @@ import crypto from 'crypto';
 
 export const HC_SESSION_COOKIE = 'hc_session';
 
-export function mintHcSession(secret, ttlHours = 12) {
+export function mintHcSession(secret, ttlHours = 12, claims = {}) {
   if (!secret) throw new Error('Session secret required');
   const exp = Date.now() + ttlHours * 3600 * 1000;
-  const payload = Buffer.from(JSON.stringify({ v: 2, exp })).toString('base64url');
+  const sessionPayload = {
+    v: 2,
+    exp,
+    role: claims.role || 'manager',
+    email: claims.email || '',
+  };
+  const payload = Buffer.from(JSON.stringify(sessionPayload)).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   return { value: `${payload}.${sig}`, maxAgeSec: ttlHours * 3600 };
 }
@@ -19,16 +25,29 @@ function safeEq(a, b) {
 
 /** @param {string | undefined} raw @param {string} secret */
 export function verifyHcSession(raw, secret) {
-  if (!raw || !secret) return false;
+  const claims = readHcSessionClaims(raw, secret);
+  return !!claims;
+}
+
+/** @param {string | undefined} raw @param {string} secret */
+export function readHcSessionClaims(raw, secret) {
+  if (!raw || !secret) return null;
   const [p, s] = String(raw).split('.');
-  if (!p || !s) return false;
+  if (!p || !s) return null;
   const expected = crypto.createHmac('sha256', secret).update(p).digest('base64url');
-  if (!safeEq(expected, s)) return false;
+  if (!safeEq(expected, s)) return null;
   try {
     const payload = JSON.parse(Buffer.from(p, 'base64url').toString('utf8'));
-    return payload.v === 2 && typeof payload.exp === 'number' && Date.now() <= payload.exp;
+    if (!(payload.v === 2 && typeof payload.exp === 'number' && Date.now() <= payload.exp)) {
+      return null;
+    }
+    return {
+      role: typeof payload.role === 'string' ? payload.role : 'manager',
+      email: typeof payload.email === 'string' ? payload.email : '',
+      exp: payload.exp,
+    };
   } catch {
-    return false;
+    return null;
   }
 }
 

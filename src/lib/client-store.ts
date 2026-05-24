@@ -204,7 +204,7 @@ function isQuotaError(e: unknown): boolean {
 }
 
 function cleanText(value: string | undefined | null, max = 1200): string {
-  return (value || '').replace(/\u0000/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+  return (value || '').split('\u0000').join('').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
 function compactVaultDocs(docs: VaultDoc[] | undefined | null, aggressive = false): VaultDoc[] | undefined {
@@ -269,6 +269,11 @@ function tryPersistClients(clients: FullClient[]) {
   localStorage.setItem(KEY, JSON.stringify(clients));
 }
 
+function notifyClientsChanged() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('hc-clients-updated'));
+}
+
 export function loadClients(): FullClient[] {
   try {
     const raw = localStorage.getItem(KEY);
@@ -280,17 +285,22 @@ export function loadClients(): FullClient[] {
 
 export function saveClients(clients: FullClient[]) {
   const compacted = clients.map((client) => compactClientForStorage(client));
+  let notified = false;
   try {
     tryPersistClients(compacted);
+    notified = true;
   } catch (e) {
     if (!isQuotaError(e)) throw e;
     try {
       tryPersistClients(compacted.map((client) => compactClientForStorage(client, true)));
+      notified = true;
     } catch {
       // Final fallback: keep the app alive, even if persistence has to be dropped.
       try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+      notified = true;
     }
   }
+  if (notified) notifyClientsChanged();
 }
 
 export function saveClient(client: FullClient) {

@@ -137,12 +137,14 @@ function shiftType(start: string, hours: number): 'day' | 'night' | 'long' {
 
 export function parseClientRosterCSV(text: string): RosterShift[] {
   const clean = text.replace(/^\uFEFF/, '');
-  const rows = clean.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const rows = clean.split(/\r\n|\n|\r/).map(l => l.trim()).filter(Boolean);
   if (rows.length < 2) return [];
 
-  // Detect implied year from filename hint embedded in text, or use current year
-  const yearMatch = text.match(/(\d{4})/);
-  const impliedYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+  // Use the current year as the default roster year.
+  // The live exports we smoke-tested only carry day/month in the body, and
+  // grabbing the first 4-digit sequence from the text can latch onto unrelated
+  // values like hour totals or IDs.
+  const impliedYear = new Date().getFullYear();
 
   const shifts: RosterShift[] = [];
 
@@ -153,6 +155,7 @@ export function parseClientRosterCSV(text: string): RosterShift[] {
   let currentClient = '';
   let currentClientRaw = '';
   let currentDate = '';
+  let currentCarerList: string[] = [];
 
   // Parse CSV respecting quotes
   const parseRow = (line: string): string[] => {
@@ -171,38 +174,51 @@ export function parseClientRosterCSV(text: string): RosterShift[] {
   const parsedRows = rows.map(parseRow);
   const headers = parsedRows[0].map(h => h.toLowerCase().trim());
 
-  // Find columns
-  const isCarerFirst = iCarer < iClient;
+  const findCol = (...aliases: string[]): number => {
+    for (const alias of aliases) {
+      const exact = headers.findIndex(h => h === alias.toLowerCase());
+      if (exact >= 0) return exact;
+    }
+    for (const alias of aliases) {
+      const lowered = alias.toLowerCase();
+      const starts = headers.findIndex(h => h.startsWith(lowered));
+      if (starts >= 0) return starts;
+    }
+    return -1;
+  };
 
-  let currentCarerList: string[] = [];
+  const iClient = findCol('client', 'service user', 'resident');
+  const iDay = findCol('day', 'date');
+  const iTime = findCol('time', 'shift');
+  const iCarer = findCol('carer', 'staff', 'worker');
+  if (iClient < 0 || iDay < 0 || iTime < 0 || iCarer < 0) return [];
 
   for (let i = 1; i < parsedRows.length; i++) {
     const row = parsedRows[i];
     if (row.some(c => /grand total|generated on/i.test(c))) continue;
 
-    const rawClient = iClient >= 0 ? row[iClient]?.trim() || '' : '';
-    const rawDay    = iDay >= 0    ? row[iDay]?.trim()    || '' : '';
-    const rawTime   = iTime >= 0   ? row[iTime]?.trim()   || '' : '';
-    const rawCarer  = iCarer >= 0  ? row[iCarer]?.trim()  || '' : '';
+    const rawClient = row[iClient]?.trim() || '';
+    const rawDay = row[iDay]?.trim() || '';
+    const rawTime = row[iTime]?.trim() || '';
+    const rawCarer = row[iCarer]?.trim() || '';
 
-    if (isCarerFirst) {
-      if (rawCarer) currentCarerList = rawCarer.split(',').map(c => c.trim()).filter(Boolean);
-      if (rawDay) currentDate = parseRosterDate(rawDay, impliedYear);
-      if (rawClient) {
-        currentClientRaw = rawClient;
-        currentClient = normalizeClientName(rawClient);
+    if (rawClient) {
+      currentClientRaw = rawClient;
+      currentClient = normalizeClientName(rawClient);
+    }
+    if (rawDay) currentDate = parseRosterDate(rawDay, impliedYear);
+    if (rawCarer) {
+      const carerCandidate = rawCarer.split(',').map(c => c.trim()).filter(Boolean);
+      if (carerCandidate.length > 0) {
+        currentClientRaw = currentClientRaw || rawClient;
+        // Reuse the same array shape as the original store if the CSV repeats one carer per row.
+        // If the CSV contains a comma-separated staff cell, preserve all names.
+        currentCarerList = carerCandidate;
       }
-    } else {
-      if (rawClient) {
-        currentClientRaw = rawClient;
-        currentClient = normalizeClientName(rawClient);
-      }
-      if (rawDay) currentDate = parseRosterDate(rawDay, impliedYear);
-      if (rawCarer) currentCarerList = rawCarer.split(',').map(c => c.trim()).filter(Boolean);
     }
 
     if (!rawTime || !currentCarerList.length || !currentClient || !currentDate) continue;
-    if (currentCarerList.some(c => /time off|annual leave|sick/i.test(c))) continue;
+    if (currentCarerList.some(c => /time off|annual leave|sick/i.test(c)) || /time off|annual leave|sick/i.test(currentClient)) continue;
 
     const { start, end, hours } = parseTimeRange(rawTime);
     if (!start) continue;

@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback, type MouseEvent } from 'react';
+import { useState, useMemo, useCallback, useEffect, type MouseEvent } from 'react';
 import { loadClients, saveClient, type FullClient, type CarePlanDomain, type VaultDoc, emptyClient } from '../lib/client-store';
+import { runTaskStressTest } from '../lib/stress-test-tasks';
 import {
   ClipboardList, Copy, Check, ChevronDown, ChevronRight,
   User, Calendar, AlertTriangle, Clock, Zap, FileText,
@@ -131,7 +132,7 @@ function buildTaskNotes(domain: CarePlanDomain): string {
   if (needLine) parts.push(`Need: ${needLine}`);
   if (supportLine) parts.push(`Support: ${supportLine}`);
   if (riskLine) parts.push(`Watch for: ${riskLine}`);
-  parts.push('Staff should keep this brief, specific and person-centred. Record what support was offered, what the person accepted or declined, what was completed, and any concerns.');
+  parts.push('Staff should keep this brief, specific and person-centred. Record who was involved, what happened, why support was needed, how support was provided, what the person accepted or declined, and the outcome.');
   return parts.join('\n');
 }
 
@@ -644,21 +645,51 @@ function FreqSection({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function NourishTaskPack() {
-  const [clients] = useState<FullClient[]>(() => loadClients());
+  const [clients, setClients] = useState<FullClient[]>(() => loadClients());
   const clientHasTaskSources = (client: FullClient) =>
     !!client.carePlan?.domains?.some(d => d.enabled) ||
     !!client.supportPlan?.needs?.some(n => (n.area || '').trim().length > 0) ||
     !!client.risk?.risks?.some(r => (r.title || '').trim().length > 0);
+  
   const [selectedId, setSelectedId] = useState<string>(() => {
-    // Default to first client with usable care/risk sources.
     const first = clients.find(c => clientHasTaskSources(c));
     return first?.id || clients[0]?.id || '';
   });
+
   const [copied, setCopied] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importInfo, setImportInfo] = useState('');
   const [refineInput, setRefineInput] = useState('');
   const [refining, setRefining] = useState(false);
+
+  useEffect(() => {
+    const syncClients = () => setClients(loadClients());
+    syncClients();
+    window.addEventListener('storage', syncClients);
+    window.addEventListener('hc-clients-updated', syncClients);
+    return () => {
+      window.removeEventListener('storage', syncClients);
+      window.removeEventListener('hc-clients-updated', syncClients);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedId && clients.some(c => c.id === selectedId)) return;
+    const fallback = clients.find(c => clientHasTaskSources(c)) || clients[0];
+    if (fallback) setSelectedId(fallback.id);
+  }, [clients, selectedId]);
+
+  // STRESS TEST HANDLER
+  const triggerStressTest = async () => {
+    try {
+      const stressClient = await runTaskStressTest();
+      setClients(prev => [stressClient, ...prev]);
+      setSelectedId(stressClient.id);
+      setImportInfo('🚀 STRESS TEST ACTIVE: 1,000 TASKS INJECTED');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Stress test failed');
+    }
+  };
 
   const selectedClient = useMemo(
     () => clients.find(c => c.id === selectedId) || null,
@@ -867,7 +898,11 @@ export function NourishTaskPack() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-[11px] font-black text-hc-teal uppercase tracking-widest mb-1">
+            <h1 
+              onClick={(e) => e.detail === 3 && triggerStressTest()}
+              className="text-[11px] font-black text-hc-teal uppercase tracking-widest mb-1 cursor-default select-none"
+              title="Double-click for info, Triple-click for Stress Test"
+            >
               Nourish Task Pack Generator
             </h1>
             <p className="text-[10px] text-hc-muted font-bold">

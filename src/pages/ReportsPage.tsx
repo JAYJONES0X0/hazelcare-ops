@@ -3,6 +3,7 @@ import type { WeekSummary, Page } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 import { flattenWeekEntries } from '../lib/staff-monitoring';
 import { generateRiskProfiles } from '../lib/risk-scores';
+import { logAuditAction } from '../lib/audit';
 import {
   FileText, Download, History, Activity, AlertTriangle, Clock, LayoutGrid
 } from 'lucide-react';
@@ -141,6 +142,8 @@ function printHtml(html: string) {
 
 export function ReportsPage({ weekData }: Props) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('weekly_summary');
+  const [reviewer, setReviewer] = useState('');
+  const [reviewApproved, setReviewApproved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
@@ -174,7 +177,7 @@ export function ReportsPage({ weekData }: Props) {
   const staffSet = weekData ? new Set(flattenWeekEntries(weekData).map(e => e.carer)) : new Set();
 
   function exportPack() {
-    if (!weekData) return;
+    if (!weekData || !reviewApproved || !reviewer.trim()) return;
     const combined = [
       buildWeeklySummaryHtml(weekData),
       '<div style="page-break-after:always"></div>',
@@ -182,7 +185,16 @@ export function ReportsPage({ weekData }: Props) {
       '<div style="page-break-after:always"></div>',
       buildStaffActivityHtml(weekData),
     ].join('');
+    logAuditAction('review_signed_off', 'Full report pack signoff', { reviewer: reviewer.trim(), reportType: 'full_pack' });
+    logAuditAction('data_exported', 'Exported full report pack', { reviewer: reviewer.trim() });
     printHtml(combined);
+  }
+
+  function exportCurrentReport() {
+    if (!reportHtml || !reviewApproved || !reviewer.trim()) return;
+    logAuditAction('review_signed_off', `Report signoff for ${selectedReport}`, { reviewer: reviewer.trim(), reportType: selectedReport });
+    logAuditAction('data_exported', `Exported ${selectedReport}`, { reviewer: reviewer.trim() });
+    printHtml(reportHtml);
   }
 
   if (!weekData) {
@@ -208,9 +220,21 @@ export function ReportsPage({ weekData }: Props) {
             {totalEntries} entries · {houses.length} houses · {staffSet.size} staff · {totalFlags} flags
           </p>
         </div>
-        <button onClick={exportPack} className="px-8 py-3.5 btn-tactical shadow-2xl flex items-center gap-3">
+        <button onClick={exportPack} disabled={!reviewApproved || !reviewer.trim()} className="px-8 py-3.5 btn-tactical shadow-2xl flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
           <Download className="w-4 h-4" /> Export Full Pack
         </button>
+      </div>
+      <div className="mb-6 flex items-center gap-3">
+        <input
+          value={reviewer}
+          onChange={(e) => setReviewer(e.target.value)}
+          placeholder="Reviewer name"
+          className="px-3 py-2 rounded-lg border border-hc-border/30 text-[10px] font-bold uppercase tracking-widest text-hc-text bg-transparent min-w-[220px]"
+        />
+        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+          <input type="checkbox" checked={reviewApproved} onChange={(e) => setReviewApproved(e.target.checked)} />
+          Review complete
+        </label>
       </div>
 
       <div className="flex flex-col xl:flex-row gap-10">
@@ -244,7 +268,7 @@ export function ReportsPage({ weekData }: Props) {
               </span>
             </div>
             {selectedReport !== 'risk_matrix' && reportHtml && (
-              <button onClick={() => printHtml(reportHtml)} className="flex items-center gap-2 px-5 py-2 mb-4 rounded-xl hc-clay-raised text-[11px] font-black text-hc-teal uppercase hover:scale-105 transition-all">
+              <button onClick={exportCurrentReport} disabled={!reviewApproved || !reviewer.trim()} className="flex items-center gap-2 px-5 py-2 mb-4 rounded-xl hc-clay-raised text-[11px] font-black text-hc-teal uppercase hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 <Download className="w-3.5 h-3.5" /> PDF
               </button>
             )}

@@ -1,0 +1,16 @@
+{
+  "startedAt": "2026-05-24T15:11:09.428Z",
+  "pages": [],
+  "loginUrl": "https://hazelcare-ops.vercel.app/CareOps",
+  "domProbe": {
+    "onAccessScreen": true,
+    "hasCareOpsAccessText": true,
+    "initialTextSnippet": "CAREOPS ACCESS\n\nENTER CREDENTIALS TO OPEN THE CARE OPERATIONS HUB\n\nESTABLISH CONNECTION"
+  },
+  "loginResponse": {
+    "status": null,
+    "reason": "no /api/auth/login response captured"
+  },
+  "loginUiInvalidCredentials": false,
+  "error": "page.waitForFunction: Timeout 90000ms exceeded."
+}

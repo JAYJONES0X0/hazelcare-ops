@@ -95,7 +95,7 @@ function ex(s: string | undefined | null): string {
 
 /** Printable, chronology-style table; entry text truncated in table (full text in CSV). */
 export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: CoordinatorPackMeta): string {
-  const title = meta.source === 'upload-hub' ? 'Field Injest Evidence' : 'Force Protection Diagnostic';
+  const title = meta.source === 'upload-hub' ? 'Import Evidence' : 'Staff Monitoring Diagnostic';
   const typeNote = meta.typeFilter?.trim()
     ? `<p style="margin:8px 0 0;font-size:11px;color:#8a8b82;">Type filter (contains): <strong>${ex(meta.typeFilter.trim())}</strong></p>`
     : '';

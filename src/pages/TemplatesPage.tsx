@@ -1,7 +1,8 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import type { WeekSummary, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
 import { escapeHtml } from '../lib/html-escape';
+import { logAuditAction, getLineageForEntries } from '../lib/audit';
 
 /** Escape user-derived strings embedded in report HTML. */
 function ex(s: string | undefined | null): string {
@@ -194,11 +195,25 @@ function generateGeneric(title: string, subtitle: string, color: string): string
 export function TemplatesPage({ weekData }: Props) {
   const [recIds] = useState<TemplateType[]>(() => loadRecommendedTemplateIds());
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(() => recIds.length > 0 ? recIds[0] : null);
+  const [reviewer, setReviewer] = useState('');
+  const [reviewApproved, setReviewApproved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const html = useMemo(() => {
     if (!weekData || !selectedTemplate) return null;
     const ctx = readTemplateImportContext();
+    
+    // Calculate lineage for the generated document
+    const allEntryIds = Object.values(weekData.houses).flatMap(h => h.entries.map(e => e.id));
+    const lineage = getLineageForEntries(allEntryIds);
+    
+    logAuditAction(
+      'document_generated', 
+      `Generated ${selectedTemplate} report`, 
+      { templateId: selectedTemplate, house: ctx?.house },
+      lineage
+    );
+
     let res = '';
     switch (selectedTemplate) {
       case 'quality_meeting':
@@ -229,6 +244,16 @@ export function TemplatesPage({ weekData }: Props) {
     }
     return res;
   }, [selectedTemplate, weekData]);
+
+  function handleReleaseToPhysical() {
+    if (!reviewApproved || !reviewer.trim() || !selectedTemplate) return;
+    logAuditAction('review_signed_off', `Review signoff for ${selectedTemplate}`, {
+      templateId: selectedTemplate,
+      reviewer: reviewer.trim(),
+      approved: true,
+    });
+    iframeRef.current?.contentWindow?.print();
+  }
 
   if (!weekData) {
     return (
@@ -295,12 +320,25 @@ export function TemplatesPage({ weekData }: Props) {
           {selectedTemplate ? (
             <>
               <div className="shrink-0 flex items-center justify-between px-8 py-3 border-b border-hc-border/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-4 rounded-full bg-hc-teal" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-1.5 h-4 rounded-full bg-hc-teal shrink-0" />
                   <span className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] font-mono">{selectedTemplate}</span>
+                  <input
+                    value={reviewer}
+                    onChange={(e) => setReviewer(e.target.value)}
+                    placeholder="Reviewer name"
+                    className="ml-3 px-3 py-1.5 rounded-lg border border-hc-border/30 text-[10px] font-bold uppercase tracking-widest text-hc-text bg-transparent min-w-[180px]"
+                  />
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                    <input type="checkbox" checked={reviewApproved} onChange={(e) => setReviewApproved(e.target.checked)} />
+                    Review complete
+                  </label>
                 </div>
-                <button onClick={() => iframeRef.current?.contentWindow?.print()}
-                  className="btn-tactical px-8 py-2.5 text-[11px]">
+                <button
+                  onClick={handleReleaseToPhysical}
+                  disabled={!reviewApproved || !reviewer.trim()}
+                  className="btn-tactical px-8 py-2.5 text-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Release to Physical
                 </button>
               </div>

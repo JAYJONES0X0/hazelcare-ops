@@ -1,12 +1,13 @@
 import crypto from 'crypto';
 import { put } from '@vercel/blob';
-import { HC_SESSION_COOKIE, verifyHcSession } from '../_lib/hc-session.js';
+import { HC_SESSION_COOKIE, readHcSessionClaims, verifyHcSession } from '../_lib/hc-session.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
 import { consumeOnce } from '../_lib/durable-once.js';
 import { STAFF_SAC_COOKIE, signStaffSacCookie, verifyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET;
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
+const AUTH_DEFAULT_ROLE = (process.env.AUTH_DEFAULT_ROLE || 'manager').toLowerCase();
 const STAFF_LINK_TTL_MINUTES = Number(process.env.STAFF_LINK_TTL_MINUTES || '30');
 const APP_ORIGIN = process.env.APP_ORIGIN || '';
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
@@ -15,6 +16,7 @@ const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map(
 
 const STAFF_TOOLS = new Set(['notes', 'handover', 'actions', 'incidents']);
 const verifyBuckets = new Map();
+const ROLE_RANK = { viewer: 0, senior: 1, manager: 2, admin: 3 };
 
 // Care Plan Domains
 const CARE_PLAN_DOMAINS = [
@@ -105,12 +107,13 @@ RULES:
 1. UK ENGLISH only - summarise, recognise, behaviour, practise, centre, etc.
 2. PERSONA: Write in first person as the staff member who was on shift. You are documenting what you observed and did, not describing the client from a distance.
 3. TEMPLATE IS STRUCTURE ONLY: The [MANDATORY LAYOUT / TEMPLATE] is a HOLLOW SKELETON. You must mirror its headers, time-block patterns, and whitespace exactly, but you MUST NOT use any of the names, dates, times, or events described in it. If the template says "Jamie took meds at 12:00" but the raw data says "Sarah took meds at 09:00", you write "09:00: Sarah took meds".
-4. RAW DATA IS SOVEREIGN: The [RAW DATA TO PROCESS] is your only source of truth. If a fact is in the template but NOT in the raw data, it is a phantom and must be ignored.
-5. CLINICAL VACUUM: Treat the template as if it were written by a ghost. It provides the rhythm, you provide the reality.
-6. PRESERVE WHITESPACE: Mirror the exact line breaks, blank lines, and headers of the template.
-7. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" - instead write "he appeared settled" or "I found him in good spirits."
-8. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
-9. Output ONLY the finished note. No preamble, no explanation.`;
+4. EVIDENCE HIERARCHY: [RAW DATA TO PROCESS] is the primary source for what happened in this exact note. [ESSENTIAL CONTEXT] is OS knowledge: care-plan strategy, roster, surrounding diary evidence, vault documents, and conflict checks. Use it to understand the person and identify contradictions, but do not invent events from it.
+5. CONFLICTS: If raw data conflicts with OS context, roster, MAR wording, or surrounding evidence, do not silently smooth it over. Align only to the strongest explicit source or state the conflict in professional wording.
+6. CLINICAL VACUUM: Treat the template as if it were written by a ghost. It provides the rhythm, you provide the reality.
+7. PRESERVE WHITESPACE: Mirror the exact line breaks, blank lines, and headers of the template.
+8. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" - instead write "he appeared settled" or "I found him in good spirits."
+9. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
+10. Output ONLY the finished note. No preamble, no explanation.`;
 
 function isRateLimited(key, max, windowMs) {
   const now = Date.now();
@@ -136,6 +139,37 @@ function setCors(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   return allowed;
+}
+
+function sanitizeRole(role) {
+  const r = String(role || '').trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(ROLE_RANK, r) ? r : 'manager';
+}
+
+function roleAtLeast(currentRole, minRole) {
+  const curr = ROLE_RANK[sanitizeRole(currentRole)] ?? ROLE_RANK.manager;
+  const min = ROLE_RANK[sanitizeRole(minRole)] ?? ROLE_RANK.manager;
+  return curr >= min;
+}
+
+function requireSessionRole(req, res, minRole = 'manager') {
+  if (!AUTH_SESSION_SECRET) {
+    res.status(503).json({ error: 'Session not configured' });
+    return null;
+  }
+  const cookies = parseCookies(req);
+  const claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
+  if (!claims) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return null;
+  }
+
+  const role = sanitizeRole(claims.role || AUTH_DEFAULT_ROLE);
+  if (!roleAtLeast(role, minRole)) {
+    res.status(403).json({ error: 'Forbidden', requiredRole: minRole, currentRole: role });
+    return null;
+  }
+  return role;
 }
 
 // Staff Link Utils
@@ -218,11 +252,7 @@ async function handleUploadDocument(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
-  const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!requireSessionRole(req, res, 'senior')) return;
 
   const filename = req.query.filename || 'document';
   
@@ -240,12 +270,7 @@ async function handleUploadDocument(req, res) {
 async function handleIssueStaffLink(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   if (!STAFF_LINK_SECRET) return res.status(500).json({ error: 'Staff link service not configured' });
-  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
-
-  const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
-    return res.status(401).json({ error: 'Sign in required' });
-  }
+  if (!requireSessionRole(req, res, 'manager')) return;
 
   const { toolId } = req.body || {};
   if (!toolId || !STAFF_TOOLS.has(toolId)) return res.status(400).json({ error: 'Invalid staff tool' });
@@ -471,11 +496,7 @@ async function handleAnalyzeIntel(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
-  const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!requireSessionRole(req, res, 'senior')) return;
 
   const { text } = req.body || {};
   if (!text) return res.status(400).json({ message: 'No text provided' });
@@ -518,11 +539,7 @@ async function handleEnhanceNote(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
-  const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!requireSessionRole(req, res, 'senior')) return;
 
   const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput, clinicalContext, includeEvidenceTrail } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');
@@ -557,6 +574,7 @@ async function handleEnhanceNote(req, res) {
     refineInstructions
       ? 'Apply the refinement instruction to the previous draft while maintaining the layout of the template.'
       : 'Extract the facts from the [RAW DATA TO PROCESS] and map them into the structure of the [MANDATORY LAYOUT]. Do NOT use any facts from the template itself.',
+    'Read [ESSENTIAL CONTEXT] before writing. Use it for care-plan strategy, roster identity, continuity, and conflict detection. Do not invent shift events from context.',
     'You must complete every template heading/time block. Return the full finished note, not a partial section.',
     evidenceInstruction,
     '',
@@ -637,11 +655,7 @@ async function handleGhostWrite(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  if (!AUTH_SESSION_SECRET) return res.status(503).json({ error: 'Session not configured' });
-  const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!requireSessionRole(req, res, 'senior')) return;
 
   const { date, clientName, prevNote, nextNote, referenceTemplate, clinicalContext, shiftContext, includeEvidenceTrail } = req.body || {};
   if (!date || !clientName) return res.status(400).send('date and clientName required');

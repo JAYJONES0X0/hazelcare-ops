@@ -160,9 +160,9 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         </div>
         <h2 className="text-2xl font-black text-hc-text mb-3 uppercase tracking-tight">Intelligence Feed Offline</h2>
         <p className="text-hc-muted text-[11px] font-bold uppercase tracking-widest mb-10 text-center max-w-xs leading-relaxed">
-          Injest a clinical data stream to initialise the Sitrep Center.
+          Import a clinical file, roster, ZIP pack, or pasted assessment to start the dashboard.
         </p>
-        <button onClick={() => setPage('upload')} className="btn-tactical shadow-2xl">INITIALISE INGEST VECTOR</button>
+        <button onClick={() => setPage('upload')} className="btn-tactical shadow-2xl">OPEN IMPORT HUB</button>
       </div>
     );
   }

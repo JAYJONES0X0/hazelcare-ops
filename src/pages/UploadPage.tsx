@@ -11,6 +11,7 @@ import { routeImport, type ClientMode } from '../lib/import-router';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
 import { mergeCarePlanData, mergeRiskData, mergeSupportPlanData } from '../lib/intel-merge';
 import type { ParseResult } from '../lib/universal-import';
+import { parseRosterCSV as parseGroupedRosterCSV } from '../lib/universal-parser';
 import { extractFileText } from '../lib/universal-extractor';
 import { appendEntries } from '../lib/entry-store';
 import { parseClientRosterCSV, saveRosterShifts, getRosterSummary, type RosterSummary } from '../lib/roster-store';
@@ -85,6 +86,37 @@ function findClientIdByNameHint(nameHint: string): string | null {
   return clients.find(c => c.name.trim().toLowerCase().includes(hint) || hint.includes(c.name.trim().toLowerCase()))?.id || null;
 }
 
+function isUsableClientHint(name: string | undefined): name is string {
+  const cleaned = (name || '').trim();
+  if (!cleaned || cleaned.toLowerCase() === 'unclear') return false;
+  if (/\b(experienced|support|plan|diary|medication|administration|report|client|unknown)\b/i.test(cleaned)) return false;
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  return words.length >= 2 && words.length <= 4;
+}
+
+function getClientHintFromEnvelope(envelope: NormalizedImportEnvelope, fileName: string): string {
+  const candidate = envelope.clientCandidates.find(c => isUsableClientHint(c.name))?.name;
+  if (candidate) return candidate;
+
+  if (envelope.diaryEntries?.length) {
+    const counts = new Map<string, number>();
+    envelope.diaryEntries.forEach(entry => {
+      if (isUsableClientHint(entry.client)) counts.set(entry.client, (counts.get(entry.client) || 0) + 1);
+    });
+    const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (best) return best;
+  }
+
+  const houseHint = Object.keys(envelope.weekSummary?.houses || {}).find(isUsableClientHint);
+  if (houseHint) return houseHint;
+
+  const admissionName = envelope.admission?.client?.name;
+  if (isUsableClientHint(admissionName)) return admissionName;
+
+  const fileHint = inferClientFromFileName(fileName);
+  return isUsableClientHint(fileHint) ? fileHint : 'Unclear';
+}
+
 function buildEnvelopeWithExtractionGuard(fileName: string, text: string): NormalizedImportEnvelope {
   const env = buildEnvelopeFromRaw(fileName, text);
   if (!text.trim()) {
@@ -93,10 +125,20 @@ function buildEnvelopeWithExtractionGuard(fileName: string, text: string): Norma
   return env;
 }
 
+function withTimeout<T>(work: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+    work
+      .then(resolve)
+      .catch(reject)
+      .finally(() => window.clearTimeout(timeout));
+  });
+}
+
 async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[]; readErrors: string[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter(entry => !entry.dir);
-  const supported = entries.filter(entry => /\.(txt|csv|tsv|md|pdf|docx)$/i.test(entry.name));
+  const supported = entries.filter(entry => /\.(txt|csv|tsv|md|pdf|docx|xlsx|xls|xlsm)$/i.test(entry.name));
   if (!supported.length) return { combined: '', rows: [], readErrors: [] };
 
   let combined = '';
@@ -107,14 +149,16 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
     try {
       const ext = entry.name.split('.').pop()?.toLowerCase();
       let text = '';
-      if (ext === 'pdf' || ext === 'docx') {
+      if (ext === 'pdf' || ext === 'docx' || ext === 'xlsx' || ext === 'xls' || ext === 'xlsm') {
         const blob = await entry.async('blob');
         const nestedFile = new File([blob], displayName);
-        text = await extractFileText(nestedFile);
+        text = await withTimeout(extractFileText(nestedFile), 15_000, displayName);
       } else {
-        text = await entry.async('text');
+        text = await withTimeout(entry.async('text'), 8_000, displayName);
       }
       const envelope = buildEnvelopeWithExtractionGuard(displayName, text);
+      const suggestedClient = getClientHintFromEnvelope(envelope, displayName);
+      if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
       return {
         text: text.trim() ? `\n\n--- FILE: ${displayName} ---\n${text}` : '',
         row: {
@@ -124,16 +168,17 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
           parserProfile: envelope.source.parserProfile,
           confidence: envelope.source.confidence,
           suggestedTargets: envelope.suggestedTargets,
-          suggestedClient: envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName),
+          suggestedClient,
           envelope,
           selectedTarget: envelope.suggestedTargets[0] || 'skip',
           clientMode: 'global' as ClientMode,
-          selectedClientId: findClientIdByNameHint(envelope.clientCandidates[0]?.name || inferClientFromFileName(displayName)),
+          selectedClientId: findClientIdByNameHint(suggestedClient),
           include: true,
         }
       };
-    } catch (e) {
-      return { error: `${displayName}: failed` };
+    } catch (e: any) {
+      if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
+      return { error: `${displayName}: ${e?.message || 'failed'}` };
     }
   }));
 
@@ -141,6 +186,22 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
     combined += r!.text;
     rows.push(r!.row);
   });
+  const dominantClient = rows
+    .map(row => row.suggestedClient)
+    .filter(isUsableClientHint)
+    .reduce((acc, name) => {
+      acc.set(name, (acc.get(name) || 0) + 1);
+      return acc;
+    }, new Map<string, number>());
+  const packClient = [...dominantClient.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (packClient) {
+    rows.forEach(row => {
+      if (!isUsableClientHint(row.suggestedClient)) {
+        row.suggestedClient = packClient;
+        row.selectedClientId = findClientIdByNameHint(packClient);
+      }
+    });
+  }
   results.filter(r => r && r.error).forEach(r => readErrors.push(r!.error));
 
   if (onProgress) onProgress(100);
@@ -178,7 +239,12 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
 }
 
 function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImportEnvelope {
-  const merged = emptyEnvelope('Batch', envelopes.map(e => e.source.fileName).join(', '));
+  if (envelopes.length === 1) return envelopes[0];
+
+  const merged = emptyEnvelope(
+    'Batch',
+    envelopes.map(e => `\n\n===== ${e.source.fileName} =====\n${e.rawText || ''}`).join('')
+  );
   const today = new Date().toLocaleDateString('en-GB');
 
   const mergeAdmissionPayload = (base: ParseResult | null, incoming: ParseResult): ParseResult => {
@@ -318,30 +384,40 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
   const handleFiles = async (files: FileList | File[]) => {
     setStep('extracting'); setErrorMsg('');
+    let nextBasket = [...sourceBasket];
+    let nextZipGuidance: ZipGuidanceRow[] = [];
     for (const file of Array.from(files)) {
       try {
         let text = ''; const ext = file.name.split('.').pop()?.toLowerCase();
-        if (ext === 'pdf' || ext === 'docx') text = await extractFileText(file, setProgress);
+        if (ext === 'pdf' || ext === 'docx' || ext === 'xlsx' || ext === 'xls' || ext === 'xlsm') text = await extractFileText(file, setProgress);
         else if (ext === 'zip') {
           const zip = await extractZipGuidance(file, setProgress);
-          setZipGuidance(zip.rows);
-          text = zip.combined;
+          nextZipGuidance = [...nextZipGuidance, ...zip.rows];
+          setZipGuidance(nextZipGuidance);
+          const combined = mergeEnvelopes(zip.rows.map(r => r.envelope));
+          combined.source.fileName = file.name;
+          combined.rawText = zip.combined;
+          if (zip.readErrors.length) {
+            combined.warnings.push(...zip.readErrors.map(err => `ZIP entry skipped: ${err}`));
+          }
+          const item = { id: uid(), fileName: file.name, envelope: combined, confidence: combined.source.confidence };
+          nextBasket = [...nextBasket, item];
+          setSourceBasket(nextBasket);
+          setPreview(buildPreview(combined));
+          setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['reports']);
+          setStep('preview');
+          continue;
         } else text = await file.text();
 
         const env = buildEnvelopeWithExtractionGuard(file.name, text);
         const item = { id: uid(), fileName: file.name, envelope: env, confidence: env.source.confidence };
-        const nextBasket = [...sourceBasket, item];
+        nextBasket = [...nextBasket, item];
         setSourceBasket(nextBasket);
         
-        if (ext === 'zip') {
-          setPreview(buildPreview(env));
-          setStep('preview');
-        } else {
-          const combined = mergeEnvelopes(nextBasket.map(i => i.envelope));
-          setPreview(buildPreview(combined));
-          setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['reports']);
-          setStep('preview');
-        }
+        const combined = mergeEnvelopes(nextBasket.map(i => i.envelope));
+        setPreview(buildPreview(combined));
+        setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['reports']);
+        setStep('preview');
       } catch (e: any) { setErrorMsg(`Fault: ${e.message}`); setStep('error'); break; }
     }
   };
@@ -350,17 +426,33 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (!preview) return;
     if (zipGuidance.length > 0) {
       const active = zipGuidance.filter(r => r.include && r.selectedTarget !== 'skip');
-      applyZipRows(active);
+      await applyZipRows(active);
       return;
     }
-    if (!selectedTargets.length) { setErrorMsg('Select target vector.'); return; }
+    if (!selectedTargets.length) { setErrorMsg('Select where this import should go.'); return; }
 
     // ── ROSTER UPLOAD PATH ──────────────────────────────────────────────────
     // If this is a roster file, parse and save to IndexedDB, then done.
     if (preview.type === 'roster' || selectedTargets.includes('roster')) {
       try {
         const rawText = preview.envelope.rawText || '';
-        const shifts = parseClientRosterCSV(rawText);
+        let shifts = parseClientRosterCSV(rawText);
+        if (shifts.length === 0) {
+          // Fallback for roster exports that arrive in the grouped roster layout.
+          const grouped = parseGroupedRosterCSV(rawText, preview.fileName);
+          shifts = grouped.map(shift => ({
+            id: shift.id,
+            client: shift.house || shift.staffId || 'Unassigned',
+            clientRaw: shift.house || shift.staffId || 'Unassigned',
+            house: '',
+            date: shift.date,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            carers: shift.staffId ? [shift.staffId] : [],
+            durationHours: shift.hours,
+            shiftType: shift.type === 'long_day' ? 'long' : shift.type,
+          }));
+        }
         if (shifts.length === 0) {
           setErrorMsg('No shifts could be parsed from this roster file. Check the format.');
           setStep('error');
@@ -400,22 +492,75 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     } else { setErrorMsg(res.warnings.join(' | ')); setStep('error'); }
   };
 
-  const applyZipRows = (rows: ZipGuidanceRow[]) => {
+  const applyZipRows = async (rows: ZipGuidanceRow[]) => {
     let success = 0;
     let entriesAdded = 0;
+    let shiftsAdded = 0;
     for (const r of rows) {
-      const res = routeImport(r.envelope, { targets: [r.selectedTarget as ImportTarget], clientMode: r.clientMode, selectedClientId: r.selectedClientId });
+      const selectedTarget = r.selectedTarget as ImportTarget;
+      if (selectedTarget === 'roster') {
+        let shifts = parseClientRosterCSV(r.envelope.rawText || '');
+        if (shifts.length === 0) {
+          const grouped = parseGroupedRosterCSV(r.envelope.rawText || '', r.fileName);
+          shifts = grouped.map(shift => ({
+            id: shift.id,
+            client: shift.house || shift.staffId || 'Unassigned',
+            clientRaw: shift.house || shift.staffId || 'Unassigned',
+            house: '',
+            date: shift.date,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            carers: shift.staffId ? [shift.staffId] : [],
+            durationHours: shift.hours,
+            shiftType: shift.type === 'long_day' ? 'long' : shift.type,
+          }));
+        }
+        if (shifts.length > 0) {
+          await saveRosterShifts(shifts);
+          shiftsAdded += shifts.length;
+          success++;
+        }
+        continue;
+      }
+
+      const res = routeImport(r.envelope, { targets: [selectedTarget], clientMode: r.clientMode, selectedClientId: r.selectedClientId });
       if (res.ok) {
         success++;
-        if (r.envelope.diaryEntries?.length) entriesAdded += appendEntries(r.envelope.diaryEntries);
+        if (r.envelope.diaryEntries?.length) {
+          const enriched = await enrichEntriesWithRoster(r.envelope.diaryEntries);
+          entriesAdded += appendEntries(enriched);
+        }
       }
     }
     if (success > 0) {
       const data = loadWeekData();
       if (data) onDataParsed(data);
-      setResultMsg(`Processed ${rows.length} units: ${success} active. ${entriesAdded} entries added to temporal store.`);
+      getRosterSummary().then(setRosterStatus).catch(() => {});
+      setResultMsg(`Processed ${rows.length} files: ${success} imported. ${entriesAdded} diary entries and ${shiftsAdded} roster shifts added.`);
       setStep('done');
     } else { setErrorMsg('Unit ingestion failed.'); setStep('error'); }
+  };
+
+  const updateZipRow = (id: string, patch: Partial<ZipGuidanceRow>) => {
+    setZipGuidance(rows => rows.map(row => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const zipIncludedCount = zipGuidance.filter(row => row.include && row.selectedTarget !== 'skip').length;
+  const zipTypeCounts = zipGuidance.reduce<Record<string, number>>((acc, row) => {
+    acc[row.detectedType] = (acc[row.detectedType] || 0) + 1;
+    return acc;
+  }, {});
+
+  const zipMetric = (row: ZipGuidanceRow) => {
+    const diaryEntries = row.envelope.diaryEntries?.length || row.envelope.weekSummary?.totalEntries || 0;
+    const shifts = row.envelope.shifts?.length || 0;
+    const supportNeeds = row.envelope.supportPlan?.needs?.length || 0;
+    if (row.parseError) return 'Parse fault';
+    if (row.detectedType === 'roster') return `${shifts} shifts`;
+    if (row.detectedType === 'support-plan') return `${supportNeeds} needs`;
+    if (row.detectedType === 'admission') return `${row.envelope.clientCandidates?.length || 0} clients`;
+    if (diaryEntries > 0) return `${diaryEntries} entries`;
+    return 'No rows';
   };
 
   return (
@@ -424,7 +569,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         {/* Header */}
         <div className="mb-12 pb-10 border-b border-hc-border/30 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Field Ingest Matrix</h1>
+            <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Import Hub</h1>
             <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">High-Density Operational Intake Protocol</p>
           </div>
           <div className="flex items-center gap-4">
@@ -454,7 +599,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               <div className="text-center">
                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialise Intake Stream</div>
                 <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] leading-loose">
-                  Drop Clinical ZIP Packs, PDF Audits, CSV/Excel Diary Exports,<br />or Roster Intelligence Vectors
+                  Drop ZIP packs, PDF assessments, CSV/Excel diary exports,<br />or roster files
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-6">
                   {['.zip', '.csv', '.xlsx', '.pdf', '.txt', '.docx'].map(ext => (
@@ -530,7 +675,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 { l: 'Care Domains Mapped', v: preview.domainsDetected ?? 0, i: <Activity className="w-4 h-4" /> },
                 { l: 'Source Type', v: 'Admission Pack', i: <CheckCircle className="w-4 h-4" /> },
               ] : [
-                { l: 'Clinical Vectors', v: preview.entryCount || preview.shiftCount || 0, i: <FileText className="w-4 h-4" /> },
+                { l: 'Parsed Items', v: preview.entryCount || preview.shiftCount || 0, i: <FileText className="w-4 h-4" /> },
                 { l: 'Temporal Scope', v: preview.dateRange || '—', i: <Calendar className="w-4 h-4" /> },
                 { l: 'Entities Active', v: preview.houseCount || 0, i: <Activity className="w-4 h-4" /> },
                 { l: 'Threat Indicators', v: preview.redFlags || 0, c: 'text-flag-red', i: <AlertTriangle className="w-4 h-4" /> },
@@ -543,7 +688,149 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               ))}
             </div>
 
-            <VerificationGrid items={preview.rawItems || []} type={preview.type} onUpdate={items => setPreview({ ...preview, rawItems: items })} />
+            {zipGuidance.length > 0 ? (
+              <div className="hc-clay-raised rounded-[2rem] border border-hc-muted/5 overflow-hidden shadow-2xl bg-black/[0.01]">
+                <div className="p-6 border-b border-hc-muted/10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                  <div>
+                    <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] flex items-center gap-3">
+                      <Archive className="w-4 h-4 text-hc-teal" />
+                      ZIP Contents Mapping
+                    </div>
+                    <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.22em] mt-2">
+                      {zipIncludedCount} of {zipGuidance.length} files queued · Diary {zipTypeCounts.diary || 0} · Docs {(zipTypeCounts.admission || 0) + (zipTypeCounts['support-plan'] || 0)} · Roster {zipTypeCounts.roster || 0} · Unknown {zipTypeCounts.unknown || 0}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => setZipGuidance(rows => rows.map(row => ({ ...row, include: true, selectedTarget: row.selectedTarget === 'skip' ? (row.suggestedTargets[0] || 'reports') : row.selectedTarget })))}
+                      className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text"
+                    >
+                      Include All
+                    </button>
+                    <button
+                      onClick={() => setZipGuidance(rows => rows.map(row => row.detectedType === 'unknown' ? { ...row, include: false, selectedTarget: 'skip' } : row))}
+                      className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted"
+                    >
+                      Skip Unknown
+                    </button>
+                    <button
+                      onClick={() => setZipGuidance(rows => rows.map(row => row.detectedType === 'diary' ? { ...row, include: true, selectedTarget: 'reports' } : row))}
+                      className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted"
+                    >
+                      Diaries to Reports
+                    </button>
+                    <button
+                      onClick={() => setZipGuidance(rows => rows.map(row => (row.detectedType === 'admission' || row.detectedType === 'support-plan') ? { ...row, include: true, selectedTarget: 'client-docs' } : row))}
+                      className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted"
+                    >
+                      Docs to Clients
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-[560px] overflow-auto scrollbar-thin">
+                  <table className="w-full min-w-[1180px] text-left border-collapse">
+                    <thead className="sticky top-0 bg-hc-bg z-10 shadow-sm">
+                      <tr className="text-[9px] font-black uppercase tracking-[0.24em] text-hc-muted">
+                        <th className="px-5 py-4 w-24">Use</th>
+                        <th className="px-5 py-4">File</th>
+                        <th className="px-5 py-4 w-44">Detected</th>
+                        <th className="px-5 py-4 w-36">Evidence</th>
+                        <th className="px-5 py-4 w-44">Client Hint</th>
+                        <th className="px-5 py-4 w-48">Target</th>
+                        <th className="px-5 py-4 w-56">Client Routing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {zipGuidance.map(row => {
+                        const hasWarning = row.parseError || row.envelope.warnings?.[0];
+                        return (
+                          <tr key={row.id} className={`border-t border-hc-muted/10 ${row.include ? 'bg-white/[0.015]' : 'opacity-55'}`}>
+                            <td className="px-5 py-4 align-top">
+                              <label className="inline-flex items-center gap-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={row.include}
+                                  onChange={e => updateZipRow(row.id, {
+                                    include: e.target.checked,
+                                    selectedTarget: e.target.checked && row.selectedTarget === 'skip' ? (row.suggestedTargets[0] || 'reports') : row.selectedTarget,
+                                  })}
+                                  className="sr-only"
+                                />
+                                <span className={`w-10 h-6 rounded-full p-1 transition-all ${row.include ? 'bg-hc-teal' : 'bg-hc-muted/20'}`}>
+                                  <span className={`block w-4 h-4 rounded-full bg-hc-bg transition-transform ${row.include ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </span>
+                              </label>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[11px] font-black text-hc-text tracking-wide break-all">{row.fileName}</div>
+                              {hasWarning && (
+                                <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-flag-amber line-clamp-2">
+                                  {row.parseError || row.envelope.warnings?.[0]}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-hc-teal/10 text-hc-teal text-[9px] font-black uppercase tracking-widest">
+                                {row.detectedType.replace('-', ' ')}
+                              </div>
+                              <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                                {Math.round(row.confidence * 100)}% · {row.parserProfile}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 align-top text-[10px] font-black uppercase tracking-widest text-hc-text">
+                              {zipMetric(row)}
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <div className="text-[10px] font-black uppercase tracking-widest text-hc-text">{row.suggestedClient}</div>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <select
+                                value={row.selectedTarget}
+                                onChange={e => updateZipRow(row.id, { selectedTarget: e.target.value as ImportTarget | 'skip', include: e.target.value !== 'skip' })}
+                                className="w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
+                              >
+                                <option value="reports">Reports</option>
+                                <option value="templates">Templates</option>
+                                <option value="client-docs">Client Docs</option>
+                                <option value="roster">Roster</option>
+                                <option value="skip">Skip</option>
+                              </select>
+                            </td>
+                            <td className="px-5 py-4 align-top">
+                              <select
+                                value={row.clientMode}
+                                onChange={e => updateZipRow(row.id, {
+                                  clientMode: e.target.value as ClientMode,
+                                  selectedClientId: e.target.value === 'specific' ? (row.selectedClientId || findClientIdByNameHint(row.suggestedClient)) : null,
+                                })}
+                                className="w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
+                              >
+                                <option value="global">Global Ledger</option>
+                                <option value="auto">Auto Resolve</option>
+                                <option value="specific">Specific Client</option>
+                              </select>
+                              {row.clientMode === 'specific' && (
+                                <select
+                                  value={row.selectedClientId || ''}
+                                  onChange={e => updateZipRow(row.id, { selectedClientId: e.target.value || null })}
+                                  className="mt-3 w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
+                                >
+                                  <option value="">Select Client...</option>
+                                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <VerificationGrid items={preview.rawItems || []} type={preview.type} onUpdate={items => setPreview({ ...preview, rawItems: items })} />
+            )}
 
             <div className="hc-clay-raised p-12 rounded-[3rem] border border-hc-muted/5 bg-black/[0.01] shadow-2xl">
               {preview.type === 'diary' && !rosterStatus && (
@@ -600,7 +887,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                    <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
                      <option value="global">Ingest to Global Ledger</option>
                      <option value="auto">Auto-Synthesise Intelligence</option>
-                     <option value="specific">Target Specific Entity Matrix</option>
+                     <option value="specific">Import into one selected client</option>
                    </select>
                    {clientMode === 'specific' && (
                      <select value={selectedClientId || ''} onChange={e => setSelectedClientId(e.target.value)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner animate-in slide-in-from-top-2">
@@ -646,7 +933,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       <div className="mt-auto p-8 flex justify-center border-t border-hc-muted/10 bg-black/[0.02]">
         <div className="flex items-center gap-3 text-[11px] font-black text-hc-muted uppercase tracking-[0.4em]">
            <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-           Field Extraction Intelligence // End-to-End Encryption Vector
+           Import extraction audit // Local browser processing
         </div>
       </div>
     </div>

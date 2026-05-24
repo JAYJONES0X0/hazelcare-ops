@@ -1,6 +1,6 @@
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
+import * as XLSX from '@e965/xlsx';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 if (typeof window !== 'undefined') {

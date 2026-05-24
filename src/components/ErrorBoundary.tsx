@@ -25,6 +25,8 @@ export class ErrorBoundary extends Component<Props, State> {
       localStorage.removeItem('hazelcare-ops');
       localStorage.removeItem('hc_current_page');
       localStorage.removeItem('hc-registered-sessions');
+      localStorage.removeItem('hc-entry-store-v3');
+      indexedDB.deleteDatabase('hazel-care-ops');
     } catch { /* ignore */ }
   }
 

@@ -105,9 +105,21 @@ function parseDateMs(s: string): number {
   return new Date(s).getTime() || 0;
 }
 
-// ─── CSV ROW PARSER (handles quoted multi-line fields) ────────────────────────
+// ─── CSV ROW PARSER (handles quoted multi-line fields and auto-delimiter detection) ────────────────────────
 function parseCSVRows(text: string): string[][] {
   const clean = text.replace(/^\uFEFF/, ''); // strip BOM
+  const lines = clean.split(/\r?\n/);
+  const firstLine = lines[0] || '';
+  
+  // Auto-detect delimiter
+  let delimiter = ',';
+  const counts = { ',': 0, ';': 0, '\t': 0, '|': 0 };
+  for (const char of firstLine) {
+    if (char in counts) counts[char as keyof typeof counts]++;
+  }
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  if (best && best[1] > 0) delimiter = best[0];
+
   const rows: string[][] = [];
   let row: string[] = [];
   let cur = '';
@@ -125,7 +137,7 @@ function parseCSVRows(text: string): string[][] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (ch === ',' && !inQuotes) {
+    } else if (ch === delimiter && !inQuotes) {
       row.push(cur.trim());
       cur = '';
     } else if ((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuotes) {
@@ -190,12 +202,12 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
   const headers = parsedRows[0];
 
   // STEP 1 — Precision header matching using the real CarePlanner column names
-  const iDate   = findCol(headers, 'entry occurred', 'display from', 'occurred', 'date', 'entry_date');
-  const iType   = findCol(headers, 'incident type', 'entry type', 'type', 'category');
-  const iCarer  = findCol(headers, 'carers involved', 'carer', 'staff', 'worker');
-  const iClient = findCol(headers, 'clients involved', 'client', 'service user', 'resident');
-  const iEntry  = findCol(headers, 'diary entry', 'entry', 'notes', 'details', 'description', 'note');
-  const iHouse  = findCol(headers, 'house', 'location', 'property', 'unit', 'site');
+  const iDate   = findCol(headers, 'entry occurred', 'display from', 'occurred', 'date', 'entry_date', 'timestamp');
+  const iType   = findCol(headers, 'incident type', 'entry type', 'type', 'category', 'tag');
+  const iCarer  = findCol(headers, 'carers involved', 'carer', 'staff', 'worker', 'personnel', 'user');
+  const iClient = findCol(headers, 'clients involved', 'client', 'service user', 'resident', 'subject', 'patient');
+  const iEntry  = findCol(headers, 'diary entry', 'entry', 'notes', 'details', 'description', 'note', 'comment', 'body', 'narrative', 'text');
+  const iHouse  = findCol(headers, 'house', 'location', 'property', 'unit', 'site', 'branch');
 
   // STEP 2 — Only run heuristics if we have NO entry column at all
   // (this prevents treating notes-in-cells as client names)
@@ -207,7 +219,7 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
     for (let c = 0; c < sample.length; c++) {
       const val = sample[c].trim();
       if (val.length > 60 && gEntry < 0) gEntry = c;
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(val) && gDate < 0) gDate = c;
+      if (/^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}/.test(val) && gDate < 0) gDate = c;
     }
     // Only guess client/carer if we're in true headerless mode AND have an entry col
     // Use short Proper-Case cells that aren't dates or the entry
@@ -226,8 +238,8 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
   if (gEntry < 0) return [];
 
   // STEP 3 — Row transformation (skip header row)
-  // No cap — parse the entire file (storage handles deduplication)
   const entries: CareEntry[] = [];
+  let lastDate = '', lastCarer = '', lastClient = '', lastHouse = '';
 
   for (let i = 1; i < parsedRows.length; i++) {
     const r = parsedRows[i];
@@ -242,31 +254,32 @@ export function parseUniversalCSV(text: string, rows?: string[][]): CareEntry[] 
 
     // Skip rows where "entry" looks like a header label
     if (rawEntry.toLowerCase() === 'diary entry' || rawEntry.toLowerCase() === 'entry' || rawEntry.toLowerCase() === 'notes') continue;
-    // Skip rows that are clearly just date values repeated (artifact of multi-line CSV parse)
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawEntry)) continue;
-
-    const date   = dateRaw || new Date().toLocaleDateString('en-GB');
-
-    // CarePlanner mobile app writes "All carers in region: HOUSE , All carers in region: ORG"
-    // Strip this to get the house name; mark carer as region-level (not individually attributed)
-    const isRegionEntry = /all carers in region/i.test(carerRaw);
-    let carer: string;
-    let regionHouse = '';
-    if (isRegionEntry) {
-      const houseMatch = carerRaw.match(/all carers in region:\s*([^,]+)/i);
-      regionHouse = houseMatch ? normalizeHouse(houseMatch[1].trim()) : '';
-      carer = 'Region Entry';
-    } else {
-      carer = carerRaw.trim() || 'Personnel Unassigned';
+    
+    // Grouped CSV inheritance logic
+    if (dateRaw) lastDate = dateRaw;
+    if (carerRaw) {
+      const isRegionEntry = /all carers in region/i.test(carerRaw);
+      if (isRegionEntry) {
+        const houseMatch = carerRaw.match(/all carers in region:\s*([^,]+)/i);
+        lastHouse = houseMatch ? normalizeHouse(houseMatch[1].trim()) : '';
+        lastCarer = 'Region Entry';
+      } else {
+        lastCarer = carerRaw.trim();
+      }
     }
+    if (clientRaw) {
+      const normalizedClient = normalizeHouse(clientRaw);
+      const isHouseName = normalizedClient !== clientRaw.trim();
+      if (!isHouseName) lastClient = clientRaw.trim();
+      else lastHouse = normalizedClient;
+    }
+    if (houseRaw) lastHouse = normalizeHouse(houseRaw);
 
-    // Guard: CarePlanner sometimes fills the client column with a house name.
-    const normalizedClient = normalizeHouse(clientRaw);
-    const isHouseName = !!clientRaw && normalizedClient !== clientRaw.trim();
-    const client = (!clientRaw || isHouseName) ? 'Service User Unassigned' : clientRaw.trim();
+    const date   = lastDate || new Date().toLocaleDateString('en-GB');
+    const carer  = lastCarer || 'Personnel Unassigned';
+    const client = lastClient || 'Service User Unassigned';
+    const house  = lastHouse || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
     const type   = typeRaw || 'Standard Entry';
-    // House priority: explicit column → region entry extraction → entry text → client field → UNASSIGNED
-    const house  = normalizeHouse(houseRaw) || regionHouse || extractHouseFromText(rawEntry) || extractHouseFromText(clientRaw) || 'UNASSIGNED';
 
     // Validate date is parseable
     const ms = parseDateMs(date);
@@ -369,23 +382,33 @@ export function parseRosterCSV(text: string, fileName: string): Shift[] {
   const impliedYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
 
   const shifts: Shift[] = [];
+  const headers = rows[0].map(h => h.toLowerCase().trim());
+  const iCarer = findCol(headers, 'carer', 'staff', 'worker');
+  const iDay = findCol(headers, 'day', 'date');
+  const iTime = findCol(headers, 'time', 'shift');
+  const iClient = findCol(headers, 'client', 'service user', 'resident');
+
+  if (iCarer < 0 || iDay < 0 || iTime < 0 || iClient < 0) return [];
+
   let currentCarer = '';
   let currentDay = '';
+  let currentClient = '';
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    if (row.length < 4) continue;
+    if (row.length < 2) continue;
     if (row.some(c => c.includes('GRAND TOTAL'))) break;
 
-    const rawCarer  = row[0]?.trim() || '';
-    const rawDay    = row[1]?.trim() || '';
-    const rawTime   = row[2]?.trim() || '';
-    const rawClient = row[3]?.trim() || '';
+    const rawCarer = row[iCarer]?.trim() || '';
+    const rawDay = row[iDay]?.trim() || '';
+    const rawTime = row[iTime]?.trim() || '';
+    const rawClient = row[iClient]?.trim() || '';
 
     if (rawCarer) currentCarer = rawCarer.split(' - ')[0].trim();
-    if (rawDay)   currentDay   = rawDay.trim();
-    if (!rawTime || !rawClient) continue;
-    if (rawClient.toLowerCase().includes('time off')) continue;
+    if (rawDay) currentDay = rawDay.trim();
+    if (rawClient) currentClient = rawClient.trim();
+    if (!rawTime || !currentClient || !currentDay) continue;
+    if (currentClient.toLowerCase().includes('time off') || currentCarer.toLowerCase().includes('time off')) continue;
 
     const dateMatch = currentDay.match(/(\d{1,2})\s+([A-Za-z]{3})/);
     let date = '';
@@ -415,8 +438,11 @@ export function parseRosterCSV(text: string, fileName: string): Shift[] {
     shifts.push({
       id: uid(),
       staffId: currentCarer,
-      house: normalizeHouse(rawClient) || rawClient,
-      date, startTime, endTime, type,
+      house: normalizeHouse(currentClient) || currentClient,
+      date,
+      startTime,
+      endTime,
+      type,
       hours: Number(hours.toFixed(2)),
       status: 'confirmed',
     });

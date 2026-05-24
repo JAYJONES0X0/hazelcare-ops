@@ -94,7 +94,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
         </div>
         <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-4 text-center">No Sites Registered</h2>
         <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-10 text-center max-w-sm">Upload a CSV export to initialise the multi-site governance view.</p>
-        <button onClick={() => setPage?.('upload')} className="btn-clay btn-clay-teal h-[60px] px-10">Field Ingest</button>
+        <button onClick={() => setPage?.('upload')} className="btn-clay btn-clay-teal h-[60px] px-10">Import Hub</button>
       </div>
     );
   }
@@ -233,7 +233,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
           <Users size={16} className="text-hc-muted" />
           <Activity size={16} className="text-hc-muted" />
         </div>
-        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.4em]">Sovereign Empire Protocol · Quality sourced from Force Protection Engine</div>
+        <div className="text-[8px] font-black text-hc-muted uppercase tracking-[0.4em]">Regional quality overview · sourced from Staff Monitoring</div>
       </div>
     </div>
   );

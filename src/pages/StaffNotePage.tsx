@@ -1,8 +1,12 @@
-﻿import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
-import { NoteWorkspace } from './NoteWorkspace';
-import { TemplatesPage } from './TemplatesPage';
+import type { Page } from '../lib/types';
+import { assessNoteStandard, buildProfessionalNoteDirective } from '../lib/note-quality-standard';
+import { loadClients } from '../lib/client-store';
+import { getAllEntriesAsync } from '../lib/entry-store';
+import { getAllRosterShifts } from '../lib/roster-store';
+import { buildOsIntelligenceContextFromState } from '../lib/os-intelligence-context';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -118,6 +122,14 @@ interface ProtocolStack {
 }
 
 const INTELLIGENCE_STACKS: ProtocolStack[] = [
+  {
+    id: 'hazel_golden_structure',
+    name: 'Hazel Golden Structure',
+    desc: 'Who, what, why, how, outcome and professional language',
+    icon: <FileText size={14} />,
+    structure: ['Who was involved', 'What happened', 'Why support was needed', 'How support was provided', 'Outcome and handover'],
+    directive: buildProfessionalNoteDirective()
+  },
   { 
     id: 'day_shift_1to1', 
     name: 'Day Shift 1:1 Narrative', 
@@ -144,8 +156,8 @@ const INTELLIGENCE_STACKS: ProtocolStack[] = [
   }
 ];
 
-export function StaffNotePage() {
-  const [activeTab, setActiveTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
+export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: any) => void } = {}) {
+  const [activeTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
   const [house, setHouse] = useState('Lingfield House');
   const [client, setClient] = useState('');
   const [freeText, setFreeText] = useState('');
@@ -175,11 +187,26 @@ export function StaffNotePage() {
   };
 
   const wordCount = freeText.split(/\s+/).filter(Boolean).length;
+  const noteAssessment = assessNoteStandard(freeText);
 
   const enhanceNote = async () => {
     if (!freeText.trim()) return;
     setEnhancing(true); setEnhancedNote('');
     try {
+      const [entries, rosterShifts] = await Promise.all([
+        getAllEntriesAsync().catch(() => []),
+        getAllRosterShifts().catch(() => []),
+      ]);
+      const profile = loadClients().find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim()) || null;
+      const clinicalContext = buildOsIntelligenceContextFromState({
+        clientName: client,
+        entry: null,
+        entries,
+        clientProfile: profile,
+        rosterShifts,
+        refineInstructions: activeStack?.directive || '',
+        maxChars: 55_000,
+      });
       const res = await fetch('/api/staff/enhance-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
@@ -190,7 +217,9 @@ export function StaffNotePage() {
           stackId: activeStack?.id,
           stackDirective: activeStack?.directive || '',
           referenceTemplate: activeStack ? activeStack.structure.map(s => `${s.toUpperCase()}:\n`).join('\n') : '',
-          refineInstructions: activeStack ? `PROTOCOL DIRECTIVE: ${activeStack.directive}` : '',
+          refineInstructions: buildProfessionalNoteDirective(client, activeStack ? `PROTOCOL DIRECTIVE: ${activeStack.directive}` : ''),
+          clinicalContext,
+          includeEvidenceTrail: true,
         }),
       });
       if (!res.ok) throw new Error('Offline');
@@ -232,34 +261,26 @@ export function StaffNotePage() {
   return (
     <div className="p-6 lg:p-12 max-w-[1700px] mx-auto animate-in fade-in duration-700">
       
-      {/* Segmented Control Switcher */}
-      <div className="w-full overflow-x-auto scrollbar-none mb-6">
-        <div className="inline-flex items-center p-1.5 rounded-[2rem] hc-clay-raised min-w-max">
-          <button
-            onClick={() => setActiveTab('dictation')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-              activeTab === 'dictation' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
-            }`}
-          >
-            <MessageSquare size={13} /> Dictation Studio
-          </button>
-          <button
-            onClick={() => setActiveTab('workspace')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-              activeTab === 'workspace' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
-            }`}
-          >
-            <Sparkles size={13} /> Note Workspace
-          </button>
-          <button
-            onClick={() => setActiveTab('templates')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-              activeTab === 'templates' ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/10' : 'text-hc-muted hover:text-hc-text'
-            }`}
-          >
-            <Database size={13} /> Builder Templates
-          </button>
+      <div className="w-full flex flex-wrap items-center gap-3 mb-6">
+        <div className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-teal flex items-center gap-2">
+          <MessageSquare size={13} /> Dictation Studio
         </div>
+        <button
+          type="button"
+          onClick={() => setPage?.('note-workspace')}
+          disabled={!setPage}
+          className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2"
+        >
+          <Sparkles size={13} /> Open Note Workspace
+        </button>
+        <button
+          type="button"
+          onClick={() => setPage?.('templates')}
+          disabled={!setPage}
+          className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2"
+        >
+          <Database size={13} /> Open Builder Templates
+        </button>
       </div>
 
       {activeTab === 'dictation' && (
@@ -332,6 +353,37 @@ export function StaffNotePage() {
               placeholder="Paste raw notes or dictate... Stacks will automatically organise the data into a forensic-grade narrative."
               className="w-full hc-clay-inset p-8 text-[13px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none min-h-[450px] scrollbar-none italic"
             />
+            <div className="hc-clay-inset p-4 rounded-2xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Golden Structure Check</span>
+                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
+                  noteAssessment.status === 'strong'
+                    ? 'bg-flag-green/10 text-flag-green border border-flag-green/20'
+                    : noteAssessment.status === 'needs-review'
+                      ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/20'
+                      : 'bg-flag-red/10 text-flag-red border border-flag-red/20'
+                }`}>
+                  {noteAssessment.score}% standard
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {noteAssessment.checks.filter(check => !check.passed).slice(0, 6).map(check => (
+                  <span key={check.id} className="px-3 py-1.5 rounded-xl bg-hc-border/20 text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                    Missing {check.label}
+                  </span>
+                ))}
+                {noteAssessment.risks.map(risk => (
+                  <span key={risk.id} className="px-3 py-1.5 rounded-xl bg-flag-amber/10 text-[9px] font-black uppercase tracking-widest text-flag-amber border border-flag-amber/20">
+                    {risk.label}
+                  </span>
+                ))}
+                {noteAssessment.status === 'strong' && (
+                  <span className="px-3 py-1.5 rounded-xl bg-flag-green/10 text-[9px] font-black uppercase tracking-widest text-flag-green border border-flag-green/20">
+                    Ready for refinement
+                  </span>
+                )}
+              </div>
+            </div>
             <button onClick={enhanceNote} disabled={!freeText.trim() || enhancing} className="w-full py-5 btn-tactical shadow-2xl flex items-center justify-center gap-4 transition-all active:scale-95">
               {enhancing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
               Assemble Gold Standard Narrative
@@ -440,5 +492,7 @@ export function StaffNotePage() {
     </div>
   );
 }
+
+
 
 

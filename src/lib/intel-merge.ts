@@ -8,7 +8,7 @@ import { emptyRisk, emptyRisk_item } from './client-store';
 
 function clean(text: string | undefined | null): string {
   if (!text) return '';
-  return text.replace(/\u0000/g, '').replace(/\s+/g, ' ').trim();
+  return text.split('\u0000').join('').replace(/\s+/g, ' ').trim();
 }
 
 function hasText(text: string | undefined | null): boolean {

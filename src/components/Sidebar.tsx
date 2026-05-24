@@ -45,9 +45,27 @@ const sectionIcon: Record<string, ReactNode> = {
 
 export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onSignOut }: Props) {
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
+  const [compactViewport, setCompactViewport] = useState(() => {
+    try { return window.innerWidth < 640; } catch { return false; }
+  });
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
   });
+
+  useEffect(() => {
+    const syncResponsiveCollapse = () => {
+      const isCompact = window.innerWidth < 640;
+      setCompactViewport(isCompact);
+      const shouldCollapse = window.innerWidth < 1280;
+      setCollapsed((prev) => {
+        if (shouldCollapse && !prev) return true;
+        return prev;
+      });
+    };
+    syncResponsiveCollapse();
+    window.addEventListener('resize', syncResponsiveCollapse);
+    return () => window.removeEventListener('resize', syncResponsiveCollapse);
+  }, []);
 
   const toggleSidebar = () => setCollapsed(c => {
     const next = !c;
@@ -59,7 +77,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
 
   return (
     <div
-      className={`h-full flex flex-col p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative ${collapsed ? 'w-20' : 'w-72'}`}
+      className={`h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative ${collapsed ? (compactViewport ? 'w-28' : 'w-16 sm:w-20') : 'w-64 lg:w-72'}`}
     >
       <button
         onClick={toggleSidebar}
@@ -90,16 +108,21 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
             <button
               key={section.id}
               onClick={() => setPage(section.landing)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                collapsed ? 'justify-center' : 'justify-start'
+              className={`w-full flex items-center rounded-2xl transition-all ${
+                collapsed
+                  ? compactViewport ? 'justify-center flex-col gap-1 px-2 py-3' : 'justify-center gap-3 px-4 py-3'
+                  : 'justify-start gap-3 px-4 py-3'
               } ${active ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/20' : 'hc-clay-raised text-hc-muted hover:text-hc-text'}`}
               title={section.label}
+              aria-label={section.label}
             >
               <span className={active ? 'text-hc-teal' : 'opacity-70'}>
                 {sectionIcon[section.label] ?? <LayoutDashboard size={16} />}
               </span>
-              {!collapsed && (
-                <span className="text-[10px] font-black uppercase tracking-widest">{section.label}</span>
+              {(!collapsed || compactViewport) && (
+                <span className={`${compactViewport && collapsed ? 'text-[8px] leading-tight text-center tracking-[0.08em]' : 'text-[10px] tracking-widest'} font-black uppercase`}>
+                  {section.label}
+                </span>
               )}
             </button>
           );
@@ -132,7 +155,7 @@ export function Sidebar({ page, setPage, weekData, actions, theme, setTheme, onS
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[9px] font-black text-hc-text uppercase tracking-widest truncate">Admin</div>
-                <div className="text-[8px] font-bold text-hc-muted opacity-60 uppercase tracking-widest">Sovereign Access</div>
+                <div className="text-[8px] font-bold text-hc-muted opacity-60 uppercase tracking-widest">Admin Access</div>
               </div>
             </div>
           )}
