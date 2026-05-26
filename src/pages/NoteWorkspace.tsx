@@ -192,23 +192,17 @@ export function NoteWorkspace() {
 
   useEffect(() => {
     let alive = true;
-    console.log('[NoteWorkspace] Starting hydration...');
 
     // Fail-safe: never block the full workspace UI indefinitely on hydration.
     const bootGuard = window.setTimeout(() => {
-      if (alive && booting) {
-        console.warn('[NoteWorkspace] Hydration timed out (2.5s) - forcing boot=false');
-        setBooting(false);
-      }
+      if (alive) setBooting(false);
     }, 2500);
 
     void getAllEntriesAsync().then(rows => {
       if (!alive) return;
-      console.log(`[NoteWorkspace] Hydrated ${rows.length} entries`);
       setEntries(rows);
       setBooting(false);
-    }).catch(err => {
-      console.error('[NoteWorkspace] Hydration failed:', err);
+    }).catch(() => {
       if (alive) setBooting(false);
     });
 
