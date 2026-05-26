@@ -35,7 +35,7 @@ function cleanLine(input: string, max = 2000): string {
   const normalized = (input || '').replace(/\s+/g, ' ').trim();
   if (!normalized) return '';
   if (normalized.length <= max) return normalized;
-  return normalized.slice(0, max - 1).trimEnd() + '…';
+  return normalized.slice(0, max - 3).trimEnd() + '...';
 }
 
 const DAILY_DOMAIN_KEYWORDS = [
@@ -132,7 +132,7 @@ function buildTaskNotes(domain: CarePlanDomain): string {
   if (needLine) parts.push(`Need: ${needLine}`);
   if (supportLine) parts.push(`Support: ${supportLine}`);
   if (riskLine) parts.push(`Watch for: ${riskLine}`);
-  parts.push('Staff should keep this brief, specific and person-centred. Record who was involved, what happened, why support was needed, how support was provided, what the person accepted or declined, and the outcome.');
+  parts.push('Evidence required: record the support offered, the response, anything declined, the outcome, and any change in risk/presentation. Do not write generic entries such as "done", "all fine", or "support given" without the facts.');
   return parts.join('\n');
 }
 
@@ -181,7 +181,7 @@ function generateTasksFromRiskAssessment(client: FullClient): NourishTask[] {
       const notesLines: string[] = [];
       if (description) notesLines.push(`Risk context: ${description}`);
       if (controls.length) notesLines.push(`Controls: ${controls.slice(0, 2).join(' | ')}`);
-      notesLines.push('Record: trigger observed, action taken, client response, escalation if needed.');
+      notesLines.push('Evidence required: trigger observed, immediate action taken, client response, who was informed, and whether the risk reduced/escalated.');
 
       return {
         id: `risk-${riskItem.title.replace(/\s+/g, '-')}`,
@@ -212,7 +212,7 @@ function generateTasksFromSupportPlan(client: FullClient): NourishTask[] {
       const notes: string[] = [];
       if (support) notes.push(`Support: ${support}`);
       if (risk) notes.push(`Risk focus: ${risk}`);
-      notes.push('Record: what was done, client response, refusal/escalation.');
+      notes.push('Evidence required: what staff offered/did, what the client accepted or declined, outcome, and any escalation or follow-up.');
 
       const sourceText = [need.canDoMyself, need.howToSupport, need.risks].join(' ').toLowerCase();
       const mandatory = /risk|safeguard|medication|aggress|falls|self-harm|incident/i.test(sourceText);
@@ -536,7 +536,7 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${freq.bg} ${freq.color}`}>
               {freq.icon} {freq.label}
             </span>
-            <span className="text-[9px] text-hc-muted truncate max-w-[200px]">{task.source}</span>
+            <span className="text-[9px] text-hc-muted break-words">{task.source}</span>
           </div>
         </div>
 
@@ -661,6 +661,7 @@ export function NourishTaskPack() {
   const [importInfo, setImportInfo] = useState('');
   const [refineInput, setRefineInput] = useState('');
   const [refining, setRefining] = useState(false);
+  const [refinementResult, setRefinementResult] = useState('');
 
   useEffect(() => {
     const syncClients = () => setClients(loadClients());
@@ -685,7 +686,7 @@ export function NourishTaskPack() {
       const stressClient = await runTaskStressTest();
       setClients(prev => [stressClient, ...prev]);
       setSelectedId(stressClient.id);
-      setImportInfo('🚀 STRESS TEST ACTIVE: 1,000 TASKS INJECTED');
+      setImportInfo('STRESS TEST ACTIVE: 1,000 TASKS INJECTED');
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Stress test failed');
     }
@@ -698,6 +699,11 @@ export function NourishTaskPack() {
 
   // Local state for manually overridden tasks or refined results
   const [manualOverrides, setManualOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setManualOverrides({});
+    setRefinementResult('');
+  }, [selectedId]);
 
   const tasks = useMemo(() => {
     if (!selectedClient) return [];
@@ -790,8 +796,6 @@ export function NourishTaskPack() {
     if (!refineInput.trim() || !selectedClient) return;
     setRefining(true);
     try {
-      // Simulate AI interaction by processing the current task list based on input
-      // In a real scenario, this would fetch from /api/staff/enhance-task-pack
       const res = await fetch('/api/staff/enhance-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -804,17 +808,11 @@ export function NourishTaskPack() {
         })
       });
 
-      if (res.ok) {
-        await res.json();
-        // Since the API returns a string, we might need a parser if we want to map back to tasks
-        // For now, let's append the AI refinement to the notes of the relevant tasks or update manually
-        // Alternatively, show the AI result in a preview for the user to "Apply"
-        alert('AI Refinement received! In a full implementation, this would map the updated instructions back to each individual task card.');
-      } else {
-        throw new Error('AI at capacity');
-      }
-    } catch {
-      alert('Refinement failed. Try a smaller request.');
+      const draft = await res.text();
+      if (!res.ok) throw new Error(draft || 'AI at capacity');
+      setRefinementResult(draft.trim());
+    } catch (error) {
+      setRefinementResult(error instanceof Error ? error.message : 'Refinement failed. Try a smaller request.');
     } finally {
       setRefining(false);
       setRefineInput('');
@@ -823,10 +821,10 @@ export function NourishTaskPack() {
 
   const clientsWithPlans = clients.filter(c => clientHasTaskSources(c));
   return (
-    <div className="flex h-full min-h-screen">
+    <div className="flex h-full min-h-screen flex-col lg:flex-row">
 
       {/* ── LEFT: Client picker ── */}
-      <aside className="w-72 shrink-0 border-r border-hc-border/10 p-4 space-y-6 overflow-y-auto bg-hc-surface/30">
+      <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-hc-border/10 p-4 space-y-6 overflow-y-auto bg-hc-surface/30 max-h-[42vh] lg:max-h-none">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <ClipboardList size={16} className="text-hc-teal" />
@@ -891,10 +889,10 @@ export function NourishTaskPack() {
       </aside>
 
       {/* ── RIGHT: Task pack ── */}
-      <main className="flex-1 overflow-y-auto p-6 pb-32 space-y-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-52 space-y-6">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h1 
               onClick={(e) => e.detail === 3 && triggerStressTest()}
@@ -911,7 +909,7 @@ export function NourishTaskPack() {
           </div>
 
           {tasks.length > 0 && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 onClick={handleDocxExport}
                 className="flex items-center gap-2 px-4 py-2.5 bg-hc-teal text-hc-bone rounded-xl text-[10px] font-black hover:bg-hc-teal-dark transition-all uppercase tracking-widest shadow-lg"
@@ -936,7 +934,7 @@ export function NourishTaskPack() {
         {selectedClient && tasks.length > 0 && (
           <>
             {/* Stats bar */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 { label: 'Total Tasks', value: tasks.length, color: 'text-hc-text' },
                 { label: 'Daily', value: daily.length, color: 'text-hc-teal' },
@@ -980,15 +978,32 @@ export function NourishTaskPack() {
 
       {/* AI Refinement Interaction Layer */}
       {selectedClient && tasks.length > 0 && (
-        <div className="fixed bottom-6 right-6 left-[20rem] z-50">
-          <div className="max-w-4xl mx-auto hc-clay-raised rounded-[2rem] p-3 flex items-center gap-3 border border-hc-teal/20 backdrop-blur-xl bg-hc-surface/80">
+        <div className="fixed bottom-4 left-4 right-4 lg:bottom-6 lg:right-6 lg:left-[20rem] z-50">
+          <div className="max-w-4xl mx-auto hc-clay-raised rounded-3xl p-3 border border-hc-teal/20 backdrop-blur-xl bg-hc-surface/90 space-y-3">
+            {refinementResult && (
+              <div className="rounded-2xl border border-hc-teal/20 bg-hc-teal/5 p-3">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-hc-teal">AI draft ready</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(refinementResult)}
+                    className="text-[9px] font-black uppercase tracking-widest text-hc-teal hover:underline"
+                  >
+                    Copy draft
+                  </button>
+                </div>
+                <div className="max-h-36 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-hc-text/80">
+                  {refinementResult}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-3">
             <div className="flex-1 relative">
               <Sparkles size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 text-hc-teal ${refining ? 'animate-spin' : ''}`} />
               <input
                 value={refineInput}
                 onChange={e => setRefineInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && runAIRefinement()}
-                placeholder="Talk to Intelligence... (e.g. 'Make the medication task more detailed' or 'Change breakfast to lunch')"
+                placeholder="Ask for a task-pack refinement..."
                 className="w-full pl-10 pr-4 py-3 rounded-2xl hc-clay-inset bg-transparent text-[11px] font-bold text-hc-text outline-none placeholder:text-hc-muted/50"
               />
             </div>
@@ -999,6 +1014,7 @@ export function NourishTaskPack() {
             >
               {refining ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
+            </div>
           </div>
         </div>
       )}

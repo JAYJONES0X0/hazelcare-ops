@@ -265,9 +265,9 @@ function scoreNarrativeNote(text: string, isDaily1to1: boolean): {
 function buildGoldStandardForAppointment(client: string, isDaily: boolean): string {
   const name = (client || 'the client').split(/[\s(]/)[0];
   if (isDaily) {
-    return `I provided 1:1 support to ${name} throughout today's shift. ${name} was calm and engaged well with all prompts and activities offered. Morning routine was completed with minimal prompting — ${name} managed [specific tasks] independently. Afternoon support focused on [activity/engagement]. ${name}'s mood remained [stable/good/low — with reason] throughout the day. No safeguarding concerns or incidents were identified during this support period. All relevant information has been passed to the incoming shift team.`;
+    return `Rewrite this as an evidenced daily 1:1 narrative for ${name}. Include: shift/time period covered, presentation on arrival, support actually offered, what ${name} accepted or declined, meals/medication/personal care/activity details where relevant, mood or risk changes, safeguarding/incident status only if observed or checked, and the handover outcome. Do not invent calm presentation, completed tasks, or "no concerns"; use the source record only and state unknowns as missing evidence.`;
   }
-  return `I supported ${name} during this visit. ${name} was [calm/settled/agitated] on arrival and [accepted/initially declined] support. [Specific support provided: e.g. personal care, medication prompt, meal preparation]. ${name} [responded well/required encouragement/declined X]. No concerns identified during this visit. All tasks completed as per care plan / [note any deviations]. Information passed to next shift.`;
+  return `Rewrite this as an evidenced appointment note for ${name}. Include: appointment time/context, reason for support, what staff actually did, what ${name} accepted or declined, outcome, any deviation from the care plan, and who was informed or handed over to. Do not invent settled presentation, completed care, or "no concerns"; use the source record only and state unknowns as missing evidence.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -480,7 +480,7 @@ export function auditTaskNotes(entries: CareEntry[]): TaskNoteAuditResult {
             : 'Task note is blank — no evidence of care delivered.',
         ],
         severity: 'high',
-        goldStandard: `Task completed for ${(entry.client || 'the client').split(' ')[0]}. Client accepted/declined support. Outcome: [specific result]. No concerns identified.`,
+        goldStandard: `Rewrite the task note for ${(entry.client || 'the client').split(' ')[0]} using the actual task evidence. Include the task attempted, support offered, client response, outcome, and any refusal/escalation. Do not invent completion or "no concerns"; use only what the record shows.`,
         score: text ? 20 : 0,
         gapType: 'task_tick',
       });
