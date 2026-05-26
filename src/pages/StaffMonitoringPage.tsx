@@ -14,7 +14,7 @@ import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Co
 import type { StaffScorecard } from '../lib/staff-monitoring';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
-import { getAllEntriesAsync, getStoreBoundsAsync } from '../lib/entry-store';
+import { getAllEntriesAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import {
   DEFAULT_SUPPORT_WINDOWS,
@@ -64,12 +64,12 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
   useEffect(() => {
     let alive = true;
     void getAllEntriesAsync().then(all => {
-      if (!alive && all.length === 0) return;
+      if (!alive) return;
       onDataParsed(buildWeekSummary(all));
       setBooting(false);
     });
     return () => { alive = false; };
-  }, []);
+  }, [onDataParsed]);
 
   const handleImportFile = useCallback(async (file: File) => {
     setImportLoading(true);

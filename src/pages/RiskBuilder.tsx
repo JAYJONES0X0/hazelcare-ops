@@ -439,7 +439,9 @@ export function RiskBuilder({ clientId, onBack }: Props) {
     try {
       const rawText = await extractFileText(file);
       const parsed = parseUniversalText(rawText);
-      const importedRisk = parsed.client.risk;
+      const importedRisk = parsed.client.risk
+        ? { ...parsed.client.risk, risks: normalizeImportedRiskItems(parsed.client.risk.risks || []) }
+        : null;
       if (!importedRisk) {
         setImportStatus('No risk dataset detected in file.');
         return;

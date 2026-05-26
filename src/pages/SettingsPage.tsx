@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   ShieldCheck, Lock, Activity, Shield, Database, Trash2,
   ShieldAlert, Building2, Key, Download, Upload, CheckCheck,
@@ -18,7 +18,7 @@ type Section = 'org' | 'security' | 'data' | 'session';
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-function SectionTab({ id, label, icon, active, onClick }: { id: Section; label: string; icon: React.ReactNode; active: boolean; onClick: () => void }) {
+function SectionTab({ label, icon, active, onClick }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -425,6 +425,14 @@ function DataSection() {
 // ── Hardware Burn ────────────────────────────────────────────────
 
 function HardwareBurnSection() {
+  const burnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearBurnTimer = () => {
+    if (burnTimerRef.current) {
+      clearTimeout(burnTimerRef.current);
+      burnTimerRef.current = null;
+    }
+  };
+
   return (
     <div className="hc-clay-raised p-8 rounded-[2.5rem] border border-flag-red/20 bg-flag-red/5 space-y-8 group">
       <div className="flex items-center gap-4">
@@ -450,15 +458,15 @@ function HardwareBurnSection() {
                 await purgeSystemDataAsync();
               }
             }, 2000);
-            (window as any)._burnTimer = timer;
+            burnTimerRef.current = timer;
           }}
           onMouseUp={(e) => {
             e.currentTarget.classList.remove('scale-95', 'bg-black');
-            clearTimeout((window as any)._burnTimer);
+            clearBurnTimer();
           }}
           onMouseLeave={(e) => {
             e.currentTarget.classList.remove('scale-95', 'bg-black');
-            clearTimeout((window as any)._burnTimer);
+            clearBurnTimer();
           }}
           className="w-full py-5 rounded-2xl bg-flag-red text-hc-bone font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl transition-all duration-300 relative overflow-hidden active:shadow-inner"
         >
@@ -471,22 +479,21 @@ function HardwareBurnSection() {
 
 // ── Main Settings Page ───────────────────────────────────────────
 
-export function SettingsPage({ onSignOut, setPage: _setPage }: Props) {
+export function SettingsPage({ onSignOut }: Props) {
   const [pin, setPin] = useState('');
   const [pinUnlocked, setPinUnlocked] = useState(false);
   const [pinError, setPinError] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>('org');
 
   // Detect node hash on mount
-  const [nodeHash, setNodeHash] = useState('');
-  useEffect(() => {
+  const [nodeHash] = useState(() => {
     let hash = localStorage.getItem('hc-node-hash');
     if (!hash) {
       hash = 'HC-' + Math.random().toString(36).substring(2, 12).toUpperCase();
       localStorage.setItem('hc-node-hash', hash);
     }
-    setNodeHash(hash);
-  }, []);
+    return hash;
+  });
 
   const handlePinSubmit = () => {
     if (pin === '236693!') {

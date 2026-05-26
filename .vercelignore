@@ -1,0 +1,9 @@
+docs/audits/**
+audit-*.png
+live-*.png
+local-*.png
+qa-*.png
+smoke-*.png
+tmp*
+*.log
+login-data.json

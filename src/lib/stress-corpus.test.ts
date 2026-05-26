@@ -56,11 +56,11 @@ async function extractCorpusCases(): Promise<{ cases: CorpusCase[]; failures: Co
             text,
             kind: 'zip-entry',
           });
-        } catch (error: any) {
+        } catch (error) {
           failures.push({
             fileName: `${entry.name}::${innerName}`,
             kind: 'zip-entry',
-            error: error?.message || String(error),
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
@@ -79,11 +79,11 @@ async function extractCorpusCases(): Promise<{ cases: CorpusCase[]; failures: Co
         text,
         kind: 'file',
       });
-    } catch (error: any) {
+    } catch (error) {
       failures.push({
         fileName: entry.name,
         kind: 'file',
-        error: error?.message || String(error),
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

@@ -1,16 +1,16 @@
-import { useState, useMemo, useCallback, useEffect, type MouseEvent } from 'react';
-import { loadClients, saveClient, type FullClient, type CarePlanDomain, type VaultDoc, emptyClient } from '../lib/client-store';
+import { useState, useMemo, useEffect, type MouseEvent } from 'react';
+import { loadClients, saveClient, type FullClient, type CarePlanDomain, type VaultDoc } from '../lib/client-store';
 import { runTaskStressTest } from '../lib/stress-test-tasks';
 import {
   ClipboardList, Copy, Check, ChevronDown, ChevronRight,
   User, Calendar, AlertTriangle, Clock, Zap, FileText,
-  Download, RefreshCw, Info, Paperclip, Trash2, Sparkles, Send, X
+  Download, RefreshCw, Paperclip, Sparkles, Send, X
 } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
 import { 
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, 
   AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
-  VerticalAlign, Header, Footer, PageNumber
+  Header, Footer, PageNumber
 } from 'docx';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -805,7 +805,7 @@ export function NourishTaskPack() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        await res.json();
         // Since the API returns a string, we might need a parser if we want to map back to tasks
         // For now, let's append the AI refinement to the notes of the relevant tasks or update manually
         // Alternatively, show the AI result in a preview for the user to "Apply"
@@ -813,7 +813,7 @@ export function NourishTaskPack() {
       } else {
         throw new Error('AI at capacity');
       }
-    } catch (e) {
+    } catch {
       alert('Refinement failed. Try a smaller request.');
     } finally {
       setRefining(false);
@@ -822,8 +822,6 @@ export function NourishTaskPack() {
   };
 
   const clientsWithPlans = clients.filter(c => clientHasTaskSources(c));
-  const clientsNoPlan = clients.filter(c => !clientHasTaskSources(c));
-
   return (
     <div className="flex h-full min-h-screen">
 

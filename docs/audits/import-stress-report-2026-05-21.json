@@ -1,21 +1,55 @@
 {
-  "generatedAt": "2026-05-24T17:10:58.334Z",
+  "generatedAt": "2026-05-26T08:59:07.935Z",
   "totals": {
-    "roots": 9,
-    "cases": 363,
+    "roots": 2,
+    "cases": 399,
     "failures": 0,
-    "diaryEntries": 278484,
-    "weekEntries": 278484,
-    "clientCandidates": 58,
-    "supportNeeds": 245,
+    "diaryEntries": 381547,
+    "weekEntries": 381547,
+    "clientCandidates": 59,
+    "supportNeeds": 250,
     "typeCounts": {
-      "unknown": 158,
-      "diary": 125,
-      "roster": 14,
+      "unknown": 161,
+      "diary": 153,
+      "roster": 18,
       "admission": 51,
-      "support-plan": 15
+      "support-plan": 16
     },
     "slowest": [
+      {
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (15).pdf",
+        "fileName": "Client-diary (15).pdf",
+        "size": 47433946,
+        "kind": "file",
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
+        "diaryEntries": 0,
+        "weekEntries": 0,
+        "clientCandidates": 0,
+        "supportNeeds": 0,
+        "warnings": [
+          "No diary entries parsed from this file."
+        ],
+        "textLength": 260,
+        "ms": 15350
+      },
+      {
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\wayne Notes 22 feb to 17 may.pdf",
+        "fileName": "wayne Notes 22 feb to 17 may.pdf",
+        "size": 66257340,
+        "kind": "file",
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
+        "diaryEntries": 0,
+        "weekEntries": 0,
+        "clientCandidates": 0,
+        "supportNeeds": 0,
+        "warnings": [
+          "No diary entries parsed from this file."
+        ],
+        "textLength": 260,
+        "ms": 12242
+      },
       {
         "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (49).csv",
         "fileName": "Client-diary (49).csv",
@@ -29,7 +63,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3330
+        "ms": 3939
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -45,7 +79,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3133
+        "ms": 3458
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -61,126 +95,84 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3097
+        "ms": 3428
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (49).csv",
-        "fileName": "Client-diary (49).csv",
-        "size": 34113380,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (13).pdf",
+        "fileName": "Client-diary (13).pdf",
+        "size": 990725,
         "kind": "file",
         "detectedType": "diary",
         "parserProfile": "generic-diary-hint",
-        "diaryEntries": 46035,
-        "weekEntries": 46035,
+        "diaryEntries": 22099,
+        "weekEntries": 22099,
         "clientCandidates": 0,
         "supportNeeds": 0,
         "warnings": [],
-        "textLength": 34019951,
-        "ms": 2803
+        "textLength": 670141,
+        "ms": 3403
       },
       {
-        "source": "type of datasets extracts from careplanner or similar/Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "fileName": "Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "size": 0,
-        "kind": "zip-entry",
-        "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\type of datasets extracts from careplanner or similar.zip",
-        "detectedType": "roster",
-        "parserProfile": "care-planner-roster",
-        "diaryEntries": 0,
-        "weekEntries": 0,
-        "clientCandidates": 0,
-        "supportNeeds": 0,
-        "warnings": [
-          "No shifts parsed from this roster file."
-        ],
-        "textLength": 153268,
-        "ms": 904
-      },
-      {
-        "source": "type of datasets extracts from careplanner or similar/Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "fileName": "Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "size": 0,
-        "kind": "zip-entry",
-        "zipPath": "C:\\Users\\brook\\Downloads\\careplanner-extracts.zip",
-        "detectedType": "roster",
-        "parserProfile": "care-planner-roster",
-        "diaryEntries": 0,
-        "weekEntries": 0,
-        "clientCandidates": 0,
-        "supportNeeds": 0,
-        "warnings": [
-          "No shifts parsed from this roster file."
-        ],
-        "textLength": 153268,
-        "ms": 897
-      },
-      {
-        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-medication-administration-report.pdf",
-        "fileName": "Client-medication-administration-report.pdf",
-        "size": 395181,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\wayne Notes 22 feb to 17 mayy .pdf",
+        "fileName": "wayne Notes 22 feb to 17 mayy .pdf",
+        "size": 18054132,
         "kind": "file",
-        "detectedType": "unknown",
-        "parserProfile": "unknown",
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
         "diaryEntries": 0,
         "weekEntries": 0,
         "clientCandidates": 0,
         "supportNeeds": 0,
         "warnings": [
-          "File type could not be confidently detected. Choose targets manually."
+          "No diary entries parsed from this file."
         ],
-        "textLength": 196205,
-        "ms": 840
+        "textLength": 91,
+        "ms": 3383
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "fileName": "Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "size": 469112,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16).pdf",
+        "fileName": "Client-diary (16).pdf",
+        "size": 990725,
         "kind": "file",
-        "detectedType": "roster",
-        "parserProfile": "care-planner-roster",
-        "diaryEntries": 0,
-        "weekEntries": 0,
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
+        "diaryEntries": 22099,
+        "weekEntries": 22099,
         "clientCandidates": 0,
         "supportNeeds": 0,
-        "warnings": [
-          "No shifts parsed from this roster file."
-        ],
-        "textLength": 153268,
-        "ms": 796
+        "warnings": [],
+        "textLength": 670141,
+        "ms": 3155
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "fileName": "Client-roster-from-20_03_2026-to-05_04_2026.pdf",
-        "size": 469112,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (15).docx",
+        "fileName": "Client-diary (15).docx",
+        "size": 540557,
         "kind": "file",
-        "detectedType": "roster",
-        "parserProfile": "care-planner-roster",
-        "diaryEntries": 0,
-        "weekEntries": 0,
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
+        "diaryEntries": 1608,
+        "weekEntries": 1608,
         "clientCandidates": 0,
         "supportNeeds": 0,
-        "warnings": [
-          "No shifts parsed from this roster file."
-        ],
-        "textLength": 153268,
-        "ms": 792
+        "warnings": [],
+        "textLength": 798976,
+        "ms": 3043
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\Client-medication-administration-report.pdf",
-        "fileName": "Client-medication-administration-report.pdf",
-        "size": 395181,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16)-cleaned-fixed.pdf",
+        "fileName": "Client-diary (16)-cleaned-fixed.pdf",
+        "size": 914886,
         "kind": "file",
-        "detectedType": "unknown",
-        "parserProfile": "unknown",
-        "diaryEntries": 0,
-        "weekEntries": 0,
+        "detectedType": "diary",
+        "parserProfile": "generic-diary-hint",
+        "diaryEntries": 22099,
+        "weekEntries": 22099,
         "clientCandidates": 0,
         "supportNeeds": 0,
-        "warnings": [
-          "File type could not be confidently detected. Choose targets manually."
-        ],
-        "textLength": 196205,
-        "ms": 777
+        "warnings": [],
+        "textLength": 665120,
+        "ms": 2992
       }
     ],
     "largestText": [
@@ -197,7 +189,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3330
+        "ms": 3939
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -213,7 +205,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3133
+        "ms": 3458
       },
       {
         "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (49).csv",
@@ -228,7 +220,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 2803
+        "ms": 2926
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -244,7 +236,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 34019951,
-        "ms": 3097
+        "ms": 3428
       },
       {
         "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (30).csv",
@@ -259,7 +251,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 3433101,
-        "ms": 292
+        "ms": 347
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (30).csv",
@@ -275,7 +267,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 3433101,
-        "ms": 334
+        "ms": 353
       },
       {
         "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (30).csv",
@@ -290,7 +282,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 3433101,
-        "ms": 254
+        "ms": 227
       },
       {
         "source": "type of datasets extracts from careplanner or similar/Client-diary (30).csv",
@@ -306,25 +298,25 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 3433101,
-        "ms": 326
+        "ms": 344
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (50).csv",
-        "fileName": "Client-diary (50).csv",
-        "size": 2956005,
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (59).csv",
+        "fileName": "Client-diary (59).csv",
+        "size": 1185692,
         "kind": "file",
         "detectedType": "diary",
         "parserProfile": "generic-diary-hint",
-        "diaryEntries": 4540,
-        "weekEntries": 4540,
+        "diaryEntries": 630,
+        "weekEntries": 630,
         "clientCandidates": 0,
         "supportNeeds": 0,
         "warnings": [],
-        "textLength": 2946895,
-        "ms": 222
+        "textLength": 1180065,
+        "ms": 73
       },
       {
-        "source": "C:\\Users\\brook\\Downloads\\Client-diarykm (53).csv",
+        "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diarykm (53).csv",
         "fileName": "Client-diarykm (53).csv",
         "size": 1030551,
         "kind": "file",
@@ -336,7 +328,7 @@
         "supportNeeds": 0,
         "warnings": [],
         "textLength": 1027283,
-        "ms": 68
+        "ms": 90
       }
     ]
   },
@@ -356,7 +348,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2268,
-      "ms": 36
+      "ms": 48
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\blueflame_invoice.pdf",
@@ -373,7 +365,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 219,
-      "ms": 88
+      "ms": 228
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Carer-diary (1).csv",
@@ -388,7 +380,37 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 46
+      "ms": 77
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (12).pdf",
+      "fileName": "Client-diary (12).pdf",
+      "size": 301253,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 7317,
+      "weekEntries": 7317,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 144390,
+      "ms": 1261
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (13).pdf",
+      "fileName": "Client-diary (13).pdf",
+      "size": 990725,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 22099,
+      "weekEntries": 22099,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 670141,
+      "ms": 3403
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (14).csv",
@@ -403,7 +425,22 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1899,
-      "ms": 1
+      "ms": 0
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (14).pdf",
+      "fileName": "Client-diary (14).pdf",
+      "size": 336574,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 8065,
+      "weekEntries": 8065,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 184927,
+      "ms": 1152
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (15).csv",
@@ -418,7 +455,69 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 120086,
-      "ms": 14
+      "ms": 12
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (15).docx",
+      "fileName": "Client-diary (15).docx",
+      "size": 540557,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 1608,
+      "weekEntries": 1608,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 798976,
+      "ms": 3043
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (15).pdf",
+      "fileName": "Client-diary (15).pdf",
+      "size": 47433946,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No diary entries parsed from this file."
+      ],
+      "textLength": 260,
+      "ms": 15350
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16)-cleaned-fixed.pdf",
+      "fileName": "Client-diary (16)-cleaned-fixed.pdf",
+      "size": 914886,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 22099,
+      "weekEntries": 22099,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 665120,
+      "ms": 2992
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16)-cleaned.pdf",
+      "fileName": "Client-diary (16)-cleaned.pdf",
+      "size": 912675,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 22099,
+      "weekEntries": 22099,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 665120,
+      "ms": 2824
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16).csv",
@@ -433,7 +532,22 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 199145,
-      "ms": 25
+      "ms": 19
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (16).pdf",
+      "fileName": "Client-diary (16).pdf",
+      "size": 990725,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 22099,
+      "weekEntries": 22099,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 670141,
+      "ms": 3155
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (19).csv",
@@ -463,7 +577,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 69118,
-      "ms": 404
+      "ms": 321
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (20).csv",
@@ -478,7 +592,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 640079,
-      "ms": 56
+      "ms": 61
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (21).csv",
@@ -493,7 +607,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 28
+      "ms": 37
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (22).csv",
@@ -523,7 +637,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 54744,
-      "ms": 4
+      "ms": 6
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (24).csv",
@@ -538,7 +652,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 56313,
-      "ms": 5
+      "ms": 6
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (25).csv",
@@ -553,7 +667,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 92916,
-      "ms": 7
+      "ms": 10
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (26).csv",
@@ -568,7 +682,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 322189,
-      "ms": 26
+      "ms": 30
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (27).csv",
@@ -583,7 +697,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 55177,
-      "ms": 6
+      "ms": 5
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (28).csv",
@@ -613,7 +727,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 980731,
-      "ms": 99
+      "ms": 97
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (3).pdf",
@@ -628,7 +742,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72524,
-      "ms": 356
+      "ms": 392
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (30).csv",
@@ -643,7 +757,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 3433101,
-      "ms": 292
+      "ms": 347
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (31).csv",
@@ -658,7 +772,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72346,
-      "ms": 6
+      "ms": 7
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (4).pdf",
@@ -673,7 +787,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 121914,
-      "ms": 612
+      "ms": 588
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (49).csv",
@@ -688,7 +802,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 34019951,
-      "ms": 3330
+      "ms": 3939
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (5).pdf",
@@ -703,22 +817,339 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 71373,
-      "ms": 357
+      "ms": 511
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (50).csv",
       "fileName": "Client-diary (50).csv",
-      "size": 2956005,
+      "size": 147672,
       "kind": "file",
       "detectedType": "diary",
       "parserProfile": "generic-diary-hint",
-      "diaryEntries": 4540,
-      "weekEntries": 4540,
+      "diaryEntries": 163,
+      "weekEntries": 163,
       "clientCandidates": 0,
       "supportNeeds": 0,
       "warnings": [],
-      "textLength": 2946895,
-      "ms": 222
+      "textLength": 147359,
+      "ms": 14
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (51).csv",
+      "fileName": "Client-diary (51).csv",
+      "size": 237899,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 287,
+      "weekEntries": 287,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 237483,
+      "ms": 27
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (52).csv",
+      "fileName": "Client-diary (52).csv",
+      "size": 318040,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 163,
+      "weekEntries": 163,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 316823,
+      "ms": 29
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (53).csv",
+      "fileName": "Client-diary (53).csv",
+      "size": 32785,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 12,
+      "weekEntries": 12,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 32657,
+      "ms": 3
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (54).csv",
+      "fileName": "Client-diary (54).csv",
+      "size": 39258,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 13,
+      "weekEntries": 13,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 39120,
+      "ms": 4
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (55).csv",
+      "fileName": "Client-diary (55).csv",
+      "size": 288108,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 129,
+      "weekEntries": 129,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 287478,
+      "ms": 25
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (56).csv",
+      "fileName": "Client-diary (56).csv",
+      "size": 336153,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 170,
+      "weekEntries": 170,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 334808,
+      "ms": 26
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (57).csv",
+      "fileName": "Client-diary (57).csv",
+      "size": 269015,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 233,
+      "weekEntries": 233,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 268408,
+      "ms": 22
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (58).csv",
+      "fileName": "Client-diary (58).csv",
+      "size": 278246,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 206,
+      "weekEntries": 206,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 277623,
+      "ms": 19
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (59).csv",
+      "fileName": "Client-diary (59).csv",
+      "size": 1185692,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 630,
+      "weekEntries": 630,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 1180065,
+      "ms": 73
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (60).csv",
+      "fileName": "Client-diary (60).csv",
+      "size": 31227,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 14,
+      "weekEntries": 14,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 31182,
+      "ms": 2
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (61).csv",
+      "fileName": "Client-diary (61).csv",
+      "size": 80493,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 34,
+      "weekEntries": 34,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 80309,
+      "ms": 8
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (62).csv",
+      "fileName": "Client-diary (62).csv",
+      "size": 85932,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 34,
+      "weekEntries": 34,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 85746,
+      "ms": 7
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (63).csv",
+      "fileName": "Client-diary (63).csv",
+      "size": 142876,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 46,
+      "weekEntries": 46,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 142639,
+      "ms": 12
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (64).csv",
+      "fileName": "Client-diary (64).csv",
+      "size": 269499,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 69,
+      "weekEntries": 69,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 268924,
+      "ms": 18
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (65).csv",
+      "fileName": "Client-diary (65).csv",
+      "size": 48928,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 21,
+      "weekEntries": 21,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 48805,
+      "ms": 4
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (66).csv",
+      "fileName": "Client-diary (66).csv",
+      "size": 27346,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 8,
+      "weekEntries": 8,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 27304,
+      "ms": 4
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (67).csv",
+      "fileName": "Client-diary (67).csv",
+      "size": 188325,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 107,
+      "weekEntries": 107,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 187347,
+      "ms": 11
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (68).csv",
+      "fileName": "Client-diary (68).csv",
+      "size": 319251,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 171,
+      "weekEntries": 171,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 317657,
+      "ms": 19
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diary (69).csv",
+      "fileName": "Client-diary (69).csv",
+      "size": 675330,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 239,
+      "weekEntries": 239,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 673903,
+      "ms": 43
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-Diary WJ.pdf",
+      "fileName": "Client-Diary WJ.pdf",
+      "size": 1210079,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No diary entries parsed from this file."
+      ],
+      "textLength": 666412,
+      "ms": 2741
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-diarykm (53).csv",
+      "fileName": "Client-diarykm (53).csv",
+      "size": 1030551,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 569,
+      "weekEntries": 569,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 1027283,
+      "ms": 90
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-medication-administration-report.pdf",
@@ -735,7 +1166,58 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 196205,
-      "ms": 840
+      "ms": 1127
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-01_03_2026-to-23_03_2026.pdf",
+      "fileName": "Client-roster-from-01_03_2026-to-23_03_2026.pdf",
+      "size": 51588,
+      "kind": "file",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No shifts parsed from this roster file."
+      ],
+      "textLength": 9554,
+      "ms": 65
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-01_03_2026-to-30_04_2026.pdf",
+      "fileName": "Client-roster-from-01_03_2026-to-30_04_2026.pdf",
+      "size": 93679,
+      "kind": "file",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No shifts parsed from this roster file."
+      ],
+      "textLength": 24156,
+      "ms": 194
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-01_04_2026-to-20_05_2026.pdf",
+      "fileName": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
+      "size": 78122,
+      "kind": "file",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No shifts parsed from this roster file."
+      ],
+      "textLength": 19279,
+      "ms": 127
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-20_03_2026-to-05_04_2026.pdf",
@@ -752,7 +1234,39 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 153268,
-      "ms": 796
+      "ms": 1020
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Client-roster-from-20_04_2026-to-05_05_2026.pdf",
+      "fileName": "Client-roster-from-20_04_2026-to-05_05_2026.pdf",
+      "size": 42679,
+      "kind": "file",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No shifts parsed from this roster file."
+      ],
+      "textLength": 6567,
+      "ms": 53
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\ClientRoster-from-01_03_2026-to-30_04_2026.csv",
+      "fileName": "ClientRoster-from-01_03_2026-to-30_04_2026.csv",
+      "size": 26857,
+      "kind": "file",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 26857,
+      "ms": 4
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\ClientRoster-from-20_03_2026-to-05_04_2026.csv",
@@ -767,7 +1281,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 171155,
-      "ms": 15
+      "ms": 17
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\compatibility risk asses - Nourish Care.pdf",
@@ -784,7 +1298,7 @@
         "Imported 1 risk area(s) from clinical risk assessment."
       ],
       "textLength": 9922,
-      "ms": 38
+      "ms": 45
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Core Staff Daily Note.docx",
@@ -801,7 +1315,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4123,
-      "ms": 48
+      "ms": 18
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Daily Finance Overview - Attendance report 3-17-26.csv",
@@ -833,7 +1347,7 @@
         "Identified 13 core care domains for this profile."
       ],
       "textLength": 77037,
-      "ms": 251
+      "ms": 327
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-james-wright_19032026_1142.pdf",
@@ -850,7 +1364,7 @@
         "Identified 20 core care domains for this profile."
       ],
       "textLength": 85596,
-      "ms": 239
+      "ms": 301
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-matthew-inder-1-1_14052026_1604.pdf",
@@ -867,7 +1381,7 @@
         "Identified 7 core care domains for this profile."
       ],
       "textLength": 61378,
-      "ms": 181
+      "ms": 207
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-matthew-inder-1-1_18052026_1224.pdf",
@@ -884,7 +1398,7 @@
         "Identified 7 core care domains for this profile."
       ],
       "textLength": 61378,
-      "ms": 174
+      "ms": 224
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-ryan-shade-1-1_14052026_1619.pdf",
@@ -901,7 +1415,7 @@
         "Identified 18 core care domains for this profile."
       ],
       "textLength": 100585,
-      "ms": 282
+      "ms": 440
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-ryan-shade-1-1_18052026_1223.pdf",
@@ -918,7 +1432,7 @@
         "Identified 18 core care domains for this profile."
       ],
       "textLength": 100585,
-      "ms": 283
+      "ms": 325
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-sean-david-marcus-perry_09042026_1819.pdf",
@@ -935,7 +1449,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 39843,
-      "ms": 58
+      "ms": 88
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-sean-david-marcuss-perry_09042026_1829.pdf",
@@ -952,7 +1466,7 @@
         "Identified 14 core care domains for this profile."
       ],
       "textLength": 50625,
-      "ms": 165
+      "ms": 208
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-wayne-jefferson-1-1_14052026_1517.pdf",
@@ -969,7 +1483,7 @@
         "Identified 19 core care domains for this profile."
       ],
       "textLength": 231533,
-      "ms": 597
+      "ms": 782
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Full Brief — Trace & Trance.pdf",
@@ -986,7 +1500,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1333,
-      "ms": 41
+      "ms": 50
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Gavin_Full_Rescue_Pack_Jan_to_April.txt",
@@ -1037,7 +1551,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6537,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Gavin_Rescue_Pack_Complete.txt",
@@ -1054,7 +1568,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 21144,
-      "ms": 0
+      "ms": 1
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Hazel Care Ltd SUPPORT PLAN.pdf",
@@ -1069,7 +1583,7 @@
       "supportNeeds": 9,
       "warnings": [],
       "textLength": 34695,
-      "ms": 211
+      "ms": 289
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-coordinator-readme-2026-04-20.txt",
@@ -1086,7 +1600,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 82204,
-      "ms": 2
+      "ms": 4
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-2026-04-09 (1).csv",
@@ -1116,7 +1630,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 18713,
-      "ms": 3
+      "ms": 2
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-2026-04-09.csv",
@@ -1131,7 +1645,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 2594,
-      "ms": 0
+      "ms": 1
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-2026-05-18.csv",
@@ -1165,7 +1679,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 785,
-      "ms": 0
+      "ms": 1
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-readme-2026-04-09 (2).txt",
@@ -1182,7 +1696,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 673,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-readme-2026-04-09.txt",
@@ -1217,7 +1731,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2232,
-      "ms": 1
+      "ms": 3
     },
     {
       "source": "brief.md",
@@ -1252,7 +1766,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 32,
-      "ms": 8
+      "ms": 7
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\hazelcare_support_roster.csv",
@@ -1287,7 +1801,7 @@
         "Imported 9 risk assessment item(s) from reassessment notes."
       ],
       "textLength": 44633,
-      "ms": 130
+      "ms": 150
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\matthew-inder-full-task-pack (1).docx",
@@ -1321,7 +1835,58 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 19104,
-      "ms": 51
+      "ms": 58
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Medication-administration-report (1).pdf",
+      "fileName": "Medication-administration-report (1).pdf",
+      "size": 320726,
+      "kind": "file",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 166349,
+      "ms": 858
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Medication-administration-report (2).pdf",
+      "fileName": "Medication-administration-report (2).pdf",
+      "size": 160396,
+      "kind": "file",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 78127,
+      "ms": 409
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Medication-administration-report.pdf",
+      "fileName": "Medication-administration-report.pdf",
+      "size": 47351,
+      "kind": "file",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 12850,
+      "ms": 89
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\My support plan JW.docx",
@@ -1336,7 +1901,7 @@
       "supportNeeds": 22,
       "warnings": [],
       "textLength": 5198,
-      "ms": 54
+      "ms": 76
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\NEXUS UI.txt",
@@ -1353,7 +1918,24 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 74602,
-      "ms": 3
+      "ms": 4
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\NOTES.txt",
+      "fileName": "NOTES.txt",
+      "size": 323198,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No diary entries parsed from this file."
+      ],
+      "textLength": 312075,
+      "ms": 18
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Nourish type Doc.pdf",
@@ -1370,7 +1952,7 @@
         "Identified 11 core care domains for this profile."
       ],
       "textLength": 57359,
-      "ms": 196
+      "ms": 305
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\nourish-task-pack-matthew-inder-(1_1) (1).txt",
@@ -1422,7 +2004,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2661,
-      "ms": 253
+      "ms": 379
     },
     {
       "source": "Livingstone Mcfie/Medication/Medication/Medication audit LM 09.10.25.docx",
@@ -1440,7 +2022,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 17323,
-      "ms": 335
+      "ms": 486
     },
     {
       "source": "Livingstone Mcfie/Medication/Medication/Medication audit LM 20.03.2026.docx",
@@ -1458,7 +2040,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 17323,
-      "ms": 341
+      "ms": 516
     },
     {
       "source": "Livingstone Mcfie/Medication/A5_Hypo_TREND.pdf",
@@ -1476,7 +2058,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 5625,
-      "ms": 294
+      "ms": 387
     },
     {
       "source": "Livingstone Mcfie/Medication/Protocol for LM diabetes.docx",
@@ -1494,7 +2076,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 566,
-      "ms": 228
+      "ms": 386
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Community Vulnerability & Safeguarding Risk.docx",
@@ -1512,7 +2094,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 655,
-      "ms": 231
+      "ms": 343
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Environmental Risk, Hoarding & Tenancy Breakdown.docx",
@@ -1530,7 +2112,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 3164,
-      "ms": 225
+      "ms": 365
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Environmental Risk, Hoarding & Tenancy Breakdown.pdf",
@@ -1548,7 +2130,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 3152,
-      "ms": 243
+      "ms": 418
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Managing Finances risk assessment.docx",
@@ -1566,7 +2148,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 2847,
-      "ms": 226
+      "ms": 375
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Medication Non-Compliance (Mental & Physical Health).docx",
@@ -1584,7 +2166,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2869,
-      "ms": 224
+      "ms": 376
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Mental Health Relapse risk assessment.docx",
@@ -1602,7 +2184,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 1673,
-      "ms": 226
+      "ms": 352
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Nutrition, Hydration & Diabetes (High Clinical Risk).docx",
@@ -1620,7 +2202,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1360,
-      "ms": 221
+      "ms": 427
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Risk of Aggression, Violence & Harm to Others.docx",
@@ -1638,7 +2220,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1736,
-      "ms": 227
+      "ms": 317
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Risk of Aggression, Violence & Harm to Others.pdf",
@@ -1656,7 +2238,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1724,
-      "ms": 236
+      "ms": 402
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Self-Neglect, Personal Care & Physical Health Deterioration.docx",
@@ -1674,7 +2256,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1584,
-      "ms": 239
+      "ms": 433
     },
     {
       "source": "Livingstone Mcfie/Risk assessments/Substance Misuse & Relapse Impact.docx",
@@ -1692,7 +2274,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 741,
-      "ms": 226
+      "ms": 326
     },
     {
       "source": "Livingstone Mcfie/supported living/care review.pdf",
@@ -1710,7 +2292,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4,
-      "ms": 224
+      "ms": 375
     },
     {
       "source": "Livingstone Mcfie/supported living/my right support.pdf",
@@ -1728,7 +2310,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 10,
-      "ms": 220
+      "ms": 393
     },
     {
       "source": "Livingstone Mcfie/_Consent Form    Livie M cfee .pdf",
@@ -1746,7 +2328,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2710,
-      "ms": 250
+      "ms": 389
     },
     {
       "source": "Livingstone Mcfie/14 day notification.pdf",
@@ -1764,7 +2346,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 5,
-      "ms": 289
+      "ms": 426
     },
     {
       "source": "Livingstone Mcfie/20260123164648398.pdf",
@@ -1782,7 +2364,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2,
-      "ms": 224
+      "ms": 329
     },
     {
       "source": "Livingstone Mcfie/21 day notice.pdf",
@@ -1800,7 +2382,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 5,
-      "ms": 282
+      "ms": 424
     },
     {
       "source": "Livingstone Mcfie/345683 LM Support Plan.pdf",
@@ -1816,7 +2398,7 @@
       "supportNeeds": 10,
       "warnings": [],
       "textLength": 22900,
-      "ms": 266
+      "ms": 424
     },
     {
       "source": "Livingstone Mcfie/About Me.pdf",
@@ -1834,7 +2416,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8,
-      "ms": 333
+      "ms": 538
     },
     {
       "source": "Livingstone Mcfie/access able.pdf",
@@ -1852,7 +2434,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 217
+      "ms": 311
     },
     {
       "source": "Livingstone Mcfie/Activity Planner - LM (1).docx",
@@ -1870,7 +2452,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 1309,
-      "ms": 233
+      "ms": 434
     },
     {
       "source": "Livingstone Mcfie/Activity Planner - LM.docx",
@@ -1888,7 +2470,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 4886,
-      "ms": 232
+      "ms": 443
     },
     {
       "source": "Livingstone Mcfie/Activity Planner - LM.pdf",
@@ -1906,7 +2488,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 6160,
-      "ms": 265
+      "ms": 417
     },
     {
       "source": "Livingstone Mcfie/Activity Planner - Template.docx",
@@ -1924,7 +2506,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 2117,
-      "ms": 235
+      "ms": 346
     },
     {
       "source": "Livingstone Mcfie/best intrest.pdf",
@@ -1942,7 +2524,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8,
-      "ms": 236
+      "ms": 365
     },
     {
       "source": "Livingstone Mcfie/Birdie Tasks.pdf",
@@ -1960,7 +2542,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 3,
-      "ms": 263
+      "ms": 437
     },
     {
       "source": "Livingstone Mcfie/birdie.pdf",
@@ -1978,7 +2560,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1910,
-      "ms": 227
+      "ms": 362
     },
     {
       "source": "Livingstone Mcfie/Care Passport LM.docx",
@@ -1996,7 +2578,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8135,
-      "ms": 246
+      "ms": 335
     },
     {
       "source": "Livingstone Mcfie/Care Passport.pdf",
@@ -2014,7 +2596,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 16,
-      "ms": 235
+      "ms": 313
     },
     {
       "source": "Livingstone Mcfie/carelog notes 2.pdf",
@@ -2032,7 +2614,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 31807,
-      "ms": 398
+      "ms": 641
     },
     {
       "source": "Livingstone Mcfie/carelog notes.pdf",
@@ -2050,7 +2632,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 33704,
-      "ms": 397
+      "ms": 642
     },
     {
       "source": "Livingstone Mcfie/careplan 3.pdf",
@@ -2068,7 +2650,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 35722,
-      "ms": 426
+      "ms": 650
     },
     {
       "source": "Livingstone Mcfie/CQC notification 23.12.pdf",
@@ -2086,7 +2668,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 8085,
-      "ms": 288
+      "ms": 399
     },
     {
       "source": "Livingstone Mcfie/emergency-admission-pack-livingstone-mcfie_27.11.25.pdf",
@@ -2104,7 +2686,7 @@
         "Identified 9 core care domains for this profile."
       ],
       "textLength": 42589,
-      "ms": 371
+      "ms": 592
     },
     {
       "source": "Livingstone Mcfie/Example note - LMc.docx",
@@ -2122,7 +2704,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4665,
-      "ms": 230
+      "ms": 386
     },
     {
       "source": "Livingstone Mcfie/Financial Assessment.pdf",
@@ -2140,7 +2722,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4,
-      "ms": 219
+      "ms": 431
     },
     {
       "source": "Livingstone Mcfie/Financial transactions Dec 2024.pdf",
@@ -2158,7 +2740,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 213
+      "ms": 292
     },
     {
       "source": "Livingstone Mcfie/Financial transactions January 2025.pdf",
@@ -2176,7 +2758,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8,
-      "ms": 226
+      "ms": 339
     },
     {
       "source": "Livingstone Mcfie/Financial.docx",
@@ -2194,7 +2776,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1098,
-      "ms": 230
+      "ms": 394
     },
     {
       "source": "Livingstone Mcfie/Grab Sheet Livingstone Mcfie .docx",
@@ -2212,7 +2794,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 989,
-      "ms": 233
+      "ms": 330
     },
     {
       "source": "Livingstone Mcfie/Grab Sheet.pdf",
@@ -2230,7 +2812,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2,
-      "ms": 223
+      "ms": 268
     },
     {
       "source": "Livingstone Mcfie/Lambrook Tenanacy LM.pdf",
@@ -2248,7 +2830,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 46,
-      "ms": 275
+      "ms": 396
     },
     {
       "source": "Livingstone Mcfie/Livie safeguarding 20.09.pdf",
@@ -2266,7 +2848,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4238,
-      "ms": 253
+      "ms": 351
     },
     {
       "source": "Livingstone Mcfie/Livingston Tenancy.pdf",
@@ -2284,7 +2866,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 44,
-      "ms": 321
+      "ms": 413
     },
     {
       "source": "Livingstone Mcfie/Livingstone Mcfie   WELCOME PACK.docx",
@@ -2302,7 +2884,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 16881,
-      "ms": 365
+      "ms": 559
     },
     {
       "source": "Livingstone Mcfie/Livingstone McFie Diabetes Protocol.docx",
@@ -2320,7 +2902,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 3016,
-      "ms": 252
+      "ms": 453
     },
     {
       "source": "Livingstone Mcfie/Livingstone Mcfie financial plan.pdf",
@@ -2338,7 +2920,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 231
+      "ms": 413
     },
     {
       "source": "Livingstone Mcfie/LM Eye hospital appointment.pdf",
@@ -2356,7 +2938,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2002,
-      "ms": 239
+      "ms": 316
     },
     {
       "source": "Livingstone Mcfie/LM financial tranactions BLACK CARD 01.08.24 - 24.06.25.pdf",
@@ -2374,7 +2956,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8,
-      "ms": 239
+      "ms": 338
     },
     {
       "source": "Livingstone Mcfie/LM financial transactions 19.03.25 - 14.10.25.pdf",
@@ -2392,7 +2974,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 16,
-      "ms": 248
+      "ms": 431
     },
     {
       "source": "Livingstone Mcfie/LM financial transactions GREY CARD 05.12.24 - 24.06.25.pdf",
@@ -2410,7 +2992,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 10,
-      "ms": 245
+      "ms": 346
     },
     {
       "source": "Livingstone Mcfie/LM Glenfrome Licence 2025.pdf",
@@ -2428,7 +3010,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 30,
-      "ms": 255
+      "ms": 453
     },
     {
       "source": "Livingstone Mcfie/LM Grab sheet.docx",
@@ -2446,7 +3028,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1048,
-      "ms": 218
+      "ms": 395
     },
     {
       "source": "Livingstone Mcfie/lm kettle.pdf",
@@ -2464,7 +3046,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 215
+      "ms": 399
     },
     {
       "source": "Livingstone Mcfie/LM Safegaurding 24.06.25.pdf",
@@ -2482,7 +3064,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 10127,
-      "ms": 264
+      "ms": 337
     },
     {
       "source": "Livingstone Mcfie/LM SP new.pdf",
@@ -2498,7 +3080,7 @@
       "supportNeeds": 7,
       "warnings": [],
       "textLength": 13061,
-      "ms": 271
+      "ms": 408
     },
     {
       "source": "Livingstone Mcfie/Lm tenancy April 2024.pdf",
@@ -2516,7 +3098,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 46,
-      "ms": 319
+      "ms": 493
     },
     {
       "source": "Livingstone Mcfie/LM Tenancy bits.pdf",
@@ -2534,7 +3116,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6,
-      "ms": 223
+      "ms": 363
     },
     {
       "source": "Livingstone Mcfie/Lm tenancy Nov 2023.pdf",
@@ -2552,7 +3134,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 46,
-      "ms": 313
+      "ms": 476
     },
     {
       "source": "Livingstone Mcfie/LM tenancy.pdf",
@@ -2570,7 +3152,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 44,
-      "ms": 295
+      "ms": 502
     },
     {
       "source": "Livingstone Mcfie/LMF licence station.pdf",
@@ -2588,7 +3170,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 30,
-      "ms": 253
+      "ms": 410
     },
     {
       "source": "Livingstone Mcfie/Medication audit LM 19.02.2026.docx",
@@ -2606,7 +3188,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 17572,
-      "ms": 303
+      "ms": 487
     },
     {
       "source": "Livingstone Mcfie/Mental Capacity Assessment tamplate livingstone.docx",
@@ -2624,7 +3206,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2175,
-      "ms": 220
+      "ms": 425
     },
     {
       "source": "Livingstone Mcfie/My personal evacuation plan LM.docx",
@@ -2642,7 +3224,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 3615,
-      "ms": 226
+      "ms": 409
     },
     {
       "source": "Livingstone Mcfie/my support plan LM  copy.docx",
@@ -2658,7 +3240,7 @@
       "supportNeeds": 16,
       "warnings": [],
       "textLength": 18963,
-      "ms": 260
+      "ms": 431
     },
     {
       "source": "Livingstone Mcfie/my support plan LM .docx",
@@ -2674,7 +3256,7 @@
       "supportNeeds": 29,
       "warnings": [],
       "textLength": 11441,
-      "ms": 264
+      "ms": 449
     },
     {
       "source": "Livingstone Mcfie/my support plan LM .pdf",
@@ -2690,7 +3272,7 @@
       "supportNeeds": 25,
       "warnings": [],
       "textLength": 11799,
-      "ms": 294
+      "ms": 463
     },
     {
       "source": "Livingstone Mcfie/my support plan.docx",
@@ -2706,7 +3288,7 @@
       "supportNeeds": 29,
       "warnings": [],
       "textLength": 13896,
-      "ms": 268
+      "ms": 468
     },
     {
       "source": "Livingstone Mcfie/POSITIVE BEHAVIOURAL ASSESSMENT.docx",
@@ -2724,7 +3306,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4014,
-      "ms": 255
+      "ms": 446
     },
     {
       "source": "Livingstone Mcfie/Property list Nov 2025 LM.pdf",
@@ -2742,7 +3324,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2,
-      "ms": 209
+      "ms": 362
     },
     {
       "source": "Livingstone Mcfie/reciepts as on 03-02-2024 to 25-03-2024.pdf",
@@ -2760,7 +3342,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 7,
-      "ms": 211
+      "ms": 401
     },
     {
       "source": "Livingstone Mcfie/relocation letter.docx",
@@ -2778,7 +3360,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 729,
-      "ms": 215
+      "ms": 375
     },
     {
       "source": "Livingstone Mcfie/Report suspected abuse_ safeguarding adults at risk - bristol.gov.uk.pdf",
@@ -2796,7 +3378,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 5086,
-      "ms": 246
+      "ms": 404
     },
     {
       "source": "Livingstone Mcfie/right support, right care.pdf",
@@ -2814,7 +3396,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6,
-      "ms": 215
+      "ms": 418
     },
     {
       "source": "Livingstone Mcfie/safeguarding 19.6.23.pdf",
@@ -2832,7 +3414,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 10,
-      "ms": 325
+      "ms": 516
     },
     {
       "source": "Livingstone Mcfie/safeguarding 23.12.pdf",
@@ -2850,7 +3432,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 11086,
-      "ms": 265
+      "ms": 429
     },
     {
       "source": "Livingstone Mcfie/safeguarding may 2021.pdf",
@@ -2868,7 +3450,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 11,
-      "ms": 368
+      "ms": 521
     },
     {
       "source": "Livingstone Mcfie/safeguarding referral.pdf",
@@ -2886,7 +3468,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 10,
-      "ms": 339
+      "ms": 569
     },
     {
       "source": "Livingstone Mcfie/safeguarding september 2021.pdf",
@@ -2904,7 +3486,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 11,
-      "ms": 367
+      "ms": 586
     },
     {
       "source": "Livingstone Mcfie/September Care Plan 2020.pdf",
@@ -2922,7 +3504,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 5478,
-      "ms": 245
+      "ms": 349
     },
     {
       "source": "Livingstone Mcfie/SS.pdf",
@@ -2940,7 +3522,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 205
+      "ms": 362
     },
     {
       "source": "Livingstone Mcfie/Tenancy LM CIC.pdf",
@@ -2958,7 +3540,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 30,
-      "ms": 256
+      "ms": 460
     },
     {
       "source": "Livingstone Mcfie/Tenancy LM Lambrook.pdf",
@@ -2976,7 +3558,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 44,
-      "ms": 299
+      "ms": 471
     },
     {
       "source": "Livingstone Mcfie/Transfer for LM 21.12.25.pdf",
@@ -2994,7 +3576,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1,
-      "ms": 208
+      "ms": 305
     },
     {
       "source": "Livingstone Mcfie/Warning letter 2.docx",
@@ -3012,7 +3594,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 563,
-      "ms": 222
+      "ms": 363
     },
     {
       "source": "Livingstone Mcfie/Warning Letter LM.docx",
@@ -3030,7 +3612,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 576,
-      "ms": 215
+      "ms": 381
     },
     {
       "source": "Livingstone Mcfie/welcome letter LM.pdf",
@@ -3048,7 +3630,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 678,
-      "ms": 235
+      "ms": 440
     },
     {
       "source": "Livingstone Mcfie/WELCOME PACK EASY READ LM.docx",
@@ -3066,7 +3648,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 8687,
-      "ms": 396
+      "ms": 590
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Quality Performance Meeting .docx",
@@ -3083,7 +3665,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 81280,
-      "ms": 19
+      "ms": 30
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Risk compatibility assessment LJ.pdf",
@@ -3100,7 +3682,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 14461,
-      "ms": 84
+      "ms": 145
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Skip to main content.txt",
@@ -3152,7 +3734,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2268,
-      "ms": 90
+      "ms": 183
     },
     {
       "source": "type of datasets extracts from careplanner or similar/blueflame_invoice.pdf",
@@ -3170,7 +3752,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 219,
-      "ms": 84
+      "ms": 166
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Carer-diary (1).csv",
@@ -3186,7 +3768,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 108
+      "ms": 173
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (14).csv",
@@ -3202,7 +3784,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1899,
-      "ms": 76
+      "ms": 121
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (15).csv",
@@ -3218,7 +3800,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 120086,
-      "ms": 91
+      "ms": 130
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (16).csv",
@@ -3234,7 +3816,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 199145,
-      "ms": 93
+      "ms": 151
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (19).csv",
@@ -3250,7 +3832,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 16128,
-      "ms": 80
+      "ms": 106
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (2).pdf",
@@ -3266,7 +3848,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 69118,
-      "ms": 332
+      "ms": 480
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (20).csv",
@@ -3282,7 +3864,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 640079,
-      "ms": 123
+      "ms": 230
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (21).csv",
@@ -3298,7 +3880,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 108
+      "ms": 156
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (22).csv",
@@ -3314,7 +3896,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 122427,
-      "ms": 86
+      "ms": 127
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (23).csv",
@@ -3330,7 +3912,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 54744,
-      "ms": 86
+      "ms": 127
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (24).csv",
@@ -3346,7 +3928,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 56313,
-      "ms": 81
+      "ms": 125
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (25).csv",
@@ -3362,7 +3944,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 92916,
-      "ms": 87
+      "ms": 138
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (26).csv",
@@ -3378,7 +3960,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 322189,
-      "ms": 97
+      "ms": 128
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (27).csv",
@@ -3394,7 +3976,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 55177,
-      "ms": 86
+      "ms": 112
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (28).csv",
@@ -3410,7 +3992,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 55177,
-      "ms": 79
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (29).csv",
@@ -3426,7 +4008,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 980731,
-      "ms": 153
+      "ms": 167
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (3).pdf",
@@ -3442,7 +4024,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72524,
-      "ms": 382
+      "ms": 439
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (30).csv",
@@ -3458,7 +4040,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 3433101,
-      "ms": 334
+      "ms": 353
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (31).csv",
@@ -3474,7 +4056,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72346,
-      "ms": 82
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (4).pdf",
@@ -3490,7 +4072,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 121914,
-      "ms": 540
+      "ms": 597
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -3506,7 +4088,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 34019951,
-      "ms": 3133
+      "ms": 3458
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (5).pdf",
@@ -3522,7 +4104,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 71373,
-      "ms": 387
+      "ms": 460
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-roster-from-20_03_2026-to-05_04_2026.pdf",
@@ -3540,7 +4122,7 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 153268,
-      "ms": 904
+      "ms": 969
     },
     {
       "source": "type of datasets extracts from careplanner or similar/ClientRoster-from-20_03_2026-to-05_04_2026.csv",
@@ -3556,7 +4138,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 171155,
-      "ms": 95
+      "ms": 167
     },
     {
       "source": "type of datasets extracts from careplanner or similar/compatibility risk asses - Nourish Care.pdf",
@@ -3574,7 +4156,7 @@
         "Imported 1 risk area(s) from clinical risk assessment."
       ],
       "textLength": 9922,
-      "ms": 121
+      "ms": 183
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Core Staff Daily Note.docx",
@@ -3592,7 +4174,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4123,
-      "ms": 92
+      "ms": 120
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Daily Finance Overview - Attendance report 3-17-26.csv",
@@ -3608,7 +4190,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1850,
-      "ms": 77
+      "ms": 114
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-barry-graham-johnson_29042026_0949.pdf",
@@ -3626,7 +4208,7 @@
         "Identified 13 core care domains for this profile."
       ],
       "textLength": 77037,
-      "ms": 336
+      "ms": 462
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-james-wright_19032026_1142.pdf",
@@ -3644,7 +4226,7 @@
         "Identified 20 core care domains for this profile."
       ],
       "textLength": 85596,
-      "ms": 324
+      "ms": 362
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-matthew-inder-1-1_14052026_1604.pdf",
@@ -3662,7 +4244,7 @@
         "Identified 7 core care domains for this profile."
       ],
       "textLength": 61378,
-      "ms": 258
+      "ms": 295
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-ryan-shade-1-1_14052026_1619.pdf",
@@ -3680,7 +4262,7 @@
         "Identified 18 core care domains for this profile."
       ],
       "textLength": 100585,
-      "ms": 364
+      "ms": 403
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-sean-david-marcus-perry_09042026_1819.pdf",
@@ -3698,7 +4280,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 39843,
-      "ms": 137
+      "ms": 195
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-sean-david-marcuss-perry_09042026_1829.pdf",
@@ -3716,7 +4298,7 @@
         "Identified 14 core care domains for this profile."
       ],
       "textLength": 50625,
-      "ms": 245
+      "ms": 297
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-wayne-jefferson-1-1_14052026_1517.pdf",
@@ -3734,7 +4316,7 @@
         "Identified 19 core care domains for this profile."
       ],
       "textLength": 231533,
-      "ms": 706
+      "ms": 737
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Full Brief — Trace & Trance.pdf",
@@ -3752,7 +4334,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1333,
-      "ms": 126
+      "ms": 140
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_Full_Rescue_Pack_Jan_to_April.txt",
@@ -3770,7 +4352,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 30220,
-      "ms": 85
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_March_1to15_Deep_Audit.txt",
@@ -3788,7 +4370,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 18672,
-      "ms": 77
+      "ms": 94
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_March_Deep_Rescue_Pack.txt",
@@ -3806,7 +4388,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6537,
-      "ms": 80
+      "ms": 92
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_Rescue_Pack_Complete.txt",
@@ -3824,7 +4406,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 21144,
-      "ms": 80
+      "ms": 123
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Hazel Care Ltd SUPPORT PLAN.pdf",
@@ -3840,7 +4422,7 @@
       "supportNeeds": 9,
       "warnings": [],
       "textLength": 34695,
-      "ms": 304
+      "ms": 436
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-coordinator-readme-2026-04-20.txt",
@@ -3858,7 +4440,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 82204,
-      "ms": 78
+      "ms": 109
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09 (1).csv",
@@ -3874,7 +4456,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 449,
-      "ms": 81
+      "ms": 105
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09 (2).csv",
@@ -3890,7 +4472,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 18713,
-      "ms": 78
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09.csv",
@@ -3906,7 +4488,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 2594,
-      "ms": 76
+      "ms": 95
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09 (1).txt",
@@ -3924,7 +4506,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 785,
-      "ms": 80
+      "ms": 106
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09 (2).txt",
@@ -3942,7 +4524,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 673,
-      "ms": 77
+      "ms": 100
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09.txt",
@@ -3960,7 +4542,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 637,
-      "ms": 76
+      "ms": 98
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Hazelcaret (Email Header).pdf",
@@ -3978,7 +4560,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 32,
-      "ms": 90
+      "ms": 113
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare_support_roster.csv",
@@ -3996,7 +4578,7 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 1323,
-      "ms": 76
+      "ms": 99
     },
     {
       "source": "type of datasets extracts from careplanner or similar/LJohnson CAREPLAN.pdf",
@@ -4015,7 +4597,7 @@
         "Imported 9 risk assessment item(s) from reassessment notes."
       ],
       "textLength": 44633,
-      "ms": 205
+      "ms": 252
     },
     {
       "source": "type of datasets extracts from careplanner or similar/My support plan JW.docx",
@@ -4031,7 +4613,7 @@
       "supportNeeds": 22,
       "warnings": [],
       "textLength": 5198,
-      "ms": 143
+      "ms": 173
     },
     {
       "source": "type of datasets extracts from careplanner or similar/NEXUS UI.txt",
@@ -4049,7 +4631,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 74602,
-      "ms": 79
+      "ms": 106
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Nourish type Doc.pdf",
@@ -4067,7 +4649,7 @@
         "Identified 11 core care domains for this profile."
       ],
       "textLength": 57359,
-      "ms": 281
+      "ms": 357
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Okay what are the maximum capacity.txt",
@@ -4085,7 +4667,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 89489,
-      "ms": 79
+      "ms": 97
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Quality Performance Meeting .docx",
@@ -4103,7 +4685,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 81280,
-      "ms": 102
+      "ms": 131
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Risk compatibility assessment LJ.pdf",
@@ -4121,7 +4703,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 14461,
-      "ms": 158
+      "ms": 215
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Skip to main content.txt",
@@ -4139,7 +4721,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 83774,
-      "ms": 83
+      "ms": 100
     },
     {
       "source": "type of datasets extracts from careplanner or similar/trace---trance-full-brief.md",
@@ -4157,7 +4739,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 913,
-      "ms": 76
+      "ms": 104
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Untitled.txt",
@@ -4175,7 +4757,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 137019,
-      "ms": 87
+      "ms": 104
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\Untitled.txt",
@@ -4195,6 +4777,208 @@
       "ms": 7
     },
     {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\wayne Notes 22 feb to 17 may.pdf",
+      "fileName": "wayne Notes 22 feb to 17 may.pdf",
+      "size": 66257340,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No diary entries parsed from this file."
+      ],
+      "textLength": 260,
+      "ms": 12242
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\wayne Notes 22 feb to 17 mayy .pdf",
+      "fileName": "wayne Notes 22 feb to 17 mayy .pdf",
+      "size": 18054132,
+      "kind": "file",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No diary entries parsed from this file."
+      ],
+      "textLength": 91,
+      "ms": 3383
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ support plan.docx",
+      "fileName": "WJ support plan.docx",
+      "size": 184271,
+      "kind": "file",
+      "detectedType": "support-plan",
+      "parserProfile": "support-plan-filename",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 1,
+      "supportNeeds": 5,
+      "warnings": [],
+      "textLength": 34019,
+      "ms": 67
+    },
+    {
+      "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\wj.pdf",
+      "fileName": "wj.pdf",
+      "size": 2983156,
+      "kind": "file",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 15,
+      "ms": 604
+    },
+    {
+      "source": "Client-diary (51).csv",
+      "fileName": "Client-diary (51).csv",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 287,
+      "weekEntries": 287,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 237483,
+      "ms": 27
+    },
+    {
+      "source": "Medication-administration-report.pdf",
+      "fileName": "Medication-administration-report.pdf",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 12850,
+      "ms": 90
+    },
+    {
+      "source": "Client-medication-administration-report.pdf",
+      "fileName": "Client-medication-administration-report.pdf",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 196205,
+      "ms": 807
+    },
+    {
+      "source": "wj.pdf",
+      "fileName": "wj.pdf",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "unknown",
+      "parserProfile": "unknown",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "File type could not be confidently detected. Choose targets manually."
+      ],
+      "textLength": 15,
+      "ms": 659
+    },
+    {
+      "source": "WJ support plan.docx",
+      "fileName": "WJ support plan.docx",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "support-plan",
+      "parserProfile": "support-plan-filename",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 1,
+      "supportNeeds": 5,
+      "warnings": [],
+      "textLength": 34019,
+      "ms": 81
+    },
+    {
+      "source": "Client-diary (12).pdf",
+      "fileName": "Client-diary (12).pdf",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 7317,
+      "weekEntries": 7317,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 144390,
+      "ms": 716
+    },
+    {
+      "source": "Client-diary (50).csv",
+      "fileName": "Client-diary (50).csv",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "diary",
+      "parserProfile": "generic-diary-hint",
+      "diaryEntries": 163,
+      "weekEntries": 163,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [],
+      "textLength": 147359,
+      "ms": 18
+    },
+    {
+      "source": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
+      "fileName": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
+      "size": 0,
+      "kind": "zip-entry",
+      "zipPath": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\WJ.zip",
+      "detectedType": "roster",
+      "parserProfile": "care-planner-roster",
+      "diaryEntries": 0,
+      "weekEntries": 0,
+      "clientCandidates": 0,
+      "supportNeeds": 0,
+      "warnings": [
+        "No shifts parsed from this roster file."
+      ],
+      "textLength": 19279,
+      "ms": 174
+    },
+    {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\1 to 1 note format.docx",
       "fileName": "1 to 1 note format.docx",
       "size": 10582,
@@ -4209,7 +4993,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2268,
-      "ms": 15
+      "ms": 8
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\blueflame_invoice.pdf",
@@ -4226,7 +5010,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 219,
-      "ms": 5
+      "ms": 12
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Carer-diary (1).csv",
@@ -4241,7 +5025,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 26
+      "ms": 32
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (14).csv",
@@ -4256,7 +5040,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1899,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (15).csv",
@@ -4286,7 +5070,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 199145,
-      "ms": 15
+      "ms": 17
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (19).csv",
@@ -4316,7 +5100,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 69118,
-      "ms": 253
+      "ms": 290
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (20).csv",
@@ -4331,7 +5115,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 640079,
-      "ms": 41
+      "ms": 40
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (21).csv",
@@ -4346,7 +5130,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 23
+      "ms": 30
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (22).csv",
@@ -4376,7 +5160,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 54744,
-      "ms": 3
+      "ms": 4
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (24).csv",
@@ -4466,7 +5250,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 980731,
-      "ms": 68
+      "ms": 76
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (3).pdf",
@@ -4481,7 +5265,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72524,
-      "ms": 260
+      "ms": 278
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (30).csv",
@@ -4496,7 +5280,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 3433101,
-      "ms": 254
+      "ms": 227
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (31).csv",
@@ -4511,7 +5295,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72346,
-      "ms": 5
+      "ms": 9
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (4).pdf",
@@ -4526,7 +5310,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 121914,
-      "ms": 432
+      "ms": 460
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (49).csv",
@@ -4541,7 +5325,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 34019951,
-      "ms": 2803
+      "ms": 2926
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-diary (5).pdf",
@@ -4556,7 +5340,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 71373,
-      "ms": 306
+      "ms": 361
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Client-roster-from-20_03_2026-to-05_04_2026.pdf",
@@ -4573,7 +5357,7 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 153268,
-      "ms": 792
+      "ms": 881
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\ClientRoster-from-20_03_2026-to-05_04_2026.csv",
@@ -4622,7 +5406,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4123,
-      "ms": 10
+      "ms": 9
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Daily Finance Overview - Attendance report 3-17-26.csv",
@@ -4637,7 +5421,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1850,
-      "ms": 0
+      "ms": 1
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-barry-graham-johnson_29042026_0949.pdf",
@@ -4654,7 +5438,7 @@
         "Identified 13 core care domains for this profile."
       ],
       "textLength": 77037,
-      "ms": 227
+      "ms": 236
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-james-wright_19032026_1142.pdf",
@@ -4671,7 +5455,7 @@
         "Identified 20 core care domains for this profile."
       ],
       "textLength": 85596,
-      "ms": 244
+      "ms": 269
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-matthew-inder-1-1_14052026_1604.pdf",
@@ -4688,7 +5472,7 @@
         "Identified 7 core care domains for this profile."
       ],
       "textLength": 61378,
-      "ms": 179
+      "ms": 188
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-ryan-shade-1-1_14052026_1619.pdf",
@@ -4705,7 +5489,7 @@
         "Identified 18 core care domains for this profile."
       ],
       "textLength": 100585,
-      "ms": 281
+      "ms": 296
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-sean-david-marcus-perry_09042026_1819.pdf",
@@ -4722,7 +5506,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 39843,
-      "ms": 55
+      "ms": 60
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-sean-david-marcuss-perry_09042026_1829.pdf",
@@ -4739,7 +5523,7 @@
         "Identified 14 core care domains for this profile."
       ],
       "textLength": 50625,
-      "ms": 164
+      "ms": 171
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\emergency-admission-pack-wayne-jefferson-1-1_14052026_1517.pdf",
@@ -4756,7 +5540,7 @@
         "Identified 19 core care domains for this profile."
       ],
       "textLength": 231533,
-      "ms": 611
+      "ms": 632
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Full Brief — Trace & Trance.pdf",
@@ -4773,7 +5557,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1333,
-      "ms": 38
+      "ms": 36
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Gavin_Full_Rescue_Pack_Jan_to_April.txt",
@@ -4824,7 +5608,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6537,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Gavin_Rescue_Pack_Complete.txt",
@@ -4841,7 +5625,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 21144,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Hazel Care Ltd SUPPORT PLAN.pdf",
@@ -4856,7 +5640,7 @@
       "supportNeeds": 9,
       "warnings": [],
       "textLength": 34695,
-      "ms": 197
+      "ms": 215
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\hazelcare-coordinator-readme-2026-04-20.txt",
@@ -4888,7 +5672,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 449,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-2026-04-09 (2).csv",
@@ -4952,7 +5736,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 673,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\hazelcare-evidence-readme-2026-04-09.txt",
@@ -4987,7 +5771,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2232,
-      "ms": 0
+      "ms": 1
     },
     {
       "source": "brief.md",
@@ -5005,7 +5789,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4315,
-      "ms": 1
+      "ms": 0
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Hazelcaret (Email Header).pdf",
@@ -5022,7 +5806,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 32,
-      "ms": 5
+      "ms": 4
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\hazelcare_support_roster.csv",
@@ -5057,7 +5841,7 @@
         "Imported 9 risk assessment item(s) from reassessment notes."
       ],
       "textLength": 44633,
-      "ms": 98
+      "ms": 100
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\My support plan JW.docx",
@@ -5072,7 +5856,7 @@
       "supportNeeds": 22,
       "warnings": [],
       "textLength": 5198,
-      "ms": 63
+      "ms": 47
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\NEXUS UI.txt",
@@ -5089,7 +5873,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 74602,
-      "ms": 4
+      "ms": 2
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Nourish type Doc.pdf",
@@ -5106,7 +5890,7 @@
         "Identified 11 core care domains for this profile."
       ],
       "textLength": 57359,
-      "ms": 205
+      "ms": 181
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Okay what are the maximum capacity.txt",
@@ -5123,7 +5907,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 89489,
-      "ms": 4
+      "ms": 3
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Quality Performance Meeting .docx",
@@ -5140,7 +5924,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 81280,
-      "ms": 19
+      "ms": 20
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Risk compatibility assessment LJ.pdf",
@@ -5157,7 +5941,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 14461,
-      "ms": 65
+      "ms": 97
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\Skip to main content.txt",
@@ -5174,7 +5958,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 83774,
-      "ms": 3
+      "ms": 4
     },
     {
       "source": "C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\careplanner-unpacked\\type of datasets extracts from careplanner or similar\\trace---trance-full-brief.md",
@@ -5208,143 +5992,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 137019,
-      "ms": 6
-    },
-    {
-      "source": "Client-diary (51).csv",
-      "fileName": "Client-diary (51).csv",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 287,
-      "weekEntries": 287,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 237483,
-      "ms": 21
-    },
-    {
-      "source": "Medication-administration-report.pdf",
-      "fileName": "Medication-administration-report.pdf",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "unknown",
-      "parserProfile": "unknown",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "File type could not be confidently detected. Choose targets manually."
-      ],
-      "textLength": 12850,
-      "ms": 58
-    },
-    {
-      "source": "Client-medication-administration-report.pdf",
-      "fileName": "Client-medication-administration-report.pdf",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "unknown",
-      "parserProfile": "unknown",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "File type could not be confidently detected. Choose targets manually."
-      ],
-      "textLength": 196205,
-      "ms": 776
-    },
-    {
-      "source": "wj.pdf",
-      "fileName": "wj.pdf",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "unknown",
-      "parserProfile": "unknown",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "File type could not be confidently detected. Choose targets manually."
-      ],
-      "textLength": 15,
-      "ms": 610
-    },
-    {
-      "source": "WJ support plan.docx",
-      "fileName": "WJ support plan.docx",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "support-plan",
-      "parserProfile": "support-plan-filename",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 1,
-      "supportNeeds": 5,
-      "warnings": [],
-      "textLength": 34019,
-      "ms": 69
-    },
-    {
-      "source": "Client-diary (12).pdf",
-      "fileName": "Client-diary (12).pdf",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 7317,
-      "weekEntries": 7317,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 144390,
-      "ms": 610
-    },
-    {
-      "source": "Client-diary (50).csv",
-      "fileName": "Client-diary (50).csv",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 163,
-      "weekEntries": 163,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 147359,
-      "ms": 15
-    },
-    {
-      "source": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
-      "fileName": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
-      "size": 0,
-      "kind": "zip-entry",
-      "zipPath": "C:\\Users\\brook\\Downloads\\WJ.zip",
-      "detectedType": "roster",
-      "parserProfile": "care-planner-roster",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "No shifts parsed from this roster file."
-      ],
-      "textLength": 19279,
-      "ms": 106
+      "ms": 7
     },
     {
       "source": "type of datasets extracts from careplanner or similar/1 to 1 note format.docx",
@@ -5362,7 +6010,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 2268,
-      "ms": 86
+      "ms": 130
     },
     {
       "source": "type of datasets extracts from careplanner or similar/blueflame_invoice.pdf",
@@ -5380,7 +6028,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 219,
-      "ms": 83
+      "ms": 104
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Carer-diary (1).csv",
@@ -5396,7 +6044,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 104
+      "ms": 136
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (14).csv",
@@ -5412,7 +6060,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1899,
-      "ms": 76
+      "ms": 109
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (15).csv",
@@ -5428,7 +6076,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 120086,
-      "ms": 96
+      "ms": 125
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (16).csv",
@@ -5444,7 +6092,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 199145,
-      "ms": 97
+      "ms": 128
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (19).csv",
@@ -5460,7 +6108,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 16128,
-      "ms": 81
+      "ms": 117
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (2).pdf",
@@ -5476,7 +6124,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 69118,
-      "ms": 332
+      "ms": 418
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (20).csv",
@@ -5492,7 +6140,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 640079,
-      "ms": 123
+      "ms": 142
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (21).csv",
@@ -5508,7 +6156,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 374334,
-      "ms": 107
+      "ms": 124
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (22).csv",
@@ -5524,7 +6172,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 122427,
-      "ms": 87
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (23).csv",
@@ -5540,7 +6188,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 54744,
-      "ms": 86
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (24).csv",
@@ -5556,7 +6204,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 56313,
-      "ms": 79
+      "ms": 99
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (25).csv",
@@ -5572,7 +6220,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 92916,
-      "ms": 88
+      "ms": 97
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (26).csv",
@@ -5588,7 +6236,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 322189,
-      "ms": 96
+      "ms": 122
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (27).csv",
@@ -5604,7 +6252,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 55177,
-      "ms": 86
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (28).csv",
@@ -5620,7 +6268,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 55177,
-      "ms": 79
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (29).csv",
@@ -5636,7 +6284,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 980731,
-      "ms": 152
+      "ms": 168
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (3).pdf",
@@ -5652,7 +6300,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72524,
-      "ms": 378
+      "ms": 429
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (30).csv",
@@ -5668,7 +6316,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 3433101,
-      "ms": 326
+      "ms": 344
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (31).csv",
@@ -5684,7 +6332,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 72346,
-      "ms": 82
+      "ms": 104
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (4).pdf",
@@ -5700,7 +6348,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 121914,
-      "ms": 545
+      "ms": 579
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (49).csv",
@@ -5716,7 +6364,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 34019951,
-      "ms": 3097
+      "ms": 3428
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-diary (5).pdf",
@@ -5732,7 +6380,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 71373,
-      "ms": 383
+      "ms": 494
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Client-roster-from-20_03_2026-to-05_04_2026.pdf",
@@ -5750,7 +6398,7 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 153268,
-      "ms": 897
+      "ms": 922
     },
     {
       "source": "type of datasets extracts from careplanner or similar/ClientRoster-from-20_03_2026-to-05_04_2026.csv",
@@ -5766,7 +6414,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 171155,
-      "ms": 94
+      "ms": 112
     },
     {
       "source": "type of datasets extracts from careplanner or similar/compatibility risk asses - Nourish Care.pdf",
@@ -5784,7 +6432,7 @@
         "Imported 1 risk area(s) from clinical risk assessment."
       ],
       "textLength": 9922,
-      "ms": 122
+      "ms": 155
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Core Staff Daily Note.docx",
@@ -5802,7 +6450,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 4123,
-      "ms": 93
+      "ms": 112
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Daily Finance Overview - Attendance report 3-17-26.csv",
@@ -5818,7 +6466,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 1850,
-      "ms": 76
+      "ms": 98
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-barry-graham-johnson_29042026_0949.pdf",
@@ -5836,7 +6484,7 @@
         "Identified 13 core care domains for this profile."
       ],
       "textLength": 77037,
-      "ms": 332
+      "ms": 386
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-james-wright_19032026_1142.pdf",
@@ -5854,7 +6502,7 @@
         "Identified 20 core care domains for this profile."
       ],
       "textLength": 85596,
-      "ms": 322
+      "ms": 386
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-matthew-inder-1-1_14052026_1604.pdf",
@@ -5872,7 +6520,7 @@
         "Identified 7 core care domains for this profile."
       ],
       "textLength": 61378,
-      "ms": 260
+      "ms": 296
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-ryan-shade-1-1_14052026_1619.pdf",
@@ -5890,7 +6538,7 @@
         "Identified 18 core care domains for this profile."
       ],
       "textLength": 100585,
-      "ms": 359
+      "ms": 432
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-sean-david-marcus-perry_09042026_1819.pdf",
@@ -5908,7 +6556,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 39843,
-      "ms": 136
+      "ms": 191
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-sean-david-marcuss-perry_09042026_1829.pdf",
@@ -5926,7 +6574,7 @@
         "Identified 14 core care domains for this profile."
       ],
       "textLength": 50625,
-      "ms": 248
+      "ms": 289
     },
     {
       "source": "type of datasets extracts from careplanner or similar/emergency-admission-pack-wayne-jefferson-1-1_14052026_1517.pdf",
@@ -5944,7 +6592,7 @@
         "Identified 19 core care domains for this profile."
       ],
       "textLength": 231533,
-      "ms": 722
+      "ms": 778
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Full Brief — Trace & Trance.pdf",
@@ -5962,7 +6610,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 1333,
-      "ms": 128
+      "ms": 141
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_Full_Rescue_Pack_Jan_to_April.txt",
@@ -5980,7 +6628,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 30220,
-      "ms": 83
+      "ms": 107
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_March_1to15_Deep_Audit.txt",
@@ -5998,7 +6646,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 18672,
-      "ms": 77
+      "ms": 102
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_March_Deep_Rescue_Pack.txt",
@@ -6016,7 +6664,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 6537,
-      "ms": 76
+      "ms": 92
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Gavin_Rescue_Pack_Complete.txt",
@@ -6034,7 +6682,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 21144,
-      "ms": 80
+      "ms": 107
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Hazel Care Ltd SUPPORT PLAN.pdf",
@@ -6050,7 +6698,7 @@
       "supportNeeds": 9,
       "warnings": [],
       "textLength": 34695,
-      "ms": 310
+      "ms": 377
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-coordinator-readme-2026-04-20.txt",
@@ -6068,7 +6716,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 82204,
-      "ms": 78
+      "ms": 99
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09 (1).csv",
@@ -6084,7 +6732,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 449,
-      "ms": 80
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09 (2).csv",
@@ -6100,7 +6748,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 18713,
-      "ms": 81
+      "ms": 103
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-2026-04-09.csv",
@@ -6116,7 +6764,7 @@
       "supportNeeds": 0,
       "warnings": [],
       "textLength": 2594,
-      "ms": 77
+      "ms": 99
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09 (1).txt",
@@ -6134,7 +6782,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 785,
-      "ms": 79
+      "ms": 102
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09 (2).txt",
@@ -6152,7 +6800,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 673,
-      "ms": 80
+      "ms": 98
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare-evidence-readme-2026-04-09.txt",
@@ -6170,7 +6818,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 637,
-      "ms": 76
+      "ms": 93
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Hazelcaret (Email Header).pdf",
@@ -6188,7 +6836,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 32,
-      "ms": 90
+      "ms": 114
     },
     {
       "source": "type of datasets extracts from careplanner or similar/hazelcare_support_roster.csv",
@@ -6206,7 +6854,7 @@
         "No shifts parsed from this roster file."
       ],
       "textLength": 1323,
-      "ms": 76
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/LJohnson CAREPLAN.pdf",
@@ -6225,7 +6873,7 @@
         "Imported 9 risk assessment item(s) from reassessment notes."
       ],
       "textLength": 44633,
-      "ms": 204
+      "ms": 250
     },
     {
       "source": "type of datasets extracts from careplanner or similar/My support plan JW.docx",
@@ -6241,7 +6889,7 @@
       "supportNeeds": 22,
       "warnings": [],
       "textLength": 5198,
-      "ms": 141
+      "ms": 176
     },
     {
       "source": "type of datasets extracts from careplanner or similar/NEXUS UI.txt",
@@ -6259,7 +6907,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 74602,
-      "ms": 81
+      "ms": 97
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Nourish type Doc.pdf",
@@ -6277,7 +6925,7 @@
         "Identified 11 core care domains for this profile."
       ],
       "textLength": 57359,
-      "ms": 281
+      "ms": 341
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Okay what are the maximum capacity.txt",
@@ -6295,7 +6943,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 89489,
-      "ms": 79
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Quality Performance Meeting .docx",
@@ -6313,7 +6961,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 81280,
-      "ms": 107
+      "ms": 126
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Risk compatibility assessment LJ.pdf",
@@ -6331,7 +6979,7 @@
         "No support plan areas detected — verify text format."
       ],
       "textLength": 14461,
-      "ms": 156
+      "ms": 200
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Skip to main content.txt",
@@ -6349,7 +6997,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 83774,
-      "ms": 85
+      "ms": 106
     },
     {
       "source": "type of datasets extracts from careplanner or similar/trace---trance-full-brief.md",
@@ -6367,7 +7015,7 @@
         "File type could not be confidently detected. Choose targets manually."
       ],
       "textLength": 913,
-      "ms": 76
+      "ms": 101
     },
     {
       "source": "type of datasets extracts from careplanner or similar/Untitled.txt",
@@ -6385,101 +7033,7 @@
         "No diary entries parsed from this file."
       ],
       "textLength": 137019,
-      "ms": 86
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-diary (57).csv",
-      "fileName": "Client-diary (57).csv",
-      "size": 269015,
-      "kind": "file",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 233,
-      "weekEntries": 233,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 268408,
-      "ms": 18
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-diary (56).csv",
-      "fileName": "Client-diary (56).csv",
-      "size": 336153,
-      "kind": "file",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 170,
-      "weekEntries": 170,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 334808,
-      "ms": 20
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-diary (55).csv",
-      "fileName": "Client-diary (55).csv",
-      "size": 288108,
-      "kind": "file",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 129,
-      "weekEntries": 129,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 287478,
-      "ms": 19
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-diarykm (53).csv",
-      "fileName": "Client-diarykm (53).csv",
-      "size": 1030551,
-      "kind": "file",
-      "detectedType": "diary",
-      "parserProfile": "generic-diary-hint",
-      "diaryEntries": 569,
-      "weekEntries": 569,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [],
-      "textLength": 1027283,
-      "ms": 68
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-roster-from-01_04_2026-to-20_05_2026.pdf",
-      "fileName": "Client-roster-from-01_04_2026-to-20_05_2026.pdf",
-      "size": 78122,
-      "kind": "file",
-      "detectedType": "roster",
-      "parserProfile": "care-planner-roster",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "No shifts parsed from this roster file."
-      ],
-      "textLength": 19279,
-      "ms": 110
-    },
-    {
-      "source": "C:\\Users\\brook\\Downloads\\Client-medication-administration-report.pdf",
-      "fileName": "Client-medication-administration-report.pdf",
-      "size": 395181,
-      "kind": "file",
-      "detectedType": "unknown",
-      "parserProfile": "unknown",
-      "diaryEntries": 0,
-      "weekEntries": 0,
-      "clientCandidates": 0,
-      "supportNeeds": 0,
-      "warnings": [
-        "File type could not be confidently detected. Choose targets manually."
-      ],
-      "textLength": 196205,
-      "ms": 777
+      "ms": 102
     }
   ]
 }

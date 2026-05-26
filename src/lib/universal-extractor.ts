@@ -1,7 +1,7 @@
-import * as pdfjs from 'pdfjs-dist';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import mammoth from 'mammoth';
 import * as XLSX from '@e965/xlsx';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 
 if (typeof window !== 'undefined') {
   // Use bundled worker URL so PDF parsing does not depend on external CDN availability.
@@ -13,11 +13,19 @@ type PdfTextItem = {
   transform?: number[];
 };
 
+function getNodeStandardFontDataUrl(): string | undefined {
+  if (typeof window !== 'undefined') return undefined;
+  const maybeProcess = (globalThis as { process?: { cwd?: () => string } }).process;
+  const cwd = maybeProcess?.cwd?.();
+  return cwd ? `${cwd.replace(/\\/g, '/')}/node_modules/pdfjs-dist/standard_fonts/` : undefined;
+}
+
 export async function extractPdfText(file: File, onProgress?: (p: number) => void): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   let pdf: Awaited<ReturnType<typeof pdfjs.getDocument>>['promise'] extends Promise<infer T> ? T : never;
+  const standardFontDataUrl = getNodeStandardFontDataUrl();
   if (typeof window === 'undefined') {
-    pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+    pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true, standardFontDataUrl }).promise;
   } else {
     try {
       pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: false }).promise;

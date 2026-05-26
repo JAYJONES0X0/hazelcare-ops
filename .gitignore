@@ -33,6 +33,7 @@ dist-ssr
 .env.production
 .env.development
 keys.env
+login-data.json
 
 # Client data exports — never commit
 *.csv

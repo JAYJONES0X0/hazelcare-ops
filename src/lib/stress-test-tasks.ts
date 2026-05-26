@@ -1,4 +1,4 @@
-import { loadClients, type FullClient } from './client-store';
+import { loadClients, type CarePlanDomain, type FullClient } from './client-store';
 
 /**
  * Stress Test Script for CareOps Task Pack Generator.
@@ -18,7 +18,7 @@ export async function runTaskStressTest() {
   console.log(`Targeting client: ${target.name}`);
 
   // Create a massive care plan with 50 unique domains, each with heavy content
-  const domains = [];
+  const domains: CarePlanDomain[] = [];
   const domainTitles = [
     'Medication Management & Safety', 'Mental Health & Emotional Wellbeing', 
     'Personal Care & Physical Presentation', 'Continence & Personal Hygiene',
@@ -52,7 +52,7 @@ export async function runTaskStressTest() {
     name: 'STRESS TEST MATTHEW',
     carePlan: {
       ...target.carePlan!,
-      domains: domains as any
+      domains
     }
   };
 

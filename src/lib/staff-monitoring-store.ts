@@ -1,10 +1,10 @@
-import { uid } from './storage';
+import { getStorage, uid } from './storage';
 import type { EscalationItem } from './types';
 
 /** Swallows QuotaExceededError silently — monitoring history is non-critical */
 function safeset(key: string, value: string): void {
   try {
-    localStorage.setItem(key, value);
+    getStorage().setItem(key, value);
   } catch { /* quota exceeded — skip write */ }
 }
 
@@ -62,7 +62,7 @@ export interface ActiveSequence {
 
 export function loadActiveSequences(): ActiveSequence[] {
   try {
-    const raw = localStorage.getItem(SEQUENCES_KEY);
+    const raw = getStorage().getItem(SEQUENCES_KEY);
     return raw ? (JSON.parse(raw) as ActiveSequence[]) : [];
   } catch { return []; }
 }
@@ -115,7 +115,7 @@ export interface ActiveTrackingRecord {
 
 export function loadActiveTracking(): ActiveTrackingRecord[] {
   try {
-    const raw = localStorage.getItem(ACTIVE_TRACKING_KEY);
+    const raw = getStorage().getItem(ACTIVE_TRACKING_KEY);
     const parsed = raw ? (JSON.parse(raw) as ActiveTrackingRecord[]) : [];
     // Prune expired records automatically on load
     const now = Date.now();
@@ -177,7 +177,7 @@ export interface CallOutcomeRecord {
 
 export function loadMonitoringRuns(): MonitoringRunRecord[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = getStorage().getItem(KEY);
     if (!raw) return [];
     const p = JSON.parse(raw);
     return Array.isArray(p) ? p : [];
@@ -200,7 +200,7 @@ export function saveMonitoringRun(summary: string, escalationCount: number): Mon
 
 export function loadCallOutcomes(): CallOutcomeRecord[] {
   try {
-    const raw = localStorage.getItem(OUTCOMES_KEY);
+    const raw = getStorage().getItem(OUTCOMES_KEY);
     if (!raw) return [];
     const p = JSON.parse(raw);
     return Array.isArray(p) ? p : [];
@@ -229,7 +229,7 @@ export function saveCallOutcome(
 
 export function lastHourlyCheckAt(): number | null {
   try {
-    const raw = localStorage.getItem('hc-staff-monitoring-hourly-v1');
+    const raw = getStorage().getItem('hc-staff-monitoring-hourly-v1');
     return raw ? Number(raw) : null;
   } catch {
     return null;
@@ -244,7 +244,7 @@ export function touchHourlyCheck(): void {
 
 export function loadCoachingEvents(): CoachingEvent[] {
   try {
-    const raw = localStorage.getItem(COACHING_EVENTS_KEY);
+    const raw = getStorage().getItem(COACHING_EVENTS_KEY);
     return raw ? (JSON.parse(raw) as CoachingEvent[]) : [];
   } catch { return []; }
 }
@@ -303,7 +303,7 @@ export function getRepeatTargets(): RepeatTarget[] {
 
 export function loadModuleHistory(): ModuleHistoryRecord[] {
   try {
-    const raw = localStorage.getItem(MODULE_HISTORY_KEY);
+    const raw = getStorage().getItem(MODULE_HISTORY_KEY);
     return raw ? (JSON.parse(raw) as ModuleHistoryRecord[]) : [];
   } catch { return []; }
 }

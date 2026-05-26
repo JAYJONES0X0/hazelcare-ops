@@ -291,16 +291,16 @@ export function CommunicationsPage() {
         <div className="flex-1 flex flex-col bg-transparent">
           <div className="p-4 hc-clay-raised mb-4 flex items-center justify-between">
             <div className="flex gap-1.5">
-              {[
+              {([
                 { id: 'all', label: 'ALL_VECTORS' },
                 { id: 'alert', label: 'CRITICAL_ALERTS' },
                 { id: 'gap', label: 'OPS_GAPS' },
                 { id: 'leave', label: 'LEAVE_LOG' },
                 { id: 'message', label: 'COMMS' }
-              ].map(f => (
+              ] satisfies Array<{ id: InterceptVector | 'all'; label: string }>).map(f => (
                 <button 
                   key={f.id}
-                  onClick={() => setFilterType(f.id as any)}
+                  onClick={() => setFilterType(f.id)}
                   className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${filterType === f.id ? 'bg-hc-teal text-hc-bone shadow-inner' : 'text-hc-muted hover:bg-hc-clay-dark hover:text-hc-text'}`}>
                   {f.label}
                 </button>

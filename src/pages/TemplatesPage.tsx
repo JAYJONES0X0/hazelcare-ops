@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import type { WeekSummary, TemplateType } from '../lib/types';
 import { TEMPLATES } from '../lib/types';
 import { escapeHtml } from '../lib/html-escape';

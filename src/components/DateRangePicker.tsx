@@ -17,7 +17,7 @@ function toddmmyyyy(d: Date): string {
   ].join('/');
 }
 
-export function getPresetRange(preset: RangePreset): DateRange {
+function getPresetRange(preset: RangePreset): DateRange {
   const now = new Date();
   if (preset === 'all' || preset === 'custom') return { from: null, to: null };
   if (preset === 'today') {

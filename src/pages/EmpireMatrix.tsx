@@ -14,16 +14,22 @@ interface Props {
 }
 
 export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
-  const [weekData, setWeekData] = useState<WeekSummary | null>(weekDataProp);
+  const [storedWeekData, setStoredWeekData] = useState<WeekSummary | null>(null);
   const [hydrating, setHydrating] = useState(!weekDataProp);
 
   useEffect(() => {
-    if (weekDataProp) { setWeekData(weekDataProp); setHydrating(false); return; }
+    if (weekDataProp) return;
+    let alive = true;
     getAllEntriesAsync().then(entries => {
-      if (entries.length > 0) setWeekData(buildWeekSummary(entries));
-      setHydrating(false);
-    }).catch(() => setHydrating(false));
+      if (alive && entries.length > 0) setStoredWeekData(buildWeekSummary(entries));
+      if (alive) setHydrating(false);
+    }).catch(() => {
+      if (alive) setHydrating(false);
+    });
+    return () => { alive = false; };
   }, [weekDataProp]);
+
+  const weekData = weekDataProp || storedWeekData;
 
   // Use the REAL staff quality scores per house
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, {}), [weekData]);

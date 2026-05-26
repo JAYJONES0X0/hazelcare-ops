@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { StaffMember } from '../lib/types';
+import type { HouseSummary, StaffMember, WeekSummary } from '../lib/types';
 import { uid, HAZELCARE_HOUSES, ROLES, staffStatus, daysUntil, STAFF_TEMPLATES, loadLegalDocument, saveLegalDocument, type LegalDocument } from '../lib/compliance-store';
 import { Users, Plus, Edit2, Shield, Search } from 'lucide-react';
 import { ORG_CONFIG } from '../lib/config';
@@ -63,7 +63,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: StaffMember; onSave: (s
           
           <div className="flex flex-col gap-2">
             <label className="text-[11px] font-black text-hc-muted uppercase tracking-widest ml-1">Employment Status</label>
-            <select value={form.status} onChange={e => set('status', e.target.value as any)} className="hc-clay-inset w-full p-4 text-[11px] font-black uppercase tracking-widest text-hc-text">
+            <select value={form.status} onChange={e => set('status', e.target.value as StaffMember['status'])} className="hc-clay-inset w-full p-4 text-[11px] font-black uppercase tracking-widest text-hc-text">
               <option value="active">Active</option>
               <option value="sickness">Sickness</option>
               <option value="leave">On Leave</option>
@@ -217,16 +217,46 @@ export function StaffPage({ staff, onUpdate }: Props) {
   useEffect(() => {
     void getAllEntriesAsync().then(all => {
       if (all.length === 0) return;
-      const summary: any = {
+      const summary: WeekSummary = {
         totalEntries: all.length,
-        dateFrom: '', dateTo: '', allFlags: [], entryTypes: {}, housePerformance: {},
-        houses: {} as any
+        dateFrom: '',
+        dateTo: '',
+        allFlags: { red: [], amber: [], green: [] },
+        entryTypes: {},
+        clients: [],
+        carers: [],
+        clientDiary: {},
+        houses: {}
       };
       // Build a house-grouped summary for the scoring engine
       all.forEach(e => {
         const h = e.house || 'UNASSIGNED';
-        if (!summary.houses[h]) summary.houses[h] = { name: h, entries: [] };
+        if (!summary.houses[h]) {
+          summary.houses[h] = {
+            name: h,
+            coordinator: '',
+            entries: [],
+            incidents: [],
+            safeguarding: [],
+            medication: [],
+            staffPerformance: [],
+            healthSafety: [],
+            handovers: [],
+            dailySupport: [],
+            flags: { red: 0, amber: 0, green: 0 },
+          } satisfies HouseSummary;
+        }
         summary.houses[h].entries.push(e);
+        summary.entryTypes[e.type] = (summary.entryTypes[e.type] || 0) + 1;
+        if (e.client && !summary.clients.includes(e.client)) summary.clients.push(e.client);
+        if (e.carer && !summary.carers.includes(e.carer)) summary.carers.push(e.carer);
+        if (e.client) {
+          if (!summary.clientDiary[e.client]) summary.clientDiary[e.client] = [];
+          summary.clientDiary[e.client].push(e);
+        }
+        if (e.severity === 'red' || e.severity === 'amber' || e.severity === 'green') {
+          summary.allFlags[e.severity].push(e);
+        }
       });
 
       const analytics = computeStaffMonitoring(summary, { house: 'all', dateFrom: '', dateTo: '' });

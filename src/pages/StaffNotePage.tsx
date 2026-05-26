@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
 import type { Page, PageContext } from '../lib/types';
@@ -42,7 +43,7 @@ const SpeechRecognitionAPI =
 
 const speechSupported = !!SpeechRecognitionAPI;
 
-export const VOICE_LANGUAGES = [
+const VOICE_LANGUAGES = [
   { code: 'en-GB', label: 'English (UK)', tag: 'UK' },
   { code: 'en-US', label: 'English (US)', tag: 'US' },
   { code: 'en-IE', label: 'English (Ireland)', tag: 'IE' },
@@ -70,7 +71,7 @@ export const VOICE_LANGUAGES = [
 ];
 
 let _voiceLang = 'en-GB';
-export function setVoiceLang(lang: string) { _voiceLang = lang; }
+function setVoiceLang(lang: string) { _voiceLang = lang; }
 
 function useSpeechToText(onResult: (transcript: string) => void) {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -116,7 +117,7 @@ interface ProtocolStack {
   id: string;
   name: string;
   desc: string;
-  icon: any;
+  icon: ReactNode;
   structure: string[];
   directive: string;
 }

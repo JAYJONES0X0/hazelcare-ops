@@ -13,17 +13,23 @@ interface Props {
 }
 
 export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props) {
-  const [weekData, setWeekData] = useState<WeekSummary | null>(weekDataProp);
+  const [storedWeekData, setStoredWeekData] = useState<WeekSummary | null>(null);
   const [hydrating, setHydrating] = useState(!weekDataProp);
 
   // Self-hydrate from IndexedDB if prop is null
   useEffect(() => {
-    if (weekDataProp) { setWeekData(weekDataProp); setHydrating(false); return; }
+    if (weekDataProp) return;
+    let alive = true;
     getAllEntriesAsync().then(entries => {
-      if (entries.length > 0) setWeekData(buildWeekSummary(entries));
-      setHydrating(false);
-    }).catch(() => setHydrating(false));
+      if (alive && entries.length > 0) setStoredWeekData(buildWeekSummary(entries));
+      if (alive) setHydrating(false);
+    }).catch(() => {
+      if (alive) setHydrating(false);
+    });
+    return () => { alive = false; };
   }, [weekDataProp]);
+
+  const weekData = weekDataProp || storedWeekData;
 
   const allEntries = useMemo(() => weekData ? Object.values(weekData.houses).flatMap(h => h.entries) : [], [weekData]);
   const trends = useMemo(() => detectTrends(allEntries), [allEntries]);

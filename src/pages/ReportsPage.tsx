@@ -145,7 +145,6 @@ export function ReportsPage({ weekData }: Props) {
   const [reviewer, setReviewer] = useState('');
   const [reviewApproved, setReviewApproved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   const REPORTS = [
     { id: 'weekly_summary' as ReportType, label: 'Weekly Clinical Summary', icon: Activity, desc: 'House-by-house clinical overview and flag report.' },
@@ -163,13 +162,15 @@ export function ReportsPage({ weekData }: Props) {
     return '';
   }, [weekData, selectedReport]);
 
-  useEffect(() => {
-    if (!reportHtml) { setPreviewUrl(''); return; }
+  const previewUrl = useMemo(() => {
+    if (!reportHtml) return '';
     const blob = new Blob([reportHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
+    return URL.createObjectURL(blob);
   }, [reportHtml]);
+
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   const houses = weekData ? Object.entries(weekData.houses) : [];
   const totalEntries = weekData?.totalEntries ?? 0;

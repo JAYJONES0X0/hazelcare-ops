@@ -32,8 +32,8 @@ describe('WJ zip smoke parse', () => {
           : await entry.async('text');
         const envelope = buildEnvelopeFromRaw(fileName, text);
         typeCounts[envelope.source.detectedType] = (typeCounts[envelope.source.detectedType] || 0) + 1;
-      } catch (error: any) {
-        failures.push({ fileName, error: error?.message || String(error) });
+      } catch (error) {
+        failures.push({ fileName, error: error instanceof Error ? error.message : String(error) });
       }
     }
 

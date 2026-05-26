@@ -15,6 +15,10 @@ import { assessNoteStandard, buildProfessionalNoteDirective } from '../lib/note-
 import { buildOsIntelligenceContextFromState } from '../lib/os-intelligence-context';
 import { getAllRosterShifts, type RosterShift } from '../lib/roster-store';
 
+type TimelineEntry = CareEntry & { type: 'entry' };
+type TimelineGap = ClinicalGap & { type: 'gap'; entry: ''; carer: 'SYSTEM_AUDIT' };
+type TimelineItem = TimelineEntry | TimelineGap;
+
 const INTERNAL_TEMPLATES = [
   {
     id: 'hazel-golden-structure',
@@ -313,7 +317,7 @@ export function NoteWorkspace() {
     });
 
     const gaps = detectClinicalGaps(raw, activeRoster);
-    const combined = [
+    const combined: TimelineItem[] = [
       ...raw.map(e => ({ ...e, type: 'entry' as const })),
       ...gaps.map(g => ({ ...g, type: 'gap' as const, entry: '', carer: 'SYSTEM_AUDIT' }))
     ];
@@ -330,15 +334,15 @@ export function NoteWorkspace() {
       visibleItems: sorted,
       stats: { entries: raw.length, gaps: gaps.length, criticalGaps: gaps.filter(g => g.severity === 'red').length }
     };
-  }, [entries, selectedClient, dateRange]);
+  }, [activeRoster, entries, selectedClient, dateRange]);
 
   const filtered = visibleItems;
 
   const sameDayGroups = useMemo(() => {
     const buckets = new Map<string, CareEntry[]>();
     for (const item of visibleItems) {
-      if ((item as any).type !== 'entry') continue;
-      const entry = item as CareEntry;
+      if (item.type !== 'entry') continue;
+      const entry = item;
       const groupKey = `${entry.client.trim().toLowerCase()}|${entry.date}`;
       if (!buckets.has(groupKey)) buckets.set(groupKey, []);
       buckets.get(groupKey)!.push(entry);
@@ -540,7 +544,7 @@ export function NoteWorkspace() {
     const profile = clients.find(c => c.name.toLowerCase().trim() === clientName.toLowerCase().trim());
 
     const entry = entries.find(e => e.id === entryKey);
-    const intelContext = buildOsIntelligenceContextFromState({
+    const structuredContext = buildOsIntelligenceContextFromState({
       clientName,
       entry,
       entries,
@@ -549,15 +553,20 @@ export function NoteWorkspace() {
       refineInstructions,
       maxChars: 72_000,
     });
+    const legacyProfileContext = profile ? buildClientIntelContext(profile, 18_000) : '';
+    const intelContext = [structuredContext, legacyProfileContext && `LEGACY CLIENT PROFILE CONTEXT:\n${legacyProfileContext}`]
+      .filter(Boolean)
+      .join('\n\n');
     let finalInstructions = refineInstructions || '';
     finalInstructions = [
       buildProfessionalNoteDirective(clientName),
       finalInstructions,
     ].filter(Boolean).join('\n\n');
     if (entry && (entry.carer.toLowerCase().includes('region') || entry.carer.toLowerCase().includes('unassigned'))) {
-      const rostered = (rosterShifts.length ? rosterShifts : activeRoster)
-        .filter(s => s.date === entry.date && ((s as any).staffId || (s as any).id || ((s as any).carers?.length)))
-        .flatMap(s => (Array.isArray((s as any).carers) && (s as any).carers.length) ? (s as any).carers : [(s as any).staffId || 'Unknown Carer']);
+      const rosterSource: Array<RosterShift | Shift> = rosterShifts.length ? rosterShifts : activeRoster;
+      const rostered = rosterSource
+        .filter(s => s.date === entry.date && ('carers' in s ? s.carers.length > 0 : Boolean(s.staffId || s.id)))
+        .flatMap(s => ('carers' in s && s.carers.length) ? s.carers : [s.staffId || s.id || 'Unknown Carer']);
       if (rostered.length > 0) {
         finalInstructions = `${finalInstructions}\nNOTE: The original record lists a generic carer ('${entry.carer}'), but the official roster for this date (${entry.date}) indicates the staff member on shift was: ${rostered.join(', ')}. Please update the narrative to reflect the correct personnel identity in the first person.`.trim();
       }
@@ -647,7 +656,7 @@ export function NoteWorkspace() {
     const shiftContextRaw = ghostContextMap[gapId]?.trim() || '';
     
     // Find rostered personnel for this gap
-    const gapItem = visibleItems.find(item => item.type === 'gap' && (item as any).id === gapId) as any;
+    const gapItem = visibleItems.find((item): item is TimelineGap => item.type === 'gap' && item.id === gapId);
     const personnel = gapItem?.likelyCarers || [];
     const personnelCtx = personnel.length > 0 ? `\nPERSONNEL ON SHIFT (According to Roster): ${personnel.join(', ')}` : '';
     

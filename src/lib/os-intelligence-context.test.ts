@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildOsIntelligenceContextFromState } from './os-intelligence-context';
 import type { CareEntry } from './types';
+import { emptyCarePlan, emptyClient } from './client-store';
 
 const entry = (patch: Partial<CareEntry>): CareEntry => ({
   id: patch.id || crypto.randomUUID(),
@@ -44,20 +45,18 @@ describe('os intelligence context', () => {
         shiftType: 'day',
       }],
       clientProfile: {
+        ...emptyClient(),
         id: 'c1',
         name: 'Wayne Jefferson',
         preferredName: 'Wayne',
-        dob: '',
-        nhs: '',
-        address: '',
-        phone: '',
         diagnoses: ['Autism'],
         carePlan: {
+          ...emptyCarePlan('20/04/2026', '20/07/2026'),
           biography: '',
           criticalInfo: 'Use calm, low-demand prompts.',
           domains: [],
-        } as any,
-      } as any,
+        },
+      },
     });
 
     expect(context).toContain('[OS INTELLIGENCE CONTRACT]');

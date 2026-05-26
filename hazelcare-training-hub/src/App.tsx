@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Shield, 
   BrainCircuit, 
@@ -8,11 +8,8 @@ import {
   ArrowRight, 
   CheckCircle2, 
   XCircle, 
-  AlertTriangle,
   FileText,
-  Settings,
   Users,
-  Search,
   ChevronRight,
   TrendingUp,
   Scale

@@ -1,19 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
 import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
-import { clearWeekData, clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
+import { clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
 import { clearClientData, clearStaffNotes, type FullClient } from '../lib/client-store';
 import {
   downloadText,
   careEntriesToEvidenceCsv,
   buildCoordinatorReadme,
   buildCoordinatorEvidenceHtml,
+  type CoordinatorPackMeta,
 } from '../lib/coordinator-export-pack';
 import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { reconcileRosterCsv } from '../lib/continuity-engine';
 import { Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle } from 'lucide-react';
+
+type ClearableDataset = 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets';
+type AdminRefreshWindow = Window & {
+  refreshDataManager?: (count: number) => void | Promise<void>;
+};
 
 function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
   const houseKeys = Object.keys(weekData.houses).sort();
@@ -49,11 +55,20 @@ function CoordinatorExportCard({ weekData }: { weekData: WeekSummary }) {
       });
 
       const day = new Date().toISOString().slice(0, 10);
-      const meta = { title: 'COORDINATOR EVIDENCE PACK', generated: new Date().toISOString(), filters, entryCount: entries.length };
+      const meta: CoordinatorPackMeta = {
+        generatedAt: new Date().toISOString(),
+        source: 'staff-monitoring',
+        windowLabel: filters.dateFrom || filters.dateTo ? `${filters.dateFrom || 'start'} to ${filters.dateTo || 'latest'}` : 'All entries',
+        houseScope: house === 'all' ? 'All houses' : house,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        entryCount: entries.length,
+        typeFilter: typeFilter.trim() || undefined,
+      };
       
       downloadText(`hazelcare-evidence-${day}.csv`, careEntriesToEvidenceCsv(entries), 'text/csv;charset=utf-8');
-      downloadText(`hazelcare-readme-${day}.txt`, buildCoordinatorReadme(meta as any), 'text/plain;charset=utf-8');
-      downloadText(`hazelcare-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta as any), 'text/html;charset=utf-8');
+      downloadText(`hazelcare-readme-${day}.txt`, buildCoordinatorReadme(meta), 'text/plain;charset=utf-8');
+      downloadText(`hazelcare-evidence-${day}.html`, buildCoordinatorEvidenceHtml(entries, meta), 'text/html;charset=utf-8');
     } finally {
       setPacking(false);
     }
@@ -203,7 +218,7 @@ function DataManagerProp
 ({ clients, onClearEverything, onClearType }: {
   clients: FullClient[];
   onClearEverything: () => void;
-  onClearType: (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets') => void;
+  onClearType: (type: ClearableDataset) => void;
 }) {
   const [realCount, setRealCount] = useState(0);
   const [storageAudit, setStorageAudit] = useState<Record<string, { count: number; size: number }>>({});
@@ -220,7 +235,7 @@ function DataManagerProp
     void getStorageAuditAsync().then(setStorageAudit);
     
     // Wire up for global refresh after clear
-    (window as any).refreshDataManager = async (count: number) => {
+    (window as AdminRefreshWindow).refreshDataManager = async (count: number) => {
        setRealCount(count);
        setStorageAudit(await getStorageAuditAsync());
     };
@@ -265,7 +280,7 @@ function DataManagerProp
     }
   }
 
-  const datasets = [
+  const datasets: Array<{ key: ClearableDataset; label: string; present: boolean; desc: string }> = [
     { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries safely stored` : 'Local registry empty' },
     { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
     { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
@@ -300,7 +315,7 @@ function DataManagerProp
               </div>
             </div>
             {d.present && (
-              <button onClick={() => { if (confirm(`Clear ${d.label}?`)) onClearType(d.key as any); }} 
+              <button onClick={() => { if (confirm(`Clear ${d.label}?`)) onClearType(d.key); }}
                 className="text-[11px] font-black text-hc-muted hover:text-flag-red uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Clear</button>
             )}
           </div>
@@ -412,7 +427,7 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
     await purgeSystemDataAsync();
   };
 
-  const handleClearType = async (type: 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets') => {
+  const handleClearType = async (type: ClearableDataset) => {
     if (!confirm(`PURGE: Wipe all ${type.toUpperCase()} records?`)) return;
     
     if (type === 'diary') {
@@ -430,7 +445,7 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
     }
     
     // Refresh the local component state to show 0
-    void getAllEntriesAsync().then(all => (window as any).refreshDataManager?.(all.length));
+    void getAllEntriesAsync().then(all => (window as AdminRefreshWindow).refreshDataManager?.(all.length));
   };
 
   return (

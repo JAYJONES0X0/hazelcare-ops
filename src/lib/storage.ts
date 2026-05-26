@@ -9,14 +9,50 @@ const SCHEMA_VERSION_KEY = 'hc-schema-v';
 const CURRENT_SCHEMA = '3';
 let sessionWeekData: WeekSummary | null = null;
 
+type StorageAdapter = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+const memoryStorage = (() => {
+  const store = new Map<string, string>();
+  return {
+    getItem(key: string) {
+      return store.has(key) ? store.get(key) ?? null : null;
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    setItem(key: string, value: string) {
+      store.set(key, String(value));
+    },
+  };
+})();
+
+export function getStorage(): StorageAdapter {
+  if (typeof window !== 'undefined') return window.localStorage;
+
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  if (descriptor && 'value' in descriptor && descriptor.value) {
+    const injected = descriptor.value as Partial<StorageAdapter>;
+    if (
+      typeof injected.getItem === 'function' &&
+      typeof injected.setItem === 'function' &&
+      typeof injected.removeItem === 'function'
+    ) {
+      return injected as StorageAdapter;
+    }
+  }
+
+  return memoryStorage;
+}
+
 // Clear stale state if schema version changed (new deploy with breaking changes)
 (function migrateSchema() {
   try {
-    if (localStorage.getItem(SCHEMA_VERSION_KEY) !== CURRENT_SCHEMA) {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem('hc_current_page');
-      localStorage.removeItem('hc-registered-sessions');
-      localStorage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);
+    const storage = getStorage();
+    if (storage.getItem(SCHEMA_VERSION_KEY) !== CURRENT_SCHEMA) {
+      storage.removeItem(STORAGE_KEY);
+      storage.removeItem('hc_current_page');
+      storage.removeItem('hc-registered-sessions');
+      storage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);
     }
   } catch { /* ignore */ }
 })();
@@ -33,7 +69,7 @@ function normalizeState(raw: Partial<AppState> | null | undefined): AppState {
 
 function load(): AppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = getStorage().getItem(STORAGE_KEY);
     if (raw) return normalizeState(JSON.parse(raw) as Partial<AppState>);
   } catch { /* empty */ }
   return normalizeState(null);
@@ -64,16 +100,16 @@ function save(state: Partial<AppState>) {
   const merged = normalizeState({ ...current, ...state, weekData: null });
   const serialised = JSON.stringify(merged);
   try {
-    localStorage.setItem(STORAGE_KEY, serialised);
+    getStorage().setItem(STORAGE_KEY, serialised);
   } catch (e) {
     if (!isQuotaError(e)) throw e;
     // Quota exceeded — try again with truncated entry bodies
     try {
       const slim = { ...merged, weekData: slimWeekData(merged.weekData) };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+      getStorage().setItem(STORAGE_KEY, JSON.stringify(slim));
     } catch {
       // Still over quota — remove and let the session run in memory only
-      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      try { getStorage().removeItem(STORAGE_KEY); } catch { /* ignore */ }
     }
   }
 }
@@ -86,7 +122,7 @@ export function saveWeekData(data: WeekSummary | null) {
   sessionWeekData = data;
   // Keep weekData in session memory only.
   // Persisting this in localStorage previously caused stale restores and large payload churn.
-  try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
+  try { getStorage().removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
 }
 
 function entryFingerprint(entry: CareEntry): string {
@@ -238,7 +274,7 @@ export function saveIncidents(incidents: Incident[]) {
 
 export function loadStaff(): StaffMember[] {
   try {
-    const raw = localStorage.getItem(STAFF_KEY);
+    const raw = getStorage().getItem(STAFF_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -247,13 +283,13 @@ export function loadStaff(): StaffMember[] {
 
 export function saveStaff(staff: StaffMember[]) {
   try {
-    localStorage.setItem(STAFF_KEY, JSON.stringify(staff));
+    getStorage().setItem(STAFF_KEY, JSON.stringify(staff));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('hc-staff-updated'));
     }
   } catch (e) {
     if (!isQuotaError(e)) throw e;
-    localStorage.removeItem(STAFF_KEY);
+    getStorage().removeItem(STAFF_KEY);
   }
 }
 
@@ -267,13 +303,13 @@ export function saveShifts(shifts: Shift[]) {
 
 export function clearWeekData() {
   sessionWeekData = null;
-  try { localStorage.removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
+  try { getStorage().removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = getStorage().getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       delete parsed.weekData;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      getStorage().setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
   } catch { /* ignore */ }
 }
@@ -297,8 +333,9 @@ export function clearSelectedData(type: 'diary' | 'actions' | 'incidents') {
 
 export function clearAllData() {
   sessionWeekData = null;
-  localStorage.removeItem(WEEK_DATA_KEY);
-  localStorage.removeItem(STORAGE_KEY);
+  const storage = getStorage();
+  storage.removeItem(WEEK_DATA_KEY);
+  storage.removeItem(STORAGE_KEY);
 }
 
 export function uid(): string {
@@ -320,13 +357,13 @@ export function exportOpsSnapshot(): OpsSnapshot {
   let clients: unknown[] = [];
   let staffNotes: unknown[] = [];
   try {
-    const raw = localStorage.getItem(CLIENTS_KEY);
+    const raw = getStorage().getItem(CLIENTS_KEY);
     clients = raw ? JSON.parse(raw) : [];
   } catch {
     clients = [];
   }
   try {
-    const raw = localStorage.getItem(STAFF_NOTES_KEY);
+    const raw = getStorage().getItem(STAFF_NOTES_KEY);
     staffNotes = raw ? JSON.parse(raw) : [];
   } catch {
     staffNotes = [];
@@ -370,9 +407,10 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   };
 
   sessionWeekData = null;
-  localStorage.removeItem(WEEK_DATA_KEY);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-  localStorage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
-  localStorage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));
+  const storage = getStorage();
+  storage.removeItem(WEEK_DATA_KEY);
+  storage.setItem(STORAGE_KEY, JSON.stringify(appState));
+  storage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
+  storage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));
   return { ok: true };
 }

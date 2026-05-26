@@ -44,7 +44,22 @@ interface PreviewData {
   supportNeeds?: number;
   warnings?: string[];
   unmappedFields?: string[];
-  rawItems?: any[]; 
+  rawItems?: VerificationItem[];
+}
+
+interface VerificationItem {
+  date?: string;
+  time?: string;
+  client?: string;
+  staffId?: string;
+  house?: string;
+  entry?: string;
+  hours?: string | number;
+  [key: string]: unknown;
+}
+
+function errorMessage(error: unknown, fallback = 'unknown error'): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 interface ZipGuidanceRow {
@@ -176,9 +191,9 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
           include: true,
         }
       };
-    } catch (e: any) {
+    } catch (e) {
       if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
-      return { error: `${displayName}: ${e?.message || 'failed'}` };
+      return { error: `${displayName}: ${errorMessage(e, 'failed')}` };
     }
   }));
 
@@ -292,7 +307,7 @@ function mergeEnvelopes(envelopes: NormalizedImportEnvelope[]): NormalizedImport
   return merged;
 }
 
-function VerificationGrid({ items, type, onUpdate }: { items: any[], type: UploadDetectedType, onUpdate: (items: any[]) => void }) {
+function VerificationGrid({ items, type, onUpdate }: { items: VerificationItem[], type: UploadDetectedType, onUpdate: (items: VerificationItem[]) => void }) {
   if (!items?.length) return null;
   const handleChange = (i: number, f: string, v: string) => {
     const n = [...items];
@@ -376,8 +391,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       setPreview(buildPreview(combined));
       setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['client-docs']);
       setStep('preview');
-    } catch (e: any) {
-      setErrorMsg(`Text intake failed: ${e?.message || 'unknown error'}`);
+    } catch (e) {
+      setErrorMsg(`Text intake failed: ${errorMessage(e)}`);
       setStep('error');
     }
   };
@@ -418,7 +433,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         setPreview(buildPreview(combined));
         setSelectedTargets(combined.suggestedTargets.length ? combined.suggestedTargets : ['reports']);
         setStep('preview');
-      } catch (e: any) { setErrorMsg(`Fault: ${e.message}`); setStep('error'); break; }
+      } catch (e) { setErrorMsg(`Fault: ${errorMessage(e)}`); setStep('error'); break; }
     }
   };
 
@@ -464,8 +479,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         setResultMsg(`Roster loaded: ${shifts.length} shifts across ${summary?.totalClients || 0} clients and ${summary?.totalCarers || 0} staff. Diary uploads from now will auto-resolve carer names.`);
         setStep('done');
         return;
-      } catch (e: any) {
-        setErrorMsg(`Roster parse failed: ${e.message}`);
+      } catch (e) {
+        setErrorMsg(`Roster parse failed: ${errorMessage(e)}`);
         setStep('error');
         return;
       }

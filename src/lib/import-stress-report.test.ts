@@ -152,10 +152,10 @@ describe('import stress report', () => {
           textLength: text.length,
           ms: Date.now() - started,
         });
-      } catch (error: any) {
+      } catch (error) {
         results.push({
           ...testCase,
-          error: error?.message || String(error),
+          error: error instanceof Error ? error.message : String(error),
           ms: Date.now() - started,
         });
       }

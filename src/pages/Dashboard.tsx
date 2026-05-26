@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw, Users, FileText, Clock } from 'lucide-react';
+import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 import type { WeekSummary, Action, Incident, Page, PageContext } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
@@ -90,14 +90,15 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   // Re-query whenever date range changes
   useEffect(() => {
     if (!dateFrom && !dateTo) {
-      setFilteredData(weekData);
       return;
     }
-    setLoading(true);
+    let alive = true;
     void (async () => {
+      setLoading(true);
       const fromStr = dateFrom ? formatDisplayDate(dateFrom) : null;
       const toStr   = dateTo   ? formatDisplayDate(dateTo)   : null;
       const entries = await getEntriesForRangeAsync(fromStr, toStr);
+      if (!alive) return;
       if (entries.length > 0) {
         setFilteredData(buildWeekSummary(entries));
       } else if (weekData) {
@@ -106,6 +107,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       }
       setLoading(false);
     })();
+    return () => { alive = false; };
   }, [dateFrom, dateTo, weekData]);
 
   function applyPreset(days: number) {
@@ -122,7 +124,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
   // â”€â”€ Optimized Metric Aggregation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { houseStats, metrics } = useMemo(() => {
-    const d = filteredData || weekData;
+    const d = dateFrom || dateTo ? (filteredData || weekData) : weekData;
     if (!d) return { houseStats: [], metrics: { totalEntries: 0, activeStaff: 0, pendingActions: 0, activeIncidents: 0, totalRedFlags: 0, totalAmberFlags: 0, uniqueClients: 0, gaps: 0, criticalGaps: 0 } };
 
     const allEntries = Object.values(d.houses).flatMap(h => h.entries);
@@ -146,10 +148,10 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     };
 
     return { houseStats: stats, metrics: computedMetrics };
-  }, [filteredData, weekData, actions, incidents]);
+  }, [dateFrom, dateTo, filteredData, weekData, actions, incidents]);
 
   // Active data reference
-  const data = filteredData || weekData;
+  const data = dateFrom || dateTo ? (filteredData || weekData) : weekData;
 
   // â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!data) {
