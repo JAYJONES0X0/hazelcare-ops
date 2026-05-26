@@ -192,24 +192,34 @@ export function NoteWorkspace() {
 
   useEffect(() => {
     let alive = true;
+    console.log('[NoteWorkspace] Starting hydration...');
+
     // Fail-safe: never block the full workspace UI indefinitely on hydration.
     const bootGuard = window.setTimeout(() => {
-      if (alive) setBooting(false);
+      if (alive && booting) {
+        console.warn('[NoteWorkspace] Hydration timed out (2.5s) - forcing boot=false');
+        setBooting(false);
+      }
     }, 2500);
 
     void getAllEntriesAsync().then(rows => {
       if (!alive) return;
+      console.log(`[NoteWorkspace] Hydrated ${rows.length} entries`);
       setEntries(rows);
       setBooting(false);
-    }).catch(() => {
+    }).catch(err => {
+      console.error('[NoteWorkspace] Hydration failed:', err);
       if (alive) setBooting(false);
     });
+
     void getStoreBoundsAsync()
       .then(b => { if (alive) setStoreBounds(b); })
       .catch(() => { if (alive) setStoreBounds(null); });
+
     void getAllRosterShifts()
       .then(shifts => { if (alive) setRosterShifts(shifts); })
       .catch(() => { if (alive) setRosterShifts([]); });
+
     return () => {
       alive = false;
       window.clearTimeout(bootGuard);
