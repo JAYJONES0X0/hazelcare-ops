@@ -49,6 +49,105 @@ function fieldSummary(label: string, input: string | undefined, max = 180): stri
   return summary ? `${label}: ${summary}` : null;
 }
 
+function hasAny(text: string, words: string[]): boolean {
+  const lower = text.toLowerCase();
+  return words.some(word => lower.includes(word));
+}
+
+function extractSourceCues(...values: Array<string | undefined>): string[] {
+  const text = values.join(' ').toLowerCase();
+  const cues: string[] = [];
+  if (hasAny(text, ['privacy', 'private', 'bedroom', 'personal space'])) cues.push('privacy/personal space');
+  if (hasAny(text, ['shared', 'communal', 'kitchen', 'lounge', 'bathroom', 'hallway'])) cues.push('shared-space responsibility');
+  if (hasAny(text, ['prompt', 'encourage', 'remind', 'guidance'])) cues.push('prompting/encouragement');
+  if (hasAny(text, ['refuse', 'decline', 'reluctant', 'does not want'])) cues.push('refusal/choice');
+  if (hasAny(text, ['risk', 'safety', 'hazard', 'maintenance', 'fire', 'clutter'])) cues.push('safety risk');
+  if (hasAny(text, ['independent', 'independently', 'can do', 'able to'])) cues.push('promote independence');
+  if (hasAny(text, ['anxious', 'distress', 'agitated', 'overwhelmed', 'mental health'])) cues.push('emotional presentation');
+  if (hasAny(text, ['medication', 'mar', 'tablet', 'dose'])) cues.push('medication evidence');
+  if (hasAny(text, ['meal', 'food', 'breakfast', 'lunch', 'dinner', 'hydrate', 'fluid'])) cues.push('nutrition/hydration');
+  return Array.from(new Set(cues)).slice(0, 4);
+}
+
+function domainTaskLogic(title: string, sourceText: string): { purpose: string; action: string; watch: string } {
+  const lower = title.toLowerCase();
+  if (lower.includes('environment') || lower.includes('adaptive living')) {
+    return {
+      purpose: 'Keep the home environment safe while respecting privacy, choice and independence.',
+      action: 'Offer choice-led prompts for bedroom/shared-area upkeep, agree what support is wanted, and address hazards without taking over tasks the person can do.',
+      watch: 'Escalate safety, maintenance, fire, hygiene or neighbour/shared-space concerns.',
+    };
+  }
+  if (lower.includes('communication') || lower.includes('sensory')) {
+    return {
+      purpose: 'Make communication clear, respectful and accessible before support is delivered.',
+      action: 'Check preferred communication style, give time to respond, adapt prompts to sensory needs, and confirm understanding before moving on.',
+      watch: 'Watch for frustration, withdrawal, overload, misunderstanding or refusal caused by communication barriers.',
+    };
+  }
+  if (lower.includes('social') || lower.includes('relationship')) {
+    return {
+      purpose: 'Support safe social connection without forcing engagement.',
+      action: 'Offer realistic activity/social options, support planning or travel if needed, and respect declined contact while keeping opportunities open.',
+      watch: 'Watch for isolation, conflict, exploitation, unsafe contact or deterioration in mood after social contact.',
+    };
+  }
+  if (lower.includes('life skills') || lower.includes('daily routine')) {
+    return {
+      purpose: 'Maintain routine and daily living skills with the least support needed.',
+      action: 'Break the routine into small steps, prompt rather than take over, and reinforce what the person completes independently.',
+      watch: 'Watch for missed routines, overload, declining motivation, household task build-up or avoidable dependency.',
+    };
+  }
+  if (lower.includes('nutrition') || lower.includes('hydration') || hasAny(sourceText, ['meal', 'hydrate', 'fluid'])) {
+    return {
+      purpose: 'Maintain safe nutrition and hydration in line with preference and care-plan need.',
+      action: 'Offer meal/fluid prompts, support preparation or access where needed, and record intake concerns or refusal clearly.',
+      watch: 'Escalate repeated refusal, poor intake, choking/reflux concerns, weight/appetite change or dehydration indicators.',
+    };
+  }
+  if (lower.includes('medication')) {
+    return {
+      purpose: 'Support medication safely and evidence the outcome.',
+      action: 'Follow MAR/prescribed instructions, prompt at the agreed time, record taken/refused/missed, and follow refusal/escalation procedure.',
+      watch: 'Escalate missed doses, refusal, side effects, stock/MAR errors or change in presentation.',
+    };
+  }
+  if (lower.includes('mental health') || lower.includes('wellbeing')) {
+    return {
+      purpose: 'Monitor emotional wellbeing and respond early to changes in presentation.',
+      action: 'Check mood/presentation, offer agreed coping support, maintain calm engagement, and record what changed or helped.',
+      watch: 'Escalate self-harm indicators, crisis presentation, withdrawal, agitation, safeguarding concerns or refusal of essential support.',
+    };
+  }
+  if (lower.includes('personal care') || lower.includes('hygiene') || lower.includes('continence')) {
+    return {
+      purpose: 'Support dignity, hygiene and presentation using the least intrusive approach.',
+      action: 'Offer discreet prompts or practical help, respect privacy, confirm consent, and record support accepted or declined.',
+      watch: 'Escalate skin issues, hygiene deterioration, continence concerns, pain, refusal patterns or infection-control risks.',
+    };
+  }
+  if (lower.includes('mobility') || lower.includes('movement') || lower.includes('exercise')) {
+    return {
+      purpose: 'Support safe movement and independence.',
+      action: 'Use the agreed mobility approach/equipment, prompt pacing, and support transfers or community movement only within the care plan.',
+      watch: 'Escalate falls, pain, breathlessness, equipment issues, reduced mobility or unsafe transfer attempts.',
+    };
+  }
+  if (lower.includes('skin') || lower.includes('pressure')) {
+    return {
+      purpose: 'Protect skin integrity and spot deterioration early.',
+      action: 'Complete agreed skin/pressure-area checks or prompts, support repositioning/comfort, and record any visible change.',
+      watch: 'Escalate redness, soreness, broken skin, swelling, pain or refusal of pressure-care support.',
+    };
+  }
+  return {
+    purpose: 'Deliver the agreed care-plan support in a person-centred, evidence-based way.',
+    action: 'Offer the planned support, use least-restrictive prompts, respect choice, and adapt support to the person’s response.',
+    watch: 'Escalate refusal of essential support, change in risk/presentation, safeguarding concern or unmet need.',
+  };
+}
+
 const DAILY_DOMAIN_KEYWORDS = [
   'medication', 'mental health', 'personal care', 'hygiene', 'nutrition',
   'hydration', 'daily routine', 'continence', 'mobility', 'pain',
@@ -136,13 +235,20 @@ function buildTaskName(domain: CarePlanDomain, clientName: string): string {
 }
 
 function buildTaskNotes(domain: CarePlanDomain): string {
-  const needLine = firstSentence(domain.identifiedNeed, 180);
-  const supportLine = firstSentence(domain.howToAchieve || domain.plannedOutcomes, 220);
-  const riskLine = firstSentence(domain.riskMitigation || domain.riskTitle, 180);
+  const sourceText = [
+    domain.identifiedNeed,
+    domain.howToAchieve,
+    domain.plannedOutcomes,
+    domain.riskTitle,
+    domain.riskMitigation,
+  ].join(' ');
+  const logic = domainTaskLogic(domain.title, sourceText);
+  const cues = extractSourceCues(sourceText);
   const parts: string[] = [];
-  if (needLine) parts.push(`Need: ${needLine}`);
-  if (supportLine) parts.push(`Support: ${supportLine}`);
-  if (riskLine) parts.push(`Watch for: ${riskLine}`);
+  parts.push(`Purpose: ${logic.purpose}`);
+  parts.push(`Staff action: ${logic.action}`);
+  parts.push(`Watch for: ${logic.watch}`);
+  if (cues.length) parts.push(`Source cues: ${cues.join(', ')}.`);
   parts.push('Record: support offered; accepted/declined; outcome; risk or presentation change; escalation/follow-up.');
   parts.push('Avoid: "done", "all fine", "support given" without the facts.');
   return parts.join('\n');
@@ -219,14 +325,17 @@ function generateTasksFromSupportPlan(client: FullClient): NourishTask[] {
     .filter(need => (need.area || '').trim().length > 0)
     .map(need => {
       const area = cleanLine(need.area, 90);
-      const support = cleanLine(need.howToSupport || need.canDoMyself, 170);
-      const risk = cleanLine(need.risks, 140);
-      const notes: string[] = [];
-      if (support) notes.push(`Support: ${support}`);
-      if (risk) notes.push(`Risk focus: ${risk}`);
-      notes.push('Evidence required: what staff offered/did, what the client accepted or declined, outcome, and any escalation or follow-up.');
+      const sourceText = [need.canDoMyself, need.howToSupport, need.risks].join(' ');
+      const logic = domainTaskLogic(area, sourceText);
+      const cues = extractSourceCues(sourceText);
+      const notes: string[] = [
+        `Purpose: ${logic.purpose}`,
+        `Staff action: ${logic.action}`,
+        `Watch for: ${logic.watch}`,
+      ];
+      if (cues.length) notes.push(`Source cues: ${cues.join(', ')}.`);
+      notes.push('Record: support offered; accepted/declined; outcome; risk or presentation change; escalation/follow-up.');
 
-      const sourceText = [need.canDoMyself, need.howToSupport, need.risks].join(' ').toLowerCase();
       const mandatory = /risk|safeguard|medication|aggress|falls|self-harm|incident/i.test(sourceText);
 
       return {
@@ -819,7 +928,14 @@ export function NourishTaskPack() {
           text: formatForExport(selectedClient, tasks),
           noteType: 'Nourish Task Pack',
           clientName: selectedClient.name,
-          refineInstructions: `Update this task pack based on: ${refineInput}. Return the full updated pack.`,
+          refineInstructions: [
+            `Task-pack refinement request: ${refineInput}.`,
+            'Act as a UK supported-living operations reviewer.',
+            'Do not paste source care-plan/admission text back as task notes.',
+            'Rewrite task notes as concise Nourish-ready operational instructions with Purpose, Staff action, Watch for, Record, and Avoid.',
+            'Preserve evidence fidelity: do not invent care events, risk status, completed tasks, or "no concerns".',
+            'Return the full updated task pack in a copy-ready format.',
+          ].join('\n'),
           includeEvidenceTrail: false,
         })
       });
