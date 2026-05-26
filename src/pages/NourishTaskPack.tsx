@@ -38,6 +38,17 @@ function cleanLine(input: string, max = 2000): string {
   return normalized.slice(0, max - 3).trimEnd() + '...';
 }
 
+function firstSentence(input: string, max = 180): string {
+  const clean = cleanLine(input, max);
+  const sentence = clean.match(/^(.+?[.!?])\s/)?.[1];
+  return sentence && sentence.length <= max ? sentence : clean;
+}
+
+function fieldSummary(label: string, input: string | undefined, max = 180): string | null {
+  const summary = firstSentence(input || '', max);
+  return summary ? `${label}: ${summary}` : null;
+}
+
 const DAILY_DOMAIN_KEYWORDS = [
   'medication', 'mental health', 'personal care', 'hygiene', 'nutrition',
   'hydration', 'daily routine', 'continence', 'mobility', 'pain',
@@ -125,25 +136,26 @@ function buildTaskName(domain: CarePlanDomain, clientName: string): string {
 }
 
 function buildTaskNotes(domain: CarePlanDomain): string {
-  const needLine = cleanLine(domain.identifiedNeed, 1000);
-  const supportLine = cleanLine(domain.howToAchieve || domain.plannedOutcomes, 1000);
-  const riskLine = cleanLine(domain.riskMitigation || domain.riskTitle, 1000);
+  const needLine = firstSentence(domain.identifiedNeed, 180);
+  const supportLine = firstSentence(domain.howToAchieve || domain.plannedOutcomes, 220);
+  const riskLine = firstSentence(domain.riskMitigation || domain.riskTitle, 180);
   const parts: string[] = [];
   if (needLine) parts.push(`Need: ${needLine}`);
   if (supportLine) parts.push(`Support: ${supportLine}`);
   if (riskLine) parts.push(`Watch for: ${riskLine}`);
-  parts.push('Evidence required: record the support offered, the response, anything declined, the outcome, and any change in risk/presentation. Do not write generic entries such as "done", "all fine", or "support given" without the facts.');
+  parts.push('Record: support offered; accepted/declined; outcome; risk or presentation change; escalation/follow-up.');
+  parts.push('Avoid: "done", "all fine", "support given" without the facts.');
   return parts.join('\n');
 }
 
 function collectEvidence(domain: CarePlanDomain): string[] {
-  const evidence: string[] = [];
-  if (domain.identifiedNeed?.trim()) evidence.push(`Need: ${domain.identifiedNeed.trim()}`);
-  if (domain.riskTitle?.trim()) evidence.push(`Risk: ${domain.riskTitle.trim()}`);
-  if (domain.riskDescription?.trim()) evidence.push(`Risk detail: ${domain.riskDescription.trim()}`);
-  if (domain.riskMitigation?.trim()) evidence.push(`Mitigation: ${domain.riskMitigation.trim()}`);
-  if (domain.howToAchieve?.trim()) evidence.push(`Support method: ${domain.howToAchieve.trim()}`);
-  return evidence;
+  return [
+    fieldSummary('Need', domain.identifiedNeed, 220),
+    fieldSummary('Risk', domain.riskTitle, 160),
+    fieldSummary('Risk detail', domain.riskDescription, 220),
+    fieldSummary('Mitigation', domain.riskMitigation, 220),
+    fieldSummary('Support method', domain.howToAchieve, 220),
+  ].filter(Boolean) as string[];
 }
 
 function generateTasksFromCarePlan(client: FullClient): NourishTask[] {
@@ -494,7 +506,7 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
     <div className={`hc-clay-raised rounded-2xl overflow-hidden border ${task.mandatory ? 'border-flag-red/20' : 'border-hc-border/5'} transition-all`}>
       <div
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-start gap-3 p-4 text-left hover:bg-white/[0.02] transition-all cursor-pointer"
+        className="w-full flex items-start gap-3 p-3 sm:p-4 text-left hover:bg-white/[0.02] transition-all cursor-pointer"
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -511,7 +523,7 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] font-black text-hc-text uppercase tracking-wide">{task.name}</span>
+            <span className="text-[11px] font-black text-hc-text uppercase tracking-wide leading-snug">{task.name}</span>
             {task.mandatory && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-flag-red/10 border border-flag-red/20 text-[9px] font-black text-flag-red uppercase tracking-widest">
                 <AlertTriangle size={8} /> Mandatory Notes
@@ -546,8 +558,9 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-hc-border/10 pt-3 animate-in slide-in-from-top-2 duration-200">
-          <div>
+        <div className="px-3 sm:px-4 pb-4 space-y-4 border-t border-hc-border/10 pt-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,420px)]">
+            <div>
             <div className="flex items-center justify-between mb-1.5">
               <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest">Task Notes Instruction</div>
               <button 
@@ -564,10 +577,10 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
                 onChange={(e) => setNotesDraft(e.target.value)}
                 onBlur={() => onUpdate?.(task.id, notesDraft)}
                 rows={5}
-                className="w-full hc-clay-inset rounded-xl p-3 text-[11px] text-hc-text bg-hc-surface font-mono outline-none focus:ring-1 focus:ring-hc-teal/30"
+                className="w-full hc-clay-inset rounded-xl p-3 text-[12px] text-hc-text bg-hc-surface font-mono outline-none focus:ring-1 focus:ring-hc-teal/30 leading-relaxed"
               />
             ) : (
-              <div className="hc-clay-inset rounded-xl p-3 text-[11px] text-hc-text/80 leading-relaxed whitespace-pre-line">
+              <div className="hc-clay-inset rounded-xl p-3 text-[12px] text-hc-text/85 leading-relaxed whitespace-pre-line max-h-52 overflow-y-auto">
                 {task.notes}
               </div>
             )}
@@ -578,21 +591,24 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
             >
               {copied === 'notes' ? 'Copied notes' : 'Copy notes'}
             </button>
-          </div>
-          <div>
-            <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Source</div>
-            <div className="text-[10px] text-hc-muted font-bold">{task.source}</div>
-          </div>
-          {task.evidence.length > 0 && (
-            <div>
-              <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Evidence</div>
-              <ul className="list-disc pl-4 space-y-1 text-[10px] text-hc-muted">
-                {task.evidence.map((ev, i) => (
-                  <li key={i}>{ev}</li>
-                ))}
-              </ul>
             </div>
-          )}
+            <div className="rounded-xl border border-hc-border/10 bg-hc-surface/35 p-3 space-y-3 min-w-0">
+              <div>
+                <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Source</div>
+                <div className="text-[10px] text-hc-muted font-bold leading-relaxed break-words">{task.source}</div>
+              </div>
+              {task.evidence.length > 0 && (
+                <div>
+                  <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest mb-1">Evidence Summary</div>
+                  <ul className="list-disc pl-4 space-y-1.5 text-[10px] text-hc-muted leading-relaxed max-h-48 overflow-y-auto">
+                    {task.evidence.map((ev, i) => (
+                      <li key={i} className="break-words">{ev}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
