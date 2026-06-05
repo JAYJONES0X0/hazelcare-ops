@@ -32,6 +32,8 @@ interface Props {
   theme: AppTheme;
   setTheme: (t: AppTheme) => void;
   onSignOut: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const sectionIcon: Record<string, ReactNode> = {
@@ -51,7 +53,9 @@ const skinOptions: Array<{ id: SkinTheme; label: string; color: string }> = [
   { id: 'focus', label: 'Focus copper', color: '#b45309' },
 ];
 
-export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }: Props) {
+export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, mobileOpen = false, onMobileClose }: Props) {
+  // On mobile the sidebar is an off-canvas drawer; selecting a destination closes it.
+  const navigate = (p: Page) => { setPage(p); onMobileClose?.(); };
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
   const [compactViewport, setCompactViewport] = useState(() => {
     try { return window.innerWidth < 640; } catch { return false; }
@@ -149,7 +153,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }:
 
   return (
     <div
-      className={`h-full flex flex-col p-3 sm:p-4 bg-hc-bg z-30 shrink-0 transition-[width] duration-300 ease-in-out relative ${collapsed ? (compactViewport ? 'w-28' : 'w-16 sm:w-20') : 'w-64 lg:w-72'}`}
+      className={`h-full flex flex-col p-3 sm:p-4 bg-hc-bg transition-all duration-300 ease-in-out w-64 fixed inset-y-0 left-0 z-50 ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} md:static md:translate-x-0 md:shadow-none md:z-30 md:shrink-0 ${collapsed ? (compactViewport ? 'md:w-24' : 'md:w-20') : 'md:w-64 md:lg:w-72'}`}
     >
       <button
         onClick={toggleSidebar}
@@ -179,7 +183,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }:
           return (
             <button
               key={section.id}
-              onClick={() => setPage(section.landing)}
+              onClick={() => navigate(section.landing)}
               className={`w-full flex items-center rounded-2xl transition-all ${
                 collapsed
                   ? compactViewport ? 'justify-center flex-col gap-1 px-2 py-3' : 'justify-center gap-3 px-4 py-3'

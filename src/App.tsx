@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Analytics } from '@vercel/analytics/react';
 import { Sidebar } from './components/Sidebar';
 import { GlobalInjest } from './components/GlobalInjest';
-import { Upload, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, ArrowUp, ArrowDown, Menu } from 'lucide-react';
 
 import type { WeekSummary, Action, Incident, StaffMember, Page, PageContext } from './lib/types';
 import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
@@ -52,6 +52,7 @@ export default function App() {
   const [authed, setAuthed] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>(() => normalizeUserRole(localStorage.getItem('hc-user-role')));
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [pageId, setPageId] = useState<Page>(() => {
     const saved = (localStorage.getItem('hc_current_page') as Page) || 'briefing';
     const role = normalizeUserRole(localStorage.getItem('hc-user-role'));
@@ -298,12 +299,26 @@ export default function App() {
       <Analytics />
       <ErrorBoundary>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} />
+          {mobileNavOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full min-h-screen ">
-              <div className="sticky top-0 z-20 px-6 pt-4 pb-3 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
+              <div className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-3 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setMobileNavOpen(true)}
+                    aria-label="Open navigation"
+                    className="md:hidden shrink-0 w-9 h-9 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal active:hc-clay-pressed"
+                  >
+                    <Menu size={18} />
+                  </button>
                   <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1">
                   {activeSection.tabs.filter(tab => canAccessPage(userRole, tab.id)).map(tab => {
                     const active = page === tab.id;
