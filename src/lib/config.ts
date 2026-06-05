@@ -10,14 +10,14 @@ export const ORG_CONFIG = {
   domain: 'hazelcare.co.uk',
   supportEmail: 'support@hazelcare.co.uk',
   tagline: 'Precision Care Operations',
-  
+
   // Storage keys — keep these stable to avoid data loss during branding changes
   storagePrefix: 'hazelcare',
-  
+
   // Visuals
   logoIcon: '/logo-icon-dark.png',
   logoFull: '/hazelcare-logo.png',
-  
+
   // Compliance
   cqcReady: true,
   dataProtectionAct: 'Data Protection Act 2018',

@@ -13,6 +13,16 @@
   --color-hc-border:    var(--hc-border);
   --color-hc-teal:       var(--hc-teal-active);
   --color-hc-teal-light: var(--hc-teal-glow);
+  --color-hc-authority:       var(--hc-authority);
+  --color-hc-authority-dark:  var(--hc-authority-dark);
+  --color-hc-authority-mid:   var(--hc-authority-mid);
+  --color-hc-authority-soft:  var(--hc-authority-soft);
+  --color-hc-authority-pale:  var(--hc-authority-pale);
+  --color-hc-critical:       var(--hc-critical);
+  --color-hc-critical-dark:  var(--hc-critical-dark);
+  --color-hc-critical-mid:   var(--hc-critical-mid);
+  --color-hc-critical-soft:  var(--hc-critical-soft);
+  --color-hc-critical-pale:  var(--hc-critical-pale);
   --color-flag-red:   #d94e4e;
   --color-flag-amber: #d9974e;
   --color-flag-green: #4e8d4e;
@@ -32,6 +42,16 @@
   --hc-border:  rgba(13, 45, 45, 0.06);
   --hc-teal-active: #1c4e4e;
   --hc-teal-glow:   #4c7c7c;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+  --hc-critical-dark: #5b1117;
+  --hc-critical:      #9d1f2d;
+  --hc-critical-mid:  #c6424d;
+  --hc-critical-soft: #df7c83;
+  --hc-critical-pale: #f0c6c9;
 
   --hc-shadow-dark:  rgba(13, 45, 45, 0.24);
   --hc-shadow-light: rgba(255, 255, 255, 0.88);
@@ -49,6 +69,161 @@
 
   --btn-bg:   #1c4e4e;
   --btn-text: #f3efe0;
+}
+
+[data-theme='authority'] {
+  /* AUTHORITY PURPLE: tuned core intelligence skin */
+  --hc-bg:      #ded6d0;
+  --hc-surface: #f1e8dd;
+  --hc-surface-2: #d8c4d7;
+  --hc-text:    #1f0923;
+  --hc-muted:   #59425b;
+  --hc-border:  rgba(93, 5, 101, 0.12);
+  --hc-teal-active: #5d0565;
+  --hc-teal-glow:   #7e3285;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(93, 5, 101, 0.25);
+  --hc-shadow-light: rgba(255, 255, 255, 0.84);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #5d0565;
+  --btn-text: #f3efe0;
+}
+
+[data-theme='clinical'] {
+  /* CLINICAL BLUE: clean medical/professional skin */
+  --hc-bg:      #d5dbe0;
+  --hc-surface: #e5edf2;
+  --hc-surface-2: #cad6e0;
+  --hc-text:    #0a192f;
+  --hc-muted:   #4a5d73;
+  --hc-border:  rgba(15, 74, 138, 0.12);
+  --hc-teal-active: #0f4a8a;
+  --hc-teal-glow:   #2563eb;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(15, 74, 138, 0.22);
+  --hc-shadow-light: rgba(255, 255, 255, 0.88);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #0f4a8a;
+  --btn-text: #f3efe0;
+}
+
+[data-theme='calm'] {
+  /* CALM SAGE: low cognitive load skin */
+  --hc-bg:      #d6dfd9;
+  --hc-surface: #e6efe8;
+  --hc-surface-2: #ccdad0;
+  --hc-text:    #122a1f;
+  --hc-muted:   #4f6b5b;
+  --hc-border:  rgba(46, 94, 73, 0.12);
+  --hc-teal-active: #2e5e49;
+  --hc-teal-glow:   #4e8d4e;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(46, 94, 73, 0.20);
+  --hc-shadow-light: rgba(255, 255, 255, 0.86);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #2e5e49;
+  --btn-text: #f3efe0;
+}
+
+[data-theme='focus'] {
+  /* FOCUS COPPER: warm operational skin */
+  --hc-bg:      #dfd7cd;
+  --hc-surface: #efe8dc;
+  --hc-surface-2: #d8cabd;
+  --hc-text:    #3b1f0b;
+  --hc-muted:   #7d553b;
+  --hc-border:  rgba(153, 62, 10, 0.14);
+  --hc-teal-active: #b45309;
+  --hc-teal-glow:   #d97706;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(153, 62, 10, 0.22);
+  --hc-shadow-light: rgba(255, 255, 255, 0.88);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #b45309;
+  --btn-text: #fff8ef;
+}
+
+[data-theme='critical'] {
+  /* CRITICAL: warm ops shell with red risk-command posture */
+  --hc-bg:      #ded7cf;
+  --hc-surface: #efe8dc;
+  --hc-surface-2: #dccccc;
+  --hc-text:    #2b1113;
+  --hc-muted:   #684d50;
+  --hc-border:  rgba(157, 31, 45, 0.10);
+  --hc-teal-active: #9d1f2d;
+  --hc-teal-glow:   #c6424d;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #5d0565;
+  --hc-authority-mid:  #7e3285;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+  --hc-critical-dark: #5b1117;
+  --hc-critical:      #9d1f2d;
+  --hc-critical-mid:  #c6424d;
+  --hc-critical-soft: #df7c83;
+  --hc-critical-pale: #f0c6c9;
+
+  --hc-shadow-dark:  rgba(91, 17, 23, 0.24);
+  --hc-shadow-light: rgba(255, 255, 255, 0.82);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #9d1f2d;
+  --btn-text: #fff8ef;
 }
 
 [data-theme='dark'] {
@@ -164,6 +339,18 @@
     border: 1px solid rgba(28, 78, 78, 0.2);
   }
   .btn-clay-teal:active {
+    box-shadow: var(--clay-pressed) !important;
+    transform: scale(0.97);
+  }
+
+  .btn-clay-authority {
+    @apply font-black uppercase tracking-[0.15em] px-6 py-3 rounded-xl
+           transition-all duration-300 hover:scale-[1.02] text-hc-authority text-[10px];
+    background-color: var(--hc-surface);
+    box-shadow: var(--clay-raised);
+    border: 1px solid rgba(93, 5, 101, 0.24);
+  }
+  .btn-clay-authority:active {
     box-shadow: var(--clay-pressed) !important;
     transform: scale(0.97);
   }

@@ -28,50 +28,86 @@ function inferNameFromFileName(fileName: string): string {
   return match ? `${match[1]} ${match[2]}` : '';
 }
 
-function extractSupportPlanCandidate(rawText: string, fileName: string): string {
+function extractBccHeaderCandidate(rawText: string): { name?: string; dob?: string; phone?: string; address?: string } {
+  const compact = rawText.replace(/\s+/g, ' ').trim();
+  const row = compact.match(
+    /\bPerson\s+ID\s+Full\s+name\s+Date\s+of\s+Birth\s+Gender(?:\s+Deceased)?\s+\d+\s+(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})\s+(\d{2}\/\d{2}\/\d{4})\b/i
+  );
+  const profile: { name?: string; dob?: string; phone?: string; address?: string } = {};
+  if (row?.[1]) {
+    const cleaned = cleanCandidateName(row[1]);
+    if (cleaned) profile.name = cleaned;
+  }
+  if (row?.[2]) profile.dob = row[2];
+
+  const phone = compact.match(/\b(?:Mobile|Phone)\s+(0\d{10})\b/i)?.[1];
+  if (phone) profile.phone = phone;
+
+  const address = compact.match(/\bPrimary\s+(.+?)\s+POSTCODE\s+Valid\s+From\s+([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/i);
+  if (address?.[1] && address?.[2]) {
+    profile.address = `${address[1].replace(/\s+/g, ' ').trim()}, ${address[2].replace(/\s+/g, ' ').trim()}`;
+  }
+
+  return profile;
+}
+
+function extractSupportPlanCandidateProfile(rawText: string, fileName: string): { name?: string; preferredName?: string; dob?: string; phone?: string; address?: string } {
+  const bcc = extractBccHeaderCandidate(rawText);
+  if (bcc.name || bcc.dob || bcc.phone || bcc.address) {
+    return {
+      ...bcc,
+      preferredName: bcc.name ? bcc.name.split(/\s+/)[0] : undefined,
+    };
+  }
+
   const prepared = rawText.match(/prepared\s+for\s+(.+?)(?=\b(full\s*name|date\s*of\s*birth|nhs|plan\s*date|review\s*date|key\s*worker)\b|\n|$)/i);
   if (prepared?.[1]) {
     const cleaned = cleanCandidateName(prepared[1]);
-    if (cleaned && !/^prepared for$/i.test(cleaned)) return cleaned;
+    if (cleaned && !/^prepared for$/i.test(cleaned)) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const personNameHeader = rawText.match(/person\s*name\s*[:-]\s*([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})\s+person\s*id/i);
   if (personNameHeader?.[1]) {
     const cleaned = cleanCandidateName(personNameHeader[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const nameKnownAs = rawText.match(/\bname\s+(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})\s+known\s+as\b/i);
   if (nameKnownAs?.[1]) {
     const cleaned = cleanCandidateName(nameKnownAs[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const serviceUser = rawText.match(/service\s*user\s*name\s+([A-Z][A-Za-z'-]+(?:\s+[A-Z][A-Za-z'-]+){1,3})(?=\s+(date\s*of\s*birth|dob|address|nhs)\b|$)/i);
   if (serviceUser?.[1]) {
     const cleaned = cleanCandidateName(serviceUser[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const personRow = rawText.match(/person\s*id\s+full\s*name\s+date\s*of\s*birth[\s\S]{0,160}?(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i);
   if (personRow?.[1]) {
     const cleaned = cleanCandidateName(personRow[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const titled = rawText.match(/\b(?:mr|mrs|ms|miss|mx|dr)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b/i);
   if (titled?.[1]) {
     const cleaned = cleanCandidateName(titled[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
   const fullNameRow = rawText.match(/full\s*name[\s:-]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)(?=\s+(date|dob|nhs|gender|deceased)\b|$)/i);
   if (fullNameRow?.[1]) {
     const cleaned = cleanCandidateName(fullNameRow[1]);
-    if (cleaned) return cleaned;
+    if (cleaned) return { name: cleaned, preferredName: cleaned.split(/\s+/)[0] };
   }
 
-  return inferNameFromFileName(fileName);
+  const inferred = inferNameFromFileName(fileName);
+  return inferred ? { name: inferred, preferredName: inferred.split(/\s+/)[0] } : {};
+}
+
+function extractSupportPlanCandidate(rawText: string, fileName: string): string {
+  return extractSupportPlanCandidateProfile(rawText, fileName).name || '';
 }
 
 function looksLikeDelimitedDiaryText(rawText: string): boolean {
@@ -239,6 +275,7 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   // 6. Support Plans
   if (
     docxSupportHint ||
+    normalized.includes('need description need comment outcome comment') ||
     normalized.includes('my support plan') ||
     normalized.includes('positive behaviour support plan') ||
     (lower.includes('what i can do') && lower.includes('how to support'))
@@ -296,8 +333,8 @@ export function buildEnvelopeFromRaw(fileName: string, rawText: string): Normali
   if (profile.type === 'support-plan') {
     const supportPlan = parseSupportPlanText(rawText);
     env.supportPlan = supportPlan;
-    const candidateName = extractSupportPlanCandidate(rawText, fileName);
-    env.clientCandidates = candidateName ? [{ name: candidateName }] : [];
+    const candidate = extractSupportPlanCandidateProfile(rawText, fileName);
+    env.clientCandidates = candidate.name || candidate.dob ? [candidate] : [];
     if (!supportPlan.needs.length) env.warnings.push('No support areas were detected in this support plan.');
     return env;
   }

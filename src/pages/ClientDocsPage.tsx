@@ -1,25 +1,19 @@
 import { useMemo, useRef, useState } from 'react';
-import * as pdfjs from 'pdfjs-dist';
-import { loadClients, saveClient, deleteClient, emptyClient, type ClientDocument, type FullClient } from '../lib/client-store';
+import { loadClients, saveClient, deleteClient, emptyClient, resolveClientMatch, type ClientDocument, type FullClient } from '../lib/client-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
 import type { ExportLayout } from '../lib/doc-renderer';
-import { analyzeIntel, analyzeIntelFallback, type IntelAnalysisResult } from '../lib/intelligence';
-import { mergeClientIdentity } from '../lib/client-identity-merge';
-import { mergeCarePlanData, mergePBSData, mergeRiskData } from '../lib/intel-merge';
+import { analyzeIntel, type IntelAnalysisResult } from '../lib/intelligence';
+import { applyIntelToClient, buildIntelSessionFromRaw, mergeIntelAnalysis, summarizeIntelResult, type IntelImportStatus, type IntelImportSummary } from '../lib/client-docs-intelligence';
 import { buildClusterNote, buildClusterTitle, clusterRiskItems } from '../lib/risk-assistant';
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X } from 'lucide-react';
 import { uid } from '../lib/storage';
-
-// Localized Sovereign PDF Worker (Vite-optimised)
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { extractFileText } from '../lib/universal-extractor';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'import';
-type PdfTextItem = { str?: string; transform?: number[] };
 
 export function ClientDocsPage() {
   const [subView, setSubView] = useState<SubView>('list');
@@ -31,7 +25,8 @@ export function ClientDocsPage() {
   const [importText, setImportText] = useState('');
   const [importTarget, setImportTarget] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<string[]>([]);
-  const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; domainsDetected: number } | null>(null);
+  const [importPreview, setImportPreview] = useState<{ name: string; dob: string; nhs: string; summary: IntelImportSummary; status: IntelImportStatus } | null>(null);
+  const [importFileName, setImportFileName] = useState('pasted-text.txt');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
@@ -81,7 +76,20 @@ export function ClientDocsPage() {
         credentials: 'include',
       });
 
-      if (!res.ok) throw new Error('Upload failed');
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const body = await res.json();
+          detail = body?.error || body?.message || '';
+        } catch {
+          detail = await res.text().catch(() => '');
+        }
+
+        if (res.status === 401) throw new Error('Your session has expired. Sign in again, then retry the upload.');
+        if (res.status === 403) throw new Error(detail || 'Upload blocked. This profile requires senior/admin access or an allowed production domain.');
+        if (res.status === 503) throw new Error(detail || 'Staff session service is not configured.');
+        throw new Error(detail || `Upload failed with status ${res.status}.`);
+      }
       const blob = await res.json();
 
       const all = loadClients();
@@ -99,8 +107,7 @@ export function ClientDocsPage() {
         refresh();
       }
     } catch (err) {
-      console.error('Upload error:', err);
-      alert('Failed to upload document. Ensure you are signed in.');
+      alert(err instanceof Error ? err.message : 'Document upload failed.');
     } finally {
       setIsUploading(null);
       if (docUploadRef.current) docUploadRef.current.value = '';
@@ -126,35 +133,13 @@ export function ClientDocsPage() {
     setImportResult(['Reading PDF Content...']);
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        let lastY: number | null = null;
-        let pageText = '';
-        for (const item of content.items as PdfTextItem[]) {
-          if (!item.str) continue;
-          const y = item.transform ? item.transform[5] : null;
-          if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
-            pageText += '\n';
-          } else if (pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
-            pageText += ' ';
-          }
-          pageText += item.str;
-          lastY = y;
-        }
-        fullText += pageText + '\n';
-      }
-
+      const fullText = await extractFileText(file);
+      setImportFileName(file.name);
       setImportText(fullText);
-      setImportResult(['Document text extracted. Use "Basic Pattern Sync" for the deterministic pass, or "Use AI" for the optional assistant.']);
+      setImportResult(['Document text extracted. Use "Map Document" for deterministic support-plan/admission parsing, or "Use AI" for model analysis.']);
       setShowAiPanel(false);
     } catch (err) {
-      console.error('PDF extract error:', err);
-      setImportResult(['Failed to read PDF. Try copy-pasting the text manually instead.']);
+      setImportResult(['Failed to read this file. Try copy-pasting the text manually, or attach it as source evidence.']);
     } finally {
       setIsExtracting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -168,14 +153,16 @@ export function ClientDocsPage() {
       setIsAnalyzing(true);
       setImportResult(['Initiating Clinical AI Intelligence Pipeline...']);
       try {
-        const result = await analyzeIntel(importText);
-        setImportResult([...result.gaps, 'Clinical analysis complete. Data mapped to CQC domains.']);
-        const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
+        const mapped = buildIntelSessionFromRaw(importFileName, importText);
+        const ai = await analyzeIntel(importText);
+        const result = mergeIntelAnalysis(mapped.result, ai, new Date().toLocaleDateString('en-GB'));
+        setImportResult([...result.gaps, 'Clinical analysis complete. Deterministic document map preserved and AI analysis layered on top.']);
         setImportPreview({
           name: result.client.name || 'Not detected',
           dob: result.client.dob || 'Not detected',
           nhs: result.client.nhs || 'Not detected',
-          domainsDetected,
+          summary: mapped.summary.count > 0 ? mapped.summary : summarizeIntelResult(result, 'ai'),
+          status: mapped.status,
         });
         setSessionIntel(result);
       } catch (err) {
@@ -190,19 +177,31 @@ export function ClientDocsPage() {
   };
 
   const runLegacyPreview = () => {
-    const result = analyzeIntelFallback(importText);
+    const session = buildIntelSessionFromRaw(importFileName, importText);
+    const result = session.result;
     setImportResult(result.gaps);
-    const domainsDetected = result.carePlan.domains.filter(d => d.enabled).length;
     setImportPreview({
       name: result.client.name || 'Not detected',
       dob: result.client.dob || 'Not detected',
       nhs: result.client.nhs || 'Not detected',
-      domainsDetected,
+      summary: session.summary,
+      status: session.status,
     });
     setSessionIntel(result);
   };
 
-  const riskItems = useMemo(() => sessionIntel?.risk?.risks || [], [sessionIntel?.risk?.risks]);
+  const riskItems = useMemo(
+    () => (sessionIntel?.risk?.risks || []).filter((risk) =>
+      Boolean(
+        risk.title?.trim() ||
+        risk.description?.trim() ||
+        risk.secondaryRisk?.trim() ||
+        risk.controls?.some((control) => control.trim()) ||
+        risk.triggers?.some((trigger) => trigger.trim())
+      )
+    ),
+    [sessionIntel?.risk?.risks]
+  );
   const riskClusters = useMemo(() => clusterRiskItems(riskItems), [riskItems]);
 
   const copyText = async (token: string, text: string) => {
@@ -221,43 +220,35 @@ export function ClientDocsPage() {
     const result = sessionIntel;
     if (!result) return;
     const today = new Date().toLocaleDateString('en-GB');
+    const clearImportState = () => {
+      refresh();
+      setImportText('');
+      setImportPreview(null);
+      setImportTarget(null);
+      setSubView('list');
+      setSessionIntel(null);
+    };
 
     if (importTarget) {
       const all = loadClients();
       const existing = all.find(c => c.id === importTarget);
       if (existing) {
-        const identity = mergeClientIdentity(existing, result.client);
-        
-        const mergedCarePlan = mergeCarePlanData(existing.carePlan, result.carePlan, today);
-        const mergedRisk = mergeRiskData(existing.risk, result.risk, today);
-        const mergedPbs = mergePBSData(existing.pbs, result.pbs || null);
-        
-        const updated: FullClient = {
-          ...identity,
-          carePlan: mergedCarePlan,
-          risk: mergedRisk,
-          pbs: mergedPbs,
-        };
+        const updated = applyIntelToClient(existing, result, today);
         saveClient(updated);
-        refresh();
-        setImportText('');
-        setImportPreview(null);
-        setSubView('list');
+        clearImportState();
       }
     } else {
-      const client = emptyClient();
-      const mergedIdentity = mergeClientIdentity(client, result.client);
-      Object.assign(client, mergedIdentity);
-      client.carePlan = result.carePlan;
-      client.risk = result.risk;
-      client.pbs = result.pbs || client.pbs;
-      saveClient(client);
-      refresh();
-      setImportText('');
-      setImportPreview(null);
-      setSubView('list');
+      const resolution = resolveClientMatch({
+        name: result.client.name,
+        nhs: result.client.nhs,
+        dob: result.client.dob,
+      });
+      const target = resolution.best && !resolution.requiresManualSelection
+        ? resolution.best.client
+        : emptyClient();
+      saveClient(applyIntelToClient(target, result, today));
+      clearImportState();
     }
-    setSessionIntel(null);
   };
 
   const printDoc = (client: FullClient, type: 'pbs' | 'risk' | 'careplan' | 'easyread') => {
@@ -290,7 +281,7 @@ export function ClientDocsPage() {
           <span className="pill pill-teal text-[10px] font-black uppercase tracking-widest px-3 py-1">Operational Pipeline</span>
         </h1>
         <p className="text-hc-muted text-sm mb-10 max-w-2xl font-medium leading-relaxed">
-          Upload person-centred clinical documents or raw unstructured text. The AI Brain will map all 21 care domains and 15 risk areas automatically.
+          Upload person-centred clinical documents or raw unstructured text. Map Document uses deterministic support-plan/admission parsing; Use AI runs optional model analysis.
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -300,13 +291,13 @@ export function ClientDocsPage() {
             className="flex-1 flex items-center justify-center gap-3 hc-clay-raised text-hc-text text-[11px] font-black uppercase tracking-[0.2em] py-4 rounded-2xl transition-all hover:brightness-105"
           >
             <FileText className="w-5 h-5 text-hc-teal" />
-            {isExtracting ? 'Extracting Text...' : 'Upload PDF Document'}
+            {isExtracting ? 'Extracting Text...' : 'Upload Document'}
           </button>
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileSelect}
-            accept=".pdf"
+            accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.xlsm"
             className="hidden"
           />
         </div>
@@ -318,7 +309,7 @@ export function ClientDocsPage() {
           <div>
             <p className="text-xs text-hc-teal font-black uppercase tracking-wide mb-0.5">Clinical Protocol</p>
             <p className="text-sm text-hc-muted font-medium italic leading-relaxed">
-              For Social Worker reports or Hospital Discharge notes, use the "Clinical AI Analysis" button below for maximum precision.
+              For social worker reports, council support plans, hospital discharge notes, or admission packs, start with Map Document. Use AI when the source is too unstructured for deterministic parsing.
             </p>
           </div>
         </div>
@@ -373,12 +364,55 @@ export function ClientDocsPage() {
                     <div className="text-sm font-black text-hc-text tabular-nums">{importPreview.dob}</div>
                   </div>
                   <div className="hc-clay-inset rounded-2xl p-4">
-                    <div className="section-header text-xs mb-1">CQC Domains</div>
-                    <div className="text-sm font-black text-hc-teal tabular-nums">{importPreview.domainsDetected} / 21</div>
+                    <div className="section-header text-xs mb-1">{importPreview.summary.countLabel}</div>
+                    <div className="text-sm font-black text-hc-teal tabular-nums">
+                      {importPreview.summary.total
+                        ? `${importPreview.summary.count} / ${importPreview.summary.total}`
+                        : importPreview.summary.count}
+                    </div>
                   </div>
                   <div className="hc-clay-inset rounded-2xl p-4">
                     <div className="section-header text-xs mb-1">Risk Logic</div>
                     <div className="text-sm font-black text-hc-teal">{riskClusters.length ? `${riskClusters.length} clusters` : 'ENABLED'}</div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr] mb-8">
+                  <div className="rounded-2xl bg-hc-teal/5 border border-hc-teal/20 p-4">
+                    <div className="section-header text-[10px] mb-3">Import Status</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-hc-muted mb-1">Document Type</div>
+                        <div className="text-xs font-black text-hc-text uppercase tracking-wide">{importPreview.status.documentType}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-hc-muted mb-1">Confidence</div>
+                        <div className={`text-xs font-black uppercase tracking-wide ${importPreview.status.confidence === 'high' ? 'text-flag-green' : importPreview.status.confidence === 'medium' ? 'text-flag-amber' : 'text-flag-red'}`}>
+                          {importPreview.status.confidence}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-hc-muted mb-1">Person Match</div>
+                      <div className="text-xs font-bold text-hc-text">{importPreview.status.personMatch}</div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-hc-border/10 border border-hc-border/30 p-4">
+                    <div className="section-header text-[10px] mb-3">Build Plan</div>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {importPreview.status.canBuild.length ? importPreview.status.canBuild.map((item) => (
+                        <span key={item} className="pill pill-teal text-[9px] font-black uppercase tracking-widest">{item}</span>
+                      )) : (
+                        <span className="pill pill-red text-[9px] font-black uppercase tracking-widest">Evidence only</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-bold text-hc-text leading-relaxed mb-3">{importPreview.status.recommendedAction}</div>
+                    {importPreview.status.missing.length > 0 && (
+                      <div className="text-[10px] text-hc-muted font-bold uppercase tracking-wide leading-relaxed">
+                        Missing: {importPreview.status.missing.slice(0, 3).join(' · ')}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -520,7 +554,7 @@ export function ClientDocsPage() {
               disabled={!importText.trim() || isAnalyzing}
               className="w-full md:w-auto btn-clay disabled:opacity-20 text-[11px] px-8 py-4 rounded-xl"
             >
-              Basic Pattern Sync
+              Map Document
             </button>
             <button
               onClick={openAiPanel}

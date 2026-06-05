@@ -29,36 +29,42 @@ const CARE_PLAN_DOMAINS = [
   'Skin Integrity & Pressure Care', 'Rest & Sleep Patterns', 'Cultural, Spiritual & Personal Beliefs'
 ];
 
-const INTEL_SYSTEM_PROMPT = `You are a Clinical Intelligence Specialist for a premium UK supported living provider. Your job is to extract highly structured clinical data from raw, unstructured text (social worker reports, hospital discharge notes, or old care plans).
+const INTEL_SYSTEM_PROMPT = `You are a Clinical Intelligence Specialist for a UK supported living provider. You extract structured clinical data from raw documents — social worker reports, hospital discharge summaries, council support plans (Bristol City Council, Adult Social Care, etc.), NHS assessments, and old care plans.
 
-OUTPUT FORMAT:
-You MUST output ONLY a valid JSON object with this exact structure:
+DOCUMENT FORMAT AWARENESS:
+- UK council support plans (BCC, adult social care) use table-based layouts. Columns include: "Support need", "What I can do myself", "What support I need", "How I want to be supported", "My goals / outcomes", "Risk". Extract from ALL of these columns.
+- Header rows like "GP Name GP Address", "Related Name Relationship Type Communication Method" are METADATA — skip them.
+- Section headers like "Personal Care", "Communication", "Health" in council docs map directly to CQC domains.
+- If the document has a support plan table, EVERY row with a need description is a domain to map.
+- Diagnoses may appear as: "Primary diagnosis", "Presenting needs", "Conditions", or inline in narrative text.
+
+OUTPUT FORMAT — output ONLY a valid JSON object, no preamble, no markdown:
 {
   "client": {
     "name": "Full Name",
     "preferredName": "First Name",
     "dob": "DD/MM/YYYY",
-    "nhs": "NHS Number",
-    "diagnoses": ["List of diagnoses"],
+    "nhs": "NHS Number if present",
+    "diagnoses": ["All diagnoses, conditions, and presenting needs found"],
     "address": "Address if found",
-    "keyWorker": "Name if found"
+    "keyWorker": "Key worker or allocated worker if found"
   },
   "carePlan": {
     "domains": [
       {
         "title": "One of the 21 specified domains",
-        "enabled": true/false,
-        "identifiedNeed": "Specific clinical need",
-        "levelOfNeed": 0-4 (0: Independent, 1: Low, 2: Moderate, 3: Substantial, 4: High),
-        "plannedOutcomes": "What we want to achieve",
-        "howToAchieve": "Step-by-step staff instructions",
-        "riskTitle": "Name of risk associated with this domain",
+        "enabled": true,
+        "identifiedNeed": "Specific need — copy the actual wording from the source, do not paraphrase",
+        "levelOfNeed": 0-4,
+        "plannedOutcomes": "Goals or desired outcomes from the document",
+        "howToAchieve": "Exact staff instructions from the source — include communication style, prompting approach, physical support, de-escalation. Be specific.",
+        "riskTitle": "Risk name if a risk is described for this domain",
         "riskLikelihood": 1-5,
         "riskImpact": 1-5,
-        "riskMitigation": "Immediate mitigation steps",
+        "riskMitigation": "Mitigation steps from the source",
         "reviewer": "AI Analysis",
-        "reviewDate": "Current Date",
-        "nextReviewDate": "90 days from now"
+        "reviewDate": "today",
+        "nextReviewDate": "90 days from today"
       }
     ]
   },
@@ -66,38 +72,40 @@ You MUST output ONLY a valid JSON object with this exact structure:
     "risks": [
       {
         "title": "Risk Name",
-        "description": "Nature of the risk",
-        "behaviours": ["List of behaviors"],
-        "affectedPeople": ["List of people"],
-        "triggers": ["List of triggers"],
-        "earlyWarnings": ["List of signs"],
+        "description": "Full description of the risk",
+        "behaviours": ["Observable behaviours"],
+        "affectedPeople": ["Who is affected"],
+        "triggers": ["Known triggers"],
+        "earlyWarnings": ["Early warning signs"],
         "controls": ["Primary staff controls"],
-        "dynamicControls": ["Responsive actions"],
-        "secondaryRisk": "Collateral risks",
-        "contingencyPlan": "What if controls fail?",
-        "leastRestrictive": "Why this is least restrictive",
+        "dynamicControls": ["Responsive in-the-moment actions"],
+        "secondaryRisk": "Collateral/secondary risks",
+        "contingencyPlan": "What to do if controls fail",
+        "leastRestrictive": "Why this approach is least restrictive",
         "likelihood": 1-5,
         "impact": 1-5,
-        "reviewTrigger": "What forces a review"
+        "reviewTrigger": "What event forces a review"
       }
     ],
-    "leastRestrictivePractice": "Global statement",
-    "escalationProcedure": "Emergency steps",
-    "reviewSchedule": "Global schedule"
+    "leastRestrictivePractice": "Global least restrictive statement",
+    "escalationProcedure": "Emergency escalation steps",
+    "reviewSchedule": "Review schedule"
   },
-  "gaps": ["List of missing information areas found in source"]
+  "gaps": ["Specific areas where the source is vague or missing detail"]
 }
 
-SPECIFIED DOMAINS (Use ONLY these):
+SPECIFIED DOMAINS (map ALL source needs to these — do not invent new domain names):
 ${CARE_PLAN_DOMAINS.join(', ')}
 
 RULES:
-1. Extract as much detail as possible. Do not summarize into single lines.
-2. If a domain is not mentioned, set "enabled": false.
-3. Be specific with "howToAchieve" - include de-escalation, communication styles, and physical support.
-4. Ensure risk Likelihood and Impact are realistic (1: Rare/Negligible, 5: Almost Certain/Catastrophic).
-5. Identify GAPS where the source document is vague (e.g., "The source mentions medication but does not specify the dosage").
-6. Output valid JSON only. No preamble.`;
+1. Map EVERY support need or care area found in the document to a domain. Do not skip areas just because they seem minor.
+2. "howToAchieve" must contain actual actionable staff instructions copied or closely derived from the source — not generic advice.
+3. "identifiedNeed" must reflect what the document actually says about the person, not a template sentence.
+4. If a domain is genuinely not mentioned anywhere in the document, set "enabled": false and omit other fields.
+5. levelOfNeed: 0 = Independent, 1 = Low, 2 = Moderate, 3 = Substantial, 4 = High/Critical.
+6. Risk likelihood/impact: 1 = Rare/Negligible → 5 = Almost Certain/Catastrophic.
+7. Identify GAPS where the source is vague (e.g. "Medication is mentioned but no dosage, frequency or MAR details given").
+8. Output valid JSON only. No explanation, no markdown fences.`;
 
 const ENHANCE_SYSTEM_PROMPT = `You are a senior support worker and clinical documentation specialist with 30 years of frontline and management experience in UK supported living, specialist care, and complex needs services. You have worked across learning disabilities, autism, acquired brain injury, mental health, and forensic settings. Your notes are consistently cited by CQC inspectors as examples of outstanding practice.
 
@@ -130,7 +138,22 @@ function isRateLimited(key, max, windowMs) {
 
 function setCors(req, res) {
   const origin = req.headers.origin;
-  const allowed = !!origin && ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin);
+  const host = req.headers.host;
+  let sameOrigin = false;
+
+  if (origin && host) {
+    try {
+      sameOrigin = new URL(origin).host === host;
+    } catch {
+      sameOrigin = false;
+    }
+  }
+
+  const allowed = !origin
+    || sameOrigin
+    || (APP_ORIGIN && origin === APP_ORIGIN)
+    || (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin));
+
   if (allowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -150,6 +173,18 @@ function roleAtLeast(currentRole, minRole) {
   const curr = ROLE_RANK[sanitizeRole(currentRole)] ?? ROLE_RANK.manager;
   const min = ROLE_RANK[sanitizeRole(minRole)] ?? ROLE_RANK.manager;
   return curr >= min;
+}
+
+function parseModelJson(rawContent, providerLabel) {
+  const raw = String(rawContent || '').trim();
+  if (!raw) throw new Error(`${providerLabel} returned an empty response`);
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+  if (!parsed || typeof parsed !== 'object') throw new Error(`${providerLabel} returned non-object JSON`);
+  if (!parsed.client || !parsed.carePlan || !parsed.risk || !Array.isArray(parsed.gaps)) {
+    throw new Error(`${providerLabel} returned incomplete intelligence JSON`);
+  }
+  return parsed;
 }
 
 function requireSessionRole(req, res, minRole = 'manager') {
@@ -242,20 +277,51 @@ export default async function handler(req, res) {
     case 'analyze-intel': return handleAnalyzeIntel(req, res);
     case 'enhance-note': return handleEnhanceNote(req, res);
     case 'ghost-write': return handleGhostWrite(req, res);
+    case 'refine-tasks': return handleRefineTasks(req, res);
     case 'upload-document': return handleUploadDocument(req, res);
     default: return res.status(404).json({ error: 'Unknown staff action' });
   }
 }
 
 async function handleUploadDocument(req, res) {
-  if (!setCors(req, res)) return res.status(403).end();
+  if (!setCors(req, res)) return res.status(403).json({ error: 'Origin is not allowed for document uploads' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
   if (!requireSessionRole(req, res, 'senior')) return;
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(503).json({
+      error: 'External evidence upload is not configured yet. Add BLOB_READ_WRITE_TOKEN in Vercel to enable document storage.',
+      code: 'BLOB_NOT_CONFIGURED',
+    });
+  }
 
-  const filename = req.query.filename || 'document';
-  
+  // Size cap (25MB) — reject before streaming a huge body to Blob.
+  const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+  const declaredLen = Number(req.headers['content-length'] || 0);
+  if (declaredLen && declaredLen > MAX_UPLOAD_BYTES) {
+    return res.status(413).json({ error: 'File too large (max 25MB).' });
+  }
+
+  // MIME allowlist — clinical evidence only (documents + photos).
+  const ALLOWED_MIME = new Set([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+  ]);
+  const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+  if (mime && !ALLOWED_MIME.has(mime)) {
+    return res.status(415).json({ error: `Unsupported file type: ${mime}` });
+  }
+
+  // Sanitize filename — strip path components and unsafe characters.
+  const rawName = String(req.query.filename || 'document').split(/[\\/]/).pop();
+  const filename = (rawName || 'document').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 200) || 'document';
+
   try {
     const blob = await put(filename, req, {
       access: 'public',
@@ -263,7 +329,7 @@ async function handleUploadDocument(req, res) {
     return res.status(200).json(blob);
   } catch (error) {
     console.error('Blob upload error:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: 'Document storage failed. Check the Vercel Blob configuration and retry.' });
   }
 }
 
@@ -402,7 +468,7 @@ async function callGemini(messages, options = {}) {
       body: JSON.stringify(body),
     });
 
-    if (res.ok) return { res, provider: 'gemini' };
+    if (res.ok) return { res, provider: 'gemini', model };
     const err = await res.json().catch(() => ({}));
     console.warn(`[Gemini] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
   }
@@ -492,7 +558,7 @@ async function callEmpireStack(messages, options = {}) {
 }
 
 async function handleAnalyzeIntel(req, res) {
-  if (!setCors(req, res)) return res.status(403).end();
+  if (!setCors(req, res)) return res.status(403).json({ message: 'Origin is not allowed for intelligence analysis' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -507,27 +573,40 @@ async function handleAnalyzeIntel(req, res) {
       { role: 'user', content: `Analyse this raw text and map it to the CQC structure:\n\n${text}` },
     ];
 
-    // For JSON analysis, use non-streaming - try Groq first (supports json_object), then OpenRouter, then Gemini
-    let rawContent;
-    try {
-      const { res: groqRes } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false });
-      const data = await groqRes.json();
-      rawContent = data.choices[0].message.content;
-    } catch {
-      const { res: orRes, provider } = await callOpenRouter(messages, { stream: false }).catch(() => callGemini(messages, { stream: false }));
-      if (provider === 'gemini') {
+    // Gemini 2.5 Flash first — best at structured extraction from messy documents, 1M context
+    // Groq fallback — json_object mode reliable but weaker extraction
+    const TOKEN_LIMIT = 6000;
+    const attempts = [
+      async () => {
+        const { res: gemRes, model } = await callGemini(messages, { stream: false, max_tokens: TOKEN_LIMIT });
+        const data = await gemRes.json();
+        return { raw: data.candidates?.[0]?.content?.parts?.[0]?.text, label: `Gemini ${model || ''}`.trim() };
+      },
+      async () => {
+        const { res: groqRes, model } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false, max_tokens: TOKEN_LIMIT });
+        const data = await groqRes.json();
+        return { raw: data.choices?.[0]?.message?.content, label: `Groq ${model || ''}`.trim() };
+      },
+      async () => {
+        const { res: orRes, model } = await callOpenRouter(messages, { stream: false, max_tokens: TOKEN_LIMIT });
         const data = await orRes.json();
-        rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      } else {
-        const data = await orRes.json();
-        rawContent = data.choices[0].message.content;
+        return { raw: data.choices?.[0]?.message?.content, label: `OpenRouter ${model || ''}`.trim() };
+      },
+    ];
+
+    const errors = [];
+    for (const attempt of attempts) {
+      try {
+        const { raw, label } = await attempt();
+        const result = parseModelJson(raw, label);
+        return res.status(200).json(result);
+      } catch (providerError) {
+        errors.push(providerError.message);
+        console.warn('[analyze-intel] provider failed:', providerError.message);
       }
     }
 
-    // Extract JSON even if model wraps it in markdown
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    const result = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
-    res.status(200).json(result);
+    throw new Error(`All intelligence providers failed: ${errors.join(' | ')}`);
   } catch (error) {
     console.error('Intel Analysis Error:', error);
     res.status(500).json({ message: error.message || 'Internal server error' });
@@ -650,6 +729,99 @@ RULES:
 - Minimum depth target: 350+ words unless source evidence is genuinely sparse.
 - Weave in relevant care plan/PBS/risk strategies naturally where appropriate (without copying policy text).`;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REFINE TASKS — returns { [taskId]: updatedNotes } for changed tasks only
+// ─────────────────────────────────────────────────────────────────────────────
+
+const REFINE_TASKS_SYSTEM_PROMPT = `You are a UK supported-living care documentation specialist reviewing Nourish task notes.
+
+You will receive a JSON array of tasks and a refinement instruction from a care coordinator.
+
+Your job: apply the instruction and return ONLY the tasks whose notes have changed.
+
+OUTPUT FORMAT: A JSON object where:
+- Keys are task IDs exactly as provided
+- Values are the complete updated task notes (preserve Purpose / Staff action / Watch for / Record / Avoid structure)
+
+RULES:
+1. Only return tasks that actually need changing based on the instruction
+2. Preserve the note structure: Purpose, Staff action, Watch for, Source cues (if present), Record, Avoid
+3. UK English only — summarise, recognise, behaviour, practise
+4. Keep notes concise enough for frontline staff to use on shift
+5. Never invent clinical events or care-plan details not in the original
+6. Output valid JSON only. No preamble, no explanation, no markdown fences.`;
+
+async function handleRefineTasks(req, res) {
+  if (!setCors(req, res)) return res.status(403).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!requireSessionRole(req, res, 'senior')) return;
+
+  const { tasks, instruction, clientName } = req.body || {};
+  if (!instruction || !Array.isArray(tasks) || tasks.length === 0) {
+    return res.status(400).json({ error: 'tasks array and instruction required' });
+  }
+  if (tasks.length > 60) return res.status(400).json({ error: 'Too many tasks (max 60)' });
+
+  const slim = tasks.map(t => ({ id: t.id, name: t.name, notes: t.notes, frequency: t.frequency }));
+
+  const userPrompt = [
+    clientName ? `Client: ${clientName}` : '',
+    `Instruction: ${instruction}`,
+    '',
+    'Tasks:',
+    JSON.stringify(slim, null, 2),
+  ].filter(Boolean).join('\n');
+
+  const messages = [
+    { role: 'system', content: REFINE_TASKS_SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+
+  try {
+    let rawContent;
+
+    // Groq preferred — supports json_object mode reliably
+    try {
+      const { res: groqRes } = await callGroq(messages, {
+        response_format: { type: 'json_object' },
+        stream: false,
+        max_tokens: 4000,
+      });
+      const data = await groqRes.json();
+      rawContent = data.choices?.[0]?.message?.content;
+    } catch {
+      // Fallback: OpenRouter → Gemini
+      try {
+        const { res: orRes } = await callOpenRouter(messages, { stream: false, max_tokens: 4000 });
+        const data = await orRes.json();
+        rawContent = data.choices?.[0]?.message?.content;
+      } catch {
+        const { res: gemRes } = await callGemini(messages, { stream: false, max_tokens: 4000 });
+        const data = await gemRes.json();
+        rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      }
+    }
+
+    const jsonMatch = (rawContent || '').match(/\{[\s\S]*\}/);
+    const updates = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent || '{}');
+
+    // Sanitise: only accept string values for known task IDs
+    const validIds = new Set(tasks.map(t => t.id));
+    const sanitized = {};
+    for (const [id, notes] of Object.entries(updates)) {
+      if (validIds.has(id) && typeof notes === 'string' && notes.trim()) {
+        sanitized[id] = notes.trim();
+      }
+    }
+
+    return res.status(200).json(sanitized);
+  } catch (error) {
+    console.error('[refine-tasks] error:', error);
+    return res.status(500).json({ error: error.message || 'Refinement failed' });
+  }
+}
+
 async function handleGhostWrite(req, res) {
   if (!setCors(req, res)) return res.status(403).end();
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -752,4 +924,3 @@ async function handleGhostWrite(req, res) {
     res.end();
   }
 }
-

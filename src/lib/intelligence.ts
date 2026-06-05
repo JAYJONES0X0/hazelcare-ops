@@ -21,12 +21,22 @@ export async function analyzeIntel(rawText: string): Promise<IntelAnalysisResult
   const res = await fetch('/api/staff/analyze-intel', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ text: rawText }),
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Intelligence analysis failed');
+    let message = '';
+    try {
+      const error = await res.json();
+      message = error.message || error.error || '';
+    } catch {
+      message = await res.text().catch(() => '');
+    }
+    if (res.status === 401) throw new Error('Your session has expired. Sign in again, then retry AI analysis.');
+    if (res.status === 403) throw new Error(message || 'AI analysis is blocked by role or domain access.');
+    if (res.status === 503) throw new Error(message || 'Staff session service is not configured.');
+    throw new Error(message || 'Intelligence analysis failed');
   }
 
   return await res.json();

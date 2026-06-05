@@ -57,8 +57,15 @@ function safeEq(a, b) {
 
 function setCors(req, res) {
   const origin = req.headers.origin;
-  const hasAllowlist = ALLOWED_ORIGINS.length > 0;
-  const allowed = !origin || !hasAllowlist || ALLOWED_ORIGINS.includes(origin);
+  const host = req.headers.host;
+  let sameOrigin = false;
+  if (origin && host) {
+    try { sameOrigin = new URL(origin).host === host; } catch { sameOrigin = false; }
+  }
+  // No "allow all if unset": permit non-browser callers (no Origin), same-origin
+  // app requests, or origins explicitly listed in AUTH_ALLOWED_ORIGINS.
+  const allowed =
+    !origin || sameOrigin || (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin));
   if (origin && allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');

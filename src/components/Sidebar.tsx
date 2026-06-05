@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Page } from '../lib/types';
 import type { WeekSummary } from '../lib/types';
 import { MAIN_SECTIONS, getSectionByPage } from '../lib/navigation';
+import { isSkinTheme, normalizeBaseTheme, type AppTheme, type SkinTheme } from '../lib/theme';
 
 import { ORG_CONFIG } from '../lib/config';
 
@@ -21,15 +22,15 @@ function useBrandAssets() {
 }
 import {
   LogOut, Sun, Moon, LayoutDashboard, MessageSquare,
-  Users, FileText, ChevronLeft, ChevronRight, Activity, Cog
+  Users, FileText, ChevronLeft, ChevronRight, Activity, Cog, Palette
 } from 'lucide-react';
 
 interface Props {
   page: Page;
   setPage: (p: Page) => void;
   weekData: WeekSummary | null;
-  theme: 'dark' | 'light';
-  setTheme: (t: 'dark' | 'light') => void;
+  theme: AppTheme;
+  setTheme: (t: AppTheme) => void;
   onSignOut: () => void;
 }
 
@@ -42,6 +43,14 @@ const sectionIcon: Record<string, ReactNode> = {
   Comms: <MessageSquare size={16} />,
 };
 
+const skinOptions: Array<{ id: SkinTheme; label: string; color: string }> = [
+  { id: 'authority', label: 'Authority purple', color: '#5d0565' },
+  { id: 'critical', label: 'Critical red', color: '#9d1f2d' },
+  { id: 'clinical', label: 'Clinical blue', color: '#0f4a8a' },
+  { id: 'calm', label: 'Calm sage', color: '#2e5e49' },
+  { id: 'focus', label: 'Focus copper', color: '#b45309' },
+];
+
 export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }: Props) {
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
   const [compactViewport, setCompactViewport] = useState(() => {
@@ -50,6 +59,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }:
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
   });
+  const [skinMenuOpen, setSkinMenuOpen] = useState(false);
 
   useEffect(() => {
     const syncResponsiveCollapse = () => {
@@ -73,6 +83,69 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }:
   });
 
   const activeSection = getSectionByPage(page);
+  const selectSkinTheme = (skin: SkinTheme) => {
+    if (theme === skin) {
+      setTheme(normalizeBaseTheme(localStorage.getItem('hc-base-theme')));
+      return;
+    }
+    if (!isSkinTheme(theme)) {
+      localStorage.setItem('hc-base-theme', theme);
+    }
+    setTheme(skin);
+  };
+  const toggleBaseTheme = () => {
+    const next: AppTheme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('hc-base-theme', next);
+    setTheme(next);
+  };
+  const nextBaseThemeLabel = theme === 'dark' ? 'Switch to bone mode' : 'Switch to command dark mode';
+  const currentSkin = isSkinTheme(theme) ? skinOptions.find((skin) => skin.id === theme) : null;
+  const skinSwitcher = (
+    <div className="relative shrink-0">
+      <button
+        onClick={() => setSkinMenuOpen(!skinMenuOpen)}
+        title="Select operating skin"
+        aria-label="Select operating skin"
+        aria-haspopup="menu"
+        aria-expanded={skinMenuOpen}
+        className={`relative w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all active:hc-clay-pressed active:scale-95 ${
+          skinMenuOpen ? 'hc-clay-pressed text-hc-teal' : ''
+        }`}
+      >
+        <Palette size={16} />
+        {currentSkin && (
+          <span
+            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border border-white/40 shadow-[0_0_8px_currentColor]"
+            style={{ backgroundColor: currentSkin.color, color: currentSkin.color }}
+          />
+        )}
+      </button>
+      {skinMenuOpen && (
+        <div className={`absolute w-56 bg-hc-surface hc-clay-raised rounded-xl border border-hc-border/20 p-2 z-50 flex flex-col gap-1 shadow-2xl ${
+          collapsed ? 'left-12 bottom-0' : 'bottom-full left-0 mb-2'
+        }`}>
+          {skinOptions.map((skin) => {
+            const active = theme === skin.id;
+            return (
+              <button
+                key={skin.id}
+                onClick={() => { selectSkinTheme(skin.id); setSkinMenuOpen(false); }}
+                className={`flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-all ${
+                  active ? 'bg-hc-teal/10 text-hc-teal' : 'hover:bg-hc-bg text-hc-muted hover:text-hc-text'
+                }`}
+              >
+                <span
+                  className="h-3.5 w-3.5 rounded-full shadow-[inset_1px_1px_3px_rgba(0,0,0,0.3)] shrink-0"
+                  style={{ backgroundColor: skin.color }}
+                />
+                <span className="text-[9px] font-black uppercase tracking-widest flex-1">{skin.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -163,9 +236,10 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut }:
             {collapsed && (
               <div className="w-2 h-2 rounded-full bg-hc-green animate-pulse mb-2" title={`${weekData ? Object.values(weekData.houses).length : 0} sites active`} />
             )}
+            {skinSwitcher}
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              onClick={toggleBaseTheme}
+              title={nextBaseThemeLabel}
               className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all active:hc-clay-pressed active:scale-95 shrink-0"
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}

@@ -29,6 +29,21 @@ export interface AuditEntry {
 
 const AUDIT_KEY = 'hc-audit-trail-v1';
 
+// Authenticated identity for attributing audit entries. Set from the session
+// fetch in App.tsx; falls back to the stored role, then 'unknown'.
+let auditIdentity = '';
+export function setAuditIdentity(identity: string) {
+  auditIdentity = (identity || '').trim();
+}
+function resolveUserId(): string {
+  if (auditIdentity) return auditIdentity;
+  try {
+    const role = localStorage.getItem('hc-user-role');
+    if (role) return role;
+  } catch { /* ignore */ }
+  return 'unknown';
+}
+
 export function loadAuditTrail(): AuditEntry[] {
   try {
     const raw = localStorage.getItem(AUDIT_KEY);
@@ -44,7 +59,7 @@ export function logAuditAction(action: AuditAction, details: string, metadata?: 
     id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     timestamp: new Date().toISOString(),
     action,
-    userId: 'current-user', // Placeholder for local-first identity
+    userId: resolveUserId(),
     details,
     metadata,
     lineage,

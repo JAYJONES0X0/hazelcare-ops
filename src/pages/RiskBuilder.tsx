@@ -8,6 +8,7 @@ import { getAllEntries } from '../lib/entry-store';
 import { extractFileText } from '../lib/universal-extractor';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
 import { mergeRiskData } from '../lib/intel-merge';
+import { buildRiskFromProfileEvidence } from '../lib/profile-intelligence-fill';
 import { buildRiskItemCopy } from '../lib/risk-assistant';
 import { Sparkles, ChevronRight, Download, Shield, Check } from 'lucide-react';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
@@ -363,6 +364,17 @@ export function RiskBuilder({ clientId, onBack }: Props) {
   const [synthStatus, setSynthStatus] = useState('');
 
   const handleSynthesiseRisk = () => {
+    const evidence = buildRiskFromProfileEvidence(client, today);
+    const evidenceCount = evidence.risk.risks.filter((item) => item.title).length;
+    const currentCount = (client.risk?.risks || []).filter((item) => item.title).length;
+    if (evidenceCount > currentCount) {
+      const next = { ...client, risk: evidence.risk };
+      saveClient(next);
+      setClient(next);
+      setSynthStatus(evidence.message);
+      return;
+    }
+
     const all = getAllEntries();
     const clientEntries = all.filter(e =>
       e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
@@ -497,14 +509,14 @@ export function RiskBuilder({ clientId, onBack }: Props) {
             onClick={handleSynthesiseRisk}
             disabled={synthesising}
             className="px-6 py-3.5 rounded-2xl hc-clay-raised border border-hc-teal/20 text-[10px] font-black uppercase tracking-[0.2em] text-hc-teal hover:brightness-90 flex items-center gap-3 transition-all shadow-xl disabled:opacity-50">
-            <Sparkles className="w-4 h-4" /> {synthesising ? 'Analysing...' : 'Synthesise Intelligence'}
+            <Sparkles className="w-4 h-4" /> {synthesising ? 'Analysing...' : 'Fill from Evidence'}
           </button>
           <button
             onClick={() => importFileRef.current?.click()}
             disabled={importing}
             className="px-6 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[10px] font-black uppercase tracking-[0.2em] text-hc-text hover:brightness-90 transition-all disabled:opacity-50"
           >
-            {importing ? 'Injesting...' : 'Injest Dataset'}
+            {importing ? 'Ingesting...' : 'Ingest Dataset'}
           </button>
           <input
             ref={importFileRef}
@@ -578,7 +590,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
             <button onClick={addRisk}
               className="flex items-center gap-4 px-10 py-4 hc-clay-raised border border-hc-teal/20 text-hc-teal text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl hover:brightness-90 transition-all shadow-2xl active:scale-95 group/add">
               <svg className="w-5 h-5 group-hover/add:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              Injest New Risk
+              Add New Risk
             </button>
           </div>
 
@@ -594,7 +606,7 @@ export function RiskBuilder({ clientId, onBack }: Props) {
               <div className="text-center py-32 hc-clay-raised border border-hc-muted/5 rounded-[3rem] animate-in zoom-in duration-700 bg-black/[0.01]">
                 <Shield className="w-16 h-16 text-hc-muted mx-auto mb-8 opacity-20" />
                 <div className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">Diagnostic Buffer Empty</div>
-                <div className="text-[11px] text-hc-muted uppercase tracking-[0.3em] font-black opacity-60">Injest new risk area protocols to proceed</div>
+                <div className="text-[11px] text-hc-muted uppercase tracking-[0.3em] font-black opacity-60">Ingest new risk area protocols to proceed</div>
               </div>
             )}
           </div>

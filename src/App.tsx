@@ -12,6 +12,16 @@ import { buildWeekSummary } from './lib/universal-parser';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { getSectionByPage } from './lib/navigation';
 import { canAccessPage, normalizeUserRole, type UserRole } from './lib/rbac';
+import { isSkinTheme, normalizeTheme, type AppTheme } from './lib/theme';
+import { setAuditIdentity } from './lib/audit';
+import {
+  clearLocalPreviewAuth,
+  enableLocalPreviewAuth,
+  getLocalPreviewRole,
+  hasLocalPreviewAuth,
+  isJsonResponse,
+  isMissingLocalApiResponse,
+} from './lib/local-preview-auth';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const UploadPage = lazy(() => import('./pages/UploadPage').then(m => ({ default: m.UploadPage })));
@@ -96,9 +106,8 @@ export default function App() {
   };
 
   const activeSection = getSectionByPage(page);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem('hc-theme');
-    return saved === 'dark' ? 'dark' : 'light';
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    return normalizeTheme(localStorage.getItem('hc-theme'));
   });
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
@@ -112,6 +121,9 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('hc-theme', theme);
+    if (!isSkinTheme(theme)) {
+      localStorage.setItem('hc-base-theme', theme);
+    }
     
     // Apply UI persistent settings
     const isCompact = localStorage.getItem('hc-compact-density') === 'true';
@@ -162,32 +174,57 @@ export default function App() {
     if (file) setGlobalInjestFile(file);
   }, [setGlobalInjestFile, setIsDraggingFile]);
 
+  const unlockLocalPreview = useCallback(() => {
+    const role = getLocalPreviewRole();
+    localStorage.setItem('hc-user-role', role);
+    setUserRole(role);
+    setAuthed(true);
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
       controller.abort();
+      if (hasLocalPreviewAuth()) {
+        unlockLocalPreview();
+      }
       setSessionLoaded(true);
     }, 8000);
 
     fetch('/api/auth/session', { credentials: 'include', signal: controller.signal })
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (isMissingLocalApiResponse(r)) {
+          if (hasLocalPreviewAuth()) {
+            unlockLocalPreview();
+          }
+          return null;
+        }
+        if (!isJsonResponse(r)) return null;
+        return r.json();
+      })
       .then((d) => {
         if (d?.authed) {
           setAuthed(true);
           const role = normalizeUserRole(d?.role || localStorage.getItem('hc-user-role'));
           localStorage.setItem('hc-user-role', role);
           setUserRole(role);
+          setAuditIdentity(d?.email || role);
         }
         setSessionLoaded(true);
       })
-      .catch(() => setSessionLoaded(true))
+      .catch(() => {
+        if (hasLocalPreviewAuth()) {
+          unlockLocalPreview();
+        }
+        setSessionLoaded(true);
+      })
       .finally(() => window.clearTimeout(timeoutId));
 
     return () => {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [unlockLocalPreview]);
 
   const handleSignOut = async () => {
     // Remove this session from the registry before signing out
@@ -200,7 +237,8 @@ export default function App() {
       }
     }
     sessionStorage.removeItem('hc-pin-unlocked');
-    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' });
+    clearLocalPreviewAuth();
+    await fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' }).catch(() => null);
     window.location.reload();
   };
 
@@ -371,19 +409,29 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
       credentials: 'include',
     });
+    if (isMissingLocalApiResponse(res)) {
+      if (!email.trim() || !password.trim()) {
+        setError('Enter any local preview credentials');
+        return;
+      }
+      enableLocalPreviewAuth('admin');
+      onUnlock('admin');
+      return;
+    }
+    const payload = isJsonResponse(res) ? await res.json().catch(() => ({})) : {};
     if (res.ok) {
-      const payload = await res.json().catch(() => ({}));
       const role = normalizeUserRole(payload?.role || localStorage.getItem('hc-user-role'));
       localStorage.setItem('hc-user-role', role);
       onUnlock(role);
     }
-    else setError('Invalid credentials');
+    else setError(payload?.error || 'Invalid credentials');
   };
 
   return (

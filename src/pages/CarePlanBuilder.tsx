@@ -12,6 +12,7 @@ import type { FullClient, CarePlanDomain } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
 import { extractFileText } from '../lib/universal-extractor';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
+import { buildCarePlanFromProfileEvidence } from '../lib/profile-intelligence-fill';
 
 interface Props {
   clientId: string;
@@ -262,6 +263,17 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
   const [synthStatus, setSynthStatus] = useState('');
 
   const handleAutoFill = () => {
+    const evidence = buildCarePlanFromProfileEvidence(client, today, reviewDate);
+    const evidenceCount = evidence.carePlan?.domains.filter((domain) => domain.enabled && domain.identifiedNeed).length || 0;
+    const currentCount = (client.carePlan?.domains || []).filter((domain) => domain.enabled && domain.identifiedNeed).length;
+    if (evidenceCount > currentCount) {
+      const next = { ...client, carePlan: evidence.carePlan };
+      saveClient(next);
+      setClient(next);
+      setSynthStatus(evidence.message);
+      return;
+    }
+
     // Pull from persistent store (all historical data)
     const persistedEntries = getAllEntries().filter(e =>
       e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
@@ -411,12 +423,10 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
             </select>
             <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-hc-muted pointer-events-none rotate-90" />
           </div>
-          {loadWeekData()?.clientDiary[client.name] && (
-            <button onClick={handleAutoFill}
-              className="flex items-center gap-3 px-8 py-3.5 hc-clay-raised border border-hc-teal/20 text-hc-teal text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:brightness-90 transition-all shadow-xl active:scale-95">
-              <Sparkles className="w-4 h-4" /> Synthesise Intelligence
-            </button>
-          )}
+          <button onClick={handleAutoFill}
+            className="flex items-center gap-3 px-8 py-3.5 hc-clay-raised border border-hc-teal/20 text-hc-teal text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:brightness-90 transition-all shadow-xl active:scale-95">
+            <Sparkles className="w-4 h-4" /> Fill from Evidence
+          </button>
           <button onClick={generatePDF}
             className="flex items-center gap-3 px-10 py-3.5 btn-tactical text-hc-bg text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all group">
             <Download className="w-4 h-4" />

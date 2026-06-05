@@ -8,6 +8,7 @@ import { getAllEntries } from '../lib/entry-store';
 import { extractFileText } from '../lib/universal-extractor';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
 import { mergePBSData } from '../lib/intel-merge';
+import { buildPBSFromProfileEvidence } from '../lib/profile-intelligence-fill';
 import { Sparkles, ChevronRight, ArrowLeft, Plus, Printer, Trash2, CheckCircle } from 'lucide-react';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
@@ -195,6 +196,15 @@ export function PBSBuilder({ clientId, onBack }: Props) {
   const [synthStatus, setSynthStatus] = useState('');
 
   const handleSynthesisePBS = () => {
+    const evidence = buildPBSFromProfileEvidence(client, today);
+    if (evidence.pbs !== client.pbs) {
+      const next = { ...client, pbs: evidence.pbs };
+      saveClient(next);
+      setClient(next);
+      setSynthStatus(evidence.message);
+      return;
+    }
+
     const all = getAllEntries();
     const clientEntries = all.filter(e =>
       e.client && client.name && e.client.toLowerCase().includes(client.name.split(' ')[0].toLowerCase())
@@ -359,7 +369,7 @@ export function PBSBuilder({ clientId, onBack }: Props) {
             type="button"
             onClick={handleSynthesisePBS}
             className="px-5 py-2.5 rounded-xl hc-clay-raised text-[11px] font-black uppercase tracking-[0.2em] text-hc-teal hover:text-hc-text hover:bg-hc-clay-dark flex items-center gap-2 transition-all shadow-md">
-            <Sparkles className="w-4 h-4" /> Synthesise from Intelligence
+            <Sparkles className="w-4 h-4" /> Fill from Profile Evidence
           </button>
           <button
             onClick={() => importFileRef.current?.click()}

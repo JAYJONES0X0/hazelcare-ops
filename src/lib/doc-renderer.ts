@@ -54,7 +54,7 @@ function baseStyles(layout: ExportLayout = 'portrait') {
   return `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   
-  @page { size: A4 ${layout}; margin: 0; }
+  @page { size: A4 ${layout}; margin: 12mm; }
 
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
   body { 
@@ -68,31 +68,34 @@ function baseStyles(layout: ExportLayout = 'portrait') {
   
   .page {
     position: relative;
-    width: ${size.width};
-    min-height: ${size.minHeight};
-    padding: 20mm;
+    width: 100%;
+    min-height: calc(${size.minHeight} - 24mm);
+    padding: 0;
     margin: 0 auto;
     background: #fff;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
   }
+  .page:last-child { break-after: auto; page-break-after: auto; }
 
   /* Fix for blank pages and scaling */
   @media print {
     html, body { height: auto; }
     .page { 
       margin: 0 !important; 
-      padding: 15mm !important; 
-      width: ${size.width} !important;
-      min-height: ${size.minHeight} !important;
+      padding: 0 !important; 
+      width: auto !important;
+      min-height: auto !important;
       height: auto !important;
       border: none !important; 
       box-shadow: none !important;
-      page-break-after: always !important;
-      break-after: page !important;
       overflow: visible !important;
     }
+    .page:not(:last-child) { page-break-after: always !important; break-after: page !important; }
+    h1, h2, h3, .sig-card { break-inside: avoid; page-break-inside: avoid; }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
   }
@@ -496,12 +499,12 @@ export function buildEasyReadHtml(client: FullClient, layout: ExportLayout = 'po
   const size = pageSize(layout);
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(docTitle(client, 'Easy Read Support Plan'))}</title><style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-    @page { size: A4 ${layout}; margin: 0; }
+    @page { size: A4 ${layout}; margin: 12mm; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
     body { font-family: 'Inter', sans-serif; color: #1a1a2e; line-height: 1.6; margin: 0; padding: 0; font-size: 18px; background: #f8fafc; }
-    .page { width: ${size.width}; min-height: ${size.minHeight}; padding: 25mm; margin: 0 auto; background: #fff; display: flex; flex-direction: column; position: relative; }
-    .page:not(:first-child) { page-break-before: always; }
-    @media print { body { background: #fff; } .page { margin: 0; padding: 15mm; width: ${size.width}; min-height: ${size.minHeight}; border: none; box-shadow: none; height: auto; overflow: visible; } }
+    .page { width: 100%; min-height: calc(${size.minHeight} - 24mm); padding: 0; margin: 0 auto; background: #fff; display: flex; flex-direction: column; position: relative; break-after: page; page-break-after: always; }
+    .page:last-child { break-after: auto; page-break-after: auto; }
+    @media print { body { background: #fff; } .page { margin: 0; padding: 0; width: auto; min-height: auto; border: none; box-shadow: none; height: auto; overflow: visible; } .page:not(:last-child) { page-break-after: always; break-after: page; } .content-card, h1, h2 { break-inside: avoid; page-break-inside: avoid; } }
     
     .logo-box { display: flex; align-items: center; gap: 20px; margin-bottom: 40px; border-bottom: 4px solid #0f766e; padding-bottom: 20px; }
     .logo-img { height: 60px; width: 60px; border-radius: 12px; object-fit: contain; }

@@ -1,5 +1,12 @@
 import { useState, useMemo, useEffect, type MouseEvent } from 'react';
-import { loadClients, saveClient, type FullClient, type CarePlanDomain, type VaultDoc } from '../lib/client-store';
+import { loadClients, saveClient, type FullClient, type VaultDoc } from '../lib/client-store';
+import {
+  clientHasTaskSources,
+  formatForExport,
+  generateTasksForClient,
+  type NourishTask,
+  type TaskFrequency,
+} from '../lib/nourish-task-pack';
 import { runTaskStressTest } from '../lib/stress-test-tasks';
 import {
   ClipboardList, Copy, Check, ChevronDown, ChevronRight,
@@ -7,444 +14,43 @@ import {
   Download, RefreshCw, Paperclip, Sparkles, Send, X
 } from 'lucide-react';
 import { extractFileText } from '../lib/universal-extractor';
-import { 
-  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, 
+import {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
   Header, Footer, PageNumber
 } from 'docx';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TASK GENERATION ENGINE
-// Maps care plan domains → Nourish task definitions
+// UI HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-type TaskFrequency = 'daily' | 'weekly' | 'event';
-
-interface NourishTask {
-  id: string;
-  name: string;
-  notes: string;
-  frequency: TaskFrequency;
-  mandatory: boolean;
-  source: string;
-  domain: string;
-  evidence: string[];
-}
-
-function cleanLine(input: string, max = 2000): string {
-  const normalized = (input || '').replace(/\s+/g, ' ').trim();
-  if (!normalized) return '';
-  if (normalized.length <= max) return normalized;
-  return normalized.slice(0, max - 3).trimEnd() + '...';
-}
-
-function firstSentence(input: string, max = 180): string {
-  const clean = cleanLine(input, max);
-  const sentence = clean.match(/^(.+?[.!?])\s/)?.[1];
-  return sentence && sentence.length <= max ? sentence : clean;
-}
-
-function fieldSummary(label: string, input: string | undefined, max = 180): string | null {
-  const summary = firstSentence(input || '', max);
-  return summary ? `${label}: ${summary}` : null;
-}
-
-function hasAny(text: string, words: string[]): boolean {
-  const lower = text.toLowerCase();
-  return words.some(word => lower.includes(word));
-}
-
-function extractSourceCues(...values: Array<string | undefined>): string[] {
-  const text = values.join(' ').toLowerCase();
-  const cues: string[] = [];
-  if (hasAny(text, ['privacy', 'private', 'bedroom', 'personal space'])) cues.push('privacy/personal space');
-  if (hasAny(text, ['shared', 'communal', 'kitchen', 'lounge', 'bathroom', 'hallway'])) cues.push('shared-space responsibility');
-  if (hasAny(text, ['prompt', 'encourage', 'remind', 'guidance'])) cues.push('prompting/encouragement');
-  if (hasAny(text, ['refuse', 'decline', 'reluctant', 'does not want'])) cues.push('refusal/choice');
-  if (hasAny(text, ['risk', 'safety', 'hazard', 'maintenance', 'fire', 'clutter'])) cues.push('safety risk');
-  if (hasAny(text, ['independent', 'independently', 'can do', 'able to'])) cues.push('promote independence');
-  if (hasAny(text, ['anxious', 'distress', 'agitated', 'overwhelmed', 'mental health'])) cues.push('emotional presentation');
-  if (hasAny(text, ['medication', 'mar', 'tablet', 'dose'])) cues.push('medication evidence');
-  if (hasAny(text, ['meal', 'food', 'breakfast', 'lunch', 'dinner', 'hydrate', 'fluid'])) cues.push('nutrition/hydration');
-  return Array.from(new Set(cues)).slice(0, 4);
-}
-
-function domainTaskLogic(title: string, sourceText: string): { purpose: string; action: string; watch: string } {
-  const lower = title.toLowerCase();
-  if (lower.includes('environment') || lower.includes('adaptive living')) {
-    return {
-      purpose: 'Keep the home environment safe while respecting privacy, choice and independence.',
-      action: 'Offer choice-led prompts for bedroom/shared-area upkeep, agree what support is wanted, and address hazards without taking over tasks the person can do.',
-      watch: 'Escalate safety, maintenance, fire, hygiene or neighbour/shared-space concerns.',
-    };
-  }
-  if (lower.includes('communication') || lower.includes('sensory')) {
-    return {
-      purpose: 'Make communication clear, respectful and accessible before support is delivered.',
-      action: 'Check preferred communication style, give time to respond, adapt prompts to sensory needs, and confirm understanding before moving on.',
-      watch: 'Watch for frustration, withdrawal, overload, misunderstanding or refusal caused by communication barriers.',
-    };
-  }
-  if (lower.includes('social') || lower.includes('relationship')) {
-    return {
-      purpose: 'Support safe social connection without forcing engagement.',
-      action: 'Offer realistic activity/social options, support planning or travel if needed, and respect declined contact while keeping opportunities open.',
-      watch: 'Watch for isolation, conflict, exploitation, unsafe contact or deterioration in mood after social contact.',
-    };
-  }
-  if (lower.includes('life skills') || lower.includes('daily routine')) {
-    return {
-      purpose: 'Maintain routine and daily living skills with the least support needed.',
-      action: 'Break the routine into small steps, prompt rather than take over, and reinforce what the person completes independently.',
-      watch: 'Watch for missed routines, overload, declining motivation, household task build-up or avoidable dependency.',
-    };
-  }
-  if (lower.includes('nutrition') || lower.includes('hydration') || hasAny(sourceText, ['meal', 'hydrate', 'fluid'])) {
-    return {
-      purpose: 'Maintain safe nutrition and hydration in line with preference and care-plan need.',
-      action: 'Offer meal/fluid prompts, support preparation or access where needed, and record intake concerns or refusal clearly.',
-      watch: 'Escalate repeated refusal, poor intake, choking/reflux concerns, weight/appetite change or dehydration indicators.',
-    };
-  }
-  if (lower.includes('medication')) {
-    return {
-      purpose: 'Support medication safely and evidence the outcome.',
-      action: 'Follow MAR/prescribed instructions, prompt at the agreed time, record taken/refused/missed, and follow refusal/escalation procedure.',
-      watch: 'Escalate missed doses, refusal, side effects, stock/MAR errors or change in presentation.',
-    };
-  }
-  if (lower.includes('mental health') || lower.includes('wellbeing')) {
-    return {
-      purpose: 'Monitor emotional wellbeing and respond early to changes in presentation.',
-      action: 'Check mood/presentation, offer agreed coping support, maintain calm engagement, and record what changed or helped.',
-      watch: 'Escalate self-harm indicators, crisis presentation, withdrawal, agitation, safeguarding concerns or refusal of essential support.',
-    };
-  }
-  if (lower.includes('personal care') || lower.includes('hygiene') || lower.includes('continence')) {
-    return {
-      purpose: 'Support dignity, hygiene and presentation using the least intrusive approach.',
-      action: 'Offer discreet prompts or practical help, respect privacy, confirm consent, and record support accepted or declined.',
-      watch: 'Escalate skin issues, hygiene deterioration, continence concerns, pain, refusal patterns or infection-control risks.',
-    };
-  }
-  if (lower.includes('mobility') || lower.includes('movement') || lower.includes('exercise')) {
-    return {
-      purpose: 'Support safe movement and independence.',
-      action: 'Use the agreed mobility approach/equipment, prompt pacing, and support transfers or community movement only within the care plan.',
-      watch: 'Escalate falls, pain, breathlessness, equipment issues, reduced mobility or unsafe transfer attempts.',
-    };
-  }
-  if (lower.includes('skin') || lower.includes('pressure')) {
-    return {
-      purpose: 'Protect skin integrity and spot deterioration early.',
-      action: 'Complete agreed skin/pressure-area checks or prompts, support repositioning/comfort, and record any visible change.',
-      watch: 'Escalate redness, soreness, broken skin, swelling, pain or refusal of pressure-care support.',
-    };
-  }
-  return {
-    purpose: 'Deliver the agreed care-plan support in a person-centred, evidence-based way.',
-    action: 'Offer the planned support, use least-restrictive prompts, respect choice, and adapt support to the person’s response.',
-    watch: 'Escalate refusal of essential support, change in risk/presentation, safeguarding concern or unmet need.',
-  };
-}
-
-const DAILY_DOMAIN_KEYWORDS = [
-  'medication', 'mental health', 'personal care', 'hygiene', 'nutrition',
-  'hydration', 'daily routine', 'continence', 'mobility', 'pain',
-  'sleep', 'infection', 'communication', 'engagement', 'social',
-];
-
-const WEEKLY_DOMAIN_KEYWORDS = [
-  'skin integrity', 'pressure care', 'financial', 'cultural', 'spiritual',
-  'environmental', 'rights', 'intimacy', 'adaptive',
-];
-
-const EVENT_DOMAIN_KEYWORDS = [
-  'safeguarding', 'incident', 'aggression', 'deterioration',
-];
-
-function inferFrequency(domainTitle: string): TaskFrequency {
-  const lower = domainTitle.toLowerCase();
-  if (EVENT_DOMAIN_KEYWORDS.some(k => lower.includes(k))) return 'event';
-  if (WEEKLY_DOMAIN_KEYWORDS.some(k => lower.includes(k))) return 'weekly';
-  if (DAILY_DOMAIN_KEYWORDS.some(k => lower.includes(k))) return 'daily';
-  return 'daily'; // default
-}
-
-function isMandatoryTask(domainTitle: string, notes: string): boolean {
-  const lower = domainTitle.toLowerCase() + ' ' + notes.toLowerCase();
-  return (
-    lower.includes('medication') ||
-    lower.includes('mental health') ||
-    lower.includes('fire') ||
-    lower.includes('risk') ||
-    lower.includes('safeguarding') ||
-    lower.includes('aggression')
-  );
-}
-
-function buildTaskName(domain: CarePlanDomain, clientName: string): string {
-  const title = domain.title;
-  const firstName = clientName.split(' ')[0] || 'Client';
-  
-  // Try to find a specific action word from the identified need to make it less generic
-  const need = (domain.identifiedNeed || '').toLowerCase();
-  let action = '';
-  
-  if (title.includes('Nutrition')) {
-    if (need.includes('breakfast')) action = 'with Breakfast';
-    else if (need.includes('lunch')) action = 'with Lunch';
-    else if (need.includes('dinner') || need.includes('tea')) action = 'with Dinner';
-    else action = 'with Meals & Hydration';
-  } else if (title.includes('Personal Care')) {
-    if (need.includes('shower')) action = 'to Shower';
-    else if (need.includes('bath')) action = 'to Bath';
-    else if (need.includes('dress')) action = 'to Dress & Groom';
-    else action = 'with Personal Care';
-  } else if (title.includes('Environment')) {
-    action = 'to maintain a Safe Environment';
-  } else if (title.includes('Social')) {
-    action = 'to engage in Social Activities';
-  }
-
-  const taskNames: Record<string, string> = {
-    'Medication Management & Safety': `Support ${firstName} with Medication`,
-    'Mental Health & Emotional Wellbeing': `${firstName}'s Emotional Wellbeing Check`,
-    'Personal Care & Physical Presentation': `Support ${firstName} ${action || 'with Personal Care'}`,
-    'Continence & Personal Hygiene': `Support ${firstName} with Hygiene & Continence`,
-    'Nutrition, Hydration & Diet': `Help ${firstName} ${action || 'with Nutrition & Hydration'}`,
-    'Life Skills & Daily Routine': `Support ${firstName}'s Daily Routine`,
-    'Social Engagement & Relationships': `Help ${firstName} ${action || 'Socialise & Connect'}`,
-    'Mobility, Movement & Exercise': `Support ${firstName} with Mobility`,
-    'Pain Management & Comfort': `Pain & Comfort Check for ${firstName}`,
-    'Rest & Sleep Patterns': `Support ${firstName}'s Sleep Pattern`,
-    'Infection Control & Public Health': `Infection Control for ${firstName}`,
-    'Communication & Sensory Integration': `Support ${firstName}'s Communication`,
-    'Environment & Physical Safety': `Help ${firstName} ${action || 'stay Safe & Secure'}`,
-    'Adaptive Living Environment': `Support ${firstName} in their Home`,
-    'Skin Integrity & Pressure Care': `Skin & Pressure Care for ${firstName}`,
-    'Financial Management & Autonomy': `Support ${firstName} with Finances`,
-    'Rights, Choice & Inclusion': `Support ${firstName}'s Rights & Choices`,
-    'Holistic Health & Vitality': `Health & Vitality Check for ${firstName}`,
-    'Respiratory Health & Support': `Support ${firstName}'s Respiratory Health`,
-    'Cultural, Spiritual & Personal Beliefs': `Support ${firstName}'s Beliefs & Culture`,
-    'Intimacy & Personal Expression': `Support ${firstName}'s Personal Expression`,
-  };
-
-  return taskNames[title] || `${title} (${firstName})`;
-}
-
-function buildTaskNotes(domain: CarePlanDomain): string {
-  const sourceText = [
-    domain.identifiedNeed,
-    domain.howToAchieve,
-    domain.plannedOutcomes,
-    domain.riskTitle,
-    domain.riskMitigation,
-  ].join(' ');
-  const logic = domainTaskLogic(domain.title, sourceText);
-  const cues = extractSourceCues(sourceText);
-  const parts: string[] = [];
-  parts.push(`Purpose: ${logic.purpose}`);
-  parts.push(`Staff action: ${logic.action}`);
-  parts.push(`Watch for: ${logic.watch}`);
-  if (cues.length) parts.push(`Source cues: ${cues.join(', ')}.`);
-  parts.push('Record: support offered; accepted/declined; outcome; risk or presentation change; escalation/follow-up.');
-  parts.push('Avoid: "done", "all fine", "support given" without the facts.');
-  return parts.join('\n');
-}
-
-function collectEvidence(domain: CarePlanDomain): string[] {
-  return [
-    fieldSummary('Need', domain.identifiedNeed, 220),
-    fieldSummary('Risk', domain.riskTitle, 160),
-    fieldSummary('Risk detail', domain.riskDescription, 220),
-    fieldSummary('Mitigation', domain.riskMitigation, 220),
-    fieldSummary('Support method', domain.howToAchieve, 220),
-  ].filter(Boolean) as string[];
-}
-
-function generateTasksFromCarePlan(client: FullClient): NourishTask[] {
-  if (!client.carePlan?.domains) return [];
-
-  const enabledDomains = client.carePlan.domains.filter(d => d.enabled);
-  if (enabledDomains.length === 0) return [];
-
-  return enabledDomains
-    .map(domain => {
-      const evidence = collectEvidence(domain);
-      const notes = buildTaskNotes(domain);
-      const frequency = inferFrequency(domain.title);
-      const name = buildTaskName(domain, client.name);
-      const mandatory = isMandatoryTask(domain.title, notes);
-      const source = `Care Plan - ${domain.title}${domain.riskTitle ? ` / Risk: ${domain.riskTitle}` : ''}`;
-
-      return { 
-        id: `cp-${domain.title.replace(/\s+/g, '-')}`,
-        name, notes, frequency, mandatory, source, domain: domain.title, evidence 
-      };
-    })
-    .filter(task => task.evidence.length > 0);
-}
-
-function generateTasksFromRiskAssessment(client: FullClient): NourishTask[] {
-  const risk = client.risk;
-  if (!risk?.risks?.length) return [];
-
-  return risk.risks
-    .filter(r => (r.title || '').trim().length > 0)
-    .map(riskItem => {
-      const controls = (riskItem.controls || []).map(c => cleanLine(c, 120)).filter(Boolean);
-      const description = cleanLine(riskItem.description, 160);
-      const notesLines: string[] = [];
-      if (description) notesLines.push(`Risk context: ${description}`);
-      if (controls.length) notesLines.push(`Controls: ${controls.slice(0, 2).join(' | ')}`);
-      notesLines.push('Evidence required: trigger observed, immediate action taken, client response, who was informed, and whether the risk reduced/escalated.');
-
-      return {
-        id: `risk-${riskItem.title.replace(/\s+/g, '-')}`,
-        name: `Risk Response - ${cleanLine(riskItem.title, 72)}`,
-        notes: notesLines.join('\n'),
-        frequency: 'event' as TaskFrequency,
-        mandatory: true,
-        source: `Risk Assessment - ${riskItem.title}`,
-        domain: 'Risk Assessment',
-        evidence: [
-          `Risk: ${riskItem.title}`,
-          ...controls.map(c => `Control: ${c}`),
-        ],
-      };
-    });
-}
-
-function generateTasksFromSupportPlan(client: FullClient): NourishTask[] {
-  const needs = client.supportPlan?.needs || [];
-  if (!needs.length) return [];
-
-  return needs
-    .filter(need => (need.area || '').trim().length > 0)
-    .map(need => {
-      const area = cleanLine(need.area, 90);
-      const sourceText = [need.canDoMyself, need.howToSupport, need.risks].join(' ');
-      const logic = domainTaskLogic(area, sourceText);
-      const cues = extractSourceCues(sourceText);
-      const notes: string[] = [
-        `Purpose: ${logic.purpose}`,
-        `Staff action: ${logic.action}`,
-        `Watch for: ${logic.watch}`,
-      ];
-      if (cues.length) notes.push(`Source cues: ${cues.join(', ')}.`);
-      notes.push('Record: support offered; accepted/declined; outcome; risk or presentation change; escalation/follow-up.');
-
-      const mandatory = /risk|safeguard|medication|aggress|falls|self-harm|incident/i.test(sourceText);
-
-      return {
-        id: `sp-${area.replace(/\s+/g, '-')}`,
-        name: `Support Plan - ${area}`,
-        notes: notes.join('\n'),
-        frequency: inferFrequency(area),
-        mandatory,
-        source: `Support Plan - ${area}`,
-        domain: area,
-        evidence: [
-          need.canDoMyself ? `Need: ${cleanLine(need.canDoMyself, 180)}` : '',
-          need.howToSupport ? `Support method: ${cleanLine(need.howToSupport, 180)}` : '',
-          need.risks ? `Risk: ${cleanLine(need.risks, 150)}` : '',
-        ].filter(Boolean),
-      };
-    });
-}
-
-function dedupeTasks(tasks: NourishTask[]): NourishTask[] {
-  const seen = new Set<string>();
-  const out: NourishTask[] = [];
+function taskSourceLabels(tasks: NourishTask[]): string[] {
+  const labels = new Set<string>();
   for (const task of tasks) {
-    const key = task.name.toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(task);
+    if (task.source.startsWith('Care Plan')) labels.add('care plan');
+    else if (task.source.startsWith('Support Plan')) labels.add('support plan');
+    else if (task.source.startsWith('Risk Assessment')) labels.add('risk assessment');
+    else if (task.source.startsWith('Intelligence Vault')) labels.add('attached source documents');
+    else labels.add('source evidence');
   }
-  return out;
+  return Array.from(labels);
 }
 
-function generateTasksForClient(client: FullClient): NourishTask[] {
-  const fromCarePlan = generateTasksFromCarePlan(client);
-  const fromRisk = generateTasksFromRiskAssessment(client);
-  const fromSupportPlan = generateTasksFromSupportPlan(client);
-  return dedupeTasks([...fromCarePlan, ...fromRisk, ...fromSupportPlan]).filter(task => task.evidence.length > 0);
+function joinSourceLabels(labels: string[]): string {
+  if (labels.length === 0) return 'care/source evidence';
+  if (labels.length === 1) return labels[0];
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
-function formatForExport(client: FullClient, tasks: NourishTask[]): string {
-  const daily = tasks.filter(t => t.frequency === 'daily');
-  const weekly = tasks.filter(t => t.frequency === 'weekly');
-  const event = tasks.filter(t => t.frequency === 'event');
-  const date = new Date().toLocaleDateString('en-GB');
-
-  let out = `NOTE TITLE: CareOps Personalised Tasks (Care Plan Aligned) - ${client.name}\n`;
-  out += `Generated: ${date} | Source: CareOps - Care Plan Builder\n\n`;
-  out += `PURPOSE\n`;
-  out += `These tasks are derived directly from ${client.name}'s current care plans, support plans and risk assessments to show what support needs to happen and how it should be evidenced.\n\n`;
-  out += `RULES\n`;
-  out += `- Build as Client Tasks in Nourish.\n`;
-  out += `- Set Task Notes mandatory for all tasks marked [MANDATORY].\n`;
-  out += `- Keep notes short enough for staff to use on shift.\n`;
-  out += `- Do not change tasks without updating the underlying care plan/risk assessment first.\n`;
-  out += `- Do not create tasks without evidence from care plan, support plan, or risk fields.\n\n`;
-  out += `-----------------------------------------------------\n`;
-
-  if (daily.length > 0) {
-    out += `DAILY TASKS\n\n`;
-    daily.forEach((t, i) => {
-      out += `${i + 1}. Task name: ${t.name}${t.mandatory ? ' [MANDATORY]' : ''}\n`;
-      out += `   Frequency: Daily\n`;
-      out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n`;
-      if (t.evidence.length) {
-        out += `   Evidence:\n`;
-        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
-      }
-      out += `\n`;
-    });
-  }
-
-  if (weekly.length > 0) {
-    out += `WEEKLY TASKS\n\n`;
-    weekly.forEach((t, i) => {
-      out += `${i + 1}. Task name: ${t.name}${t.mandatory ? ' [MANDATORY]' : ''}\n`;
-      out += `   Frequency: Weekly\n`;
-      out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n`;
-      if (t.evidence.length) {
-        out += `   Evidence:\n`;
-        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
-      }
-      out += `\n`;
-    });
-  }
-
-  if (event.length > 0) {
-    out += `EVENT-DRIVEN TASKS (create only when triggered)\n\n`;
-    event.forEach((t, i) => {
-      out += `${i + 1}. Task name: ${t.name}\n`;
-      out += `   Frequency: When triggered\n`;
-      out += `   Task Notes: ${t.notes.replace(/\n/g, '\n   ')}\n`;
-      out += `   Source: ${t.source}\n`;
-      if (t.evidence.length) {
-        out += `   Evidence:\n`;
-        t.evidence.forEach(ev => { out += `   - ${ev}\n`; });
-      }
-      out += `\n`;
-    });
-  }
-
-  out += `-----------------------------------------------------\n`;
-  out += `REVIEW\n`;
-  out += `Review tasks at the next scheduled care plan review, or sooner if there is a significant change in risk, presentation, medication, or environmental safety.\n`;
-
-  return out;
+function taskPackSourceSummary(client: FullClient, tasks: NourishTask[]): string {
+  const taskLabel = tasks.length === 1 ? 'task' : 'tasks';
+  return `${tasks.length} ${taskLabel} derived from ${client.name}'s ${joinSourceLabels(taskSourceLabels(tasks))}`;
 }
 
-// DOCX Generation Helper
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCX GENERATION
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
   const daily = tasks.filter(t => t.frequency === 'daily');
   const weekly = tasks.filter(t => t.frequency === 'weekly');
@@ -456,7 +62,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
 
   const buildTaskRows = (taskList: NourishTask[], label: string) => {
     if (taskList.length === 0) return [];
-    
+
     const rows = [
       new TableRow({
         children: [
@@ -534,7 +140,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: "HAZEL CARE LTD - OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
+                new TextRun({ text: "CARE OPS · OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
               ]
             })
           ]
@@ -565,7 +171,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
         new Paragraph({
           alignment: AlignmentType.CENTER,
           children: [
-            new TextRun({ text: "Full Task Pack for Nourish / Care System Entry", size: 24, color: "6B7280" })
+            new TextRun({ text: taskPackSourceSummary(client, tasks), size: 24, color: "6B7280" })
           ],
           spacing: { after: 400 }
         }),
@@ -591,18 +197,24 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
 }
 
 // COMPONENTS
-const FREQ_CONFIG = {
+const FREQ_CONFIG: Record<TaskFrequency, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
   daily: { label: 'Daily', icon: <Clock size={12} />, color: 'text-hc-teal', bg: 'bg-hc-teal/10 border-hc-teal/20' },
   weekly: { label: 'Weekly', icon: <Calendar size={12} />, color: 'text-flag-amber', bg: 'bg-flag-amber/10 border-flag-amber/20' },
   event: { label: 'Event-Driven', icon: <Zap size={12} />, color: 'text-flag-red', bg: 'bg-flag-red/10 border-flag-red/20' },
 };
 
-function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number, onUpdate?: (id: string, notes: string) => void }) {
+function TaskCard({ task, index, onUpdate, isUpdated }: { task: NourishTask; index: number; onUpdate?: (id: string, notes: string) => void; isUpdated?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState<'name' | 'notes' | ''>('');
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(task.notes);
   const freq = FREQ_CONFIG[task.frequency];
+
+  useEffect(() => {
+    setExpanded(false);
+    setEditingNotes(false);
+    setNotesDraft(task.notes);
+  }, [task.id, task.notes]);
 
   const copyValue = async (kind: 'name' | 'notes', text: string, e?: MouseEvent<HTMLButtonElement>) => {
     e?.stopPropagation();
@@ -612,7 +224,10 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
   };
 
   return (
-    <div className={`hc-clay-raised rounded-2xl overflow-hidden border ${task.mandatory ? 'border-flag-red/20' : 'border-hc-border/5'} transition-all`}>
+    <div className={`hc-clay-raised rounded-2xl overflow-hidden border transition-all duration-500 ${
+      isUpdated ? 'border-hc-teal/50 ring-2 ring-hc-teal/20 shadow-[0_0_12px_rgba(13,148,136,0.15)]' :
+      task.mandatory ? 'border-flag-red/20' : 'border-hc-border/5'
+    }`}>
       <div
         onClick={() => setExpanded(e => !e)}
         className="w-full flex items-start gap-3 p-3 sm:p-4 text-left hover:bg-white/[0.02] transition-all cursor-pointer"
@@ -625,7 +240,6 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
           }
         }}
       >
-        {/* Index */}
         <span className="w-6 h-6 rounded-lg hc-clay-inset flex items-center justify-center text-[10px] font-black text-hc-muted shrink-0 mt-0.5">
           {index}
         </span>
@@ -672,14 +286,14 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
             <div>
             <div className="flex items-center justify-between mb-1.5">
               <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest">Task Notes Instruction</div>
-              <button 
+              <button
                 onClick={() => setEditingNotes(!editingNotes)}
                 className="text-[8px] font-black text-hc-teal uppercase tracking-widest hover:underline"
               >
                 {editingNotes ? 'Preview' : 'Edit Manually'}
               </button>
             </div>
-            
+
             {editingNotes ? (
               <textarea
                 value={notesDraft}
@@ -693,7 +307,7 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
                 {task.notes}
               </div>
             )}
-            
+
             <button
               onClick={(e) => copyValue('notes', task.notes, e)}
               className="mt-2 text-[9px] font-black uppercase tracking-widest text-hc-teal hover:underline"
@@ -725,13 +339,14 @@ function TaskCard({ task, index, onUpdate }: { task: NourishTask; index: number,
 }
 
 function FreqSection({
-  label, tasks, freq, icon, onTaskUpdate
+  label, tasks, freq, icon, onTaskUpdate, updatedIds
 }: {
   label: string;
   tasks: NourishTask[];
   freq: TaskFrequency;
   icon: React.ReactNode;
   onTaskUpdate?: (id: string, notes: string) => void;
+  updatedIds?: Set<string>;
 }) {
   const [open, setOpen] = useState(true);
   const cfg = FREQ_CONFIG[freq];
@@ -757,7 +372,7 @@ function FreqSection({
       {open && (
         <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
           {tasks.map((t, i) => (
-            <TaskCard key={`${freq}-${i}`} task={t} index={i + 1} onUpdate={onTaskUpdate} />
+            <TaskCard key={`${freq}-${t.id}`} task={t} index={i + 1} onUpdate={onTaskUpdate} isUpdated={updatedIds?.has(t.id)} />
           ))}
         </div>
       )}
@@ -771,14 +386,11 @@ function FreqSection({
 
 export function NourishTaskPack() {
   const [clients, setClients] = useState<FullClient[]>(() => loadClients());
-  const clientHasTaskSources = (client: FullClient) =>
-    !!client.carePlan?.domains?.some(d => d.enabled) ||
-    !!client.supportPlan?.needs?.some(n => (n.area || '').trim().length > 0) ||
-    !!client.risk?.risks?.some(r => (r.title || '').trim().length > 0);
-  
+
   const [selectedId, setSelectedId] = useState<string>(() => {
-    const first = clients.find(c => clientHasTaskSources(c));
-    return first?.id || clients[0]?.id || '';
+    const all = loadClients();
+    const first = all.find(c => clientHasTaskSources(c));
+    return first?.id || all[0]?.id || '';
   });
 
   const [copied, setCopied] = useState(false);
@@ -786,7 +398,8 @@ export function NourishTaskPack() {
   const [importInfo, setImportInfo] = useState('');
   const [refineInput, setRefineInput] = useState('');
   const [refining, setRefining] = useState(false);
-  const [refinementResult, setRefinementResult] = useState('');
+  const [refineStatus, setRefineStatus] = useState<{ count: number; message: string } | null>(null);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const syncClients = () => setClients(loadClients());
@@ -805,29 +418,30 @@ export function NourishTaskPack() {
     if (fallback) setSelectedId(fallback.id);
   }, [clients, selectedId]);
 
-  // STRESS TEST HANDLER
-  const triggerStressTest = async () => {
-    try {
-      const stressClient = await runTaskStressTest();
-      setClients(prev => [stressClient, ...prev]);
-      setSelectedId(stressClient.id);
-      setImportInfo('STRESS TEST ACTIVE: 1,000 TASKS INJECTED');
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Stress test failed');
-    }
-  };
+  const triggerStressTest = import.meta.env.DEV
+    ? async () => {
+        try {
+          const stressClient = await runTaskStressTest();
+          setClients(prev => [stressClient, ...prev]);
+          setSelectedId(stressClient.id);
+          setImportInfo('STRESS TEST ACTIVE: 1,000 TASKS INJECTED');
+        } catch (e) {
+          alert(e instanceof Error ? e.message : 'Stress test failed');
+        }
+      }
+    : undefined;
 
   const selectedClient = useMemo(
     () => clients.find(c => c.id === selectedId) || null,
     [clients, selectedId]
   );
 
-  // Local state for manually overridden tasks or refined results
   const [manualOverrides, setManualOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setManualOverrides({});
-    setRefinementResult('');
+    setRefineStatus(null);
+    setRecentlyUpdated(new Set());
   }, [selectedId]);
 
   const tasks = useMemo(() => {
@@ -860,7 +474,6 @@ export function NourishTaskPack() {
     try {
       await generateBeautifulDocx(selectedClient, tasks);
     } catch (e) {
-      console.error('DOCX Export Failed:', e);
       alert('Failed to generate Word document. Falling back to text download.');
       handleDownloadTxt();
     }
@@ -890,16 +503,16 @@ export function NourishTaskPack() {
       const clientsList = loadClients();
       const profile = clientsList.find(c => c.id === selectedId);
       if (!profile) return;
-      
+
       const newDoc: VaultDoc = {
         id: `vault-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: file.name,
         text,
         uploadedAt: new Date().toISOString(),
       };
-      
-      profile.vaultDocs = [...(profile.vaultDocs || []), newDoc];
-      saveClient(profile);
+
+      saveClient({ ...profile, vaultDocs: [...(profile.vaultDocs || []), newDoc] });
+      setClients(loadClients());
       setImportInfo(`Intelligence updated with ${file.name}`);
     } catch (e) {
       setImportInfo(`Import failed: ${e instanceof Error ? e.message : 'Unknown'}`);
@@ -912,39 +525,41 @@ export function NourishTaskPack() {
     if (!selectedClient) return;
     const profile = clients.find(c => c.id === selectedId);
     if (!profile) return;
-    profile.vaultDocs = (profile.vaultDocs || []).filter(d => d.id !== docId);
-    saveClient(profile);
+    saveClient({ ...profile, vaultDocs: (profile.vaultDocs || []).filter(d => d.id !== docId) });
+    setClients(loadClients());
     setImportInfo('Document removed');
   };
 
   const runAIRefinement = async () => {
-    if (!refineInput.trim() || !selectedClient) return;
+    if (!refineInput.trim() || !selectedClient || tasks.length === 0) return;
     setRefining(true);
+    setRefineStatus(null);
     try {
-      const res = await fetch('/api/staff/enhance-note', {
+      const res = await fetch('/api/staff/refine-tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: formatForExport(selectedClient, tasks),
-          noteType: 'Nourish Task Pack',
+          instruction: refineInput,
           clientName: selectedClient.name,
-          refineInstructions: [
-            `Task-pack refinement request: ${refineInput}.`,
-            'Act as a UK supported-living operations reviewer.',
-            'Do not paste source care-plan/admission text back as task notes.',
-            'Rewrite task notes as concise Nourish-ready operational instructions with Purpose, Staff action, Watch for, Record, and Avoid.',
-            'Preserve evidence fidelity: do not invent care events, risk status, completed tasks, or "no concerns".',
-            'Return the full updated task pack in a copy-ready format.',
-          ].join('\n'),
-          includeEvidenceTrail: false,
-        })
+          tasks: tasks.map(t => ({ id: t.id, name: t.name, notes: t.notes, frequency: t.frequency })),
+        }),
       });
 
-      const draft = await res.text();
-      if (!res.ok) throw new Error(draft || 'AI at capacity');
-      setRefinementResult(draft.trim());
+      if (!res.ok) throw new Error((await res.json()).error || 'AI at capacity');
+      const updates: Record<string, string> = await res.json();
+      const count = Object.keys(updates).length;
+
+      if (count > 0) {
+        setManualOverrides(prev => ({ ...prev, ...updates }));
+        const updatedSet = new Set(Object.keys(updates));
+        setRecentlyUpdated(updatedSet);
+        setTimeout(() => setRecentlyUpdated(new Set()), 3500);
+        setRefineStatus({ count, message: `${count} task${count === 1 ? '' : 's'} updated` });
+      } else {
+        setRefineStatus({ count: 0, message: 'No changes needed for that instruction' });
+      }
     } catch (error) {
-      setRefinementResult(error instanceof Error ? error.message : 'Refinement failed. Try a smaller request.');
+      setRefineStatus({ count: -1, message: error instanceof Error ? error.message : 'Refinement failed — try again' });
     } finally {
       setRefining(false);
       setRefineInput('');
@@ -1026,17 +641,16 @@ export function NourishTaskPack() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 
-              onClick={(e) => e.detail === 3 && triggerStressTest()}
+            <h1
+              onClick={triggerStressTest ? (e) => e.detail === 3 && triggerStressTest() : undefined}
               className="text-[11px] font-black text-hc-teal uppercase tracking-widest mb-1 cursor-default select-none"
-              title="Double-click for info, Triple-click for Stress Test"
             >
               Nourish Task Pack Generator
             </h1>
             <p className="text-[10px] text-hc-muted font-bold">
               {selectedClient
-                ? `${tasks.length} tasks derived from ${selectedClient.name}'s care plan + risk assessment`
-                : 'Select a client to generate their care/risk aligned task pack'}
+                ? taskPackSourceSummary(selectedClient, tasks)
+                : 'Select a client to generate their care/source aligned task pack'}
             </p>
           </div>
 
@@ -1088,6 +702,7 @@ export function NourishTaskPack() {
                 freq="daily"
                 icon={<Clock size={12} />}
                 onTaskUpdate={handleTaskUpdate}
+                updatedIds={recentlyUpdated}
               />
               <FreqSection
                 label="Weekly Tasks"
@@ -1095,6 +710,7 @@ export function NourishTaskPack() {
                 freq="weekly"
                 icon={<Calendar size={12} />}
                 onTaskUpdate={handleTaskUpdate}
+                updatedIds={recentlyUpdated}
               />
               <FreqSection
                 label="Event-Driven Tasks"
@@ -1102,50 +718,65 @@ export function NourishTaskPack() {
                 freq="event"
                 icon={<Zap size={12} />}
                 onTaskUpdate={handleTaskUpdate}
+                updatedIds={recentlyUpdated}
               />
             </div>
           </>
         )}
       </main>
 
-      {/* AI Refinement Interaction Layer */}
+      {/* AI Task Refinement Bar */}
       {selectedClient && tasks.length > 0 && (
         <div className="fixed bottom-4 left-4 right-4 lg:bottom-6 lg:right-6 lg:left-[20rem] z-50">
-          <div className="max-w-4xl mx-auto hc-clay-raised rounded-3xl p-3 border border-hc-teal/20 backdrop-blur-xl bg-hc-surface/90 space-y-3">
-            {refinementResult && (
-              <div className="rounded-2xl border border-hc-teal/20 bg-hc-teal/5 p-3">
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-hc-teal">AI draft ready</span>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(refinementResult)}
-                    className="text-[9px] font-black uppercase tracking-widest text-hc-teal hover:underline"
-                  >
-                    Copy draft
-                  </button>
-                </div>
-                <div className="max-h-36 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-hc-text/80">
-                  {refinementResult}
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Sparkles size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 text-hc-teal ${refining ? 'animate-spin' : ''}`} />
-              <input
-                value={refineInput}
-                onChange={e => setRefineInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && runAIRefinement()}
-                placeholder="Ask for a task-pack refinement..."
-                className="w-full pl-10 pr-4 py-3 rounded-2xl hc-clay-inset bg-transparent text-[11px] font-bold text-hc-text outline-none placeholder:text-hc-muted/50"
-              />
+          <div className="max-w-4xl mx-auto hc-clay-raised rounded-3xl border border-hc-teal/20 backdrop-blur-xl bg-hc-surface/90 overflow-hidden">
+
+            {/* Label row */}
+            <div className="flex items-center gap-3 px-4 pt-3 pb-2 border-b border-hc-border/10">
+              <Sparkles size={12} className="text-hc-teal shrink-0" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-hc-teal">AI Task Refinement</span>
+              <span className="text-[9px] text-hc-muted font-medium">
+                — describe a change and AI will rewrite the full pack. E.g. <em>"make medication notes shorter"</em> or <em>"add seizure protocol to risk tasks"</em>
+              </span>
             </div>
-            <button
-              onClick={runAIRefinement}
-              disabled={!refineInput.trim() || refining}
-              className="p-3 rounded-2xl bg-hc-teal text-hc-bone hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
-            >
-              {refining ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
-            </button>
+
+            <div className="p-3 space-y-3">
+              {refineStatus && (
+                <div className={`rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-in fade-in duration-300 ${
+                  refineStatus.count > 0
+                    ? 'bg-hc-teal/10 border border-hc-teal/20'
+                    : refineStatus.count === 0
+                    ? 'bg-hc-border/10 border border-hc-border/20'
+                    : 'bg-flag-red/10 border border-flag-red/20'
+                }`}>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${
+                    refineStatus.count > 0 ? 'text-hc-teal' : refineStatus.count === 0 ? 'text-hc-muted' : 'text-flag-red'
+                  }`}>
+                    {refineStatus.count > 0 ? '✓ ' : ''}{refineStatus.message}
+                  </span>
+                  {refineStatus.count > 0 && (
+                    <span className="text-[8px] text-hc-muted font-medium ml-auto">cards updated above — download docx to export</span>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <Sparkles size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 text-hc-teal ${refining ? 'animate-spin' : ''}`} />
+                  <input
+                    value={refineInput}
+                    onChange={e => setRefineInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && runAIRefinement()}
+                    placeholder={`Refine ${selectedClient.name.split(' ')[0]}'s task pack — describe what to change…`}
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl hc-clay-inset bg-transparent text-[11px] font-bold text-hc-text outline-none placeholder:text-hc-muted/50"
+                  />
+                </div>
+                <button
+                  onClick={runAIRefinement}
+                  disabled={!refineInput.trim() || refining}
+                  className="p-3 rounded-2xl bg-hc-teal text-hc-bone hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale"
+                >
+                  {refining ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1153,7 +784,3 @@ export function NourishTaskPack() {
     </div>
   );
 }
-
-
-
-
