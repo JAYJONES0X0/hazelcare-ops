@@ -169,7 +169,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
         </div>
         {!collapsed && (
           <div className="text-center overflow-hidden">
-            <div className="text-[10px] font-black tracking-[0.2em] uppercase text-hc-teal whitespace-nowrap">Operational Core</div>
+            <div className="text-[10px] font-black tracking-[0.2em] uppercase text-hc-teal whitespace-nowrap">Care Ops</div>
             <div className="text-[9px] font-bold text-hc-muted uppercase tracking-[0.3em] mt-0.5 whitespace-nowrap">
               {localStorage.getItem('hc-org-name') || ORG_CONFIG.name}
             </div>
@@ -253,12 +253,12 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
                 onClick={onSignOut}
                 className="flex-1 h-10 rounded-xl hc-clay-raised flex items-center justify-center gap-2 text-[10px] font-black text-hc-muted hover:text-hc-red transition-all active:hc-clay-pressed active:scale-95 uppercase tracking-widest"
               >
-                <LogOut size={14} /> Exit Core
+                <LogOut size={14} /> Sign Out
               </button>
             ) : (
               <button
                 onClick={onSignOut}
-                title="Exit Core"
+                title="Sign Out"
                 className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-red transition-all active:hc-clay-pressed active:scale-95"
               >
                 <LogOut size={14} />

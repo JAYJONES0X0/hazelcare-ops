@@ -199,7 +199,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
       return `I supported ${firstName} with personal care, meal preparation, and medication prompt. ${firstName} was calm and engaged well with support throughout. No incidents or safeguarding concerns were identified during this period. All support was delivered in line with ${firstName}'s care plan.`;
     }
 
-    // Third-person â†’ first-person transformations
+    // Third-person → first-person transformations
     const subs: [RegExp, string][] = [
       [/\bstaff (supported|assisted|helped|provided|led|maintained|promoted|ensured|acted|encouraged|followed|documented|worked|completed|delivered|administered|gave|offered|observed|monitored|prompted|accompanied)\b/gi, 'I $1'],
       [/\bstaff members? (supported|assisted|helped|provided|led|maintained|were|was)\b/gi, 'I $1'],
@@ -229,7 +229,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
       text += ` ${client} was calm and co-operative throughout the visit and engaged well with all prompts offered.`;
     }
     if (!isCore && taskScore < 60) {
-      text += ` Support provided included personal care, medication prompt, and meal preparation â€” all completed in line with the care plan.`;
+      text += ` Support provided included personal care, medication prompt, and meal preparation — all completed in line with the care plan.`;
     }
     if (isCore && resScore < 60) {
       text += ` All residents were observed and presented as settled during the shift. No concerns regarding welfare were noted.`;
@@ -252,27 +252,27 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     const allMissing = r.moduleBreakdown.flatMap(m => m.missing);
     const points: string[] = [];
     if (allMissing.some(g => /first person|carer action|who provided/i.test(g))) {
-      points.push(`Start each entry by stating what you actually did â€” "I supported ${firstName === r.carer.split(' ')[0] ? (worstEntries[0]?.client?.split(' ')[0] || 'them') : firstName} with..." gives the note an owner straight away.`);
+      points.push(`Start each entry by stating what you actually did — "I supported ${firstName === r.carer.split(' ')[0] ? (worstEntries[0]?.client?.split(' ')[0] || 'them') : firstName} with..." gives the note an owner straight away.`);
     }
     if (allMissing.some(g => /support tasks|specific tasks/i.test(g))) {
       points.push('Be specific about the tasks. "Provided support" tells us nothing. "Supported with shower, prompted for medication, prepared lunch" tells us everything.');
     }
     if (allMissing.some(g => /presentation|outcome|responded/i.test(g))) {
-      points.push(`Always say how they were. Mood, engagement, any refusals. Even "calm throughout and accepted all prompts" is better than nothing â€” it's the evidence.`);
+      points.push(`Always say how they were. Mood, engagement, any refusals. Even "calm throughout and accepted all prompts" is better than nothing — it's the evidence.`);
     }
     if (allMissing.some(g => /safeguarding|incident/i.test(g))) {
       points.push('If nothing happened, say so. "No concerns or incidents during this visit" is a statement of fact, and it matters on a CQC file.');
     }
     if (r.shortEntryRatio > 0.3) {
-      points.push(`Some of the entries are very short â€” a few words at most. That won't hold up if we're ever asked to evidence the care. A solid entry takes two minutes to write properly.`);
+      points.push(`Some of the entries are very short — a few words at most. That won't hold up if we're ever asked to evidence the care. A solid entry takes two minutes to write properly.`);
     }
 
     const openingLine = r.qualityScore >= 60
       ? `I've been going through your entries from this period and there's a lot of good work in there. A few things would make a real difference to the standard though, so I wanted to flag them.`
-      : `I've been reviewing your recent entries and I want to have a quiet word about the documentation. The care is there â€” I can see you're putting in the work. But what's written down needs to show that, and right now it isn't quite getting there.`;
+      : `I've been reviewing your recent entries and I want to have a quiet word about the documentation. The care is there — I can see you're putting in the work. But what's written down needs to show that, and right now it isn't quite getting there.`;
 
     const lines: string[] = [
-      `Subject: Documentation Feedback â€” ${r.carer}`,
+      `Subject: Documentation Feedback — ${r.carer}`,
       '',
       `Hi ${firstName},`,
       '',
@@ -281,11 +281,11 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     ];
 
     if (points.length > 0) {
-      points.forEach(p => lines.push(`â€¢ ${p}`, ''));
+      points.forEach(p => lines.push(`• ${p}`, ''));
     }
 
     if (r.isRepeatTarget && r.repeatGaps.length) {
-      lines.push(`I do want to be straight with you â€” we've spoken about some of this before. I need to see a real change in the entries going forward, not just this week.`, '');
+      lines.push(`I do want to be straight with you — we've spoken about some of this before. I need to see a real change in the entries going forward, not just this week.`, '');
     }
 
     if (worstEntries.length > 0) {
@@ -305,7 +305,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
       );
 
       if (worstEntries.length > 1) {
-        lines.push(`One more example â€” ${worstEntries[1].date || ''} for ${worstEntries[1].client || 'the house'}:`, '');
+        lines.push(`One more example — ${worstEntries[1].date || ''} for ${worstEntries[1].client || 'the house'}:`, '');
         lines.push(
           `As written:`,
           (worstEntries[1].entry || '').trim(),
@@ -318,7 +318,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     }
 
     lines.push(
-      `Have a look at your upcoming entries with this in mind. I'll do another review in two weeks. Come and find me if you want to go through it together â€” happy to sit down.`,
+      `Have a look at your upcoming entries with this in mind. I'll do another review in two weeks. Come and find me if you want to go through it together — happy to sit down.`,
       '',
       `Regards,`,
       `Management Team`,
@@ -341,24 +341,24 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     const hasTooShort = staffRow.gaps.some(g => g.failures.includes('too_short'));
 
     const points: string[] = [];
-    if (hasBlank) points.push('Several task notes were submitted completely blank. A blank task note is worse than no note â€” it tells us the task was opened but not completed, and gives us nothing to evidence the care.');
-    if (hasMedGap) points.push('Medication task notes must state whether the medication was taken, refused, or missed â€” and reference the MAR chart. "Gave medication" is not sufficient. We need: taken/refused, any concerns, and MAR confirmed.');
+    if (hasBlank) points.push('Several task notes were submitted completely blank. A blank task note is worse than no note — it tells us the task was opened but not completed, and gives us nothing to evidence the care.');
+    if (hasMedGap) points.push('Medication task notes must state whether the medication was taken, refused, or missed — and reference the MAR chart. "Gave medication" is not sufficient. We need: taken/refused, any concerns, and MAR confirmed.');
     if (hasPlaceholder) points.push('Entries like "done and recorded", "completed", or "not required" are not care notes. They give no evidence of what happened. Each task note must answer the task instruction.');
-    if (hasTooShort) points.push('Some notes are a single sentence covering a task that requires real documentation. A task note must respond to the instruction â€” if the task asks you to record mood, you record mood.');
+    if (hasTooShort) points.push('Some notes are a single sentence covering a task that requires real documentation. A task note must respond to the instruction — if the task asks you to record mood, you record mood.');
     if (points.length === 0) points.push('The task notes reviewed do not sufficiently evidence the care delivered. Each note must respond to the task instruction and record the client\'s presentation and response.');
 
     const complianceStatement = staffRow.complianceScore < 40
-      ? `Your current task note compliance is at ${staffRow.complianceScore}% â€” ${staffRow.failingTaskNotes} of your ${staffRow.totalTaskNotes} task notes did not meet the required standard. This is a significant concern.`
-      : `Your task note compliance is currently ${staffRow.complianceScore}% â€” ${staffRow.failingTaskNotes} of ${staffRow.totalTaskNotes} notes reviewed need attention.`;
+      ? `Your current task note compliance is at ${staffRow.complianceScore}% — ${staffRow.failingTaskNotes} of your ${staffRow.totalTaskNotes} task notes did not meet the required standard. This is a significant concern.`
+      : `Your task note compliance is currently ${staffRow.complianceScore}% — ${staffRow.failingTaskNotes} of ${staffRow.totalTaskNotes} notes reviewed need attention.`;
 
     const lines: string[] = [
-      `Subject: Task Note Documentation Feedback â€” ${staffRow.carer}`,
+      `Subject: Task Note Documentation Feedback — ${staffRow.carer}`,
       '',
       `Hi ${firstName},`,
       '',
       `I've been reviewing your task notes on the Nourish app and I want to flag some concerns. ${complianceStatement}`,
       '',
-      `Task notes are not optional extras â€” they are the legal record that a specific care task was completed to the required standard. When they are blank, vague, or generic, we have no evidence that the care happened at all.`,
+      `Task notes are not optional extras — they are the legal record that a specific care task was completed to the required standard. When they are blank, vague, or generic, we have no evidence that the care happened at all.`,
       '',
     ];
 
@@ -367,10 +367,10 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
     if (exampleGaps.length > 0) {
       const first = exampleGaps[0];
       lines.push(
-        `Here's a real example from your recent notes â€” ${first.date} for ${first.client} (${first.taskCategoryLabel}):`,
+        `Here's a real example from your recent notes — ${first.date} for ${first.client} (${first.taskCategoryLabel}):`,
         '',
         `As written:`,
-        first.noteText.trim() || '(blank â€” nothing written)',
+        first.noteText.trim() || '(blank — nothing written)',
         '',
         `What it should look like:`,
         first.goldStandard,
@@ -382,7 +382,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
       if (exampleGaps.length > 1) {
         const second = exampleGaps[1];
         lines.push(
-          `One more â€” ${second.date} for ${second.client} (${second.taskCategoryLabel}):`,
+          `One more — ${second.date} for ${second.client} (${second.taskCategoryLabel}):`,
           '',
           `As written:`,
           second.noteText.trim() || '(blank)',
@@ -438,7 +438,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
         <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-hc-bg/90 backdrop-blur-md border-[8px] border-dashed border-hc-teal/30">
           <div className="rounded-[3rem] p-16 flex flex-col items-center gap-6 hc-clay-raised border border-hc-teal/20 shadow-2xl">
             <RefreshCw className="w-20 h-20 text-hc-teal animate-spin-slow" strokeWidth={1} />
-            <div className="text-hc-text font-black text-2xl tracking-tighter uppercase">Drop Intelligence Stream</div>
+            <div className="text-hc-text font-black text-2xl tracking-tighter uppercase">Drop Diary Export</div>
           </div>
         </div>
       )}
@@ -447,8 +447,8 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
 
       <div className="mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-hc-border pb-10">
         <div>
-          <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase flex items-center gap-4">Force Protection</h1>
-          <p className="text-hc-text text-[11px] font-bold mt-3 max-w-2xl leading-relaxed uppercase tracking-wider">Clinical analysis of diary exports Â· Scored to protect registration.</p>
+          <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase flex items-center gap-4">Staff Monitoring</h1>
+          <p className="text-hc-text text-[11px] font-bold mt-3 max-w-2xl leading-relaxed uppercase tracking-wider">Care analysis of diary exports · Scored to protect your registration.</p>
         </div>
         <div className="flex flex-wrap gap-4">
           <button onClick={() => allCollapsed(STAFF_IDS) ? expandAll(STAFF_IDS) : collapseAll(STAFF_IDS)} className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:text-hc-teal transition-all shadow-xl active:hc-clay-pressed">
@@ -457,7 +457,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
           <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
             className="flex items-center gap-3 px-8 py-3.5 rounded-2xl btn-tactical text-[11px] font-black cursor-pointer shadow-2xl">
             <RefreshCw className={`w-4 h-4 ${importLoading ? 'animate-spin' : ''}`} />
-            {importLoading ? 'Analysingâ€¦' : 'Sync daily CSV'}
+            {importLoading ? 'Analysing…' : 'Sync daily CSV'}
           </button>
         </div>
       </div>
@@ -534,7 +534,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
           <div className="mt-4 flex flex-wrap gap-2">
             {coverage.missingDays.slice(0, 14).map((day) => (
               <span key={day.date} className="pill pill-amber text-[9px]">
-                {day.date} Â· {day.actual}/{day.expected}
+                {day.date} · {day.actual}/{day.expected}
               </span>
             ))}
           </div>
@@ -550,7 +550,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
             <div className="flex flex-wrap gap-3">
               {growthAlerts.map(a => (
                 <span key={a.carer} className="text-[11px] text-hc-muted">
-                  <span className="font-black text-flag-green">{a.carer.split(' ')[0]}</span> â€” {a.module} +{a.delta}pts
+                  <span className="font-black text-flag-green">{a.carer.split(' ')[0]}</span> — {a.module} +{a.delta}pts
                 </span>
               ))}
             </div>
@@ -560,9 +560,9 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-12">
         {[
-          { label: 'Intelligence Window', value: snapshot.windowLabel, icon: <Activity className="w-4 h-4" /> },
+          { label: 'Review Window', value: snapshot.windowLabel, icon: <Activity className="w-4 h-4" /> },
           { label: 'Scored Entries', value: String(snapshot.dataFreshness.entryCount), icon: <FileText className="w-4 h-4" /> },
-          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || 'â€”', icon: <RefreshCw className="w-4 h-4" /> },
+          { label: 'Clinical Freshness', value: snapshot.dataFreshness.lastEntryDate || '—', icon: <RefreshCw className="w-4 h-4" /> },
           { label: 'Snapshot Time', value: new Date(snapshot.computedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), icon: <History className="w-4 h-4" /> },
         ].map(({ label, value, icon }) => (
           <div key={label} className="hc-clay-raised px-8 py-6 relative overflow-hidden group/stat transition-all hover:translate-y-[-2px]">
@@ -646,8 +646,8 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
               }`}>
                 <ClipboardCheck size={12} />
                 {taskAudit.auditMode === 'appointment_evidence'
-                  ? `Appointment Evidence Mode Â· Auditing appointment notes & daily 1:1 narratives â€” task ticks are not flagged`
-                  : `Legacy Task Tick Mode Â· No appointment notes detected â€” flagging blank/placeholder task ticks only`
+                  ? `Appointment Evidence Mode · Auditing appointment notes & daily 1:1 narratives — task ticks are not flagged`
+                  : `Legacy Task Tick Mode · No appointment notes detected — flagging blank/placeholder task ticks only`
                 }
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -732,10 +732,10 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                                         {gap.severity}
                                       </span>
                                       <span className="text-[9px] font-black text-hc-muted uppercase">{gap.taskCategoryLabel}</span>
-                                      <span className="text-[9px] text-hc-muted">{gap.date} Â· {gap.client}</span>
+                                      <span className="text-[9px] text-hc-muted">{gap.date} · {gap.client}</span>
                                     </div>
                                     <div className="text-[10px] text-hc-text/70 italic truncate">
-                                      "{gap.noteText.slice(0, 100)}{gap.noteText.length > 100 ? 'â€¦' : ''}"
+                                      "{gap.noteText.slice(0, 100)}{gap.noteText.length > 100 ? '…' : ''}"
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3 shrink-0">
@@ -750,7 +750,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                                     <div>
                                       <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">As Written</div>
                                       <div className="hc-clay-inset rounded-xl p-3 text-[10px] text-hc-text/70 italic leading-relaxed">
-                                        {gap.noteText || <span className="text-flag-red/60">â€” blank â€”</span>}
+                                        {gap.noteText || <span className="text-flag-red/60">— blank —</span>}
                                       </div>
                                     </div>
                                     {/* Failure reasons */}
@@ -789,7 +789,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
           <section className="space-y-4">
             <div className="flex items-center gap-3 px-4 mb-6">
               <div className="w-2.5 h-2.5 rounded-full bg-flag-amber glow-amber" />
-              <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">Critical Review Â· {snapshot.staff.length}</h2>
+              <h2 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em]">Critical Review · {snapshot.staff.length}</h2>
             </div>
             <div className="space-y-4">
               {snapshot.staff.map((s) => {
@@ -804,9 +804,9 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                          <div>
                             <div className="flex items-center gap-3 mb-2">
                               <div className="text-base font-black text-hc-text uppercase leading-none group-hover:text-hc-teal transition-colors">{s.carer}</div>
-                              {s.tier === 3 && <span className="pill !bg-flag-red/20 !text-flag-red border-flag-red/30 text-[8px]">T3 Â· Disciplinary</span>}
-                              {s.tier === 2 && <span className="pill !bg-flag-amber/20 !text-flag-amber border-flag-amber/30 text-[8px]">T2 Â· Formal Review</span>}
-                              {s.tier === 1 && <span className="pill !bg-hc-teal/20 !text-hc-teal border-hc-teal/30 text-[8px]">T1 Â· Coaching</span>}
+                              {s.tier === 3 && <span className="pill !bg-flag-red/20 !text-flag-red border-flag-red/30 text-[8px]">T3 · Disciplinary</span>}
+                              {s.tier === 2 && <span className="pill !bg-flag-amber/20 !text-flag-amber border-flag-amber/30 text-[8px]">T2 · Formal Review</span>}
+                              {s.tier === 1 && <span className="pill !bg-hc-teal/20 !text-hc-teal border-hc-teal/30 text-[8px]">T1 · Coaching</span>}
                               {activeSequences.some(seq => seq.carer === s.carer && seq.status === 'active') && (
                                 <span className="pill !bg-flag-amber/10 !text-flag-amber border-flag-amber/20 text-[8px]">â–¶ Sequence Active</span>
                               )}
@@ -931,14 +931,14 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                           <div key={i} className="rounded-2xl overflow-hidden border border-hc-border/20">
                             <div className="px-4 py-2.5 bg-hc-bg/60 flex items-center justify-between border-b border-hc-border/10">
                               <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">
-                                {gap.taskCategoryLabel} Â· {gap.date} Â· {gap.client}
+                                {gap.taskCategoryLabel} · {gap.date} · {gap.client}
                               </span>
                               <span className={`text-[9px] font-black tabular-nums ${gap.score < 40 ? 'text-flag-red' : 'text-flag-amber'}`}>{gap.score}%</span>
                             </div>
                             <div className="px-4 py-3 border-b border-hc-border/10">
                               <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">as written</div>
                               <p className="text-[10px] text-hc-muted leading-relaxed italic">
-                                "{gap.noteText.trim().slice(0, 200) || '(blank â€” nothing written)'}{gap.noteText.length > 200 ? 'â€¦' : ''}"
+                                "{gap.noteText.trim().slice(0, 200) || '(blank — nothing written)'}{gap.noteText.length > 200 ? '…' : ''}"
                               </p>
                             </div>
                             {gap.failureMessages.length > 0 && (
@@ -1042,7 +1042,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                         </div>
                         {m.missing.length > 0 && (
                           <div className="text-[10px] text-hc-muted leading-relaxed">
-                            Missing: {m.missing.slice(0, 3).join(' Â· ')}
+                            Missing: {m.missing.slice(0, 3).join(' · ')}
                           </div>
                         )}
                       </div>
@@ -1090,7 +1090,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                       <Award className="w-4 h-4 text-flag-green shrink-0 mt-0.5" />
                       <div>
                         <div className="text-[10px] font-black text-flag-green uppercase tracking-widest mb-1">Growth Detected</div>
-                        <div className="text-[11px] text-hc-muted">{alert.module}: {alert.previousScore}% â†’ {alert.currentScore}% (+{alert.delta}pts)</div>
+                        <div className="text-[11px] text-hc-muted">{alert.module}: {alert.previousScore}% → {alert.currentScore}% (+{alert.delta}pts)</div>
                       </div>
                     </div>
                   );
@@ -1102,7 +1102,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                     <div className={`px-5 py-3 flex items-center gap-3 ${coachRecord.tier === 3 ? 'bg-flag-red/10' : coachRecord.tier === 2 ? 'bg-flag-amber/10' : 'bg-hc-teal/10'}`}>
                       <ShieldAlert size={14} className={coachRecord.tier === 3 ? 'text-flag-red' : coachRecord.tier === 2 ? 'text-flag-amber' : 'text-hc-teal'} />
                       <span className={`text-[10px] font-black uppercase tracking-widest ${coachRecord.tier === 3 ? 'text-flag-red' : coachRecord.tier === 2 ? 'text-flag-amber' : 'text-hc-teal'}`}>
-                        {coachRecord.tier === 3 ? 'Tier 3 â€” Disciplinary Pathway' : coachRecord.tier === 2 ? 'Tier 2 â€” Formal Supervision' : 'Tier 1 â€” Coaching Required'}
+                        {coachRecord.tier === 3 ? 'Tier 3 — Disciplinary Pathway' : coachRecord.tier === 2 ? 'Tier 2 — Formal Supervision' : 'Tier 1 — Coaching Required'}
                       </span>
                     </div>
                     <div className="p-4 space-y-3">
@@ -1120,7 +1120,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                                 <input
                                   value={sequenceNote}
                                   onChange={e => setSequenceNote(e.target.value)}
-                                  placeholder="Add note for this stepâ€¦"
+                                  placeholder="Add note for this step…"
                                   className="w-full hc-clay-inset rounded-lg px-3 py-2 text-[10px] text-hc-text bg-transparent outline-none placeholder:text-hc-muted/40"
                                 />
                                 <button
@@ -1170,7 +1170,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                   </div>
                 )}
 
-                {/* Live entry review â€” actual vs expected */}
+                {/* Live entry review — actual vs expected */}
                 {(() => {
                   const worst = getWorstEntries(coachRecord.carer);
                   if (worst.length === 0) return null;
@@ -1188,7 +1188,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                             <div key={entry.id} className="rounded-2xl overflow-hidden border border-hc-border/20">
                               <div className="px-4 py-2.5 bg-hc-bg/60 flex items-center justify-between border-b border-hc-border/10">
                                 <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">
-                                  Entry {i + 1} Â· {entry.date || 'â€”'} Â· {entry.client || 'House note'}
+                                  Entry {i + 1} · {entry.date || '—'} · {entry.client || 'House note'}
                                 </span>
                                 <span className={`text-[9px] font-black tabular-nums ${result.total >= 60 ? 'text-flag-green' : result.total >= 40 ? 'text-flag-amber' : 'text-flag-red'}`}>
                                   {result.total}%
@@ -1199,7 +1199,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
                               <div className="px-4 py-3 border-b border-hc-border/10">
                                 <div className="text-[8px] font-black text-flag-red uppercase tracking-widest mb-1.5">as written</div>
                                 <p className="text-[10px] text-hc-muted leading-relaxed italic">
-                                  "{(entry.entry || '').trim().slice(0, 250)}{(entry.entry || '').length > 250 ? 'â€¦' : ''}"
+                                  "{(entry.entry || '').trim().slice(0, 250)}{(entry.entry || '').length > 250 ? '…' : ''}"
                                 </p>
                               </div>
 

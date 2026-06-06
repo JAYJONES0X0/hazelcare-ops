@@ -23,7 +23,7 @@ export interface MainSection {
 export const MAIN_SECTIONS: MainSection[] = [
   {
     id: 'mission-control',
-    label: 'Command Centre',
+    label: 'Overview',
     landing: 'dashboard',
     tabs: [
       { id: 'dashboard', label: 'Dashboard' },

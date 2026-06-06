@@ -92,13 +92,13 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
       {/* ── MISSION HEADER ── */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-10 pb-12 border-b border-hc-border">
         <div>
-          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">CareOps // Service Intelligence</div>
-          <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Mission Briefing</h1>
+          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">CareOps // Service Overview</div>
+          <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Daily Briefing</h1>
         </div>
         
         <div className="flex items-center gap-6">
            <div className="flex flex-col items-end">
-              <span className="text-[11px] font-black text-hc-teal-light uppercase tracking-widest">Sitrep Interval</span>
+              <span className="text-[11px] font-black text-hc-teal-light uppercase tracking-widest">Review Period</span>
               <span className="text-[11px] font-black text-hc-muted uppercase tabular-nums">{weekData.dateFrom} — {weekData.dateTo}</span>
            </div>
            <button
@@ -113,7 +113,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
       <div className="max-w-7xl mx-auto w-full space-y-12 pb-24">
 
         {/* ── PRIORITY INTERVENTIONS ── */}
-        <Section id="interventions" title="Intervention Backlog" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={openActions.length}>
+        <Section id="interventions" title="Priority Follow-ups" collapsed={isSectionCollapsed('interventions')} onToggle={() => toggleSection('interventions')} count={openActions.length}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {openActions.slice(0, 6).map(a => (
               <div key={a.id} onClick={() => setPage('actions')} className="hc-clay-raised p-8 flex flex-col gap-6 group cursor-pointer transition-all hover:translate-y-[-4px]">
@@ -134,7 +134,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
         </Section>
 
         {/* ── CLIENT STABILITY MATRIX ── */}
-        <Section id="clients" title="Client Stability Matrix" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
+        <Section id="clients" title="People to Watch" collapsed={isSectionCollapsed('clients')} onToggle={() => toggleSection('clients')} count={priorityClients.length}>
           <div className="hc-clay-inset p-2 overflow-hidden">
             <table className="w-full text-left border-separate border-spacing-2">
               <thead>
@@ -142,7 +142,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
                   <th className="px-6 py-4">Identifier</th>
                   <th className="px-6 py-4">Station</th>
                   <th className="px-6 py-4 text-center">Alerts</th>
-                  <th className="px-6 py-4">Latest Telemetry</th>
+                  <th className="px-6 py-4">Latest Note</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +195,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
                   <Metric label="Critical" val={h.flags.red} red />
                   <Metric label="Monitor" val={h.flags.amber} amber />
                 </div>
-                <button onClick={() => setPage('staff-monitoring')} className="btn-clay !py-2.5 !rounded-xl text-[11px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Force Protection ›</button>
+                <button onClick={() => setPage('staff-monitoring')} className="btn-clay !py-2.5 !rounded-xl text-[11px] mt-2 opacity-0 group-hover:opacity-100 transition-all">Staff cover ›</button>
               </div>
             ))}
           </div>

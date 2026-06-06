@@ -134,17 +134,17 @@ export function CompliancePage({ staff }: Props) {
         <div>
           <div className="flex items-center gap-3 mb-4">
              <Shield className="w-6 h-6 text-hc-teal" />
-             <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase">Regulatory Audit</h1>
+             <h1 className="text-2xl md:text-4xl font-black text-hc-text tracking-[0.2em] uppercase">Training & Compliance</h1>
           </div>
           <p className="text-hc-muted text-sm font-bold opacity-80 uppercase tracking-wider leading-relaxed">
-            Personnel Compliance & Credentialing Matrix — {ORG_CONFIG.name} Governance Standard.
+            Staff training, DBS & credentials — {ORG_CONFIG.name} compliance standard.
           </p>
         </div>
         
         {/* KPI Slabs */}
         <div className="flex flex-wrap gap-6">
           {[
-            { label: 'Network Health', value: `${stats.rate}%`, color: 'text-hc-teal' },
+            { label: 'Compliance Rate', value: `${stats.rate}%`, color: 'text-hc-teal' },
             { label: 'Missing Docs', value: stats.missing, color: 'text-flag-red' },
             { label: 'Pending Review', value: stats.pending, color: 'text-flag-amber' }
           ].map(kpi => (
@@ -163,14 +163,14 @@ export function CompliancePage({ staff }: Props) {
            className={`px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all border-b-2 
              ${tab === 'integrity' ? 'border-hc-teal text-hc-teal bg-hc-teal/5' : 'border-transparent text-hc-muted hover:text-hc-text opacity-40'}`}
          >
-           Clinical Integrity Audit
+           Care Compliance
          </button>
          <button 
            onClick={() => setTab('personnel')}
            className={`px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all border-b-2 
              ${tab === 'personnel' ? 'border-hc-teal text-hc-teal bg-hc-teal/5' : 'border-transparent text-hc-muted hover:text-hc-text opacity-40'}`}
          >
-           Personnel Compliance
+           Staff Compliance
          </button>
       </div>
 
@@ -195,7 +195,7 @@ export function CompliancePage({ staff }: Props) {
             {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h.toUpperCase()}</option>)}
           </select>
           <button className="h-[60px] btn-tactical flex items-center justify-center gap-3 shadow-xl">
-             <UserPlus className="w-4 h-4" /> Add Personnel
+             <UserPlus className="w-4 h-4" /> Add Staff Member
           </button>
         </div>
       )}

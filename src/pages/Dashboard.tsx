@@ -170,7 +170,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   }
 
   const dateLabel = dateFrom || dateTo
-    ? `${dateFrom ? formatDisplayDate(dateFrom) : 'â€¦'} â†’ ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
+    ? `${dateFrom ? formatDisplayDate(dateFrom) : '…'} → ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
     : 'All Time';
 
   return (
@@ -185,7 +185,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             <div className="flex items-center gap-2 mr-2">
               <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
               <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">
-                {totalInStore.toLocaleString()} Records Â· {storeBounds.from} â†’ {storeBounds.to}
+                {totalInStore.toLocaleString()} Records · {storeBounds.from} to {storeBounds.to}
               </span>
             </div>
           )}
@@ -224,7 +224,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               onChange={e => setDateFrom(e.target.value)}
               className="hc-clay-inset px-3 py-1.5 text-[11px] font-black text-hc-text rounded-lg outline-none border border-hc-border/20 focus:border-hc-teal/50 transition-all"
             />
-            <span className="text-[11px] text-hc-muted font-black">â†’</span>
+            <span className="text-[11px] text-hc-muted font-black">→</span>
             <input
               type="date"
               value={dateTo}
@@ -240,34 +240,34 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="p-6 lg:p-12 max-w-[1800px] mx-auto space-y-12">
 
-        {/* â”€â”€ SITREP HEADER â”€â”€ */}
+        {/* -- SERVICE OVERVIEW HEADER -- */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-hc-border pb-8">
           <div>
             <div className="flex items-center gap-4 mb-4">
-              <span className="pill pill-teal text-[10px]">HAZEL CARE Â· COMMAND INTEL</span>
+              <span className="pill pill-teal text-[10px]">HAZEL CARE · OVERVIEW</span>
               <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE SITREP Â· {dateLabel}</span>
+              <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE · {dateLabel}</span>
             </div>
-            <h1 className="text-5xl font-black text-hc-text tracking-tighter uppercase leading-none">Sitrep Center</h1>
+            <h1 className="text-5xl font-black text-hc-text tracking-tighter uppercase leading-none">Service Overview</h1>
           </div>
           <div className="flex gap-4">
             <button onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)} className="hc-clay-raised px-6 py-3 text-[11px] font-black text-hc-text hover:text-hc-teal transition-all rounded-xl uppercase tracking-widest">
-              {allCollapsed ? 'Expand Matrix' : 'Collapse Matrix'}
+              {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button onClick={() => setPage('briefing')} className="px-6 py-3 hc-clay-raised text-[11px] font-black uppercase text-hc-text hover:text-hc-teal transition-all rounded-xl">Mission Briefing</button>
+            <button onClick={() => setPage('briefing')} className="px-6 py-3 hc-clay-raised text-[11px] font-black uppercase text-hc-text hover:text-hc-teal transition-all rounded-xl">Daily Briefing</button>
             <button onClick={() => setPage('staff-monitoring')} className="px-6 py-3 bg-hc-teal text-hc-bone text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:scale-105 transition-all">Staff Monitoring</button>
           </div>
         </div>
 
-        {/* â”€â”€ KPI PODS â”€â”€ */}
+        {/* -- KPI PODS -- */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { label: 'Intelligence Records', val: metrics.totalEntries.toLocaleString(), sub: 'In Window',         color: 'text-hc-text'    },
+            { label: 'Care Records',         val: metrics.totalEntries.toLocaleString(), sub: 'In Window',         color: 'text-hc-text'    },
             { label: 'Service Users',         val: metrics.uniqueClients,                sub: 'Active Clients',    color: 'text-hc-text'    },
-            { label: 'Personnel Active',      val: metrics.activeStaff,                  sub: 'Field Strength',    color: 'text-hc-text'    },
-            { label: 'Clinical Gaps',         val: metrics.gaps,                         sub: metrics.criticalGaps > 0 ? `${metrics.criticalGaps} Deep Silence` : 'Continuity Intact', color: metrics.gaps > 0 ? 'text-flag-amber' : 'text-hc-muted' },
-            { label: 'Critical Escalations',  val: metrics.totalRedFlags,                sub: 'Immediate Action',  color: 'text-flag-red'   },
-            { label: 'Active Incidents',      val: metrics.activeIncidents,              sub: 'Force Protection',  color: 'text-flag-red'   },
+            { label: 'Staff On Shift',        val: metrics.activeStaff,                  sub: 'Active',            color: 'text-hc-text'    },
+            { label: 'Care Gaps',             val: metrics.gaps,                         sub: metrics.criticalGaps > 0 ? `${metrics.criticalGaps} Need Review` : 'Up To Date', color: metrics.gaps > 0 ? 'text-flag-amber' : 'text-hc-muted' },
+            { label: 'Urgent Concerns',       val: metrics.totalRedFlags,                sub: 'Immediate Action',  color: 'text-flag-red'   },
+            { label: 'Active Incidents',      val: metrics.activeIncidents,              sub: 'Safeguarding',      color: 'text-flag-red'   },
           ].map(s => (
             <div key={s.label} className="hc-clay-raised p-6 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-all">
               <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest leading-tight">{s.label}</div>
@@ -309,7 +309,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
               {metrics.totalAmberFlags} amber alert{metrics.totalAmberFlags !== 1 ? 's' : ''} require review in selected window
             </span>
             <button onClick={() => setPage('client-diary', { severity: 'amber' })} className="ml-auto text-[10px] font-black text-flag-amber uppercase tracking-widest hover:underline">
-              Review â†’
+              Review →
             </button>
           </div>
         )}
@@ -334,7 +334,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           ));
 
           return (
-            <Section id="7-day" title="7-Day Persistence Matrix" collapsed={isSectionCollapsed('7-day')} onToggle={() => toggleSection('7-day')}>
+            <Section id="7-day" title="7-Day Activity" collapsed={isSectionCollapsed('7-day')} onToggle={() => toggleSection('7-day')}>
               <div className="hc-clay-raised p-6 rounded-[2.25rem] overflow-x-auto">
                 <table className="w-full min-w-[600px]">
                   <thead>
@@ -374,7 +374,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                                       : '#f3efe0',
                                 }}
                               >
-                                {cnt === 0 ? 'Â·' : cnt}
+                                {cnt === 0 ? '·' : cnt}
                               </div>
                             </td>
                           );
@@ -396,7 +396,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
           {houseStats.length === 0 ? (
             <div className="hc-clay-raised rounded-2xl p-12 text-center">
-              <p className="text-[11px] font-black text-hc-muted uppercase tracking-widest">No data for selected range â€” try widening the date window</p>
+              <p className="text-[11px] font-black text-hc-muted uppercase tracking-widest">No data for selected range — try widening the date window</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -437,11 +437,11 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         <Section id="shortcuts" title="Command Vector Shortcuts" collapsed={isSectionCollapsed('shortcuts')} onToggle={() => toggleSection('shortcuts')}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {[
-              { label: 'Force Protection',    desc: 'Readiness & Diagnostic', icon: <Activity />,      id: 'staff-monitoring' },
-              { label: 'Incident Governance', desc: 'Active Escalations',     icon: <AlertTriangle />, id: 'incidents'        },
-              { label: 'Command Vectors',     desc: 'Deployment Queue',       icon: <Zap />,           id: 'actions'          },
-              { label: 'Personnel Audit',     desc: 'Staff Compliance'     ,   icon: <Shield />,        id: 'compliance'       },
-              { label: 'Audit Archives',      desc: 'Advanced Data Export',   icon: <Printer />,       id: 'reports'          },
+              { label: 'Staff Monitoring',    desc: 'Cover & wellbeing',      icon: <Activity />,      id: 'staff-monitoring' },
+              { label: 'Incidents',           desc: 'Active concerns',        icon: <AlertTriangle />, id: 'incidents'        },
+              { label: 'Action Log',          desc: 'Tasks to follow up',     icon: <Zap />,           id: 'actions'          },
+              { label: 'Training & DBS',      desc: 'Staff compliance'     ,   icon: <Shield />,        id: 'compliance'       },
+              { label: 'Reports',             desc: 'Export & audit packs',   icon: <Printer />,       id: 'reports'          },
             ].map(btn => (
               <div
                 key={btn.label}

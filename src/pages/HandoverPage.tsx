@@ -163,7 +163,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
         <div className="lg:col-span-3 space-y-10">
           
           <div className="hc-clay-raised p-8">
-             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-8 block">1. Operational Meta-Data</span>
+             <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] mb-8 block">1. Shift Details</span>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-3">
                    <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Site / House</label>
@@ -248,7 +248,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                        </div>
                        <div className={`text-[13px] text-hc-text font-black leading-relaxed ${item.resolved ? 'line-through' : ''}`}>{item.text}</div>
                     </div>
-                    <button onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 text-hc-muted hover:text-hc-red transition-all">âœ•</button>
+                    <button onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 text-hc-muted hover:text-hc-red transition-all">✕</button>
                  </div>
                );
              })}
@@ -261,7 +261,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                  <div className="p-8 bg-hc-teal/[0.03] border-b border-hc-border/10 flex items-center justify-between">
                     <div>
                        <h3 className="text-xl font-black text-hc-text uppercase tracking-tight">Handover Preview</h3>
-                       <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums mt-1 block">{items.length} Clinical Nodes Active</span>
+                       <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest tabular-nums mt-1 block">{items.length} Items</span>
                     </div>
                     <div className="flex gap-3">
                        <button onClick={copyToClipboard} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl ${copied ? 'bg-hc-teal text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}>{copied ? 'COPIED' : 'COPY'}</button>
@@ -270,7 +270,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                  </div>
                  <div className="p-8">
                     <pre className="text-[12px] text-hc-text font-black leading-loose whitespace-pre-wrap italic max-h-[500px] overflow-y-auto scrollbar-thin">
-                       {items.length > 0 ? generateHandoverText() : '// Report stream awaiting intelligence...'}
+                       {items.length > 0 ? generateHandoverText() : '// Handover will appear here as you add items...'}
                     </pre>
                  </div>
               </div>
@@ -290,8 +290,8 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                                 <span className="text-[9px] font-black text-hc-muted tabular-nums">{h.date}</span>
                              </div>
                              <div className="flex items-center gap-4">
-                                <span className="pill pill-teal text-[8px] font-black">{h.shiftFrom} âž” {h.shiftTo}</span>
-                                <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{h.items.length} NODES</span>
+                                <span className="pill pill-teal text-[8px] font-black">{h.shiftFrom} → {h.shiftTo}</span>
+                                <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">{h.items.length} ITEMS</span>
                              </div>
                           </div>
                         ))}
