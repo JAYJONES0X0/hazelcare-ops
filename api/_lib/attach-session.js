@@ -11,7 +11,8 @@ export function attachHcSessionCookie(res) {
 export function attachHcSessionCookieWithClaims(res, claims = {}) {
   if (!AUTH_SESSION_SECRET) return;
   try {
-    const { value, maxAgeSec } = mintHcSession(AUTH_SESSION_SECRET, 168, claims);
+    // 24h session for a clinical app (was 168h/7d — too long for sensitive data).
+    const { value, maxAgeSec } = mintHcSession(AUTH_SESSION_SECRET, 24, claims);
     const secure = secureCookieSuffix();
     res.setHeader(
       'Set-Cookie',
