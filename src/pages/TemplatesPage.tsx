@@ -83,7 +83,7 @@ export function TemplatesPage({ weekData }: Props) {
     <div className="h-screen overflow-hidden flex flex-col animate-in fade-in duration-500">
       <div className="shrink-0 border-b border-hc-border/30 px-8 py-5 flex items-center justify-between gap-8">
         <div>
-          <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Synthesis Matrix</h1>
+          <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Document Library</h1>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Document Assembly Station</span>
             <div className="h-3 w-px bg-hc-border/40" />
@@ -95,7 +95,7 @@ export function TemplatesPage({ weekData }: Props) {
       <div className="flex-1 flex overflow-hidden">
         <div className="w-72 shrink-0 border-r border-hc-border/30 flex flex-col">
           <div className="p-4 border-b border-hc-border/20">
-            <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Protocol Selection</span>
+            <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Template Selection</span>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin">
             {TEMPLATES.map((template) => {
@@ -160,7 +160,7 @@ export function TemplatesPage({ weekData }: Props) {
                   disabled={!reviewApproved || !reviewer.trim()}
                   className="btn-tactical px-8 py-2.5 text-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Release to Physical
+                  Print Document
                 </button>
               </div>
               <div className="flex-1 p-8 overflow-y-auto scrollbar-thin flex justify-center">

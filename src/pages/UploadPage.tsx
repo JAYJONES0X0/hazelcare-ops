@@ -316,7 +316,7 @@ function VerificationGrid({ items, type, onUpdate }: { items: VerificationItem[]
   };
   return (
     <div className="hc-clay-raised rounded-[2rem] overflow-hidden mb-6 flex flex-col max-h-[400px]">
-      <div className="p-5 border-b border-hc-muted/10 text-[11px] font-black uppercase tracking-widest text-hc-teal bg-black/[0.02]">Forensic Ingest Audit ({items.length} Units)</div>
+      <div className="p-5 border-b border-hc-muted/10 text-[11px] font-black uppercase tracking-widest text-hc-teal bg-black/[0.02]">Document Ingest Audit ({items.length} Records)</div>
       <div className="overflow-auto scrollbar-thin">
         <table className="w-full text-left border-collapse min-w-[600px]">
           <thead className="sticky top-0 bg-hc-bg z-20 shadow-sm">

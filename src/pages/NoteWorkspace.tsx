@@ -1854,9 +1854,12 @@ export function NoteWorkspace() {
                               onClick={() => void runRewrite(key, e.entry, e.client)}
                               className="btn-tactical text-[10px] px-8 py-3 rounded-2xl flex items-center gap-3 group"
                             >
-                              <Sparkles className="w-4 h-4 text-hc-teal group-hover:scale-125 transition-transform" />
+                              <Sparkles className="w-4 h-4 text-hc-teal group-hover-scale-125 transition-transform" />
                               Refine Observation
                             </button>
+                            <p className="mt-4 text-[10px] text-hc-muted/80 leading-relaxed max-w-xs">
+                              Selected text is sent to configured AI providers (Gemini → OpenRouter → Groq; Groq first for task refinement) to rewrite the observation. No data is sent until you click Refine. See Subprocessor List for retention &amp; training terms.
+                            </p>
                           </>
                         )}
                       </div>
