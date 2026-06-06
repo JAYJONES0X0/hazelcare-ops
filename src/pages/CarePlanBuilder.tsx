@@ -164,7 +164,7 @@ function DomainEditor({ domain, onChange }: {
       <div className="h-10" />
       <div className="text-[11px] font-black mb-6 ml-1 text-hc-muted tracking-[0.3em] uppercase">Sector Risk Management</div>
       
-      <Field label="Operational Risk Vector" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
+      <Field label="Risk Summary" value={domain.riskTitle} onChange={v => up({ riskTitle: v })}
         placeholder="e.g. Risk of falls due to limited mobility" />
 
       <RiskScoreWidget
@@ -180,9 +180,9 @@ function DomainEditor({ domain, onChange }: {
           <Field label="Target Review Date" value={domain.nextReviewDate} onChange={v => up({ nextReviewDate: v })} />
           <Field label="Clinical Reviewer" value={domain.reviewer} onChange={v => up({ reviewer: v })} />
         </div>
-        <Field label="Review Sitrep" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
+        <Field label="Review Note" value={domain.reviewNote} onChange={v => up({ reviewNote: v })}
           area rows={4} placeholder="Summary of the latest review — include feedback from the person..." />
-        <Field label="Initialization Date" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
+        <Field label="Start Date" value={domain.reviewDate} onChange={v => up({ reviewDate: v })}
           placeholder="DD/MM/YYYY" />
       </div>
     </div>
@@ -311,7 +311,7 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
       { idx: 17, keywords: ['shower', 'bath', 'wash', 'shave', 'hair', 'groom', 'dress', 'personal care'] },
       { idx: 18, keywords: ['skin', 'pressure', 'wound', 'blister', 'reddening', 'turning', 'grade'] },
       { idx: 19, keywords: ['sleep', 'night', 'woke', 'insomnia', 'rest', 'bed'] },
-      { idx: 20, keywords: ['faith', 'religion', 'culture', 'belief', 'spiritual', 'church', 'mosque'] },
+      { idx: 20, keywords: ['faith', 'religion', 'culture', 'belief', 'spiritual', 'elm', 'mosque'] },
     ];
 
     setClient(prev => {

@@ -159,7 +159,7 @@ const INTELLIGENCE_STACKS: ProtocolStack[] = [
 
 export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageContext) => void } = {}) {
   const [activeTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
-  const [house, setHouse] = useState('Lingfield House');
+  const [house, setHouse] = useState('Maple House');
   const [client, setClient] = useState('');
   const [freeText, setFreeText] = useState('');
   const [enhancing, setEnhancing] = useState(false);

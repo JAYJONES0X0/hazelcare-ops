@@ -69,9 +69,9 @@ export function staffStatus(dateStr: string, warnDays = 30): 'ok' | 'due_soon' |
 }
 
 export const HAZELCARE_HOUSES = [
-  'Lingfield House', 'Church House', 'Laurel House', 'Station House',
-  'Canterbury', 'Glenfrome House', 'Woburn House', 'Hazelbury House',
-  'Courtney Lodge', 'Cottrell House',
+  'Maple House', 'Elm House', 'Rowan House', 'Willow House',
+  'Cedar House', 'Hawthorn House', 'Linden House', 'Birch Lodge',
+  'Aspen House', 'Holly House',
 ];
 
 export const ROLES = [

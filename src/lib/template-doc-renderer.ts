@@ -67,8 +67,8 @@ function byCategory(category: CareEntry['category']) {
 
 const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
   quality_meeting: {
-    title: 'Quality & Compliance SITREP',
-    subtitle: 'Regional operational audit broadcast',
+    title: 'Quality & Compliance Report',
+    subtitle: 'Service quality and compliance review',
     purpose: 'Board-ready review of unit compliance, risk pressure, open incidents, medication exposure, and required quality actions.',
     evidenceTitle: 'Quality Exceptions',
     actionTitle: 'Quality Action Register',
@@ -76,7 +76,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: allEntries,
   },
   daily_quality: {
-    title: 'Morning Vector Briefing',
+    title: 'Morning Briefing',
     subtitle: 'Start-of-day operational priorities',
     purpose: 'A concise operational handover for the next duty cycle, highlighting pressure points, people affected, and follow-up moves.',
     evidenceTitle: 'Priority Signals',
@@ -94,7 +94,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.incidents,
   },
   handover: {
-    title: 'Unit Rotation Handover',
+    title: 'Shift Handover',
     subtitle: 'Night and day shift continuity record',
     purpose: 'Shift-to-shift continuity record covering resident changes, staff actions, risk controls, and unresolved handover items.',
     evidenceTitle: 'Handover Notes',
@@ -103,7 +103,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.handovers,
   },
   supervision: {
-    title: 'Personnel Readiness Audit',
+    title: 'Staff Supervision Record',
     subtitle: 'Staff supervision and capability notes',
     purpose: 'Staff readiness review for performance trends, training gaps, conduct risks, and supervision follow-up.',
     evidenceTitle: 'Staff Signals',
@@ -112,7 +112,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.staffPerformance,
   },
   safeguarding: {
-    title: 'Trust & Safety Intercept',
+    title: 'Safeguarding Record',
     subtitle: 'Safeguarding concern documentation',
     purpose: 'Safeguarding-focused governance record that separates concern, immediate protection, escalation path, and review evidence.',
     evidenceTitle: 'Safeguarding Evidence',
@@ -121,7 +121,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.safeguarding,
   },
   medication_audit: {
-    title: 'Pharmacological Audit',
+    title: 'Medication Audit',
     subtitle: 'Medication review and MAR governance',
     purpose: 'Medication safety audit covering errors, omissions, stock movement, clinical review requirements, and accountability.',
     evidenceTitle: 'Medication Evidence',
@@ -130,7 +130,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.medication,
   },
   finance: {
-    title: 'Fiscal Operations Review',
+    title: 'Finance Review',
     subtitle: 'Budget and finance review',
     purpose: 'Finance governance review for client money, petty cash, benefits support, audit evidence, and exception handling.',
     evidenceTitle: 'Finance Evidence',
@@ -139,7 +139,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: byCategory('finance'),
   },
   care_review: {
-    title: 'Client Stability Review',
+    title: 'Care Plan Review',
     subtitle: 'Care plan review and clinical stability',
     purpose: 'Person-level care review summary showing changes in presentation, support plan needs, risks, and next review actions.',
     evidenceTitle: 'Care Review Evidence',
@@ -148,7 +148,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => [...house.dailySupport, ...house.healthSafety, ...house.safeguarding],
   },
   complaint_concern: {
-    title: 'Feedback & Rectification',
+    title: 'Complaints & Concerns',
     subtitle: 'Complaints and concerns log',
     purpose: 'Complaint and concern log with triage, response pathway, lessons learned, and proof of closure.',
     evidenceTitle: 'Feedback Signals',
@@ -166,7 +166,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: allEntries,
   },
   house_meeting: {
-    title: 'Unit Team Briefing',
+    title: 'Team Briefing',
     subtitle: 'House-level team meeting',
     purpose: 'Team meeting record for operational priorities, decisions, resident updates, staffing, and owner-based actions.',
     evidenceTitle: 'Team Discussion Evidence',
@@ -175,7 +175,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: allEntries,
   },
   family_feedback: {
-    title: 'Family Feedback Matrix',
+    title: 'Family Feedback Record',
     subtitle: 'Client and family feedback record',
     purpose: 'Feedback matrix for family contact, concerns, compliments, response actions, and evidence of resolution.',
     evidenceTitle: 'Feedback Evidence',
@@ -184,7 +184,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: allEntries,
   },
   gp_appointment: {
-    title: 'Medical Telemetry',
+    title: 'GP Visit Record',
     subtitle: 'GP visit and outcome record',
     purpose: 'Health appointment record that captures presenting issue, advice, medication changes, follow-up, and staff ownership.',
     evidenceTitle: 'Clinical Evidence',
@@ -211,7 +211,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.medication,
   },
   finance_audit: {
-    title: 'Fiscal Telemetry',
+    title: 'Finance Audit',
     subtitle: 'Finance audit and transactions',
     purpose: 'Financial audit snapshot covering transaction records, client money controls, discrepancies, and authorisation trail.',
     evidenceTitle: 'Financial Evidence',
@@ -220,7 +220,7 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: byCategory('finance'),
   },
   repairs_maintenance: {
-    title: 'Facilities Integrity',
+    title: 'Property & Repairs',
     subtitle: 'Property repairs log',
     purpose: 'Facilities safety record for property defects, repairs, environmental risk, contractor status, and closure evidence.',
     evidenceTitle: 'Facilities Evidence',
@@ -229,8 +229,8 @@ const TEMPLATE_LENSES: Record<TemplateType, TemplateLens> = {
     source: (house) => house.healthSafety,
   },
   weekly_quality_report: {
-    title: 'Regional Performance SITREP',
-    subtitle: 'Regional quality summary',
+    title: 'Weekly Performance Report',
+    subtitle: 'Weekly quality summary',
     purpose: 'Weekly regional performance report for the quality meeting, using live records to show pressure, assurance, and action.',
     evidenceTitle: 'Regional Signals',
     actionTitle: 'Regional Action Register',
@@ -525,7 +525,7 @@ function header(lens: TemplateLens, templateId: TemplateType): string {
       </div>
       <div>
         <img src="/logo-formal.png" class="logo" alt="CareOps" onerror="this.style.display='none'" />
-        <div class="org">Hazel Care Operations</div>
+        <div class="org">Care Ops</div>
       </div>
     </div>`;
 }
@@ -558,7 +558,7 @@ export function buildTemplateDocument(
     </div>
     ${signoff(options)}
     <div class="footer">
-      <span>Hazel Care Operations / controlled document / do not redistribute</span>
+      <span>Care Ops / controlled document / do not redistribute</span>
       <span>${ex(templateId)}</span>
     </div>
   </main>

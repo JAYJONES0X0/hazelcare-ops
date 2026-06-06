@@ -8,7 +8,7 @@
  *   "Who was on shift for [client] on [date] at [time]?"
  *
  * This fixes the "Region Entry" / "UNASSIGNED" carer problem — when a diary
- * entry says "All carers in region: Glenfrome House" with no individual name,
+ * entry says "All carers in region: Hawthorn House" with no individual name,
  * the resolver cross-references the roster to find the actual person on shift.
  *
  * UPLOAD ORDER (recommended):

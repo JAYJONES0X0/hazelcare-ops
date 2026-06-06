@@ -434,7 +434,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         </Section>
 
         {/* â”€â”€ COMMAND VECTOR SHORTCUTS â”€â”€ */}
-        <Section id="shortcuts" title="Command Vector Shortcuts" collapsed={isSectionCollapsed('shortcuts')} onToggle={() => toggleSection('shortcuts')}>
+        <Section id="shortcuts" title="Quick Actions" collapsed={isSectionCollapsed('shortcuts')} onToggle={() => toggleSection('shortcuts')}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {[
               { label: 'Staff Monitoring',    desc: 'Cover & wellbeing',      icon: <Activity />,      id: 'staff-monitoring' },

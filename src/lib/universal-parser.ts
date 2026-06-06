@@ -2,7 +2,7 @@ import type { CareEntry, WeekSummary, Shift } from './types';
 import { uid } from './storage';
 
 // ============================================================
-// FLAG KEYWORDS — Hazel Care Intelligent Detection
+// FLAG KEYWORDS — Care Ops Intelligent Detection
 // ============================================================
 const RED_FLAGS = [
   'refused medication', 'medication refused', 'he refused', 'she refused',
@@ -32,16 +32,16 @@ const AMBER_FLAGS = [
 ];
 
 const HOUSE_MAP: Record<string, string> = {
-  'glenfrome': 'Glenfrome House',
-  'laurel house': 'Laurel House',
-  'hazelbury': 'Hazelbury House',
-  'station': 'Station House',
-  'church': 'Church House',
-  'woburn': 'Woburn House',
-  'courtney': 'Courtney Lodge',
-  'canterbury': 'Canterbury',
-  'lingfield': 'Lingfield House',
-  'cottrell': 'Cottrell House',
+  'hawthorn': 'Hawthorn House',
+  'rowan house': 'Rowan House',
+  'birch': 'Birch Lodge',
+  'willow': 'Willow House',
+  'elm': 'Elm House',
+  'linden': 'Linden House',
+  'aspen': 'Aspen House',
+  'cedar': 'Cedar House',
+  'maple': 'Maple House',
+  'holly': 'Holly House',
   'old bakery': 'Flats (Old Bakery)',
   'management': 'Management',
   'unassigned': 'UNASSIGNED',

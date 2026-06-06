@@ -86,7 +86,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
       <div className="min-h-screen flex items-center justify-center bg-hc-bg">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin" />
-          <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Calibrating Empire Matrix</div>
+          <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Loading Regional Overview</div>
         </div>
       </div>
     );
@@ -118,7 +118,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-hc-border/20 pb-10">
         <div>
           <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] mb-2">Multi-Site Governance</div>
-          <h1 className="text-4xl font-black text-hc-text tracking-[0.2em] uppercase">Empire Matrix</h1>
+          <h1 className="text-4xl font-black text-hc-text tracking-[0.2em] uppercase">Regional Overview</h1>
           <p className="text-[10px] font-black text-hc-muted uppercase tracking-widest mt-2">
             Cross-site quality intelligence · {houseData.length} sites in scope
           </p>

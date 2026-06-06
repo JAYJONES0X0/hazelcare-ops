@@ -18,8 +18,8 @@ export const ORG_CONFIG = {
   storagePrefix: 'careops',
 
   // Visuals
-  logoIcon: '/logo-icon-dark.png',
-  logoFull: '/logo-icon-dark.png',
+  logoIcon: '/careops-logo.png',
+  logoFull: '/careops-logo.png',
 
   // Compliance
   cqcReady: true,

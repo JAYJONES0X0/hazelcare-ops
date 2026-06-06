@@ -142,7 +142,7 @@ export function buildProfessionalNoteDirective(clientName?: string, extraInstruc
   const extra = extraInstruction?.trim() ? `\n\nAdditional source rule:\n${extraInstruction.trim()}` : '';
 
   return [
-    `Apply the Hazel Care golden note structure${subject}.`,
+    `Apply the Care Ops golden note structure${subject}.`,
     'Who: name who was present, involved, witnessed the event, or was contacted.',
     'What: describe observable events and behaviours. Do not summarise when description is needed.',
     'Why: explain why support, intervention, monitoring, or escalation was needed.',

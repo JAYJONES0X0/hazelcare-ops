@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────
  * Module-based quality scoring per entry type.
  *
- * Built from two real Hazel Care templates:
+ * Built from two real Care Ops templates:
  *   • Core Staff Daily Note (House-level, Environmental, Overview)
  *   • 1:1 Support Note (Client-level, Specific Engagement, Refusals)
  */

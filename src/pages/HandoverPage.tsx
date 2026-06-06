@@ -28,9 +28,9 @@ interface Handover {
 }
 
 const HOUSES = [
-  'Lingfield House', 'Church House', 'Laurel House', 'Station House',
-  'Canterbury', 'Glenfrome House', 'Woburn House', 'Hazelbury House',
-  'Courtney Lodge', 'Cottrell House',
+  'Maple House', 'Elm House', 'Rowan House', 'Willow House',
+  'Cedar House', 'Hawthorn House', 'Linden House', 'Birch Lodge',
+  'Aspen House', 'Holly House',
 ];
 
 const CATEGORIES: { id: HandoverItem['category']; label: string; color: string; icon: string }[] = [
