@@ -64,7 +64,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     allCollapsed: allSectionsCollapsed,
     isCollapsed: isSectionCollapsed,
     toggle: toggleSection,
-  } = useCollapseStore('sitrep-sections');
+  } = useCollapseStore('overview-sections');
   
   const SECTION_IDS = ['7-day', 'regional', 'shortcuts'];
   const allCollapsed = allSectionsCollapsed(SECTION_IDS);
