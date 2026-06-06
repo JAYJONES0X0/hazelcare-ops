@@ -244,7 +244,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-hc-border pb-8">
           <div>
             <div className="flex items-center gap-4 mb-4">
-              <span className="pill pill-teal text-[10px]">HAZEL CARE · OVERVIEW</span>
+              <span className="pill pill-teal text-[10px]">MEADOWVIEW CARE · OVERVIEW</span>
               <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
               <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">LIVE · {dateLabel}</span>
             </div>

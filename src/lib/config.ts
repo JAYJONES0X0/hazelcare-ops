@@ -1,22 +1,25 @@
 /**
- * HAZELCARE OPS — GLOBAL CONFIGURATION
+ * CARE OPS — GLOBAL CONFIGURATION
  * This file controls the branding and identity of the entire engine.
  */
 
 export const ORG_CONFIG = {
-  name: 'CareOps',
-  fullName: 'CareOps',
+  name: 'Care Ops',
+  fullName: 'Care Ops',
   shortName: 'CO',
-  domain: 'hazelcare.co.uk',
-  supportEmail: 'support@hazelcare.co.uk',
-  tagline: 'Precision Care Operations',
+  domain: 'careops.app',
+  supportEmail: 'support@careops.app',
+  tagline: 'Operational intelligence for care providers',
 
-  // Storage keys — keep these stable to avoid data loss during branding changes
-  storagePrefix: 'hazelcare',
+  // Demo provider shown in showcase data (fictional — not a real provider)
+  demoProvider: 'Meadowview Care',
+
+  // Storage keys
+  storagePrefix: 'careops',
 
   // Visuals
   logoIcon: '/logo-icon-dark.png',
-  logoFull: '/hazelcare-logo.png',
+  logoFull: '/logo-icon-dark.png',
 
   // Compliance
   cqcReady: true,

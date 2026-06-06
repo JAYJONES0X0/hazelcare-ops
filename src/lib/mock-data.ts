@@ -2,42 +2,42 @@ import type { CareEntry, Action, Incident, StaffMember } from './types';
 import { uid } from './storage';
 
 // ============================================================
-// REALISTIC DEMO DATA — Hazelcare houses, real entry types
+// SYNTHETIC DEMO DATA — fictional provider, homes, clients and notes
 // ============================================================
 
 const HOUSES = [
-  'Lingfield House', 'Church House', 'Laurel House', 'Station House',
-  'Canterbury', 'Glenfrome House', 'Woburn House', 'Hazelbury House',
-  'Courtney Lodge', 'Cottrell House',
+  'Maple House', 'Elm House', 'Rowan House', 'Willow House',
+  'Cedar House', 'Hawthorn House', 'Linden House', 'Birch Lodge',
+  'Aspen House', 'Holly House',
 ];
 
 const COORDINATORS: Record<string, string> = {
-  'Lingfield House': 'Sarah Mitchell',
-  'Church House': 'David Clarke',
-  'Laurel House': 'Emma Thompson',
-  'Station House': 'Mark Williams',
-  'Canterbury': 'Lisa Brown',
-  'Glenfrome House': 'James Wilson',
-  'Woburn House': 'Rachel Davis',
-  'Hazelbury House': 'Tom Harris',
-  'Courtney Lodge': 'Karen Moore',
-  'Cottrell House': 'Paul Taylor',
+  'Maple House': 'Priya Sharma',
+  'Elm House': 'Daniel Okafor',
+  'Rowan House': 'Megan Lewis',
+  'Willow House': 'Tomasz Nowak',
+  'Cedar House': 'Aisha Khan',
+  'Hawthorn House': 'Liam Doyle',
+  'Linden House': 'Grace Adeyemi',
+  'Birch Lodge': 'Connor Walsh',
+  'Aspen House': 'Hannah Reid',
+  'Holly House': 'Marcus Bell',
 };
 
 const CLIENTS = [
-  'Jordan Blake', 'Wayne Jefferson', 'Claire Hughes', 'Robert Ellis',
-  'Sandra Peters', 'Michael Quinn', 'Deborah Lane', 'Steven Cross',
-  'Patricia Webb', 'Andrew Shaw', 'Helen Barnes', 'Gary Newman',
-  'Julie Foster', 'Keith Bryant', 'Donna Marshall', 'Brian Cooper',
-  'Margaret Price', 'Ian Russell', 'Carol Bennett', 'Philip Howard',
-];
+  'Arthur Penrose', 'Maeve Sullivan', 'Colin Whittaker', 'Rosa Delgado',
+  'Frank Osei', 'Nadia Karim', 'Edmund Clarke', 'Priscilla Boateng',
+  'Harold Finch', 'Yvonne Mensah', 'Stuart Bailey', 'Agnes Romano',
+  'Derek Holloway', 'Lorna Pryce', 'Vincent Adeyemi', 'Joyce Hammond',
+  'Raymond Tarrant', 'Mabel Forsythe', 'Cyril Donovan', 'Beatrice Lowe',
+]
 
 const STAFF = [
-  'Sarah Mitchell', 'David Clarke', 'Emma Thompson', 'Mark Williams',
-  'Lisa Brown', 'James Wilson', 'Rachel Davis', 'Tom Harris',
-  'Karen Moore', 'Paul Taylor', 'Amy Rogers', 'Chris Evans',
-  'Natalie Wood', 'Daniel King', 'Sophie Turner', 'Ben Green',
-];
+  'Priya Sharma', 'Daniel Okafor', 'Megan Lewis', 'Tomasz Nowak',
+  'Aisha Khan', 'Liam Doyle', 'Grace Adeyemi', 'Connor Walsh',
+  'Hannah Reid', 'Marcus Bell', 'Olivia Hart', 'Samuel Idris',
+  'Chloe Murphy', 'Nathan Frost', 'Ruth Mensah', 'Jacob Lane',
+]
 
 function randomFrom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -152,27 +152,27 @@ export function generateMockEntries(): CareEntry[] {
 
 export function generateMockActions(): Action[] {
   return [
-    { id: uid(), title: 'Follow up GP referral for Jordan Blake', description: 'GP referral made after fall incident. Need confirmation of appointment date.', house: 'Lingfield House', owner: 'Sarah Mitchell', priority: 'critical', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-1), tags: ['medical', 'fall'] },
-    { id: uid(), title: 'Review medication protocol — evening count', description: 'Discrepancy found in evening medication count. Review process and retrain staff if needed.', house: 'Church House', owner: 'David Clarke', priority: 'high', status: 'open', createdAt: dateStr(2), dueDate: dateStr(-2), tags: ['medication'] },
-    { id: uid(), title: 'Schedule maintenance — bathroom light', description: 'Bathroom light reported flickering. Health & safety concern for night shifts.', house: 'Laurel House', owner: 'Emma Thompson', priority: 'medium', status: 'open', createdAt: dateStr(1), dueDate: dateStr(-4), tags: ['maintenance', 'h&s'] },
-    { id: uid(), title: 'Complete safeguarding referral', description: 'Local authority referral for threatening behaviour incident. Paperwork needs completing.', house: 'Station House', owner: 'Mark Williams', priority: 'critical', status: 'in_progress', createdAt: dateStr(2), dueDate: dateStr(-1), tags: ['safeguarding'] },
-    { id: uid(), title: 'Staff supervision — Amy Rogers', description: 'Supervision overdue by 2 weeks. Schedule and complete.', house: 'Canterbury', owner: 'Lisa Brown', priority: 'medium', status: 'open', createdAt: dateStr(5), dueDate: dateStr(-3), tags: ['staff', 'supervision'] },
-    { id: uid(), title: 'Repair plasterboard — communal lounge', description: 'Hole in wall from thrown remote. Get quote from maintenance.', house: 'Glenfrome House', owner: 'James Wilson', priority: 'low', status: 'open', createdAt: dateStr(4), dueDate: dateStr(-7), tags: ['maintenance', 'damage'] },
-    { id: uid(), title: 'Family meeting — Hughes family', description: 'Follow-up on cleanliness complaint. Arrange meeting to discuss care plan.', house: 'Woburn House', owner: 'Rachel Davis', priority: 'high', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-2), tags: ['family', 'complaint'] },
-    { id: uid(), title: 'Night staff sleep monitoring log', description: 'Client not sleeping — set up monitoring log for night staff to complete nightly.', house: 'Hazelbury House', owner: 'Tom Harris', priority: 'high', status: 'completed', createdAt: dateStr(5), dueDate: dateStr(0), completedAt: dateStr(1), tags: ['monitoring'] },
-    { id: uid(), title: 'Written warning — lateness', description: 'Staff member late 45 mins without notice. Formal process to begin.', house: 'Courtney Lodge', owner: 'Karen Moore', priority: 'medium', status: 'open', createdAt: dateStr(2), dueDate: dateStr(-5), tags: ['staff', 'disciplinary'] },
-    { id: uid(), title: 'Update crisis plan — self-harm disclosure', description: 'Client disclosed self-harm thoughts. Crisis plan needs updating with MH team input.', house: 'Cottrell House', owner: 'Paul Taylor', priority: 'critical', status: 'in_progress', createdAt: dateStr(1), dueDate: dateStr(-1), tags: ['mental-health', 'crisis'] },
+    { id: uid(), title: 'Follow up GP referral for Jordan Blake', description: 'GP referral made after fall incident. Need confirmation of appointment date.', house: 'Maple House', owner: 'Priya Sharma', priority: 'critical', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-1), tags: ['medical', 'fall'] },
+    { id: uid(), title: 'Review medication protocol — evening count', description: 'Discrepancy found in evening medication count. Review process and retrain staff if needed.', house: 'Elm House', owner: 'Daniel Okafor', priority: 'high', status: 'open', createdAt: dateStr(2), dueDate: dateStr(-2), tags: ['medication'] },
+    { id: uid(), title: 'Schedule maintenance — bathroom light', description: 'Bathroom light reported flickering. Health & safety concern for night shifts.', house: 'Rowan House', owner: 'Megan Lewis', priority: 'medium', status: 'open', createdAt: dateStr(1), dueDate: dateStr(-4), tags: ['maintenance', 'h&s'] },
+    { id: uid(), title: 'Complete safeguarding referral', description: 'Local authority referral for threatening behaviour incident. Paperwork needs completing.', house: 'Willow House', owner: 'Tomasz Nowak', priority: 'critical', status: 'in_progress', createdAt: dateStr(2), dueDate: dateStr(-1), tags: ['safeguarding'] },
+    { id: uid(), title: 'Staff supervision — Olivia Hart', description: 'Supervision overdue by 2 weeks. Schedule and complete.', house: 'Cedar House', owner: 'Aisha Khan', priority: 'medium', status: 'open', createdAt: dateStr(5), dueDate: dateStr(-3), tags: ['staff', 'supervision'] },
+    { id: uid(), title: 'Repair plasterboard — communal lounge', description: 'Hole in wall from thrown remote. Get quote from maintenance.', house: 'Hawthorn House', owner: 'Liam Doyle', priority: 'low', status: 'open', createdAt: dateStr(4), dueDate: dateStr(-7), tags: ['maintenance', 'damage'] },
+    { id: uid(), title: 'Family meeting — Hughes family', description: 'Follow-up on cleanliness complaint. Arrange meeting to discuss care plan.', house: 'Linden House', owner: 'Grace Adeyemi', priority: 'high', status: 'in_progress', createdAt: dateStr(3), dueDate: dateStr(-2), tags: ['family', 'complaint'] },
+    { id: uid(), title: 'Night staff sleep monitoring log', description: 'Client not sleeping — set up monitoring log for night staff to complete nightly.', house: 'Birch Lodge', owner: 'Connor Walsh', priority: 'high', status: 'completed', createdAt: dateStr(5), dueDate: dateStr(0), completedAt: dateStr(1), tags: ['monitoring'] },
+    { id: uid(), title: 'Written warning — lateness', description: 'Staff member late 45 mins without notice. Formal process to begin.', house: 'Aspen House', owner: 'Hannah Reid', priority: 'medium', status: 'open', createdAt: dateStr(2), dueDate: dateStr(-5), tags: ['staff', 'disciplinary'] },
+    { id: uid(), title: 'Update crisis plan — self-harm disclosure', description: 'Client disclosed self-harm thoughts. Crisis plan needs updating with MH team input.', house: 'Holly House', owner: 'Marcus Bell', priority: 'critical', status: 'in_progress', createdAt: dateStr(1), dueDate: dateStr(-1), tags: ['mental-health', 'crisis'] },
   ];
 }
 
 export function generateMockIncidents(): Incident[] {
   return [
-    { id: uid(), title: 'Client fall — bathroom', house: 'Lingfield House', client: 'Jordan Blake', staff: 'Sarah Mitchell', date: dateStr(3), severity: 'red', stage: 'investigating', description: 'Client fell in bathroom at 06:30. Small bruise on left arm. First aid administered. GP notified.', flags: ['fall', 'injury'], actions: ['GP referral', 'Incident form filed', 'Family notified'], createdAt: dateStr(3) },
-    { id: uid(), title: 'Medication refusal — antipsychotic', house: 'Church House', client: 'Wayne Jefferson', staff: 'David Clarke', date: dateStr(2), severity: 'red', stage: 'logged', description: 'Client refused morning medication including prescribed antipsychotic. GP informed.', flags: ['refused medication'], actions: ['GP notification', 'MAR chart updated'], createdAt: dateStr(2) },
-    { id: uid(), title: 'Threatening behaviour disclosure', house: 'Station House', client: 'Robert Ellis', staff: 'Mark Williams', date: dateStr(2), severity: 'red', stage: 'investigating', description: 'Client disclosed threatening comments from another resident. Statements taken.', flags: ['safeguarding', 'threatened'], actions: ['Statements taken', 'Manager notified', 'LA referral pending'], createdAt: dateStr(2) },
-    { id: uid(), title: 'Self-harm disclosure', house: 'Cottrell House', client: 'Patricia Webb', staff: 'Paul Taylor', date: dateStr(1), severity: 'red', stage: 'investigating', description: 'Client expressed self-harm thoughts during 1:1. Crisis plan activated. MH team contacted.', flags: ['self-harm'], actions: ['Crisis plan activated', 'MH team referral', '1:1 obs increased'], createdAt: dateStr(1) },
-    { id: uid(), title: 'Property damage — lounge', house: 'Glenfrome House', client: 'Steven Cross', staff: 'James Wilson', date: dateStr(4), severity: 'amber', stage: 'resolved', description: 'Client threw remote at wall causing hole in plasterboard. Apologised later.', flags: ['property damage'], actions: ['Maintenance notified', 'Behavioural support plan reviewed'], outcome: 'Maintenance repair scheduled. BSP updated.', createdAt: dateStr(4) },
-    { id: uid(), title: 'Staff lateness — medication round', house: 'Courtney Lodge', client: '', staff: 'Ben Green', date: dateStr(2), severity: 'amber', stage: 'logged', description: 'Staff arrived 45 mins late. Short-staffed during medication round.', flags: ['late'], actions: ['Coordinator spoken to staff'], createdAt: dateStr(2) },
+    { id: uid(), title: 'Client fall — bathroom', house: 'Maple House', client: 'Jordan Blake', staff: 'Priya Sharma', date: dateStr(3), severity: 'red', stage: 'investigating', description: 'Client fell in bathroom at 06:30. Small bruise on left arm. First aid administered. GP notified.', flags: ['fall', 'injury'], actions: ['GP referral', 'Incident form filed', 'Family notified'], createdAt: dateStr(3) },
+    { id: uid(), title: 'Medication refusal — antipsychotic', house: 'Elm House', client: 'Wayne Jefferson', staff: 'Daniel Okafor', date: dateStr(2), severity: 'red', stage: 'logged', description: 'Client refused morning medication including prescribed antipsychotic. GP informed.', flags: ['refused medication'], actions: ['GP notification', 'MAR chart updated'], createdAt: dateStr(2) },
+    { id: uid(), title: 'Threatening behaviour disclosure', house: 'Willow House', client: 'Robert Ellis', staff: 'Tomasz Nowak', date: dateStr(2), severity: 'red', stage: 'investigating', description: 'Client disclosed threatening comments from another resident. Statements taken.', flags: ['safeguarding', 'threatened'], actions: ['Statements taken', 'Manager notified', 'LA referral pending'], createdAt: dateStr(2) },
+    { id: uid(), title: 'Self-harm disclosure', house: 'Holly House', client: 'Patricia Webb', staff: 'Marcus Bell', date: dateStr(1), severity: 'red', stage: 'investigating', description: 'Client expressed self-harm thoughts during 1:1. Crisis plan activated. MH team contacted.', flags: ['self-harm'], actions: ['Crisis plan activated', 'MH team referral', '1:1 obs increased'], createdAt: dateStr(1) },
+    { id: uid(), title: 'Property damage — lounge', house: 'Hawthorn House', client: 'Steven Cross', staff: 'Liam Doyle', date: dateStr(4), severity: 'amber', stage: 'resolved', description: 'Client threw remote at wall causing hole in plasterboard. Apologised later.', flags: ['property damage'], actions: ['Maintenance notified', 'Behavioural support plan reviewed'], outcome: 'Maintenance repair scheduled. BSP updated.', createdAt: dateStr(4) },
+    { id: uid(), title: 'Staff lateness — medication round', house: 'Aspen House', client: '', staff: 'Jacob Lane', date: dateStr(2), severity: 'amber', stage: 'logged', description: 'Staff arrived 45 mins late. Short-staffed during medication round.', flags: ['late'], actions: ['Coordinator spoken to staff'], createdAt: dateStr(2) },
   ];
 }
 
