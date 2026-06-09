@@ -49,6 +49,20 @@ const NourishTaskPack = lazy(() => import('./pages/NourishTaskPack').then(m => (
 
 
 export default function App() {
+  useEffect(() => {
+    // Branding Migration: Clear old hc-org-* keys if they contain old branding
+    // This forces the new copper logo defaults for existing users.
+    const oldLogo = localStorage.getItem('hc-org-logo');
+    const oldName = localStorage.getItem('hc-org-name');
+    if (oldLogo || oldName) {
+      // If we see the old name or a logo override, clear it once.
+      // We can be more surgical, but clearing once is safest for the rebranding.
+      localStorage.removeItem('hc-org-logo');
+      localStorage.removeItem('hc-org-name');
+      window.dispatchEvent(new CustomEvent('hc-brand-updated'));
+    }
+  }, []);
+
   const [authed, setAuthed] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>(() => normalizeUserRole(localStorage.getItem('hc-user-role')));
   const [sessionLoaded, setSessionLoaded] = useState(false);
@@ -309,9 +323,9 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
-            <div className="relative z-10 w-full min-h-screen ">
-              <div className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-3 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
-                <div className="flex items-center gap-3">
+            <div className="relative z-10 w-full min-h-screen">
+              <div className="sticky top-0 z-20 px-3 sm:px-6 pt-3 pb-2 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setMobileNavOpen(true)}
                     aria-label="Open navigation"
@@ -319,7 +333,7 @@ export default function App() {
                   >
                     <Menu size={18} />
                   </button>
-                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1">
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 pb-1">
                   {activeSection.tabs.filter(tab => canAccessPage(userRole, tab.id)).map(tab => {
                     const active = page === tab.id;
                     return (
@@ -481,10 +495,12 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
           </label>
         </div>
         {error && <div className="text-[10px] font-black text-flag-red uppercase tracking-widest text-center">{error}</div>}
-        <button type="submit" className="w-full py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all hover:scale-[1.02]">Establish Connection</button>
+        <button type="submit" className="w-full py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all hover:scale-[1.02]">Open Operations Hub</button>
       </form>
     </div>
   );
 }
+
+
 
 

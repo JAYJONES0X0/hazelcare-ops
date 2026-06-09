@@ -71,7 +71,7 @@ export function TemplatesPage({ weekData }: Props) {
           <span className="text-xs font-black tracking-[0.2em] text-hc-muted">DOC</span>
         </div>
         <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em] mb-3">Synthesis Offline</div>
-        <h2 className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">No Live Telemetry</h2>
+        <h2 className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">No documents yet</h2>
         <p className="text-hc-muted text-[11px] font-bold text-center max-w-xs uppercase tracking-widest leading-relaxed">
           Sync regional operational data via Field Ingest to initialise document synthesis.
         </p>
@@ -85,9 +85,9 @@ export function TemplatesPage({ weekData }: Props) {
         <div>
           <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Document Library</h1>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Document Assembly Station</span>
+            <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Build and print care documents</span>
             <div className="h-3 w-px bg-hc-border/40" />
-            <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Protocols Loaded</span>
+            <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Templates</span>
           </div>
         </div>
       </div>

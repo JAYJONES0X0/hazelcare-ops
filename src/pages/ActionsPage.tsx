@@ -95,9 +95,9 @@ export function ActionsPage({ actions, onUpdate }: Props) {
     <div className="min-h-screen flex flex-col animate-in fade-in duration-500">
 
       {/* ── COMMAND HEADER ── */}
-      <div className="shrink-0 border-b border-hc-border/30 px-8 py-6 flex items-center justify-between gap-8">
+      <div className="shrink-0 border-b border-hc-border/30 px-4 sm:px-8 py-4 sm:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Action Tracker</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Action Tracker</h1>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Action Tracker</span>
             <div className="h-3 w-px bg-hc-border/40" />
@@ -128,7 +128,7 @@ export function ActionsPage({ actions, onUpdate }: Props) {
       {showAdd && (
         <div className="shrink-0 border-b border-hc-border/30 p-8 animate-in slide-in-from-top-4 duration-300">
           <div className="hc-clay-raised p-6 space-y-4">
-            <h3 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-4">New Action Vector</h3>
+            <h3 className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-4">New Action</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="lg:col-span-2">
                 <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-2 block">Action Title</label>

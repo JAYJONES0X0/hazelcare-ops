@@ -205,14 +205,14 @@ export const TEMPLATES: Template[] = [
   { id: 'house_meeting',          name: 'HOME TEAM MEETING',           icon: '🏠', desc: 'Home-level team meeting',            color: '#0f766e' },
   { id: 'family_feedback',        name: 'FAMILY FEEDBACK',             icon: '💬', desc: 'Client & family feedback record',    color: '#7c3aed' },
   { id: 'gp_appointment',         name: 'GP APPOINTMENT',              icon: '🩺', desc: 'GP visit & outcome record',          color: '#0891b2' },
-  { id: 'medication_review',      name: 'CLINICAL PHARMA REVIEW',      icon: '🔬', desc: 'Clinical medication review',         color: '#0369a1' },
-  { id: 'medication_transaction', name: 'PHARMA SUPPLY LOG',          icon: '📦', desc: 'Collected / ordered / returned',     color: '#0891b2' },
-  { id: 'finance_audit',          name: 'FISCAL TELEMETRY',            icon: '🧾', desc: 'Finance audit & transactions',       color: '#059669' },
-  { id: 'repairs_maintenance',    name: 'FACILITIES INTEGRITY',        icon: '🔧', desc: 'Property repairs log',               color: '#78350f' },
-  { id: 'weekly_quality_report',  name: 'REGIONAL PERFORMANCE SITREP', icon: '📈', desc: 'Regional quality summary',           color: '#1e40af' },
-  { id: 'performance_improvement',name: 'PERFORMANCE RECTIFICATION',   icon: '📌', desc: 'Staff PIP documentation',            color: '#b45309' },
-  { id: 'probation_review',       name: 'ENTRY-LEVEL EVALUATION',      icon: '✅', desc: 'First 3-month staff review',         color: '#059669' },
-  { id: 'exit_interview',         name: 'DE-BOARDING INTERVIEW',       icon: '🚪', desc: 'Leaver exit interview record',       color: '#64748b' },
+  { id: 'medication_review',      name: 'CLINICAL MEDICATION REVIEW',      icon: '🔬', desc: 'Clinical medication review',         color: '#0369a1' },
+  { id: 'medication_transaction', name: 'MEDICATION SUPPLY LOG',          icon: '📦', desc: 'Collected / ordered / returned',     color: '#0891b2' },
+  { id: 'finance_audit',          name: 'FINANCE AUDIT',            icon: '🧾', desc: 'Finance audit & transactions',       color: '#059669' },
+  { id: 'repairs_maintenance',    name: 'PROPERTY & REPAIRS',        icon: '🔧', desc: 'Property repairs log',               color: '#78350f' },
+  { id: 'weekly_quality_report',  name: 'WEEKLY PERFORMANCE REVIEW', icon: '📈', desc: 'Regional quality summary',           color: '#1e40af' },
+  { id: 'performance_improvement',name: 'PERFORMANCE IMPROVEMENT',   icon: '📌', desc: 'Staff PIP documentation',            color: '#b45309' },
+  { id: 'probation_review',       name: 'INDUCTION REVIEW',      icon: '✅', desc: 'First 3-month staff review',         color: '#059669' },
+  { id: 'exit_interview',         name: 'EXIT INTERVIEW',       icon: '🚪', desc: 'Leaver exit interview record',       color: '#64748b' },
 ];
 
 // ============================================================

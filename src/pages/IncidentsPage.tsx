@@ -60,16 +60,15 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <div className="w-1 h-6 bg-hc-teal" />
-              <h1 className="text-xl font-black tracking-tighter uppercase text-hc-text">Stability Vector Hub</h1>
-
+              <h1 className="text-xl font-black tracking-tighter uppercase text-hc-text">Incident Hub</h1>
             </div>
             <div className="flex items-center gap-4 text-[11px] font-bold">
               <div className="flex items-center gap-2">
-                <span className="text-hc-muted">STATION_STATUS:</span>
+                <span className="text-hc-muted">HUB_STATUS:</span>
                 <span className="text-blue-400">OPERATIONAL // ENFORCED</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-hc-muted">VECTOR_LOAD:</span>
+                <span className="text-hc-muted">INCIDENT_LOAD:</span>
                 <span className={totalActive > 0 ? "text-orange-500" : "text-green-500"}>{totalActive} ACTIVE</span>
               </div>
               <div className="flex items-center gap-2">
@@ -102,8 +101,6 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
             className={`flex-none w-80 flex flex-col border border-hc-border bg-hc-card
               ${isStageCollapsed(stage.id) ? 'w-12 overflow-hidden' : ''} transition-all duration-300`}
           >
-
-
             {/* Column Header */}
             <div 
               onClick={() => toggleStage(stage.id)}
@@ -123,7 +120,6 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
               </div>
             </div>
 
-
             {/* Column Body */}
             {!isStageCollapsed(stage.id) && (
               <div className="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-none">
@@ -133,7 +129,6 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                     className={`p-4 border bg-hc-card shadow-xl relative overflow-hidden group
                       ${incident.severity === 'red' ? 'border-red-900/50 hover:border-red-800' : 'border-hc-border hover:border-hc-border-light'}`}
                   >
-
                     {/* Severity Indicator */}
                     <div className={`absolute top-0 right-0 w-12 h-1 ${incident.severity === 'red' ? 'bg-red-600 animate-pulse' : 'bg-orange-600'}`} />
                     
@@ -184,7 +179,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
                           onClick={(e) => { e.stopPropagation(); advanceStage(incident); }}
                           className="px-3 py-1.5 text-[11px] font-black uppercase bg-slate-800 border border-slate-700 hover:bg-blue-900 hover:border-blue-700 text-hc-muted hover:text-hc-text transition-all"
                         >
-                          Advance_Vector ▸
+                          Advance Stage ▸
                         </button>
                       )}
                     </div>
@@ -204,7 +199,7 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
 
                 {stage.items.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 border border-dashed border-hc-border m-2">
-                    <span className="text-[11px] font-black uppercase text-hc-muted tracking-[0.2em]">Zero_Vectors</span>
+                    <span className="text-[11px] font-black uppercase text-hc-muted tracking-[0.2em]">No Incidents</span>
                   </div>
                 )}
               </div>
@@ -215,4 +210,3 @@ export function IncidentsPage({ incidents, onUpdate }: Props) {
     </div>
   );
 }
-

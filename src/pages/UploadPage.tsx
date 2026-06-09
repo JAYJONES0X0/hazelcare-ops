@@ -585,7 +585,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         <div className="mb-12 pb-10 border-b border-hc-border/30 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase leading-none mb-3">Import Hub</h1>
-            <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">High-Density Operational Intake Protocol</p>
+            <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Import care records — CSV, PDF, ZIP, or pasted text</p>
           </div>
           <div className="flex items-center gap-4">
             {/* Roster status pill */}

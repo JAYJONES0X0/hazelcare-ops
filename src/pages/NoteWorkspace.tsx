@@ -1838,6 +1838,7 @@ export function NoteWorkspace() {
                                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                              </button>
                           </div>
+                          <p className="text-[9px] font-bold text-hc-muted/70 uppercase tracking-wider mt-1">AI assist sends the selected note text to a configured AI provider.</p>
                         </div>
                       </div>
                     ) : (
