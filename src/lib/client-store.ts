@@ -183,12 +183,69 @@ export interface VaultDoc {
   uploadedAt: string;
 }
 
+export type CareCircleMode =
+  | 'off'
+  | 'light_reassurance'
+  | 'standard_family_window'
+  | 'collaborative'
+  | 'professional_access';
+
+export type CareCirclePermissionLevel = 'reassurance' | 'care_plan' | 'risk_aware' | 'professional';
+
+export interface CareCircleContact {
+  id: string;
+  name: string;
+  relationship: string;
+  email: string;
+  phone: string;
+  permissionLevel: CareCirclePermissionLevel;
+  verified: boolean;
+  consentBasis: string;
+  restrictions: string;
+  reviewDate: string;
+}
+
+export interface CareCircleUpdate {
+  id: string;
+  dateFrom: string;
+  dateTo: string;
+  mode: CareCircleMode;
+  status: 'draft' | 'reviewed' | 'shared';
+  shareability: 'green' | 'amber' | 'red';
+  summary: string;
+  sourceEntryIds: string[];
+  reviewedBy: string;
+  reviewedAt: string;
+  createdAt: string;
+}
+
+export interface CareCircleConcern {
+  id: string;
+  type: 'concern' | 'compliment' | 'question' | 'family_update';
+  source: string;
+  detail: string;
+  owner: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'in_progress' | 'resolved';
+  createdAt: string;
+  response: string;
+}
+
+export interface CareCircleData {
+  mode: CareCircleMode;
+  contacts: CareCircleContact[];
+  updates: CareCircleUpdate[];
+  concerns: CareCircleConcern[];
+  notes: string;
+}
+
 export interface FullClient extends ClientBasic {
   pbs: PBSData | null;
   risk: RiskData | null;
   carePlan: CarePlanData | null;
   supportPlan: SupportPlanData | null;
   documents: ClientDocument[];
+  careCircle?: CareCircleData;
   clinicalBriefing?: string;
   vaultDocs?: VaultDoc[];
 }
@@ -249,6 +306,38 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
     risk: client.risk,
     carePlan: client.carePlan,
     supportPlan: client.supportPlan,
+    careCircle: client.careCircle ? {
+      ...client.careCircle,
+      notes: cleanText(client.careCircle.notes, aggressive ? 500 : 1400),
+      contacts: Array.isArray(client.careCircle.contacts)
+        ? client.careCircle.contacts.slice(0, aggressive ? 6 : 20).map((contact) => ({
+            ...contact,
+            name: cleanText(contact.name, 120),
+            relationship: cleanText(contact.relationship, 80),
+            email: cleanText(contact.email, 160),
+            phone: cleanText(contact.phone, 40),
+            consentBasis: cleanText(contact.consentBasis, 220),
+            restrictions: cleanText(contact.restrictions, 260),
+            reviewDate: cleanText(contact.reviewDate, 40),
+          }))
+        : [],
+      updates: Array.isArray(client.careCircle.updates)
+        ? client.careCircle.updates.slice(0, aggressive ? 6 : 30).map((update) => ({
+            ...update,
+            summary: cleanText(update.summary, aggressive ? 900 : 2400),
+            reviewedBy: cleanText(update.reviewedBy, 120),
+          }))
+        : [],
+      concerns: Array.isArray(client.careCircle.concerns)
+        ? client.careCircle.concerns.slice(0, aggressive ? 8 : 40).map((concern) => ({
+            ...concern,
+            source: cleanText(concern.source, 120),
+            detail: cleanText(concern.detail, aggressive ? 500 : 1400),
+            owner: cleanText(concern.owner, 120),
+            response: cleanText(concern.response, aggressive ? 500 : 1400),
+          }))
+        : [],
+    } : undefined,
     documents: Array.isArray(client.documents)
       ? client.documents.map((doc) => ({
           ...doc,
@@ -511,6 +600,16 @@ export function emptySupportPlan(planDate: string): SupportPlanData {
   };
 }
 
+export function emptyCareCircle(reviewDate: string): CareCircleData {
+  return {
+    mode: 'off',
+    contacts: [],
+    updates: [],
+    concerns: [],
+    notes: `Family involvement is optional and must follow the person's consent, best-interest decision-making where relevant, safeguarding boundaries, and provider policy. Review by ${reviewDate}.`,
+  };
+}
+
 export function emptyClient(): FullClient {
   const today = new Date().toLocaleDateString('en-GB');
   const reviewDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
@@ -535,6 +634,7 @@ export function emptyClient(): FullClient {
     carePlan: null,
     supportPlan: null,
     documents: [],
+    careCircle: emptyCareCircle(reviewDate),
   };
 }
 

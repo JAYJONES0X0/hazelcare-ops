@@ -9,11 +9,12 @@ import { buildClusterNote, buildClusterTitle, clusterRiskItems } from '../lib/ri
 import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
-import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X } from 'lucide-react';
+import { CareCirclePanel } from './CareCirclePanel';
+import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
 
-type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'import';
+type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
 export function ClientDocsPage() {
   const [subView, setSubView] = useState<SubView>('list');
@@ -43,6 +44,7 @@ export function ClientDocsPage() {
   const openPBS = (id: string) => { setSelectedId(id); setSubView('pbs'); };
   const openRisk = (id: string) => { setSelectedId(id); setSubView('risk'); };
   const openCarePlan = (id: string) => { setSelectedId(id); setSubView('careplan'); };
+  const openCareCircle = (id: string) => { setSelectedId(id); setSubView('carecircle'); };
   const goBack = () => { refresh(); setSubView('list'); setSelectedId(null); };
 
   const handleDelete = (id: string, name: string) => {
@@ -266,6 +268,7 @@ export function ClientDocsPage() {
   if (subView === 'pbs' && selectedId) return <PBSBuilder clientId={selectedId} onBack={goBack} />;
   if (subView === 'risk' && selectedId) return <RiskBuilder clientId={selectedId} onBack={goBack} />;
   if (subView === 'careplan' && selectedId) return <CarePlanBuilder clientId={selectedId} onBack={goBack} />;
+  if (subView === 'carecircle' && selectedId) return <CareCirclePanel clientId={selectedId} onBack={goBack} />;
 
   if (subView === 'import') {
     return (
@@ -588,6 +591,7 @@ export function ClientDocsPage() {
   const pbsCount = clients.filter(c => c.pbs && c.pbs.aboutText).length;
   const riskCount = clients.filter(c => c.risk && c.risk.risks.some(r => r.title)).length;
   const cpCount = clients.filter(c => c.carePlan && c.carePlan.domains.some(d => d.enabled)).length;
+  const circleCount = clients.filter(c => c.careCircle && c.careCircle.mode !== 'off').length;
 
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
@@ -600,6 +604,7 @@ export function ClientDocsPage() {
             <span className="pill pill-teal text-xs font-black uppercase tracking-wide">{pbsCount} PBS Profiles</span>
             <span className="pill pill-amber text-xs font-black uppercase tracking-wide">{riskCount} Risk Matrices</span>
             <span className="pill pill-purple text-xs font-black uppercase tracking-wide">{cpCount} Support Plans</span>
+            <span className="pill text-xs font-black uppercase tracking-wide bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/20">{circleCount} Care Circles</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -665,6 +670,7 @@ export function ClientDocsPage() {
             const hasPBS = !!(client.pbs && client.pbs.aboutText);
             const hasRisk = !!(client.risk && client.risk.risks.some(r => r.title));
             const hasCarePlan = !!(client.carePlan && client.carePlan.domains.some(d => d.enabled));
+            const hasCareCircle = !!(client.careCircle && client.careCircle.mode !== 'off');
             const cpDomains = client.carePlan?.domains.filter(d => d.enabled) || [];
             const cpFilled = cpDomains.filter(d => d.identifiedNeed).length;
 
@@ -749,6 +755,9 @@ export function ClientDocsPage() {
                     <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasPBS ? 'pill-teal' : 'pill-blue'}`}>
                       PBS {hasPBS ? 'Ready' : 'Missing'}
                     </span>
+                    <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasCareCircle ? 'bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/25' : 'pill-blue'}`}>
+                      Care Circle {hasCareCircle ? 'On' : 'Off'}
+                    </span>
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex flex-wrap items-center gap-8">
@@ -823,6 +832,12 @@ export function ClientDocsPage() {
                     </div>
 
                     <div className="flex items-center gap-4 ml-auto">
+                      <button onClick={() => openCareCircle(client.id)}
+                        className="inline-flex items-center gap-2 text-[10px] font-black text-[#5d0565] uppercase tracking-widest hover:text-hc-text transition-colors">
+                        <Users className="w-3.5 h-3.5" />
+                        Care Circle
+                      </button>
+                      <div className="h-4 w-px bg-hc-border/40" />
                       <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
                         className="text-[10px] font-black text-hc-teal uppercase tracking-widest hover:text-hc-text transition-colors">
                         Intelligence Sync
