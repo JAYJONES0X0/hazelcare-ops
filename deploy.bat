@@ -1,5 +1,5 @@
 @echo off
-title HAZEL CARE TACTICAL DEPLOYMENT
+title CARE OPS PRODUCTION DEPLOYMENT
 echo 🛰️ INITIALIZING TACTICAL DEPLOYMENT...
 echo ──────────────────────────────────────────────────
 
@@ -36,6 +36,6 @@ npx vercel --prod --yes
 echo.
 echo ──────────────────────────────────────────────────
 echo 🏁 MISSION COMPLETE: SYSTEM IS LIVE.
-echo 🔗 URL: https://hazelcare-ops.vercel.app/
+echo URL: https://care-ops-os.vercel.app/
 echo ──────────────────────────────────────────────────
 pause

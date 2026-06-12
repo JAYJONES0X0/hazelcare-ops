@@ -1,5 +1,5 @@
-# HAZELCARE OPS — OFFICIAL LAUNCH AUDIT
-**Platform**: https://hazelcare-ops.vercel.app
+# CARE OPS - OFFICIAL LAUNCH AUDIT
+**Platform**: https://care-ops-os.vercel.app
 **Audit Date**: 17 March 2026
 **Prepared for**: Jay / Hazelcare Management
 **Purpose**: Pre-launch test run — page-by-page operational readiness assessment
@@ -8,7 +8,7 @@
 
 ## SYSTEM OVERVIEW
 
-Hazelcare Ops is a browser-based operational intelligence platform for supported living services. It ingests weekly Nourish CSV exports and transforms raw care diary data into actionable management intelligence — flags, reports, compliance tracking, templates, and AI-assisted documentation tools.
+Care Ops is a browser-based operational intelligence platform for supported living services. It ingests weekly care diary exports and transforms raw care data into actionable management intelligence: flags, reports, compliance tracking, templates, and AI-assisted documentation tools.
 
 **Architecture**: React/TypeScript SPA | localStorage persistence | No backend | Vercel hosted
 **Data source**: Nourish CSV exports (UTF-8, RFC 4180 format)
@@ -32,7 +32,7 @@ Generates an at-a-glance morning brief for the manager on shift. Shows: today's 
 - First thing a manager should see when opening the platform
 
 #### How to use
-1. Open https://hazelcare-ops.vercel.app — briefing loads automatically
+1. Open https://care-ops-os.vercel.app - briefing loads automatically
 2. Review red flag count and top priority clients
 3. Use "View Details" links to jump directly to flagged entries
 4. Check outstanding actions and incidents needing follow-up
@@ -459,7 +459,7 @@ To make this production-ready: add file upload (Supabase Storage or similar), li
 
 ### Step 1 — Data import (5 mins)
 1. Export this week's Nourish data as CSV
-2. Go to https://hazelcare-ops.vercel.app → Import Data
+2. Go to https://care-ops-os.vercel.app -> Import Data
 3. Drop the CSV file — confirm entry count and flag totals match expectation
 
 ### Step 2 — Flag review (10 mins)
@@ -521,7 +521,7 @@ To make this production-ready: add file upload (Supabase Storage or similar), li
 
 ## SIGN-OFF
 
-**Platform URL**: https://hazelcare-ops.vercel.app
+**Platform URL**: https://care-ops-os.vercel.app
 **Build date**: 17 March 2026
 **Audit by**: Arbigent / EXA
 **Status**: APPROVED FOR TEST RUN

@@ -492,8 +492,8 @@ async function callOpenRouter(messages, options = {}) {
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://hazelcare-ops.vercel.app',
-        'X-Title': 'Hazel Care Ops',
+        'HTTP-Referer': 'https://care-ops-os.vercel.app',
+        'X-Title': 'Care Ops',
       },
       body: JSON.stringify({
         model,

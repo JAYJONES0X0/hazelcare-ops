@@ -524,7 +524,7 @@ function header(lens: TemplateLens, templateId: TemplateType): string {
         <div class="meta">${ex(lens.subtitle)} / Generated ${ex(dateStamp())} / Confidential internal use only</div>
       </div>
       <div>
-        <img src="/logo-formal.png" class="logo" alt="CareOps" onerror="this.style.display='none'" />
+        <img src="/logo-formal.png" class="logo" alt="Care Ops" onerror="this.style.display='none'" />
         <div class="org">Care Ops</div>
       </div>
     </div>`;

@@ -467,7 +467,7 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
     <div className="min-h-screen flex items-center justify-center bg-hc-bg p-6">
       <form onSubmit={handleLogin} className="w-full max-w-sm hc-clay-raised p-10 space-y-8 rounded-[3rem] shadow-2xl border border-hc-muted/5">
         <div>
-          <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">CareOps Access</h1>
+          <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">Care Ops Access</h1>
           <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-2">Enter credentials to open the care operations hub</p>
         </div>
         <div className="space-y-4">
