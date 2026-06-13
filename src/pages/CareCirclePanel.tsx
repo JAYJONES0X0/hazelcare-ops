@@ -75,6 +75,22 @@ function asParagraphs(input: string | undefined) {
   return escapeHtml(input).split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
 }
 
+function modeLabel(mode?: CareCircleMode) {
+  return (mode && MODE_LABELS[mode]) || 'Care Circle';
+}
+
+function permissionLabel(level?: CareCirclePermissionLevel) {
+  return (level && PERMISSION_LABELS[level]) || 'Reassurance';
+}
+
+function permissionRank(level?: CareCirclePermissionLevel) {
+  return (level && PERMISSION_RANK[level]) || 0;
+}
+
+function concernTypeLabel(type?: CareCircleConcern['type']) {
+  return (type || 'concern').replace('_', ' ');
+}
+
 function addDays(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -104,7 +120,7 @@ function contactHasRoute(contact: CareCircleContact) {
 }
 
 function contactAllowed(contact: CareCircleContact, audience: ShareAudience) {
-  return PERMISSION_RANK[contact.permissionLevel] >= PERMISSION_RANK[audience];
+  return permissionRank(contact.permissionLevel) >= permissionRank(audience);
 }
 
 function isSensitive(entry: CareEntry) {
@@ -171,20 +187,20 @@ function sharePackText(client: FullClient, circle: ReturnType<typeof emptyCareCi
   const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved').slice(0, 6);
   const lines = [
     `Care Circle Pack - ${client.name}`,
-    `Audience: ${PERMISSION_LABELS[audience]}`,
+    `Audience: ${permissionLabel(audience)}`,
     `Generated: ${todayUk()}`,
-    `Mode: ${MODE_LABELS[circle.mode]}`,
+    `Mode: ${modeLabel(circle.mode)}`,
     '',
     'Reviewed Update',
     update?.summary || 'No reviewed update has been saved yet.',
     '',
     'Sharing Controls',
     `Approved contacts in scope: ${contacts.length}`,
-    ...contacts.map((contact) => `- ${contact.name} (${contact.relationship || 'relationship not recorded'}): ${PERMISSION_LABELS[contact.permissionLevel]}${contact.verified ? ', verified' : ', not verified'}${contactExpired(contact) ? ', review expired' : ''}`),
+    ...contacts.map((contact) => `- ${contact.name} (${contact.relationship || 'relationship not recorded'}): ${permissionLabel(contact.permissionLevel)}${contact.verified ? ', verified' : ', not verified'}${contactExpired(contact) ? ', review expired' : ''}`),
     circle.notes ? `Boundaries: ${circle.notes}` : '',
     '',
     'Open Family Items',
-    openItems.length ? openItems.map((item) => `- ${item.type.replace('_', ' ')} / ${item.priority} / ${item.status}: ${item.detail}`).join('\n') : 'No open Care Circle items.',
+    openItems.length ? openItems.map((item) => `- ${concernTypeLabel(item.type)} / ${item.priority} / ${item.status}: ${item.detail}`).join('\n') : 'No open Care Circle items.',
   ].filter(Boolean);
   return lines.join('\n');
 }
@@ -212,9 +228,9 @@ function sharePackHtml(client: FullClient, circle: ReturnType<typeof emptyCareCi
 </head>
 <body>
   <h1>Care Circle Pack</h1>
-  <div class="meta">${escapeHtml(client.name)} / ${escapeHtml(PERMISSION_LABELS[audience])} / ${escapeHtml(todayUk())}</div>
+  <div class="meta">${escapeHtml(client.name)} / ${escapeHtml(permissionLabel(audience))} / ${escapeHtml(todayUk())}</div>
   <div class="box">
-    <span class="pill">Mode: ${escapeHtml(MODE_LABELS[circle.mode])}</span>
+    <span class="pill">Mode: ${escapeHtml(modeLabel(circle.mode))}</span>
     <span class="pill">Contacts in scope: ${contacts.length}</span>
     <span class="pill">Open items: ${openItems.length}</span>
   </div>
@@ -223,14 +239,14 @@ function sharePackHtml(client: FullClient, circle: ReturnType<typeof emptyCareCi
   <h2>Sharing Controls</h2>
   <div class="box">
     <ul>
-      ${contacts.length ? contacts.map((contact) => `<li><strong>${escapeHtml(contact.name)}</strong> - ${escapeHtml(contact.relationship || 'relationship not recorded')} / ${escapeHtml(PERMISSION_LABELS[contact.permissionLevel])} / ${contact.verified ? 'verified' : 'not verified'}${contactExpired(contact) ? ' / review expired' : ''}</li>`).join('') : '<li>No contacts are currently in scope for this permission level.</li>'}
+      ${contacts.length ? contacts.map((contact) => `<li><strong>${escapeHtml(contact.name)}</strong> - ${escapeHtml(contact.relationship || 'relationship not recorded')} / ${escapeHtml(permissionLabel(contact.permissionLevel))} / ${contact.verified ? 'verified' : 'not verified'}${contactExpired(contact) ? ' / review expired' : ''}</li>`).join('') : '<li>No contacts are currently in scope for this permission level.</li>'}
     </ul>
     ${circle.notes ? `<p><strong>Boundaries:</strong> ${escapeHtml(circle.notes)}</p>` : ''}
   </div>
   <h2>Open Family Items</h2>
   <div class="box">
     <ul>
-      ${openItems.length ? openItems.map((item) => `<li><strong>${escapeHtml(item.type.replace('_', ' '))}</strong> / ${escapeHtml(item.priority)} / ${escapeHtml(item.status)}: ${escapeHtml(item.detail)}</li>`).join('') : '<li>No open Care Circle items.</li>'}
+      ${openItems.length ? openItems.map((item) => `<li><strong>${escapeHtml(concernTypeLabel(item.type))}</strong> / ${escapeHtml(item.priority)} / ${escapeHtml(item.status)}: ${escapeHtml(item.detail)}</li>`).join('') : '<li>No open Care Circle items.</li>'}
     </ul>
   </div>
   <div class="footer">Manager reviewed pack. Internal evidence references remain in Care Ops and are not printed for family-facing circulation unless separately authorised.</div>
@@ -249,7 +265,7 @@ function buildFamilySummary(client: FullClient, entries: CareEntry[], mode: Care
   const lines = [
     `Family update for ${name} - ${todayUk()}`,
     '',
-    `Mode: ${MODE_LABELS[mode]}. This is a manager-reviewed summary, not a raw care record.`,
+    `Mode: ${modeLabel(mode)}. This is a manager-reviewed summary, not a raw care record.`,
     '',
     `Wellbeing: ${inferMood(entries)}`,
     `Support covered: ${taskSummary(entries)}`,
@@ -300,7 +316,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const readinessIssues = [
     circle.mode === 'off' ? 'Care Circle mode is Off.' : '',
     !latestUpdate ? 'No reviewed update has been saved yet.' : '',
-    contactsInScope.length === 0 ? `No ${PERMISSION_LABELS[shareAudience]} contacts are in scope.` : '',
+    contactsInScope.length === 0 ? `No ${permissionLabel(shareAudience)} contacts are in scope.` : '',
     contactsInScope.some((contact) => !contact.verified) ? 'One or more contacts need verification.' : '',
     contactsInScope.some((contact) => !contactHasRoute(contact)) ? 'One or more contacts have no email or phone route.' : '',
     contactsInScope.some(contactExpired) ? 'One or more contacts have an expired review date.' : '',
@@ -422,7 +438,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     if (!client || mode === circle.mode) return;
     updateCircleWithActivity(
       { mode },
-      activity('mode_changed', 'Care Circle mode changed', `${MODE_LABELS[circle.mode]} -> ${MODE_LABELS[mode]}`)
+      activity('mode_changed', 'Care Circle mode changed', `${modeLabel(circle.mode)} -> ${modeLabel(mode)}`)
     );
   }
 
@@ -430,7 +446,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     if (!contactDraft.name.trim()) return;
     updateCircleWithActivity(
       { contacts: [contactDraft, ...(circle.contacts || [])] },
-      activity('contact_added', 'Contact added', `${contactDraft.name} added as ${PERMISSION_LABELS[contactDraft.permissionLevel]}.`, contactDraft.id)
+      activity('contact_added', 'Contact added', `${contactDraft.name} added as ${permissionLabel(contactDraft.permissionLevel)}.`, contactDraft.id)
     );
     setContactDraft(newContact());
   }
@@ -450,7 +466,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     const concern: CareCircleConcern = { ...concernDraft, createdAt: todayIso(), dueDate: concernDraft.dueDate || dueDateFor(concernDraft.priority) };
     const action: Action = {
       id: uid(),
-      title: `${concern.type.replace('_', ' ')} - ${client.name}`,
+      title: `${concernTypeLabel(concern.type)} - ${client.name}`,
       description: [
         concern.detail,
         concern.source ? `Raised by: ${concern.source}` : '',
@@ -469,7 +485,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     saveActions([action, ...loadActions()]);
     updateCircleWithActivity(
       { concerns: [linkedConcern, ...(circle.concerns || [])] },
-      activity('concern_logged', 'Care Circle item logged', `Internal action created for ${concern.type.replace('_', ' ')}.`, linkedConcern.id)
+      activity('concern_logged', 'Care Circle item logged', `Internal action created for ${concernTypeLabel(concern.type)}.`, linkedConcern.id)
     );
     setConcernDraft(newConcern());
   }
@@ -480,7 +496,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     updateCircle({
       concerns: (circle.concerns || []).map((concern) => concern.id === id ? { ...concern, ...patch } : concern),
       activity: statusChanged
-        ? [activity('status_changed', 'Care Circle item status changed', `${prior.type.replace('_', ' ')} moved to ${patch.status}.`, id), ...(circle.activity || [])]
+        ? [activity('status_changed', 'Care Circle item status changed', `${concernTypeLabel(prior.type)} moved to ${patch.status}.`, id), ...(circle.activity || [])]
         : circle.activity,
     });
   }
@@ -491,7 +507,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     setCopiedId('share-pack');
     updateCircleWithActivity(
       {},
-      activity('share_pack_copied', 'Share pack copied', `${PERMISSION_LABELS[shareAudience]} pack copied for ${client.name}.`)
+      activity('share_pack_copied', 'Share pack copied', `${permissionLabel(shareAudience)} pack copied for ${client.name}.`)
     );
     window.setTimeout(() => setCopiedId(''), 1400);
   }
@@ -507,7 +523,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     window.setTimeout(() => win.print(), 300);
     updateCircleWithActivity(
       {},
-      activity('share_pack_printed', 'Share pack printed', `${PERMISSION_LABELS[shareAudience]} pack printed for ${client.name}.`)
+      activity('share_pack_printed', 'Share pack printed', `${permissionLabel(shareAudience)} pack printed for ${client.name}.`)
     );
   }
 
@@ -548,7 +564,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               onClick={() => setMode(mode)}
               className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${circle.mode === mode ? 'btn-tactical' : 'btn-clay text-hc-muted'}`}
             >
-              {MODE_LABELS[mode]}
+              {modeLabel(mode)}
             </button>
           ))}
         </div>
@@ -661,7 +677,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               aria-label="Share pack audience"
             >
               {(Object.keys(PERMISSION_LABELS) as ShareAudience[]).map((level) => (
-                <option key={level} value={level}>{PERMISSION_LABELS[level]}</option>
+                <option key={level} value={level}>{permissionLabel(level)}</option>
               ))}
             </select>
             <button onClick={copySharePack} className="w-full btn-clay rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
@@ -713,7 +729,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             <input value={contactDraft.email} onChange={(event) => setContactDraft({ ...contactDraft, email: event.target.value })} placeholder="Email" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
             <input value={contactDraft.phone} onChange={(event) => setContactDraft({ ...contactDraft, phone: event.target.value })} placeholder="Phone" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
             <select value={contactDraft.permissionLevel} onChange={(event) => setContactDraft({ ...contactDraft, permissionLevel: event.target.value as CareCirclePermissionLevel })} className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none">
-              {(Object.keys(PERMISSION_LABELS) as CareCirclePermissionLevel[]).map((level) => <option key={level} value={level}>{PERMISSION_LABELS[level]}</option>)}
+              {(Object.keys(PERMISSION_LABELS) as CareCirclePermissionLevel[]).map((level) => <option key={level} value={level}>{permissionLabel(level)}</option>)}
             </select>
             <input value={contactDraft.reviewDate} onChange={(event) => setContactDraft({ ...contactDraft, reviewDate: event.target.value })} placeholder="Review date" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
             <label className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none flex items-center gap-3">
@@ -736,7 +752,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               <div key={contact.id} className="bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4 flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-black text-hc-text">{contact.name}</div>
-                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{contact.relationship} / {PERMISSION_LABELS[contact.permissionLevel]}</div>
+                  <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{contact.relationship} / {permissionLabel(contact.permissionLevel)}</div>
                   <div className="text-xs text-hc-muted mt-2">{contact.email || contact.phone || 'No contact route recorded'}</div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <span className={`pill text-[8px] font-black uppercase tracking-widest ${contact.verified ? 'pill-green' : 'pill-amber'}`}>
@@ -792,7 +808,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               <div key={concern.id} className="bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm font-black text-hc-text uppercase">{concern.type.replace('_', ' ')}</div>
+                    <div className="text-sm font-black text-hc-text uppercase">{concernTypeLabel(concern.type)}</div>
                     <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{concern.priority} / {concern.source || 'No source'} / due {concern.dueDate || 'unset'}</div>
                   </div>
                   <select value={concern.status} onChange={(event) => updateConcern(concern.id, { status: event.target.value as CareCircleConcern['status'] })} className="hc-clay-inset rounded-xl px-3 py-2 text-[10px] font-black text-hc-text focus:outline-none">

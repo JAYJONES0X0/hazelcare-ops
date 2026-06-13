@@ -16,6 +16,50 @@ import { extractFileText } from '../lib/universal-extractor';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
+function parseCareCircleReviewDate(value: string) {
+  if (!value) return 0;
+  const parts = value.split(/[/-]/).map(part => part.trim());
+  if (parts.length === 3) {
+    const [d, m, y] = parts.map(Number);
+    if (d && m && y) return new Date(y < 100 ? y + 2000 : y, m - 1, d).getTime();
+  }
+  return Date.parse(value) || 0;
+}
+
+function isCareCircleContactExpired(reviewDate: string) {
+  const parsed = parseCareCircleReviewDate(reviewDate);
+  return !!parsed && parsed < Date.now() - 24 * 60 * 60 * 1000;
+}
+
+function getCareCircleStatus(client: FullClient) {
+  const circle = client.careCircle;
+  const contacts = circle?.contacts || [];
+  const updates = circle?.updates || [];
+  const concerns = circle?.concerns || [];
+  const activity = circle?.activity || [];
+  const active = !!circle && circle.mode !== 'off';
+  const reviewedUpdate = updates.some(update => update.status === 'reviewed' || update.status === 'shared');
+  const inScopeContacts = contacts.filter(contact => contact.permissionLevel === 'reassurance' || contact.permissionLevel === 'care_plan' || contact.permissionLevel === 'risk_aware' || contact.permissionLevel === 'professional');
+  const verifiedContacts = inScopeContacts.filter(contact => contact.verified && (contact.email.trim() || contact.phone.trim()) && !isCareCircleContactExpired(contact.reviewDate));
+  const openConcerns = concerns.filter(concern => concern.status !== 'resolved');
+  const expiredContacts = contacts.filter(contact => isCareCircleContactExpired(contact.reviewDate));
+  const unverifiedContacts = contacts.filter(contact => !contact.verified);
+  const routeMissing = contacts.filter(contact => !contact.email.trim() && !contact.phone.trim());
+  const recentShare = activity.find(item => item.type === 'share_pack_copied' || item.type === 'share_pack_printed' || item.type === 'update_copied');
+  const issues = [
+    active ? '' : 'Mode off',
+    active && !reviewedUpdate ? 'No reviewed update' : '',
+    active && contacts.length === 0 ? 'No contacts' : '',
+    active && contacts.length > 0 && verifiedContacts.length === 0 ? 'No verified route' : '',
+    unverifiedContacts.length ? `${unverifiedContacts.length} unverified` : '',
+    expiredContacts.length ? `${expiredContacts.length} expired review` : '',
+    routeMissing.length ? `${routeMissing.length} no route` : '',
+    openConcerns.length ? `${openConcerns.length} open item${openConcerns.length === 1 ? '' : 's'}` : '',
+  ].filter(Boolean);
+  const ready = active && reviewedUpdate && verifiedContacts.length > 0 && expiredContacts.length === 0 && routeMissing.length === 0 && unverifiedContacts.length === 0 && openConcerns.length === 0;
+  return { active, reviewedUpdate, contacts, verifiedContacts, openConcerns, expiredContacts, unverifiedContacts, routeMissing, recentShare, issues, ready };
+}
+
 export function ClientDocsPage() {
   const [subView, setSubView] = useState<SubView>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -592,6 +636,19 @@ export function ClientDocsPage() {
   const riskCount = clients.filter(c => c.risk && c.risk.risks.some(r => r.title)).length;
   const cpCount = clients.filter(c => c.carePlan && c.carePlan.domains.some(d => d.enabled)).length;
   const circleCount = clients.filter(c => c.careCircle && c.careCircle.mode !== 'off').length;
+  const circleRows = clients
+    .map(client => ({ client, status: getCareCircleStatus(client) }))
+    .filter(row => row.status.active || row.status.openConcerns.length > 0 || row.status.contacts.length > 0 || row.status.recentShare)
+    .sort((a, b) => {
+      const ar = a.status.ready ? 1 : 0;
+      const br = b.status.ready ? 1 : 0;
+      if (ar !== br) return ar - br;
+      return b.status.openConcerns.length - a.status.openConcerns.length;
+    });
+  const circleReady = circleRows.filter(row => row.status.ready).length;
+  const circleNeedsReview = circleRows.filter(row => !row.status.ready).length;
+  const circleOpenItems = circleRows.reduce((sum, row) => sum + row.status.openConcerns.length, 0);
+  const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
 
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
@@ -655,6 +712,79 @@ export function ClientDocsPage() {
             <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
+      )}
+
+      {circleRows.length > 0 && (
+        <section className="mb-8 hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
+          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4 mb-5">
+            <div>
+              <div className="section-header text-[10px] mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#5d0565]" />
+                Care Circle Oversight
+              </div>
+              <p className="text-xs text-hc-muted font-medium max-w-3xl leading-relaxed">
+                Operational view of family and professional visibility across people: readiness, contact review, unresolved items, and recent sharing activity.
+              </p>
+            </div>
+            <button onClick={() => setFilterText('')}
+              className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+              Full queue
+            </button>
+          </div>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-hc-teal">{circleReady}</div>
+              <div className="section-header text-[9px]">Share-ready</div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-flag-amber">{circleNeedsReview}</div>
+              <div className="section-header text-[9px]">Needs review</div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-flag-red">{circleOpenItems}</div>
+              <div className="section-header text-[9px]">Open family items</div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-[#5d0565]">{circleRecentShares}</div>
+              <div className="section-header text-[9px]">Recent shares</div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {circleRows.slice(0, 6).map(({ client, status }) => (
+              <div key={client.id} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-sm font-black text-hc-text">{client.name}</span>
+                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${status.ready ? 'pill-green' : 'pill-amber'}`}>
+                      {status.ready ? 'Ready' : 'Review'}
+                    </span>
+                    <span className="pill text-[8px] font-black uppercase tracking-widest bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/20">
+                      {client.careCircle?.mode?.replaceAll('_', ' ') || 'off'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{status.verifiedContacts.length}/{status.contacts.length} verified contacts</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{status.openConcerns.length} open items</span>
+                    {status.recentShare && <span className="text-[10px] font-bold text-hc-teal uppercase tracking-widest">shared {new Date(status.recentShare.createdAt).toLocaleDateString('en-GB')}</span>}
+                  </div>
+                  {!status.ready && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {status.issues.slice(0, 5).map(issue => (
+                        <span key={issue} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{issue}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => openCareCircle(client.id)}
+                    className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                    Open Care Circle
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Client cards */}
