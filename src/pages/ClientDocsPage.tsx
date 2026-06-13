@@ -13,52 +13,9 @@ import { CareCirclePanel } from './CareCirclePanel';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
+import { careCircleModeLabel, getCareCircleStatus } from '../lib/care-circle-status';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
-
-function parseCareCircleReviewDate(value: string) {
-  if (!value) return 0;
-  const parts = value.split(/[/-]/).map(part => part.trim());
-  if (parts.length === 3) {
-    const [d, m, y] = parts.map(Number);
-    if (d && m && y) return new Date(y < 100 ? y + 2000 : y, m - 1, d).getTime();
-  }
-  return Date.parse(value) || 0;
-}
-
-function isCareCircleContactExpired(reviewDate: string) {
-  const parsed = parseCareCircleReviewDate(reviewDate);
-  return !!parsed && parsed < Date.now() - 24 * 60 * 60 * 1000;
-}
-
-function getCareCircleStatus(client: FullClient) {
-  const circle = client.careCircle;
-  const contacts = circle?.contacts || [];
-  const updates = circle?.updates || [];
-  const concerns = circle?.concerns || [];
-  const activity = circle?.activity || [];
-  const active = !!circle && circle.mode !== 'off';
-  const reviewedUpdate = updates.some(update => update.status === 'reviewed' || update.status === 'shared');
-  const inScopeContacts = contacts.filter(contact => contact.permissionLevel === 'reassurance' || contact.permissionLevel === 'care_plan' || contact.permissionLevel === 'risk_aware' || contact.permissionLevel === 'professional');
-  const verifiedContacts = inScopeContacts.filter(contact => contact.verified && (contact.email.trim() || contact.phone.trim()) && !isCareCircleContactExpired(contact.reviewDate));
-  const openConcerns = concerns.filter(concern => concern.status !== 'resolved');
-  const expiredContacts = contacts.filter(contact => isCareCircleContactExpired(contact.reviewDate));
-  const unverifiedContacts = contacts.filter(contact => !contact.verified);
-  const routeMissing = contacts.filter(contact => !contact.email.trim() && !contact.phone.trim());
-  const recentShare = activity.find(item => item.type === 'share_pack_copied' || item.type === 'share_pack_printed' || item.type === 'update_copied');
-  const issues = [
-    active ? '' : 'Mode off',
-    active && !reviewedUpdate ? 'No reviewed update' : '',
-    active && contacts.length === 0 ? 'No contacts' : '',
-    active && contacts.length > 0 && verifiedContacts.length === 0 ? 'No verified route' : '',
-    unverifiedContacts.length ? `${unverifiedContacts.length} unverified` : '',
-    expiredContacts.length ? `${expiredContacts.length} expired review` : '',
-    routeMissing.length ? `${routeMissing.length} no route` : '',
-    openConcerns.length ? `${openConcerns.length} open item${openConcerns.length === 1 ? '' : 's'}` : '',
-  ].filter(Boolean);
-  const ready = active && reviewedUpdate && verifiedContacts.length > 0 && expiredContacts.length === 0 && routeMissing.length === 0 && unverifiedContacts.length === 0 && openConcerns.length === 0;
-  return { active, reviewedUpdate, contacts, verifiedContacts, openConcerns, expiredContacts, unverifiedContacts, routeMissing, recentShare, issues, ready };
-}
 
 export function ClientDocsPage() {
   const [subView, setSubView] = useState<SubView>('list');
@@ -759,7 +716,7 @@ export function ClientDocsPage() {
                       {status.ready ? 'Ready' : 'Review'}
                     </span>
                     <span className="pill text-[8px] font-black uppercase tracking-widest bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/20">
-                      {client.careCircle?.mode?.replaceAll('_', ' ') || 'off'}
+                      {careCircleModeLabel(client.careCircle?.mode)}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
