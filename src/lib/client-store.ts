@@ -214,6 +214,7 @@ export interface CareCircleUpdate {
   shareability: 'green' | 'amber' | 'red';
   summary: string;
   sourceEntryIds: string[];
+  sourceRefs?: string[];
   reviewedBy: string;
   reviewedAt: string;
   createdAt: string;
@@ -229,6 +230,18 @@ export interface CareCircleConcern {
   status: 'open' | 'in_progress' | 'resolved';
   createdAt: string;
   response: string;
+  dueDate?: string;
+  actionId?: string;
+}
+
+export interface CareCircleActivity {
+  id: string;
+  type: 'mode_changed' | 'contact_added' | 'update_generated' | 'update_copied' | 'concern_logged' | 'action_created' | 'status_changed';
+  label: string;
+  detail: string;
+  createdAt: string;
+  actor: string;
+  refId?: string;
 }
 
 export interface CareCircleData {
@@ -236,6 +249,7 @@ export interface CareCircleData {
   contacts: CareCircleContact[];
   updates: CareCircleUpdate[];
   concerns: CareCircleConcern[];
+  activity: CareCircleActivity[];
   notes: string;
 }
 
@@ -262,6 +276,15 @@ function isQuotaError(e: unknown): boolean {
 
 function cleanText(value: string | undefined | null, max = 1200): string {
   return (value || '').split('\u0000').join('').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function cleanMultiline(value: string | undefined | null, max = 2400): string {
+  return (value || '')
+    .split('\u0000').join('')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, max);
 }
 
 function compactVaultDocs(docs: VaultDoc[] | undefined | null, aggressive = false): VaultDoc[] | undefined {
@@ -324,7 +347,8 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
       updates: Array.isArray(client.careCircle.updates)
         ? client.careCircle.updates.slice(0, aggressive ? 6 : 30).map((update) => ({
             ...update,
-            summary: cleanText(update.summary, aggressive ? 900 : 2400),
+            summary: cleanMultiline(update.summary, aggressive ? 900 : 2400),
+            sourceRefs: Array.isArray(update.sourceRefs) ? update.sourceRefs.slice(0, aggressive ? 6 : 16).map((ref) => cleanText(ref, 220)) : [],
             reviewedBy: cleanText(update.reviewedBy, 120),
           }))
         : [],
@@ -334,7 +358,18 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
             source: cleanText(concern.source, 120),
             detail: cleanText(concern.detail, aggressive ? 500 : 1400),
             owner: cleanText(concern.owner, 120),
-            response: cleanText(concern.response, aggressive ? 500 : 1400),
+            response: cleanMultiline(concern.response, aggressive ? 500 : 1400),
+            dueDate: cleanText(concern.dueDate, 40),
+            actionId: cleanText(concern.actionId, 80),
+          }))
+        : [],
+      activity: Array.isArray(client.careCircle.activity)
+        ? client.careCircle.activity.slice(0, aggressive ? 12 : 80).map((activity) => ({
+            ...activity,
+            label: cleanText(activity.label, 160),
+            detail: cleanText(activity.detail, aggressive ? 180 : 360),
+            actor: cleanText(activity.actor, 120),
+            refId: cleanText(activity.refId, 80),
           }))
         : [],
     } : undefined,
@@ -606,6 +641,7 @@ export function emptyCareCircle(reviewDate: string): CareCircleData {
     contacts: [],
     updates: [],
     concerns: [],
+    activity: [],
     notes: `Family involvement is optional and must follow the person's consent, best-interest decision-making where relevant, safeguarding boundaries, and provider policy. Review by ${reviewDate}.`,
   };
 }

@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle, Copy, MessageSquare, Plus, Save, ShieldCheck, Sparkles, Trash2, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, CheckCircle, Copy, FileText, Link2, MessageSquare, Plus, Save, ShieldCheck, Sparkles, Trash2, Users } from 'lucide-react';
 import {
   emptyCareCircle,
   loadClients,
   saveClient,
+  type CareCircleActivity,
   type CareCircleConcern,
   type CareCircleContact,
   type CareCircleMode,
@@ -11,8 +12,8 @@ import {
   type CareCircleUpdate,
   type FullClient,
 } from '../lib/client-store';
-import { loadWeekData, uid } from '../lib/storage';
-import type { CareEntry } from '../lib/types';
+import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
+import type { Action, ActionPriority, CareEntry } from '../lib/types';
 
 interface Props {
   clientId: string;
@@ -52,6 +53,16 @@ function cleanLine(input: string | undefined, max = 180) {
   return text.length > max ? `${text.slice(0, max - 3).trim()}...` : text;
 }
 
+function addDays(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function actorFor(client: FullClient) {
+  return client.responsible || client.keyWorker || client.completedBy || 'Manager';
+}
+
 function isSensitive(entry: CareEntry) {
   const text = `${entry.type} ${entry.entry} ${(entry.flags || []).join(' ')}`.toLowerCase();
   return /safeguard|abuse|alleg|police|financial|money|medication error|self-harm|suicide|assault|violence|injur|capacity|deprivation|domestic|exploitation|complaint/.test(text)
@@ -69,6 +80,41 @@ function taskSummary(entries: CareEntry[]) {
   const types = Array.from(new Set(entries.map((entry) => entry.type).filter(Boolean))).slice(0, 5);
   if (types.length) return types.join(', ');
   return 'General support, wellbeing checks, and daily living support where evidenced.';
+}
+
+function sourceRef(entry: CareEntry) {
+  const bits = [entry.date, entry.time, entry.house, entry.type].filter(Boolean).join(' / ');
+  return `${bits || 'Care entry'}: ${cleanLine(entry.entry, 170)}`;
+}
+
+function clientEvidenceRefs(client: FullClient) {
+  const refs: string[] = [];
+  const domains = client.carePlan?.domains?.filter((domain) => domain.enabled) || [];
+  for (const domain of domains.slice(0, 8)) {
+    const detail = cleanLine(domain.identifiedNeed || domain.howToSupport || domain.desiredOutcome || domain.riskNotes, 170);
+    refs.push(`Care plan / ${domain.title}: ${detail || 'Domain enabled for support planning.'}`);
+  }
+  if (client.supportPlan?.needs?.length) {
+    for (const need of client.supportPlan.needs.slice(0, 6)) {
+      refs.push(`Support plan / ${need.area}: ${cleanLine(need.need || need.howToSupport || need.outcome, 170)}`);
+    }
+  }
+  if (client.clinicalBriefing) refs.push(`Clinical briefing: ${cleanLine(client.clinicalBriefing, 190)}`);
+  if (client.vaultDocs?.length) {
+    for (const doc of client.vaultDocs.slice(0, 4)) refs.push(`Evidence vault / ${doc.name}: ${cleanLine(doc.text, 170)}`);
+  }
+  return refs.filter(Boolean);
+}
+
+function dueDateFor(priority: CareCircleConcern['priority']) {
+  if (priority === 'critical') return addDays(1);
+  if (priority === 'high') return addDays(3);
+  if (priority === 'medium') return addDays(7);
+  return addDays(14);
+}
+
+function actionPriorityFor(priority: CareCircleConcern['priority']): ActionPriority {
+  return priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
 }
 
 function buildFamilySummary(client: FullClient, entries: CareEntry[], mode: CareCircleMode) {
@@ -116,6 +162,7 @@ function getClientEntries(client: FullClient) {
 export function CareCirclePanel({ clientId, onBack }: Props) {
   const [clients, setClients] = useState<FullClient[]>(() => loadClients());
   const [copiedId, setCopiedId] = useState('');
+  const [reviewDraft, setReviewDraft] = useState('');
   const [contactDraft, setContactDraft] = useState<CareCircleContact>(() => newContact());
   const [concernDraft, setConcernDraft] = useState<CareCircleConcern>(() => newConcern());
   const client = clients.find((item) => item.id === clientId);
@@ -124,6 +171,11 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const circle = client?.careCircle || emptyCareCircle(client?.reviewDate || todayUk());
   const generatedSummary = client ? buildFamilySummary(client, entries, circle.mode) : '';
   const shareability = shareabilityFor(entries, circle.mode);
+  const sourceRefs = [...entries.slice(0, 12).map(sourceRef), ...(client ? clientEvidenceRefs(client) : [])].slice(0, 16);
+
+  useEffect(() => {
+    setReviewDraft(generatedSummary);
+  }, [generatedSummary]);
 
   function persist(next: FullClient) {
     saveClient(next);
@@ -133,6 +185,25 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   function updateCircle(patch: Partial<typeof circle>) {
     if (!client) return;
     persist({ ...client, careCircle: { ...circle, ...patch } });
+  }
+
+  function activity(type: CareCircleActivity['type'], label: string, detail: string, refId?: string): CareCircleActivity {
+    return {
+      id: uid(),
+      type,
+      label,
+      detail,
+      refId,
+      actor: client ? actorFor(client) : 'Manager',
+      createdAt: todayIso(),
+    };
+  }
+
+  function updateCircleWithActivity(patch: Partial<typeof circle>, item: CareCircleActivity) {
+    updateCircle({
+      ...patch,
+      activity: [item, ...(circle.activity || [])],
+    });
   }
 
   function newContact(): CareCircleContact {
@@ -161,13 +232,26 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
       status: 'open',
       createdAt: todayIso(),
       response: '',
+      dueDate: dueDateFor('medium'),
     };
   }
 
   async function copyUpdate(update: CareCircleUpdate | null = null) {
-    const text = update?.summary || generatedSummary;
+    const text = update?.summary || reviewDraft || generatedSummary;
     await navigator.clipboard.writeText(text);
     setCopiedId(update?.id || 'draft');
+    if (client) {
+      if (update) {
+        updateCircleWithActivity(
+          {
+            updates: (circle.updates || []).map((item) => item.id === update.id ? { ...item, status: 'shared' } : item),
+          },
+          activity('update_copied', 'Reviewed update copied', `${client.name} update copied for controlled sharing.`, update.id)
+        );
+      } else {
+        updateCircleWithActivity({}, activity('update_copied', 'Draft update copied', `${client.name} draft copied before saving.`));
+      }
+    }
     window.setTimeout(() => setCopiedId(''), 1400);
   }
 
@@ -180,18 +264,33 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
       mode: circle.mode,
       status: 'reviewed',
       shareability,
-      summary: generatedSummary,
+      summary: reviewDraft || generatedSummary,
       sourceEntryIds: entries.slice(0, 12).map((entry) => entry.id),
-      reviewedBy: client.responsible || client.keyWorker || 'Manager',
+      sourceRefs,
+      reviewedBy: actorFor(client),
       reviewedAt: todayIso(),
       createdAt: todayIso(),
     };
-    updateCircle({ updates: [update, ...(circle.updates || [])] });
+    updateCircleWithActivity(
+      { updates: [update, ...(circle.updates || [])] },
+      activity('update_generated', 'Reviewed update saved', `${sourceRefs.length} source references retained internally.`, update.id)
+    );
+  }
+
+  function setMode(mode: CareCircleMode) {
+    if (!client || mode === circle.mode) return;
+    updateCircleWithActivity(
+      { mode },
+      activity('mode_changed', 'Care Circle mode changed', `${MODE_LABELS[circle.mode]} -> ${MODE_LABELS[mode]}`)
+    );
   }
 
   function addContact() {
     if (!contactDraft.name.trim()) return;
-    updateCircle({ contacts: [contactDraft, ...(circle.contacts || [])] });
+    updateCircleWithActivity(
+      { contacts: [contactDraft, ...(circle.contacts || [])] },
+      activity('contact_added', 'Contact added', `${contactDraft.name} added as ${PERMISSION_LABELS[contactDraft.permissionLevel]}.`, contactDraft.id)
+    );
     setContactDraft(newContact());
   }
 
@@ -200,14 +299,42 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   }
 
   function addConcern() {
-    if (!concernDraft.detail.trim()) return;
-    updateCircle({ concerns: [{ ...concernDraft, createdAt: todayIso() }, ...(circle.concerns || [])] });
+    if (!client || !concernDraft.detail.trim()) return;
+    const concern: CareCircleConcern = { ...concernDraft, createdAt: todayIso(), dueDate: concernDraft.dueDate || dueDateFor(concernDraft.priority) };
+    const action: Action = {
+      id: uid(),
+      title: `${concern.type.replace('_', ' ')} - ${client.name}`,
+      description: [
+        concern.detail,
+        concern.source ? `Raised by: ${concern.source}` : '',
+        concern.response ? `Initial response: ${concern.response}` : '',
+      ].filter(Boolean).join('\n'),
+      house: 'Client Care',
+      owner: concern.owner || actorFor(client),
+      priority: actionPriorityFor(concern.priority),
+      status: 'open',
+      createdAt: todayIso(),
+      dueDate: concern.dueDate || '',
+      sourceEntry: `care-circle:${client.id}:${concern.id}`,
+      tags: ['care-circle', concern.type, client.name],
+    };
+    const linkedConcern = { ...concern, actionId: action.id };
+    saveActions([action, ...loadActions()]);
+    updateCircleWithActivity(
+      { concerns: [linkedConcern, ...(circle.concerns || [])] },
+      activity('concern_logged', 'Care Circle item logged', `Internal action created for ${concern.type.replace('_', ' ')}.`, linkedConcern.id)
+    );
     setConcernDraft(newConcern());
   }
 
   function updateConcern(id: string, patch: Partial<CareCircleConcern>) {
+    const prior = (circle.concerns || []).find((concern) => concern.id === id);
+    const statusChanged = patch.status && prior && patch.status !== prior.status;
     updateCircle({
       concerns: (circle.concerns || []).map((concern) => concern.id === id ? { ...concern, ...patch } : concern),
+      activity: statusChanged
+        ? [activity('status_changed', 'Care Circle item status changed', `${prior.type.replace('_', ' ')} moved to ${patch.status}.`, id), ...(circle.activity || [])]
+        : circle.activity,
     });
   }
 
@@ -245,7 +372,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           {(Object.keys(MODE_LABELS) as CareCircleMode[]).map((mode) => (
             <button
               key={mode}
-              onClick={() => updateCircle({ mode })}
+              onClick={() => setMode(mode)}
               className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${circle.mode === mode ? 'btn-tactical' : 'btn-clay text-hc-muted'}`}
             >
               {MODE_LABELS[mode]}
@@ -271,11 +398,28 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             </span>
           </div>
           <textarea
-            value={generatedSummary}
-            readOnly
+            value={reviewDraft}
+            onChange={(event) => setReviewDraft(event.target.value)}
             rows={12}
             className="w-full hc-clay-inset rounded-2xl p-5 text-sm text-hc-text font-medium leading-relaxed resize-y focus:outline-none"
           />
+          <div className="mt-4 rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+            <div className="section-header text-[9px] mb-3 flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5 text-hc-teal" />
+              Internal source evidence retained
+            </div>
+            {sourceRefs.length ? (
+              <ul className="space-y-2 max-h-36 overflow-auto pr-2">
+                {sourceRefs.map((ref, idx) => (
+                  <li key={`${ref}-${idx}`} className="text-[11px] text-hc-muted font-bold leading-relaxed">
+                    {idx + 1}. {ref}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[11px] text-hc-muted font-bold">No diary source entries are currently loaded for this person.</p>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <button onClick={() => copyUpdate()} className="btn-clay rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
               <Copy className="w-4 h-4" />
@@ -378,6 +522,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             </select>
             <input value={concernDraft.source} onChange={(event) => setConcernDraft({ ...concernDraft, source: event.target.value })} placeholder="Raised by" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
             <input value={concernDraft.owner} onChange={(event) => setConcernDraft({ ...concernDraft, owner: event.target.value })} placeholder="Owner" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
+            <input value={concernDraft.dueDate || ''} onChange={(event) => setConcernDraft({ ...concernDraft, dueDate: event.target.value })} placeholder="Due date" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
             <textarea value={concernDraft.detail} onChange={(event) => setConcernDraft({ ...concernDraft, detail: event.target.value })} placeholder="What was raised?" rows={4} className="md:col-span-2 hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
           </div>
           <button onClick={addConcern} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-5">
@@ -390,7 +535,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-sm font-black text-hc-text uppercase">{concern.type.replace('_', ' ')}</div>
-                    <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{concern.priority} / {concern.source || 'No source'} / {new Date(concern.createdAt).toLocaleDateString('en-GB')}</div>
+                    <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{concern.priority} / {concern.source || 'No source'} / due {concern.dueDate || 'unset'}</div>
                   </div>
                   <select value={concern.status} onChange={(event) => updateConcern(concern.id, { status: event.target.value as CareCircleConcern['status'] })} className="hc-clay-inset rounded-xl px-3 py-2 text-[10px] font-black text-hc-text focus:outline-none">
                     <option value="open">Open</option>
@@ -399,6 +544,12 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                   </select>
                 </div>
                 <p className="text-xs text-hc-text/80 leading-relaxed mt-3">{concern.detail}</p>
+                {concern.actionId && (
+                  <div className="mt-3 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-hc-teal">
+                    <Link2 className="w-3 h-3" />
+                    Action linked
+                  </div>
+                )}
                 <textarea value={concern.response} onChange={(event) => updateConcern(concern.id, { response: event.target.value })} placeholder="Response/actions taken..." rows={2} className="mt-3 w-full hc-clay-inset rounded-xl px-4 py-3 text-xs font-bold text-hc-text focus:outline-none" />
               </div>
             ))}
@@ -423,6 +574,39 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                   </button>
                 </div>
                 <pre className="whitespace-pre-wrap text-xs leading-relaxed text-hc-text/80 font-sans">{update.summary}</pre>
+                {update.sourceRefs && update.sourceRefs.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-[10px] font-black uppercase tracking-widest text-hc-teal">Internal evidence refs</summary>
+                    <ul className="mt-3 space-y-2">
+                      {update.sourceRefs.map((ref, idx) => (
+                        <li key={`${update.id}-${idx}`} className="text-[11px] text-hc-muted font-bold leading-relaxed">{idx + 1}. {ref}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(circle.activity || []).length > 0 && (
+        <section className="hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20 mt-6">
+          <div className="section-header text-[10px] mb-5 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-hc-teal" />
+            Care Circle activity log
+          </div>
+          <div className="space-y-3">
+            {(circle.activity || []).map((item) => (
+              <div key={item.id} className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-3 rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+                <div className="text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                  {new Date(item.createdAt).toLocaleString('en-GB')}
+                </div>
+                <div>
+                  <div className="text-sm font-black text-hc-text">{item.label}</div>
+                  <div className="text-xs font-bold text-hc-muted mt-1">{item.detail}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-hc-muted/70 mt-2">{item.actor}</div>
+                </div>
               </div>
             ))}
           </div>
