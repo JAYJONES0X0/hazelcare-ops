@@ -14,6 +14,7 @@ import {
 } from '../lib/client-store';
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
+import { getCareCircleOperationalInsight } from '../lib/care-circle-insights';
 import {
   buildCareCircleSharePackHtml,
   buildCareCircleSharePackText,
@@ -219,6 +220,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const readinessIssues = shareReadiness.issues;
   const shareReady = shareReadiness.ready;
   const canReleaseSharePack = canReleaseCareCircleSharePack(shareReadiness, shareOverride);
+  const circleInsight = getCareCircleOperationalInsight(circle, shareReadiness);
 
   useEffect(() => {
     setReviewDraft(generatedSummary);
@@ -563,6 +565,34 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           </div>
           <div className={`pill text-[9px] font-black uppercase tracking-widest ${shareReady ? 'pill-green' : 'pill-amber'}`}>
             {shareReady ? 'Ready to share' : `${readinessIssues.length} checks`}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mt-5">
+          <div className="hc-clay-inset rounded-2xl p-4">
+            <div className="section-header text-[8px] mb-2">Window</div>
+            <div className="text-sm font-black text-hc-text capitalize">{circleInsight.windowLabel}</div>
+          </div>
+          <div className="hc-clay-inset rounded-2xl p-4">
+            <div className="section-header text-[8px] mb-2">Release lane</div>
+            <div className={`text-sm font-black uppercase ${circleInsight.releaseState === 'ready' ? 'text-hc-teal' : circleInsight.releaseState === 'blocked' ? 'text-flag-amber' : 'text-hc-muted'}`}>
+              {circleInsight.releaseState.replace('_', ' ')}
+            </div>
+          </div>
+          <div className="lg:col-span-2 hc-clay-inset rounded-2xl p-4">
+            <div className="section-header text-[8px] mb-2">Next move</div>
+            <div className="text-xs font-bold text-hc-text leading-relaxed">{circleInsight.nextMove}</div>
+          </div>
+          <div className="lg:col-span-2 rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+            <div className="section-header text-[8px] mb-2">Family pressure</div>
+            <div className="text-xs font-bold text-hc-muted leading-relaxed">{circleInsight.pressureLine}</div>
+          </div>
+          <div className="lg:col-span-2 rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+            <div className="section-header text-[8px] mb-2">Guardrails</div>
+            <ul className="space-y-1">
+              {circleInsight.controls.map((control) => (
+                <li key={control} className="text-[11px] font-bold text-hc-muted leading-relaxed">{control}</li>
+              ))}
+            </ul>
           </div>
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-5 mt-5">
