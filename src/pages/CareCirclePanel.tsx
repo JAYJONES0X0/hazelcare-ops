@@ -16,6 +16,7 @@ import { getAllEntriesAsync } from '../lib/entry-store';
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
 import { syncCareCircleLinkedAction } from '../lib/care-circle-action-sync';
+import { buildCareCircleInternalDraftText } from '../lib/care-circle-draft-copy';
 import { mergeCareCircleEvidenceEntries } from '../lib/care-circle-evidence';
 import {
   buildCareCircleFamilyDigest,
@@ -227,7 +228,13 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   }
 
   async function copyUpdate(update: CareCircleUpdate | null = null) {
-    const text = update?.summary || reviewDraft || generatedSummary;
+    const draftText = reviewDraft || generatedSummary;
+    const text = update?.summary || buildCareCircleInternalDraftText({
+      clientName: client?.name || '',
+      draft: draftText,
+      sourceCount: entries.length,
+      shareability,
+    });
     await navigator.clipboard.writeText(text);
     setCopiedId(update?.id || 'draft');
     if (client) {
@@ -239,7 +246,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           activity('update_copied', 'Reviewed update copied', `${client.name} update copied for controlled sharing.`, update.id)
         );
       } else {
-        updateCircleWithActivity({}, activity('update_copied', 'Draft update copied', `${client.name} draft copied before saving.`));
+        updateCircleWithActivity({}, activity('update_copied', 'Internal draft copied', `${client.name} draft copied for manager review only.`));
       }
     }
     window.setTimeout(() => setCopiedId(''), 1400);
@@ -469,7 +476,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           <div className="flex flex-wrap items-center gap-3 mt-4">
             <button onClick={() => copyUpdate()} className="btn-clay rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
               <Copy className="w-4 h-4" />
-              {copiedId === 'draft' ? 'Copied' : 'Copy Draft'}
+              {copiedId === 'draft' ? 'Copied' : 'Copy Internal Draft'}
             </button>
             <button onClick={saveGeneratedUpdate} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
               <Save className="w-4 h-4" />
