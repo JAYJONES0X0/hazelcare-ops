@@ -236,7 +236,7 @@ export interface CareCircleConcern {
 
 export interface CareCircleActivity {
   id: string;
-  type: 'mode_changed' | 'contact_added' | 'update_generated' | 'update_copied' | 'concern_logged' | 'action_created' | 'status_changed' | 'share_pack_copied' | 'share_pack_printed';
+  type: 'mode_changed' | 'contact_added' | 'update_generated' | 'update_copied' | 'concern_logged' | 'action_created' | 'status_changed' | 'share_pack_copied' | 'share_pack_printed' | 'response_copied';
   label: string;
   detail: string;
   createdAt: string;

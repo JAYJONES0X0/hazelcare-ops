@@ -15,6 +15,7 @@ import {
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
 import { getCareCircleOperationalInsight } from '../lib/care-circle-insights';
+import { buildCareCircleFamilyResponseText, getCareCircleResponseStatus } from '../lib/care-circle-response';
 import {
   buildCareCircleSharePackHtml,
   buildCareCircleSharePackText,
@@ -400,6 +401,25 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     });
   }
 
+  async function copyConcernResponse(concern: CareCircleConcern) {
+    if (!client) return;
+    const status = getCareCircleResponseStatus(concern);
+    if (!status.canCopy) return;
+    await navigator.clipboard.writeText(buildCareCircleFamilyResponseText(client.name, concern));
+    setCopiedId(`response-${concern.id}`);
+    updateCircleWithActivity(
+      {},
+      activity('response_copied', 'Family response copied', `${concernTypeLabel(concern.type)} response copied for ${client.name}.`, concern.id)
+    );
+    window.setTimeout(() => setCopiedId(''), 1400);
+  }
+
+  function resolveConcernWithResponse(concern: CareCircleConcern) {
+    const status = getCareCircleResponseStatus(concern);
+    if (!status.canResolve) return;
+    updateConcern(concern.id, { status: 'resolved' });
+  }
+
   async function copySharePack() {
     if (!client || !canReleaseSharePack) return;
     await navigator.clipboard.writeText(buildCareCircleSharePackText(client, circle, shareAudience, { managerOverride: !shareReady }));
@@ -754,29 +774,62 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             Log Item
           </button>
           <div className="space-y-3">
-            {(circle.concerns || []).map((concern) => (
-              <div key={concern.id} className="bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-black text-hc-text uppercase">{concernTypeLabel(concern.type)}</div>
-                    <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{concern.priority} / {concern.source || 'No source'} / due {concern.dueDate || 'unset'}</div>
+            {(circle.concerns || []).map((concern) => {
+              const responseStatus = getCareCircleResponseStatus(concern);
+              return (
+                <div key={concern.id} className="bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-black text-hc-text uppercase">{concernTypeLabel(concern.type)}</div>
+                      <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-1">{concern.priority} / {concern.source || 'No source'} / due {concern.dueDate || 'unset'}</div>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <span className={`pill text-[8px] font-black uppercase tracking-widest ${responseStatus.tone === 'green' ? 'pill-green' : responseStatus.tone === 'amber' ? 'pill-amber' : 'pill-purple'}`}>
+                        {responseStatus.label}
+                      </span>
+                      <select
+                        value={concern.status}
+                        onChange={(event) => {
+                          const nextStatus = event.target.value as CareCircleConcern['status'];
+                          if (nextStatus === 'resolved') resolveConcernWithResponse(concern);
+                          else updateConcern(concern.id, { status: nextStatus });
+                        }}
+                        className="hc-clay-inset rounded-xl px-3 py-2 text-[10px] font-black text-hc-text focus:outline-none"
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="resolved" disabled={!responseStatus.canResolve}>Resolved</option>
+                      </select>
+                    </div>
                   </div>
-                  <select value={concern.status} onChange={(event) => updateConcern(concern.id, { status: event.target.value as CareCircleConcern['status'] })} className="hc-clay-inset rounded-xl px-3 py-2 text-[10px] font-black text-hc-text focus:outline-none">
-                    <option value="open">Open</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
+                  <p className="text-xs text-hc-text/80 leading-relaxed mt-3">{concern.detail}</p>
+                  {concern.actionId && (
+                    <div className="mt-3 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-hc-teal">
+                      <Link2 className="w-3 h-3" />
+                      Action linked
+                    </div>
+                  )}
+                  <textarea value={concern.response} onChange={(event) => updateConcern(concern.id, { response: event.target.value })} placeholder="Response/actions taken..." rows={2} className="mt-3 w-full hc-clay-inset rounded-xl px-4 py-3 text-xs font-bold text-hc-text focus:outline-none" />
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => copyConcernResponse(concern)}
+                      disabled={!responseStatus.canCopy}
+                      className={`rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${responseStatus.canCopy ? 'btn-clay' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+                    >
+                      <Copy className="w-3 h-3" />
+                      {copiedId === `response-${concern.id}` ? 'Copied' : 'Copy Response'}
+                    </button>
+                    <button
+                      onClick={() => resolveConcernWithResponse(concern)}
+                      disabled={!responseStatus.canResolve || concern.status === 'resolved'}
+                      className={`rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest ${responseStatus.canResolve && concern.status !== 'resolved' ? 'btn-tactical' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+                    >
+                      Mark Resolved
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-hc-text/80 leading-relaxed mt-3">{concern.detail}</p>
-                {concern.actionId && (
-                  <div className="mt-3 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-hc-teal">
-                    <Link2 className="w-3 h-3" />
-                    Action linked
-                  </div>
-                )}
-                <textarea value={concern.response} onChange={(event) => updateConcern(concern.id, { response: event.target.value })} placeholder="Response/actions taken..." rows={2} className="mt-3 w-full hc-clay-inset rounded-xl px-4 py-3 text-xs font-bold text-hc-text focus:outline-none" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>
