@@ -15,6 +15,12 @@ import {
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
 import { syncCareCircleLinkedAction } from '../lib/care-circle-action-sync';
+import {
+  buildCareCircleFamilyDigest,
+  careCircleClientEvidenceRefs,
+  careCircleDigestShareability,
+  careCircleEntrySourceRef,
+} from '../lib/care-circle-family-digest';
 import { getCareCircleOperationalInsight } from '../lib/care-circle-insights';
 import { buildCareCircleFamilyResponseText, getCareCircleResponseStatus } from '../lib/care-circle-response';
 import {
@@ -60,16 +66,6 @@ function todayUk() {
   return new Date().toLocaleDateString('en-GB');
 }
 
-function firstName(client: FullClient) {
-  return client.preferredName || client.name.split(' ')[0] || 'this person';
-}
-
-function cleanLine(input: string | undefined, max = 180) {
-  const text = (input || '').replace(/\s+/g, ' ').trim();
-  if (!text) return '';
-  return text.length > max ? `${text.slice(0, max - 3).trim()}...` : text;
-}
-
 function modeLabel(mode?: CareCircleMode) {
   return (mode && MODE_LABELS[mode]) || careCircleModeLabel(mode);
 }
@@ -104,49 +100,6 @@ function contactAllowed(contact: CareCircleContact, audience: ShareAudience) {
   return careCircleContactAllowed(contact, audience);
 }
 
-function isSensitive(entry: CareEntry) {
-  const text = `${entry.type} ${entry.entry} ${(entry.flags || []).join(' ')}`.toLowerCase();
-  return /safeguard|abuse|alleg|police|financial|money|medication error|self-harm|suicide|assault|violence|injur|capacity|deprivation|domestic|exploitation|complaint/.test(text)
-    || entry.severity === 'red';
-}
-
-function inferMood(entries: CareEntry[]) {
-  const text = entries.map((entry) => entry.entry).join(' ').toLowerCase();
-  if (/happy|chatty|laugh|good spirits|settled|calm|relaxed|bright/.test(text)) return 'Settled, engaged, or in good spirits at points during the period.';
-  if (/anxious|low mood|upset|distress|agitated|withdrawn/.test(text)) return 'Some changes in mood or presentation were noted and should be reviewed before sharing.';
-  return 'No clear mood pattern was identified from the selected evidence.';
-}
-
-function taskSummary(entries: CareEntry[]) {
-  const types = Array.from(new Set(entries.map((entry) => entry.type).filter(Boolean))).slice(0, 5);
-  if (types.length) return types.join(', ');
-  return 'General support, wellbeing checks, and daily living support where evidenced.';
-}
-
-function sourceRef(entry: CareEntry) {
-  const bits = [entry.date, entry.time, entry.house, entry.type].filter(Boolean).join(' / ');
-  return `${bits || 'Care entry'}: ${cleanLine(entry.entry, 170)}`;
-}
-
-function clientEvidenceRefs(client: FullClient) {
-  const refs: string[] = [];
-  const domains = client.carePlan?.domains?.filter((domain) => domain.enabled) || [];
-  for (const domain of domains.slice(0, 8)) {
-    const detail = cleanLine(domain.identifiedNeed || domain.howToSupport || domain.desiredOutcome || domain.riskNotes, 170);
-    refs.push(`Care plan / ${domain.title}: ${detail || 'Domain enabled for support planning.'}`);
-  }
-  if (client.supportPlan?.needs?.length) {
-    for (const need of client.supportPlan.needs.slice(0, 6)) {
-      refs.push(`Support plan / ${need.area}: ${cleanLine(need.need || need.howToSupport || need.outcome, 170)}`);
-    }
-  }
-  if (client.clinicalBriefing) refs.push(`Clinical briefing: ${cleanLine(client.clinicalBriefing, 190)}`);
-  if (client.vaultDocs?.length) {
-    for (const doc of client.vaultDocs.slice(0, 4)) refs.push(`Evidence vault / ${doc.name}: ${cleanLine(doc.text, 170)}`);
-  }
-  return refs.filter(Boolean);
-}
-
 function dueDateFor(priority: CareCircleConcern['priority']) {
   if (priority === 'critical') return addDays(1);
   if (priority === 'high') return addDays(3);
@@ -156,39 +109,6 @@ function dueDateFor(priority: CareCircleConcern['priority']) {
 
 function actionPriorityFor(priority: CareCircleConcern['priority']): ActionPriority {
   return priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
-}
-
-function buildFamilySummary(client: FullClient, entries: CareEntry[], mode: CareCircleMode) {
-  const name = firstName(client);
-  const safeEntries = entries.filter((entry) => !isSensitive(entry)).slice(0, 8);
-  const sensitiveCount = entries.length - safeEntries.length;
-  const careDomains = client.carePlan?.domains?.filter((domain) => domain.enabled).slice(0, 4).map((domain) => domain.title) || [];
-  const source = safeEntries.length ? safeEntries : entries.slice(0, 3);
-  const evidenceLines = source.map((entry) => cleanLine(entry.entry, 150)).filter(Boolean).slice(0, 3);
-
-  const lines = [
-    `Family update for ${name} - ${todayUk()}`,
-    '',
-    `Mode: ${modeLabel(mode)}. This is a manager-reviewed summary, not a raw care record.`,
-    '',
-    `Wellbeing: ${inferMood(entries)}`,
-    `Support covered: ${taskSummary(entries)}`,
-    careDomains.length ? `Care areas in view: ${careDomains.join(', ')}.` : '',
-    evidenceLines.length ? `Meaningful notes: ${evidenceLines.join(' ')}` : `Meaningful notes: No share-ready diary evidence is available yet for ${name}.`,
-    sensitiveCount > 0 ? `Manager review required: ${sensitiveCount} source entr${sensitiveCount === 1 ? 'y was' : 'ies were'} held back because they may contain risk, safeguarding, medication, finance, or other sensitive detail.` : 'No high-sensitivity source entries were detected in this generated draft.',
-    '',
-    'Before sharing: confirm consent, relationship permissions, restrictions, and whether any detail should be removed.',
-  ].filter(Boolean);
-
-  return lines.join('\n');
-}
-
-function shareabilityFor(entries: CareEntry[], mode: CareCircleMode): CareCircleUpdate['shareability'] {
-  if (mode === 'off') return 'red';
-  const sensitive = entries.filter(isSensitive).length;
-  if (sensitive >= 2) return 'red';
-  if (sensitive === 1 || mode === 'professional_access') return 'amber';
-  return 'green';
 }
 
 function getClientEntries(client: FullClient) {
@@ -212,9 +132,9 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
 
   const entries = useMemo(() => client ? getClientEntries(client) : [], [client]);
   const circle = client?.careCircle || emptyCareCircle(client?.reviewDate || todayUk());
-  const generatedSummary = client ? buildFamilySummary(client, entries, circle.mode) : '';
-  const shareability = shareabilityFor(entries, circle.mode);
-  const sourceRefs = [...entries.slice(0, 12).map(sourceRef), ...(client ? clientEvidenceRefs(client) : [])].slice(0, 16);
+  const generatedSummary = client ? buildCareCircleFamilyDigest(client, entries, circle.mode) : '';
+  const shareability = careCircleDigestShareability(entries, circle.mode);
+  const sourceRefs = [...entries.slice(0, 12).map(careCircleEntrySourceRef), ...(client ? careCircleClientEvidenceRefs(client) : [])].slice(0, 16);
   const latestUpdate = latestReviewedCareCircleUpdate(circle.updates);
   const contactsInScope = (circle.contacts || []).filter((contact) => contactAllowed(contact, shareAudience));
   const verifiedInScope = contactsInScope.filter((contact) => contact.verified && contactHasRoute(contact) && !contactExpired(contact));
