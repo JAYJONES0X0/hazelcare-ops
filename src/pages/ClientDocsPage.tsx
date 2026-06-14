@@ -13,7 +13,7 @@ import { CareCirclePanel } from './CareCirclePanel';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
-import { buildCareCircleOversightRows } from '../lib/care-circle-oversight';
+import { buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from '../lib/care-circle-oversight';
 import { careCircleModeLabel } from '../lib/care-circle-status';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
@@ -602,6 +602,16 @@ export function ClientDocsPage() {
   const circleOverdueResponses = circleRows.reduce((sum, row) => sum + row.overdueItems, 0);
   const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
 
+  function printCareCircleOversight() {
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    if (!win) return;
+    win.document.open();
+    win.document.write(buildCareCircleOversightReportHtml(circleRows));
+    win.document.close();
+    win.focus();
+    window.setTimeout(() => win.print(), 300);
+  }
+
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
       {/* Page header */}
@@ -678,10 +688,16 @@ export function ClientDocsPage() {
                 Operational view of family and professional visibility across people: readiness, contact review, unresolved items, and recent sharing activity.
               </p>
             </div>
-            <button onClick={() => setFilterText('')}
-              className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
-              Full queue
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setFilterText('')}
+                className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                Full queue
+              </button>
+              <button onClick={printCareCircleOversight}
+                className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                Print Oversight
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 xl:grid-cols-6 gap-3 mb-5">
             <div className="hc-clay-inset rounded-2xl p-4">

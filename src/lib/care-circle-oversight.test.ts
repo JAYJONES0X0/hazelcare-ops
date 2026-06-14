@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCareCircleOversightRows } from './care-circle-oversight';
+import { buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from './care-circle-oversight';
 import type { FullClient } from './client-store';
 
 function client(overrides: Partial<FullClient>): FullClient {
@@ -80,5 +80,29 @@ describe('care circle oversight queue', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0].queueLabel).toBe('Recently shared');
+  });
+
+  it('builds a printable report without leaking raw unsafe HTML', () => {
+    const rows = buildCareCircleOversightRows([
+      client({
+        name: 'Ryan <script>alert(1)</script>',
+        careCircle: {
+          mode: 'standard_family_window',
+          notes: '',
+          contacts: [{ id: 'c1', name: 'A', relationship: 'Daughter', email: 'a@example.com', phone: '', permissionLevel: 'reassurance', verified: true, consentBasis: '', restrictions: '', reviewDate: '30/12/2026' }],
+          updates: [{ id: 'u1', dateFrom: '', dateTo: '', mode: 'standard_family_window', status: 'reviewed', shareability: 'green', summary: 'Reviewed.', sourceEntryIds: [], reviewedBy: 'Manager', reviewedAt: '2026-06-14T10:00:00.000Z', createdAt: '2026-06-14T10:00:00.000Z' }],
+          concerns: [{ id: 'q1', type: 'question', source: 'Family', detail: 'Need <urgent> reply.', owner: 'Manager', priority: 'high', status: 'open', createdAt: '2026-06-01T10:00:00.000Z', response: '', dueDate: '01/06/2026' }],
+          activity: [],
+        },
+      }),
+    ], new Date('2026-06-14T12:00:00.000Z'));
+
+    const html = buildCareCircleOversightReportHtml(rows, new Date('2026-06-14T12:00:00.000Z'));
+
+    expect(html).toContain('Care Circle Oversight Report');
+    expect(html).toContain('Overdue response');
+    expect(html).toContain('Ryan &lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).not.toContain('Ryan <script>alert(1)</script>');
+    expect(html).not.toContain('Need <urgent> reply.');
   });
 });
