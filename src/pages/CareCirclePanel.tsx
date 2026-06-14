@@ -21,6 +21,7 @@ import {
   careCircleContactAllowed,
   careCircleContactHasRoute,
   careCirclePermissionLabel,
+  getCareCircleShareReadiness,
   latestReviewedCareCircleUpdate,
 } from '../lib/care-circle-share-pack';
 import { careCircleModeLabel, isCareCircleContactExpired } from '../lib/care-circle-status';
@@ -212,15 +213,9 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const latestUpdate = latestReviewedCareCircleUpdate(circle.updates);
   const contactsInScope = (circle.contacts || []).filter((contact) => contactAllowed(contact, shareAudience));
   const verifiedInScope = contactsInScope.filter((contact) => contact.verified && contactHasRoute(contact) && !contactExpired(contact));
-  const readinessIssues = [
-    circle.mode === 'off' ? 'Care Circle mode is Off.' : '',
-    !latestUpdate ? 'No reviewed update has been saved yet.' : '',
-    contactsInScope.length === 0 ? `No ${permissionLabel(shareAudience)} contacts are in scope.` : '',
-    contactsInScope.some((contact) => !contact.verified) ? 'One or more contacts need verification.' : '',
-    contactsInScope.some((contact) => !contactHasRoute(contact)) ? 'One or more contacts have no email or phone route.' : '',
-    contactsInScope.some(contactExpired) ? 'One or more contacts have an expired review date.' : '',
-  ].filter(Boolean);
-  const shareReady = readinessIssues.length === 0;
+  const shareReadiness = getCareCircleShareReadiness(circle, shareAudience);
+  const readinessIssues = shareReadiness.issues;
+  const shareReady = shareReadiness.ready;
 
   useEffect(() => {
     setReviewDraft(generatedSummary);

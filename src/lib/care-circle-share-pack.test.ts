@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCareCircleSharePackHtml, buildCareCircleSharePackText } from './care-circle-share-pack';
+import { buildCareCircleSharePackHtml, buildCareCircleSharePackText, getCareCircleShareReadiness } from './care-circle-share-pack';
 import type { FullClient } from './client-store';
 
 const client = {
@@ -43,6 +43,13 @@ const client = {
 } as unknown as FullClient;
 
 describe('care circle share pack', () => {
+  it('blocks pack readiness while family items remain open', () => {
+    const readiness = getCareCircleShareReadiness(client.careCircle!, 'reassurance');
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.issues).toContain('1 open family item needs resolution or manager sign-off.');
+  });
+
   it('builds text from partial legacy records without crashing', () => {
     const text = buildCareCircleSharePackText(client, client.careCircle!, 'reassurance');
 

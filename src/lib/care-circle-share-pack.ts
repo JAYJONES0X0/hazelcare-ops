@@ -54,6 +54,22 @@ export function latestReviewedCareCircleUpdate(updates: CareCircleUpdate[] | und
   return (updates || []).find((update) => update.status === 'reviewed' || update.status === 'shared') || null;
 }
 
+export function getCareCircleShareReadiness(circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel) {
+  const contactsInScope = (circle.contacts || []).filter((contact) => careCircleContactAllowed(contact, audience));
+  const latestUpdate = latestReviewedCareCircleUpdate(circle.updates);
+  const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved');
+  const issues = [
+    circle.mode === 'off' ? 'Care Circle mode is Off.' : '',
+    !latestUpdate ? 'No reviewed update has been saved yet.' : '',
+    contactsInScope.length === 0 ? `No ${careCirclePermissionLabel(audience)} contacts are in scope.` : '',
+    contactsInScope.some((contact) => !contact.verified) ? 'One or more contacts need verification.' : '',
+    contactsInScope.some((contact) => !careCircleContactHasRoute(contact)) ? 'One or more contacts have no email or phone route.' : '',
+    contactsInScope.some((contact) => isCareCircleContactExpired(safeText(contact.reviewDate))) ? 'One or more contacts have an expired review date.' : '',
+    openItems.length ? `${openItems.length} open family item${openItems.length === 1 ? '' : 's'} need${openItems.length === 1 ? 's' : ''} resolution or manager sign-off.` : '',
+  ].filter(Boolean);
+  return { ready: issues.length === 0, issues, contactsInScope, latestUpdate, openItems };
+}
+
 function asParagraphs(input: string | undefined) {
   return escapeHtml(input || '').split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
 }
