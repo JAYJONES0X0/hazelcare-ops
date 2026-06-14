@@ -85,6 +85,55 @@ function openItemSummary(row: CareCircleOversightRow) {
   }).join('')}</ul>`;
 }
 
+function csvCell(value: unknown) {
+  return `"${String(value ?? '').replaceAll('"', '""')}"`;
+}
+
+function openItemSummaryText(row: CareCircleOversightRow) {
+  return row.status.openConcerns
+    .slice(0, 5)
+    .map((concern) => {
+      const response = getCareCircleResponseStatus(concern);
+      const due = concern.dueDate ? ` due ${concern.dueDate}` : '';
+      return `${concern.type.replace('_', ' ')} / ${concern.priority} / ${response.label}${due}: ${concern.detail || 'No detail recorded.'}`;
+    })
+    .join(' | ');
+}
+
+export function buildCareCircleOversightCsv(rows: CareCircleOversightRow[]) {
+  const header = [
+    'client_id',
+    'client_name',
+    'queue_state',
+    'mode',
+    'ready',
+    'verified_contacts',
+    'total_contacts',
+    'open_items',
+    'waiting_responses',
+    'overdue_responses',
+    'recent_share',
+    'issues',
+    'open_item_summary',
+  ];
+  const lines = rows.map((row) => [
+    row.client.id,
+    row.client.name,
+    row.queueLabel,
+    row.client.careCircle?.mode || 'off',
+    row.ready ? 'yes' : 'no',
+    row.status.verifiedContacts.length,
+    row.status.contacts.length,
+    row.openItems,
+    row.waitingResponses,
+    row.overdueItems,
+    row.status.recentShare?.createdAt || '',
+    row.status.issues.join('; '),
+    openItemSummaryText(row),
+  ].map(csvCell).join(','));
+  return [header.join(','), ...lines].join('\n');
+}
+
 export function buildCareCircleOversightReportHtml(rows: CareCircleOversightRow[], generatedAt = new Date()) {
   const ready = rows.filter((row) => row.ready).length;
   const waiting = rows.reduce((sum, row) => sum + row.waitingResponses, 0);

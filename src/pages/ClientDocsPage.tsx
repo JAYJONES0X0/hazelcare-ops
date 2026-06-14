@@ -13,8 +13,9 @@ import { CareCirclePanel } from './CareCirclePanel';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
-import { buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from '../lib/care-circle-oversight';
+import { buildCareCircleOversightCsv, buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from '../lib/care-circle-oversight';
 import { careCircleModeLabel } from '../lib/care-circle-status';
+import { downloadText } from '../lib/coordinator-export-pack';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
@@ -612,6 +613,11 @@ export function ClientDocsPage() {
     window.setTimeout(() => win.print(), 300);
   }
 
+  function downloadCareCircleOversightCsv() {
+    const day = new Date().toISOString().slice(0, 10);
+    downloadText(`care-circle-oversight-${day}.csv`, buildCareCircleOversightCsv(circleRows), 'text/csv;charset=utf-8');
+  }
+
   return (
     <div className="p-6 lg:p-10 xl:px-16 2xl:px-24 w-full animate-in fade-in duration-700">
       {/* Page header */}
@@ -696,6 +702,10 @@ export function ClientDocsPage() {
               <button onClick={printCareCircleOversight}
                 className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
                 Print Oversight
+              </button>
+              <button onClick={downloadCareCircleOversightCsv}
+                className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                CSV Export
               </button>
             </div>
           </div>

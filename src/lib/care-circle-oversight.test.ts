@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from './care-circle-oversight';
+import { buildCareCircleOversightCsv, buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from './care-circle-oversight';
 import type { FullClient } from './client-store';
 
 function client(overrides: Partial<FullClient>): FullClient {
@@ -104,5 +104,28 @@ describe('care circle oversight queue', () => {
     expect(html).toContain('Ryan &lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('Ryan <script>alert(1)</script>');
     expect(html).not.toContain('Need <urgent> reply.');
+  });
+
+  it('exports oversight rows to spreadsheet-safe CSV', () => {
+    const rows = buildCareCircleOversightRows([
+      client({
+        name: 'Ryan "The Shade"',
+        careCircle: {
+          mode: 'standard_family_window',
+          notes: '',
+          contacts: [{ id: 'c1', name: 'A', relationship: 'Daughter', email: 'a@example.com', phone: '', permissionLevel: 'reassurance', verified: true, consentBasis: '', restrictions: '', reviewDate: '30/12/2026' }],
+          updates: [{ id: 'u1', dateFrom: '', dateTo: '', mode: 'standard_family_window', status: 'reviewed', shareability: 'green', summary: 'Reviewed.', sourceEntryIds: [], reviewedBy: 'Manager', reviewedAt: '2026-06-14T10:00:00.000Z', createdAt: '2026-06-14T10:00:00.000Z' }],
+          concerns: [{ id: 'q1', type: 'question', source: 'Family', detail: 'Need reply.', owner: 'Manager', priority: 'high', status: 'open', createdAt: '2026-06-01T10:00:00.000Z', response: '', dueDate: '01/06/2026' }],
+          activity: [],
+        },
+      }),
+    ], new Date('2026-06-14T12:00:00.000Z'));
+
+    const csv = buildCareCircleOversightCsv(rows);
+
+    expect(csv.split('\n')[0]).toBe('client_id,client_name,queue_state,mode,ready,verified_contacts,total_contacts,open_items,waiting_responses,overdue_responses,recent_share,issues,open_item_summary');
+    expect(csv).toContain('"Ryan ""The Shade"""');
+    expect(csv).toContain('"Overdue response"');
+    expect(csv).toContain('question / high / Needs response due 01/06/2026: Need reply.');
   });
 });
