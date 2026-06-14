@@ -14,6 +14,16 @@ import {
 } from '../lib/client-store';
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
+import {
+  buildCareCircleSharePackHtml,
+  buildCareCircleSharePackText,
+  careCircleConcernTypeLabel,
+  careCircleContactAllowed,
+  careCircleContactHasRoute,
+  careCirclePermissionLabel,
+  latestReviewedCareCircleUpdate,
+} from '../lib/care-circle-share-pack';
+import { careCircleModeLabel, isCareCircleContactExpired } from '../lib/care-circle-status';
 
 interface Props {
   clientId: string;
@@ -33,13 +43,6 @@ const PERMISSION_LABELS: Record<CareCirclePermissionLevel, string> = {
   care_plan: 'Care Plan',
   risk_aware: 'Risk Aware',
   professional: 'Professional',
-};
-
-const PERMISSION_RANK: Record<CareCirclePermissionLevel, number> = {
-  reassurance: 1,
-  care_plan: 2,
-  risk_aware: 3,
-  professional: 4,
 };
 
 type ShareAudience = CareCirclePermissionLevel;
@@ -62,33 +65,16 @@ function cleanLine(input: string | undefined, max = 180) {
   return text.length > max ? `${text.slice(0, max - 3).trim()}...` : text;
 }
 
-function escapeHtml(input: string | undefined) {
-  return (input || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function asParagraphs(input: string | undefined) {
-  return escapeHtml(input).split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
-}
-
 function modeLabel(mode?: CareCircleMode) {
-  return (mode && MODE_LABELS[mode]) || 'Care Circle';
+  return (mode && MODE_LABELS[mode]) || careCircleModeLabel(mode);
 }
 
 function permissionLabel(level?: CareCirclePermissionLevel) {
-  return (level && PERMISSION_LABELS[level]) || 'Reassurance';
-}
-
-function permissionRank(level?: CareCirclePermissionLevel) {
-  return (level && PERMISSION_RANK[level]) || 0;
+  return (level && PERMISSION_LABELS[level]) || careCirclePermissionLabel(level);
 }
 
 function concernTypeLabel(type?: CareCircleConcern['type']) {
-  return (type || 'concern').replace('_', ' ');
+  return careCircleConcernTypeLabel(type);
 }
 
 function addDays(days: number) {
@@ -101,26 +87,16 @@ function actorFor(client: FullClient) {
   return client.responsible || client.keyWorker || client.completedBy || 'Manager';
 }
 
-function parseReviewDate(value: string) {
-  const parts = value.split(/[/-]/).map((part) => part.trim());
-  if (parts.length === 3) {
-    const [d, m, y] = parts.map(Number);
-    if (d && m && y) return new Date(y < 100 ? y + 2000 : y, m - 1, d).getTime();
-  }
-  return Date.parse(value) || 0;
-}
-
 function contactExpired(contact: CareCircleContact) {
-  const date = parseReviewDate(contact.reviewDate || '');
-  return !!date && date < Date.now() - 24 * 60 * 60 * 1000;
+  return isCareCircleContactExpired(contact.reviewDate || '');
 }
 
 function contactHasRoute(contact: CareCircleContact) {
-  return Boolean(contact.email.trim() || contact.phone.trim());
+  return careCircleContactHasRoute(contact);
 }
 
 function contactAllowed(contact: CareCircleContact, audience: ShareAudience) {
-  return permissionRank(contact.permissionLevel) >= permissionRank(audience);
+  return careCircleContactAllowed(contact, audience);
 }
 
 function isSensitive(entry: CareEntry) {
@@ -175,83 +151,6 @@ function dueDateFor(priority: CareCircleConcern['priority']) {
 
 function actionPriorityFor(priority: CareCircleConcern['priority']): ActionPriority {
   return priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
-}
-
-function latestReviewedUpdate(updates: CareCircleUpdate[] | undefined) {
-  return (updates || []).find((update) => update.status === 'reviewed' || update.status === 'shared') || null;
-}
-
-function sharePackText(client: FullClient, circle: ReturnType<typeof emptyCareCircle>, audience: ShareAudience) {
-  const update = latestReviewedUpdate(circle.updates);
-  const contacts = (circle.contacts || []).filter((contact) => contactAllowed(contact, audience));
-  const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved').slice(0, 6);
-  const lines = [
-    `Care Circle Pack - ${client.name}`,
-    `Audience: ${permissionLabel(audience)}`,
-    `Generated: ${todayUk()}`,
-    `Mode: ${modeLabel(circle.mode)}`,
-    '',
-    'Reviewed Update',
-    update?.summary || 'No reviewed update has been saved yet.',
-    '',
-    'Sharing Controls',
-    `Approved contacts in scope: ${contacts.length}`,
-    ...contacts.map((contact) => `- ${contact.name} (${contact.relationship || 'relationship not recorded'}): ${permissionLabel(contact.permissionLevel)}${contact.verified ? ', verified' : ', not verified'}${contactExpired(contact) ? ', review expired' : ''}`),
-    circle.notes ? `Boundaries: ${circle.notes}` : '',
-    '',
-    'Open Family Items',
-    openItems.length ? openItems.map((item) => `- ${concernTypeLabel(item.type)} / ${item.priority} / ${item.status}: ${item.detail}`).join('\n') : 'No open Care Circle items.',
-  ].filter(Boolean);
-  return lines.join('\n');
-}
-
-function sharePackHtml(client: FullClient, circle: ReturnType<typeof emptyCareCircle>, audience: ShareAudience) {
-  const update = latestReviewedUpdate(circle.updates);
-  const contacts = (circle.contacts || []).filter((contact) => contactAllowed(contact, audience));
-  const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved').slice(0, 6);
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Care Circle Pack - ${escapeHtml(client.name)}</title>
-  <style>
-    @page { size: A4; margin: 18mm; }
-    body { font-family: Inter, Arial, sans-serif; color: #163434; margin: 0; line-height: 1.45; }
-    h1 { font-size: 24px; margin: 0 0 4px; }
-    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .14em; margin: 24px 0 8px; color: #5d0565; }
-    .meta { color: #667; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
-    .box { border: 1px solid #d7d0bf; border-radius: 12px; padding: 14px; margin-top: 10px; break-inside: avoid; }
-    .pill { display: inline-block; border: 1px solid #d7d0bf; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin: 3px 4px 3px 0; }
-    p, li { font-size: 12px; }
-    .footer { margin-top: 28px; border-top: 1px solid #d7d0bf; padding-top: 10px; font-size: 10px; color: #667; }
-  </style>
-</head>
-<body>
-  <h1>Care Circle Pack</h1>
-  <div class="meta">${escapeHtml(client.name)} / ${escapeHtml(permissionLabel(audience))} / ${escapeHtml(todayUk())}</div>
-  <div class="box">
-    <span class="pill">Mode: ${escapeHtml(modeLabel(circle.mode))}</span>
-    <span class="pill">Contacts in scope: ${contacts.length}</span>
-    <span class="pill">Open items: ${openItems.length}</span>
-  </div>
-  <h2>Reviewed Update</h2>
-  <div class="box">${update ? asParagraphs(update.summary) : '<p>No reviewed update has been saved yet.</p>'}</div>
-  <h2>Sharing Controls</h2>
-  <div class="box">
-    <ul>
-      ${contacts.length ? contacts.map((contact) => `<li><strong>${escapeHtml(contact.name)}</strong> - ${escapeHtml(contact.relationship || 'relationship not recorded')} / ${escapeHtml(permissionLabel(contact.permissionLevel))} / ${contact.verified ? 'verified' : 'not verified'}${contactExpired(contact) ? ' / review expired' : ''}</li>`).join('') : '<li>No contacts are currently in scope for this permission level.</li>'}
-    </ul>
-    ${circle.notes ? `<p><strong>Boundaries:</strong> ${escapeHtml(circle.notes)}</p>` : ''}
-  </div>
-  <h2>Open Family Items</h2>
-  <div class="box">
-    <ul>
-      ${openItems.length ? openItems.map((item) => `<li><strong>${escapeHtml(concernTypeLabel(item.type))}</strong> / ${escapeHtml(item.priority)} / ${escapeHtml(item.status)}: ${escapeHtml(item.detail)}</li>`).join('') : '<li>No open Care Circle items.</li>'}
-    </ul>
-  </div>
-  <div class="footer">Manager reviewed pack. Internal evidence references remain in Care Ops and are not printed for family-facing circulation unless separately authorised.</div>
-</body>
-</html>`;
 }
 
 function buildFamilySummary(client: FullClient, entries: CareEntry[], mode: CareCircleMode) {
@@ -310,7 +209,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const generatedSummary = client ? buildFamilySummary(client, entries, circle.mode) : '';
   const shareability = shareabilityFor(entries, circle.mode);
   const sourceRefs = [...entries.slice(0, 12).map(sourceRef), ...(client ? clientEvidenceRefs(client) : [])].slice(0, 16);
-  const latestUpdate = latestReviewedUpdate(circle.updates);
+  const latestUpdate = latestReviewedCareCircleUpdate(circle.updates);
   const contactsInScope = (circle.contacts || []).filter((contact) => contactAllowed(contact, shareAudience));
   const verifiedInScope = contactsInScope.filter((contact) => contact.verified && contactHasRoute(contact) && !contactExpired(contact));
   const readinessIssues = [
@@ -503,7 +402,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
 
   async function copySharePack() {
     if (!client) return;
-    await navigator.clipboard.writeText(sharePackText(client, circle, shareAudience));
+    await navigator.clipboard.writeText(buildCareCircleSharePackText(client, circle, shareAudience));
     setCopiedId('share-pack');
     updateCircleWithActivity(
       {},
@@ -517,7 +416,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     const win = window.open('', '_blank', 'width=900,height=1200');
     if (!win) return;
     win.document.open();
-    win.document.write(sharePackHtml(client, circle, shareAudience));
+    win.document.write(buildCareCircleSharePackHtml(client, circle, shareAudience));
     win.document.close();
     win.focus();
     window.setTimeout(() => win.print(), 300);
