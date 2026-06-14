@@ -71,7 +71,8 @@ describe('care circle share pack', () => {
     expect(text).toContain('Care Circle Pack - Jane <script>alert(1)</script>');
     expect(text).toContain('Mode: old family portal');
     expect(text).toContain('relationship not recorded');
-    expect(text).toContain('concern / medium / open: Please confirm weekend plan <urgent>.');
+    expect(text).toContain('1 item is being reviewed internally before sharing.');
+    expect(text).not.toContain('Please confirm weekend plan <urgent>.');
   });
 
   it('escapes family-facing HTML output', () => {
@@ -79,8 +80,43 @@ describe('care circle share pack', () => {
 
     expect(html).toContain('Jane &lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).toContain('Sam &lt;b&gt;Relative&lt;/b&gt;');
-    expect(html).toContain('Please confirm weekend plan &lt;urgent&gt;.');
+    expect(html).toContain('1 item is being reviewed internally before sharing.');
+    expect(html).not.toContain('Please confirm weekend plan &lt;urgent&gt;.');
     expect(html).not.toContain('<script>alert("x")</script>');
     expect(html).not.toContain('<private>');
+  });
+
+  it('includes manager-drafted responses without exposing unresolved raw item detail', () => {
+    const copy = {
+      ...client,
+      careCircle: {
+        ...client.careCircle!,
+        concerns: [
+          {
+            ...client.careCircle!.concerns[0],
+            detail: 'Raw family concern with private medication context.',
+            response: 'Thank you for raising this. The manager has reviewed it and will update you after the planned check.',
+          },
+          {
+            ...client.careCircle!.concerns[0],
+            id: 'concern-2',
+            detail: 'Unanswered safeguarding allegation detail.',
+            response: '',
+          },
+        ],
+      },
+    } as FullClient;
+
+    const text = buildCareCircleSharePackText(copy, copy.careCircle!, 'reassurance', { managerOverride: true });
+    const html = buildCareCircleSharePackHtml(copy, copy.careCircle!, 'reassurance', { managerOverride: true });
+
+    expect(text).toContain('Thank you for raising this.');
+    expect(text).toContain('1 item is being reviewed internally before sharing.');
+    expect(text).not.toContain('Raw family concern with private medication context.');
+    expect(text).not.toContain('Unanswered safeguarding allegation detail.');
+    expect(html).toContain('Thank you for raising this.');
+    expect(html).toContain('1 item is being reviewed internally before sharing.');
+    expect(html).not.toContain('Raw family concern with private medication context.');
+    expect(html).not.toContain('Unanswered safeguarding allegation detail.');
   });
 });

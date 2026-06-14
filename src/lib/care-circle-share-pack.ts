@@ -1,10 +1,12 @@
 import type {
   CareCircleContact,
+  CareCircleConcern,
   CareCircleData,
   CareCirclePermissionLevel,
   CareCircleUpdate,
   FullClient,
 } from './client-store';
+import { getCareCircleResponseStatus } from './care-circle-response';
 import { careCircleModeLabel, isCareCircleContactExpired } from './care-circle-status';
 import { escapeHtml } from './html-escape';
 
@@ -88,6 +90,34 @@ function asParagraphs(input: string | undefined) {
   return escapeHtml(input || '').split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
 }
 
+function familyVisibleResponseItems(items: CareCircleConcern[]) {
+  return items.filter((item) => getCareCircleResponseStatus(item).canCopy && safeText(item.response));
+}
+
+function heldItemLine(count: number) {
+  return `${count} item${count === 1 ? ' is' : 's are'} being reviewed internally before sharing.`;
+}
+
+function familyResponseSummaryText(items: CareCircleConcern[]) {
+  const visible = familyVisibleResponseItems(items);
+  const held = items.length - visible.length;
+  const lines = [
+    ...visible.map((item) => `- ${careCircleConcernTypeLabel(item.type)} / ${getCareCircleResponseStatus(item).label}: ${safeText(item.response)}`),
+    held > 0 ? `- ${heldItemLine(held)}` : '',
+  ].filter(Boolean);
+  return lines.length ? lines.join('\n') : 'No open Care Circle items.';
+}
+
+function familyResponseSummaryHtml(items: CareCircleConcern[]) {
+  const visible = familyVisibleResponseItems(items);
+  const held = items.length - visible.length;
+  const lines = [
+    ...visible.map((item) => `<li><strong>${escapeHtml(careCircleConcernTypeLabel(item.type))}</strong> / ${escapeHtml(getCareCircleResponseStatus(item).label)}: ${escapeHtml(safeText(item.response))}</li>`),
+    held > 0 ? `<li>${escapeHtml(heldItemLine(held))}</li>` : '',
+  ].filter(Boolean);
+  return lines.length ? lines.join('') : '<li>No open Care Circle items.</li>';
+}
+
 export function buildCareCircleSharePackText(client: FullClient, circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel, options?: CareCircleSharePackOptions) {
   const update = latestReviewedCareCircleUpdate(circle.updates);
   const contacts = (circle.contacts || []).filter((contact) => careCircleContactAllowed(contact, audience));
@@ -110,8 +140,8 @@ export function buildCareCircleSharePackText(client: FullClient, circle: Partial
     }),
     circle.notes ? `Boundaries: ${circle.notes}` : '',
     '',
-    'Open Family Items',
-    openItems.length ? openItems.map((item) => `- ${careCircleConcernTypeLabel(item.type)} / ${item.priority || 'medium'} / ${item.status || 'open'}: ${item.detail || 'No detail recorded.'}`).join('\n') : 'No open Care Circle items.',
+    'Family Questions and Responses',
+    familyResponseSummaryText(openItems),
   ].filter(Boolean);
   return lines.join('\n');
 }
@@ -156,10 +186,10 @@ export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial
     </ul>
     ${circle.notes ? `<p><strong>Boundaries:</strong> ${escapeHtml(circle.notes)}</p>` : ''}
   </div>
-  <h2>Open Family Items</h2>
+  <h2>Family Questions and Responses</h2>
   <div class="box">
     <ul>
-      ${openItems.length ? openItems.map((item) => `<li><strong>${escapeHtml(careCircleConcernTypeLabel(item.type))}</strong> / ${escapeHtml(item.priority || 'medium')} / ${escapeHtml(item.status || 'open')}: ${escapeHtml(item.detail || 'No detail recorded.')}</li>`).join('') : '<li>No open Care Circle items.</li>'}
+      ${familyResponseSummaryHtml(openItems)}
     </ul>
   </div>
   <div class="footer">Manager reviewed pack. Internal evidence references remain in Care Ops and are not printed for family-facing circulation unless separately authorised.</div>
