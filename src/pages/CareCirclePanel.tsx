@@ -12,9 +12,11 @@ import {
   type CareCircleUpdate,
   type FullClient,
 } from '../lib/client-store';
+import { getAllEntriesAsync } from '../lib/entry-store';
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
 import { syncCareCircleLinkedAction } from '../lib/care-circle-action-sync';
+import { mergeCareCircleEvidenceEntries } from '../lib/care-circle-evidence';
 import {
   buildCareCircleFamilyDigest,
   careCircleClientEvidenceRefs,
@@ -111,26 +113,35 @@ function actionPriorityFor(priority: CareCircleConcern['priority']): ActionPrior
   return priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
 }
 
-function getClientEntries(client: FullClient) {
-  const week = loadWeekData();
-  const clientNames = [client.name, client.preferredName].map((name) => name.toLowerCase().trim()).filter(Boolean);
-  const diary = week?.clientDiary || {};
-  const direct = Object.entries(diary).find(([name]) => clientNames.includes(name.toLowerCase().trim()))?.[1] || [];
-  if (direct.length) return direct;
-  return Object.values(diary).flat().filter((entry) => clientNames.some((name) => entry.client.toLowerCase().includes(name)));
-}
-
 export function CareCirclePanel({ clientId, onBack }: Props) {
   const [clients, setClients] = useState<FullClient[]>(() => loadClients());
   const [copiedId, setCopiedId] = useState('');
   const [reviewDraft, setReviewDraft] = useState('');
   const [shareAudience, setShareAudience] = useState<ShareAudience>('reassurance');
   const [shareOverride, setShareOverride] = useState(false);
+  const [storedEntries, setStoredEntries] = useState<CareEntry[]>([]);
+  const [entryStoreLoaded, setEntryStoreLoaded] = useState(false);
   const [contactDraft, setContactDraft] = useState<CareCircleContact>(() => newContact());
   const [concernDraft, setConcernDraft] = useState<CareCircleConcern>(() => newConcern());
   const client = clients.find((item) => item.id === clientId);
 
-  const entries = useMemo(() => client ? getClientEntries(client) : [], [client]);
+  useEffect(() => {
+    let cancelled = false;
+    setEntryStoreLoaded(false);
+    getAllEntriesAsync()
+      .then((rows) => {
+        if (!cancelled) setStoredEntries(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setStoredEntries([]);
+      })
+      .finally(() => {
+        if (!cancelled) setEntryStoreLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  const entries = useMemo(() => client ? mergeCareCircleEvidenceEntries(client, loadWeekData(), storedEntries) : [], [client, storedEntries]);
   const circle = client?.careCircle || emptyCareCircle(client?.reviewDate || todayUk());
   const generatedSummary = client ? buildCareCircleFamilyDigest(client, entries, circle.mode) : '';
   const shareability = careCircleDigestShareability(entries, circle.mode);
@@ -448,6 +459,8 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                   </li>
                 ))}
               </ul>
+            ) : !entryStoreLoaded ? (
+              <p className="text-[11px] text-hc-muted font-bold">Syncing diary source entries from the local evidence store...</p>
             ) : (
               <p className="text-[11px] text-hc-muted font-bold">No diary source entries are currently loaded for this person.</p>
             )}
@@ -462,7 +475,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               Save Reviewed Update
             </button>
             <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
-              {entries.length} source entries scanned
+              {entryStoreLoaded ? entries.length : 'Syncing'} source entries scanned
             </span>
           </div>
         </section>
