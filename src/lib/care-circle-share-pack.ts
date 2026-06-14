@@ -64,20 +64,29 @@ export function getCareCircleShareReadiness(circle: Partial<CareCircleData>, aud
   const contactsInScope = (circle.contacts || []).filter((contact) => careCircleContactAllowed(contact, audience));
   const latestUpdate = latestReviewedCareCircleUpdate(circle.updates);
   const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved');
-  const issues = [
+  const hardIssues = [
     circle.mode === 'off' ? 'Care Circle mode is Off.' : '',
     !latestUpdate ? 'No reviewed update has been saved yet.' : '',
     contactsInScope.length === 0 ? `No ${careCirclePermissionLabel(audience)} contacts are in scope.` : '',
     contactsInScope.some((contact) => !contact.verified) ? 'One or more contacts need verification.' : '',
     contactsInScope.some((contact) => !careCircleContactHasRoute(contact)) ? 'One or more contacts have no email or phone route.' : '',
     contactsInScope.some((contact) => isCareCircleContactExpired(safeText(contact.reviewDate))) ? 'One or more contacts have an expired review date.' : '',
+  ].filter(Boolean);
+  const overrideableIssues = [
     openItems.length ? `${openItems.length} open family item${openItems.length === 1 ? '' : 's'} need${openItems.length === 1 ? 's' : ''} resolution or manager sign-off.` : '',
   ].filter(Boolean);
-  return { ready: issues.length === 0, issues, contactsInScope, latestUpdate, openItems };
+  const issues = [...hardIssues, ...overrideableIssues];
+  return { ready: issues.length === 0, issues, hardIssues, overrideableIssues, contactsInScope, latestUpdate, openItems };
 }
 
-export function canReleaseCareCircleSharePack(readiness: { ready: boolean }, managerOverride: boolean) {
-  return readiness.ready || managerOverride;
+export function canReleaseCareCircleSharePack(
+  readiness: { ready: boolean; hardIssues?: string[]; overrideableIssues?: string[] },
+  managerOverride: boolean
+) {
+  if (readiness.ready) return true;
+  const hardIssues = readiness.hardIssues || [];
+  const overrideableIssues = readiness.overrideableIssues || [];
+  return managerOverride && hardIssues.length === 0 && overrideableIssues.length > 0;
 }
 
 function releaseStatus(options?: CareCircleSharePackOptions) {

@@ -11,6 +11,8 @@ const client = {
       id: 'contact-1',
       name: 'Sam <b>Relative</b>',
       relationship: '',
+      email: 'sam@example.com',
+      phone: '',
       permissionLevel: 'reassurance',
       verified: true,
       reviewDate: '30/12/2026',
@@ -55,6 +57,33 @@ describe('care circle share pack', () => {
 
     expect(canReleaseCareCircleSharePack(readiness, false)).toBe(false);
     expect(canReleaseCareCircleSharePack(readiness, true)).toBe(true);
+    expect(readiness.hardIssues).toEqual([]);
+    expect(readiness.overrideableIssues).toContain('1 open family item needs resolution or manager sign-off.');
+  });
+
+  it('does not allow manager override to bypass core release prerequisites', () => {
+    const missingUpdate = getCareCircleShareReadiness({ ...client.careCircle!, updates: [], concerns: [] }, 'reassurance');
+    const noContacts = getCareCircleShareReadiness({ ...client.careCircle!, contacts: [], concerns: [] }, 'reassurance');
+    const unverified = getCareCircleShareReadiness({
+      ...client.careCircle!,
+      contacts: [{ ...client.careCircle!.contacts[0], verified: false }],
+      concerns: [],
+    }, 'reassurance');
+    const noRoute = getCareCircleShareReadiness({
+      ...client.careCircle!,
+      contacts: [{ ...client.careCircle!.contacts[0], email: '', phone: '' }],
+      concerns: [],
+    }, 'reassurance');
+    const expired = getCareCircleShareReadiness({
+      ...client.careCircle!,
+      contacts: [{ ...client.careCircle!.contacts[0], reviewDate: '01/01/2020' }],
+      concerns: [],
+    }, 'reassurance');
+
+    for (const readiness of [missingUpdate, noContacts, unverified, noRoute, expired]) {
+      expect(readiness.hardIssues.length).toBeGreaterThan(0);
+      expect(canReleaseCareCircleSharePack(readiness, true)).toBe(false);
+    }
   });
 
   it('marks released packs when a manager override was used', () => {

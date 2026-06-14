@@ -152,6 +152,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const shareReadiness = getCareCircleShareReadiness(circle, shareAudience);
   const readinessIssues = shareReadiness.issues;
   const shareReady = shareReadiness.ready;
+  const shareOverrideAvailable = !shareReady && canReleaseCareCircleSharePack(shareReadiness, true);
   const canReleaseSharePack = canReleaseCareCircleSharePack(shareReadiness, shareOverride);
   const circleInsight = getCareCircleOperationalInsight(circle, shareReadiness);
 
@@ -567,7 +568,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 <option key={level} value={level}>{permissionLabel(level)}</option>
               ))}
             </select>
-            {!shareReady && (
+            {shareOverrideAvailable && (
               <label className="hc-clay-inset rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-hc-muted flex items-start gap-3 leading-relaxed">
                 <input
                   type="checkbox"
