@@ -35,7 +35,23 @@ describe('care circle response workflow', () => {
       canResolve: true,
     });
     expect(buildCareCircleFamilyResponseText('Ryan Shade', withResponse)).toContain('Response for Ryan Shade');
+    expect(buildCareCircleFamilyResponseText('Ryan Shade', withResponse)).toContain('Item type: question');
+    expect(buildCareCircleFamilyResponseText('Ryan Shade', withResponse)).toContain('Response status: Response drafted');
     expect(buildCareCircleFamilyResponseText('Ryan Shade', withResponse)).toContain('We will confirm with the manager after the morning handover.');
+  });
+
+  it('does not copy raw original concern detail into family response text', () => {
+    const withSensitiveDetail = {
+      ...concern,
+      detail: 'Medication error and safeguarding allegation discussed internally.',
+      response: 'Thank you for raising this. The manager has reviewed the matter and will update you after the planned check.',
+    };
+
+    const text = buildCareCircleFamilyResponseText('Ryan Shade', withSensitiveDetail);
+
+    expect(text).toContain('Thank you for raising this.');
+    expect(text).not.toContain('Medication error and safeguarding allegation discussed internally.');
+    expect(text).not.toContain('Item:');
   });
 
   it('marks resolved items as closed but still preserves response copy', () => {

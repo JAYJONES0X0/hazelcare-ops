@@ -6,6 +6,10 @@ function clean(value: unknown) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
 }
 
+function label(value: unknown, fallback: string) {
+  return clean(value).replaceAll('_', ' ') || fallback;
+}
+
 export function getCareCircleResponseStatus(concern: Partial<CareCircleConcern>) {
   const hasResponse = Boolean(clean(concern.response));
   if (concern.status === 'resolved') {
@@ -35,11 +39,11 @@ export function getCareCircleResponseStatus(concern: Partial<CareCircleConcern>)
 export function buildCareCircleFamilyResponseText(clientName: string, concern: Partial<CareCircleConcern>) {
   const response = clean(concern.response);
   const raisedBy = clean(concern.source) || 'family / representative';
-  const item = clean(concern.detail) || 'No original detail recorded.';
   return [
     `Response for ${clean(clientName) || 'this person'}`,
     `Raised by: ${raisedBy}`,
-    `Item: ${item}`,
+    `Item type: ${label(concern.type, 'family item')}`,
+    `Response status: ${getCareCircleResponseStatus(concern).label}`,
     '',
     response || 'No response has been recorded yet.',
     '',
