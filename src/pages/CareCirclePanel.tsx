@@ -14,6 +14,7 @@ import {
 } from '../lib/client-store';
 import { loadActions, loadWeekData, saveActions, uid } from '../lib/storage';
 import type { Action, ActionPriority, CareEntry } from '../lib/types';
+import { syncCareCircleLinkedAction } from '../lib/care-circle-action-sync';
 import { getCareCircleOperationalInsight } from '../lib/care-circle-insights';
 import { buildCareCircleFamilyResponseText, getCareCircleResponseStatus } from '../lib/care-circle-response';
 import {
@@ -393,6 +394,9 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   function updateConcern(id: string, patch: Partial<CareCircleConcern>) {
     const prior = (circle.concerns || []).find((concern) => concern.id === id);
     const statusChanged = patch.status && prior && patch.status !== prior.status;
+    if (statusChanged && prior?.actionId) {
+      saveActions(syncCareCircleLinkedAction(loadActions(), prior.actionId, patch.status!, todayIso()));
+    }
     updateCircle({
       concerns: (circle.concerns || []).map((concern) => concern.id === id ? { ...concern, ...patch } : concern),
       activity: statusChanged
