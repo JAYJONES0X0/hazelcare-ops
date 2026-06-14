@@ -57,6 +57,14 @@ describe('care circle share pack', () => {
     expect(canReleaseCareCircleSharePack(readiness, true)).toBe(true);
   });
 
+  it('marks released packs when a manager override was used', () => {
+    const text = buildCareCircleSharePackText(client, client.careCircle!, 'reassurance', { managerOverride: true });
+    const html = buildCareCircleSharePackHtml(client, client.careCircle!, 'reassurance', { managerOverride: true });
+
+    expect(text).toContain('Release status: Manager override - unresolved checks accepted for release.');
+    expect(html).toContain('Manager override - unresolved checks accepted for release.');
+  });
+
   it('builds text from partial legacy records without crashing', () => {
     const text = buildCareCircleSharePackText(client, client.careCircle!, 'reassurance');
 

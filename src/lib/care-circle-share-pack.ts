@@ -22,6 +22,10 @@ const PERMISSION_RANK: Record<CareCirclePermissionLevel, number> = {
   professional: 4,
 };
 
+type CareCircleSharePackOptions = {
+  managerOverride?: boolean;
+};
+
 function safeText(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -74,11 +78,17 @@ export function canReleaseCareCircleSharePack(readiness: { ready: boolean }, man
   return readiness.ready || managerOverride;
 }
 
+function releaseStatus(options?: CareCircleSharePackOptions) {
+  return options?.managerOverride
+    ? 'Manager override - unresolved checks accepted for release.'
+    : 'Standard release - readiness checks clear.';
+}
+
 function asParagraphs(input: string | undefined) {
   return escapeHtml(input || '').split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
 }
 
-export function buildCareCircleSharePackText(client: FullClient, circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel) {
+export function buildCareCircleSharePackText(client: FullClient, circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel, options?: CareCircleSharePackOptions) {
   const update = latestReviewedCareCircleUpdate(circle.updates);
   const contacts = (circle.contacts || []).filter((contact) => careCircleContactAllowed(contact, audience));
   const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved').slice(0, 6);
@@ -87,6 +97,7 @@ export function buildCareCircleSharePackText(client: FullClient, circle: Partial
     `Audience: ${careCirclePermissionLabel(audience)}`,
     `Generated: ${todayUk()}`,
     `Mode: ${careCircleModeLabel(circle.mode)}`,
+    `Release status: ${releaseStatus(options)}`,
     '',
     'Reviewed Update',
     update?.summary || 'No reviewed update has been saved yet.',
@@ -105,7 +116,7 @@ export function buildCareCircleSharePackText(client: FullClient, circle: Partial
   return lines.join('\n');
 }
 
-export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel) {
+export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial<CareCircleData>, audience: CareCirclePermissionLevel, options?: CareCircleSharePackOptions) {
   const update = latestReviewedCareCircleUpdate(circle.updates);
   const contacts = (circle.contacts || []).filter((contact) => careCircleContactAllowed(contact, audience));
   const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved').slice(0, 6);
@@ -122,6 +133,7 @@ export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial
     .meta { color: #667; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
     .box { border: 1px solid #d7d0bf; border-radius: 12px; padding: 14px; margin-top: 10px; break-inside: avoid; }
     .pill { display: inline-block; border: 1px solid #d7d0bf; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin: 3px 4px 3px 0; }
+    .status { border-color: ${options?.managerOverride ? '#b45309' : '#0f766e'}; color: ${options?.managerOverride ? '#92400e' : '#0f766e'}; }
     p, li { font-size: 12px; }
     .footer { margin-top: 28px; border-top: 1px solid #d7d0bf; padding-top: 10px; font-size: 10px; color: #667; }
   </style>
@@ -133,6 +145,7 @@ export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial
     <span class="pill">Mode: ${escapeHtml(careCircleModeLabel(circle.mode))}</span>
     <span class="pill">Contacts in scope: ${contacts.length}</span>
     <span class="pill">Open items: ${openItems.length}</span>
+    <span class="pill status">Release: ${escapeHtml(releaseStatus(options))}</span>
   </div>
   <h2>Reviewed Update</h2>
   <div class="box">${update ? asParagraphs(update.summary) : '<p>No reviewed update has been saved yet.</p>'}</div>

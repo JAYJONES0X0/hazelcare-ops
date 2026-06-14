@@ -400,7 +400,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
 
   async function copySharePack() {
     if (!client || !canReleaseSharePack) return;
-    await navigator.clipboard.writeText(buildCareCircleSharePackText(client, circle, shareAudience));
+    await navigator.clipboard.writeText(buildCareCircleSharePackText(client, circle, shareAudience, { managerOverride: !shareReady }));
     setCopiedId('share-pack');
     updateCircleWithActivity(
       {},
@@ -414,7 +414,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     const win = window.open('', '_blank', 'width=900,height=1200');
     if (!win) return;
     win.document.open();
-    win.document.write(buildCareCircleSharePackHtml(client, circle, shareAudience));
+    win.document.write(buildCareCircleSharePackHtml(client, circle, shareAudience, { managerOverride: !shareReady }));
     win.document.close();
     win.focus();
     window.setTimeout(() => win.print(), 300);
