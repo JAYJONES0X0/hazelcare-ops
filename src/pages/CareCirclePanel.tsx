@@ -17,6 +17,7 @@ import type { Action, ActionPriority, CareEntry } from '../lib/types';
 import {
   buildCareCircleSharePackHtml,
   buildCareCircleSharePackText,
+  canReleaseCareCircleSharePack,
   careCircleConcernTypeLabel,
   careCircleContactAllowed,
   careCircleContactHasRoute,
@@ -201,6 +202,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const [copiedId, setCopiedId] = useState('');
   const [reviewDraft, setReviewDraft] = useState('');
   const [shareAudience, setShareAudience] = useState<ShareAudience>('reassurance');
+  const [shareOverride, setShareOverride] = useState(false);
   const [contactDraft, setContactDraft] = useState<CareCircleContact>(() => newContact());
   const [concernDraft, setConcernDraft] = useState<CareCircleConcern>(() => newConcern());
   const client = clients.find((item) => item.id === clientId);
@@ -216,6 +218,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const shareReadiness = getCareCircleShareReadiness(circle, shareAudience);
   const readinessIssues = shareReadiness.issues;
   const shareReady = shareReadiness.ready;
+  const canReleaseSharePack = canReleaseCareCircleSharePack(shareReadiness, shareOverride);
 
   useEffect(() => {
     setReviewDraft(generatedSummary);
@@ -396,18 +399,18 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   }
 
   async function copySharePack() {
-    if (!client) return;
+    if (!client || !canReleaseSharePack) return;
     await navigator.clipboard.writeText(buildCareCircleSharePackText(client, circle, shareAudience));
     setCopiedId('share-pack');
     updateCircleWithActivity(
       {},
-      activity('share_pack_copied', 'Share pack copied', `${permissionLabel(shareAudience)} pack copied for ${client.name}.`)
+      activity('share_pack_copied', 'Share pack copied', `${permissionLabel(shareAudience)} pack copied for ${client.name}.${shareReady ? '' : ' Manager override recorded for blocked checks.'}`)
     );
     window.setTimeout(() => setCopiedId(''), 1400);
   }
 
   function printSharePack() {
-    if (!client) return;
+    if (!client || !canReleaseSharePack) return;
     const win = window.open('', '_blank', 'width=900,height=1200');
     if (!win) return;
     win.document.open();
@@ -417,7 +420,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     window.setTimeout(() => win.print(), 300);
     updateCircleWithActivity(
       {},
-      activity('share_pack_printed', 'Share pack printed', `${permissionLabel(shareAudience)} pack printed for ${client.name}.`)
+      activity('share_pack_printed', 'Share pack printed', `${permissionLabel(shareAudience)} pack printed for ${client.name}.${shareReady ? '' : ' Manager override recorded for blocked checks.'}`)
     );
   }
 
@@ -566,7 +569,10 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           <div className="space-y-3">
             <select
               value={shareAudience}
-              onChange={(event) => setShareAudience(event.target.value as ShareAudience)}
+              onChange={(event) => {
+                setShareAudience(event.target.value as ShareAudience);
+                setShareOverride(false);
+              }}
               className="w-full hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none"
               aria-label="Share pack audience"
             >
@@ -574,13 +580,33 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 <option key={level} value={level}>{permissionLabel(level)}</option>
               ))}
             </select>
-            <button onClick={copySharePack} className="w-full btn-clay rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+            {!shareReady && (
+              <label className="hc-clay-inset rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-hc-muted flex items-start gap-3 leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={shareOverride}
+                  onChange={(event) => setShareOverride(event.target.checked)}
+                  className="mt-0.5 accent-hc-teal"
+                  aria-label="Manager override blocked share checks"
+                />
+                Manager override: release despite unresolved checks
+              </label>
+            )}
+            <button
+              onClick={copySharePack}
+              disabled={!canReleaseSharePack}
+              className={`w-full rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${canReleaseSharePack ? 'btn-clay' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+            >
               <Copy className="w-4 h-4" />
-              {copiedId === 'share-pack' ? 'Copied' : 'Copy Pack'}
+              {copiedId === 'share-pack' ? 'Copied' : shareReady ? 'Copy Pack' : shareOverride ? 'Copy With Override' : 'Copy Locked'}
             </button>
-            <button onClick={printSharePack} className="w-full btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+            <button
+              onClick={printSharePack}
+              disabled={!canReleaseSharePack}
+              className={`w-full rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${canReleaseSharePack ? 'btn-tactical' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+            >
               <Printer className="w-4 h-4" />
-              Print Pack
+              {shareReady ? 'Print Pack' : shareOverride ? 'Print With Override' : 'Print Locked'}
             </button>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

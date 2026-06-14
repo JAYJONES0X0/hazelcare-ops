@@ -70,6 +70,10 @@ export function getCareCircleShareReadiness(circle: Partial<CareCircleData>, aud
   return { ready: issues.length === 0, issues, contactsInScope, latestUpdate, openItems };
 }
 
+export function canReleaseCareCircleSharePack(readiness: { ready: boolean }, managerOverride: boolean) {
+  return readiness.ready || managerOverride;
+}
+
 function asParagraphs(input: string | undefined) {
   return escapeHtml(input || '').split(/\n{2,}/).map((part) => `<p>${part.replace(/\n/g, '<br/>')}</p>`).join('');
 }

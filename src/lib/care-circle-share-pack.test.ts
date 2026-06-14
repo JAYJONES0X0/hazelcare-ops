@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCareCircleSharePackHtml, buildCareCircleSharePackText, getCareCircleShareReadiness } from './care-circle-share-pack';
+import { buildCareCircleSharePackHtml, buildCareCircleSharePackText, canReleaseCareCircleSharePack, getCareCircleShareReadiness } from './care-circle-share-pack';
 import type { FullClient } from './client-store';
 
 const client = {
@@ -48,6 +48,13 @@ describe('care circle share pack', () => {
 
     expect(readiness.ready).toBe(false);
     expect(readiness.issues).toContain('1 open family item needs resolution or manager sign-off.');
+  });
+
+  it('requires manager override before releasing a blocked share pack', () => {
+    const readiness = getCareCircleShareReadiness(client.careCircle!, 'reassurance');
+
+    expect(canReleaseCareCircleSharePack(readiness, false)).toBe(false);
+    expect(canReleaseCareCircleSharePack(readiness, true)).toBe(true);
   });
 
   it('builds text from partial legacy records without crashing', () => {
