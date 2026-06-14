@@ -13,7 +13,8 @@ import { CareCirclePanel } from './CareCirclePanel';
 import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
-import { careCircleModeLabel, getCareCircleStatus } from '../lib/care-circle-status';
+import { buildCareCircleOversightRows } from '../lib/care-circle-oversight';
+import { careCircleModeLabel } from '../lib/care-circle-status';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
@@ -593,18 +594,12 @@ export function ClientDocsPage() {
   const riskCount = clients.filter(c => c.risk && c.risk.risks.some(r => r.title)).length;
   const cpCount = clients.filter(c => c.carePlan && c.carePlan.domains.some(d => d.enabled)).length;
   const circleCount = clients.filter(c => c.careCircle && c.careCircle.mode !== 'off').length;
-  const circleRows = clients
-    .map(client => ({ client, status: getCareCircleStatus(client) }))
-    .filter(row => row.status.active || row.status.openConcerns.length > 0 || row.status.contacts.length > 0 || row.status.recentShare)
-    .sort((a, b) => {
-      const ar = a.status.ready ? 1 : 0;
-      const br = b.status.ready ? 1 : 0;
-      if (ar !== br) return ar - br;
-      return b.status.openConcerns.length - a.status.openConcerns.length;
-    });
+  const circleRows = buildCareCircleOversightRows(clients);
   const circleReady = circleRows.filter(row => row.status.ready).length;
   const circleNeedsReview = circleRows.filter(row => !row.status.ready).length;
-  const circleOpenItems = circleRows.reduce((sum, row) => sum + row.status.openConcerns.length, 0);
+  const circleOpenItems = circleRows.reduce((sum, row) => sum + row.openItems, 0);
+  const circleWaitingResponses = circleRows.reduce((sum, row) => sum + row.waitingResponses, 0);
+  const circleOverdueResponses = circleRows.reduce((sum, row) => sum + row.overdueItems, 0);
   const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
 
   return (
@@ -688,7 +683,7 @@ export function ClientDocsPage() {
               Full queue
             </button>
           </div>
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3 mb-5">
             <div className="hc-clay-inset rounded-2xl p-4">
               <div className="text-2xl font-black text-hc-teal">{circleReady}</div>
               <div className="section-header text-[9px]">Share-ready</div>
@@ -702,18 +697,26 @@ export function ClientDocsPage() {
               <div className="section-header text-[9px]">Open family items</div>
             </div>
             <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-flag-amber">{circleWaitingResponses}</div>
+              <div className="section-header text-[9px]">Responses waiting</div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-2xl font-black text-flag-red">{circleOverdueResponses}</div>
+              <div className="section-header text-[9px]">Overdue responses</div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
               <div className="text-2xl font-black text-[#5d0565]">{circleRecentShares}</div>
               <div className="section-header text-[9px]">Recent shares</div>
             </div>
           </div>
           <div className="space-y-3">
-            {circleRows.slice(0, 6).map(({ client, status }) => (
+            {circleRows.slice(0, 6).map(({ client, status, queueLabel, waitingResponses, overdueItems, openItems }) => (
               <div key={client.id} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="text-sm font-black text-hc-text">{client.name}</span>
-                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${status.ready ? 'pill-green' : 'pill-amber'}`}>
-                      {status.ready ? 'Ready' : 'Review'}
+                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${queueLabel === 'Ready to release' ? 'pill-green' : queueLabel === 'Overdue response' || queueLabel === 'Release blocked' ? 'pill-red' : 'pill-amber'}`}>
+                      {queueLabel}
                     </span>
                     <span className="pill text-[8px] font-black uppercase tracking-widest bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/20">
                       {careCircleModeLabel(client.careCircle?.mode)}
@@ -721,7 +724,9 @@ export function ClientDocsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{status.verifiedContacts.length}/{status.contacts.length} verified contacts</span>
-                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{status.openConcerns.length} open items</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{openItems} open items</span>
+                    {waitingResponses > 0 && <span className="text-[10px] font-bold text-flag-amber uppercase tracking-widest">{waitingResponses} waiting response</span>}
+                    {overdueItems > 0 && <span className="text-[10px] font-bold text-flag-red uppercase tracking-widest">{overdueItems} overdue</span>}
                     {status.recentShare && <span className="text-[10px] font-bold text-hc-teal uppercase tracking-widest">shared {new Date(status.recentShare.createdAt).toLocaleDateString('en-GB')}</span>}
                   </div>
                   {!status.ready && (
