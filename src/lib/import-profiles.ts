@@ -2,6 +2,7 @@
 import { parseSupportPlanText, parseUniversalText } from './universal-import';
 import type { NormalizedImportEnvelope, ImportType, ImportTarget } from './import-intelligence';
 import { emptyEnvelope } from './import-intelligence';
+import { looksLikeContactDetailsExport, parseContactDetailsExport } from './contact-details-import';
 
 interface ProfileMatch {
   id: string;
@@ -140,6 +141,7 @@ const TARGETS_BY_TYPE: Record<ImportType, ImportTarget[]> = {
   diary: ['reports', 'templates'],
   admission: ['client-docs', 'templates'],
   'support-plan': ['client-docs'],
+  'contact-details': ['client-docs'],
   roster: ['roster'],
   unknown: [],
 };
@@ -149,6 +151,10 @@ export function detectProfile(fileName: string, rawText: string): ProfileMatch {
   const normalized = lower.replace(/\s+/g, ' ').trim();
   const ext = (fileName.split('.').pop() || '').toLowerCase();
   const lowerName = fileName.toLowerCase();
+
+  if (looksLikeContactDetailsExport(fileName, rawText)) {
+    return { id: 'contact-details-export', type: 'contact-details', confidence: 0.94 };
+  }
 
   // 1. HIGH PRIORITY: Explicit Filename Hints (If content is messy/short)
   if (lowerName.includes('admission') || lowerName.includes('admission-pack')) {
@@ -336,6 +342,17 @@ export function buildEnvelopeFromRaw(fileName: string, rawText: string): Normali
     const candidate = extractSupportPlanCandidateProfile(rawText, fileName);
     env.clientCandidates = candidate.name || candidate.dob ? [candidate] : [];
     if (!supportPlan.needs.length) env.warnings.push('No support areas were detected in this support plan.');
+    return env;
+  }
+
+  if (profile.type === 'contact-details') {
+    const contactDetails = parseContactDetailsExport(rawText);
+    env.contactDetails = contactDetails;
+    env.clientCandidates = contactDetails.clientName ? [{
+      name: contactDetails.clientName,
+      preferredName: contactDetails.clientName.split(/\s+/)[0],
+    }] : [];
+    if (!contactDetails.contacts.length) env.warnings.push('No contacts were detected in this contact details export.');
     return env;
   }
 

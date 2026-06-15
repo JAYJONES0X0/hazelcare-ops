@@ -7,6 +7,7 @@ import { buildEnvelopeFromRaw } from './import-profiles';
 const CAREPLAN_PDF = 'C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar\\LJohnson CAREPLAN.pdf';
 const SUPPORT_PLAN_PDF = 'C:\\Users\\brook\\Downloads\\support plan BCC.pdf';
 const WAYNE_EMERGENCY_PDF = 'C:\\Users\\brook\\Downloads\\emergency-admission-pack-wayne-jefferson_15052026_1157.pdf';
+const CONTACT_DETAILS_PDF = 'C:\\Users\\brook\\Downloads\\Contact-details.pdf';
 
 async function parsePdf(filePath: string) {
   const bytes = fs.readFileSync(filePath);
@@ -40,5 +41,19 @@ describe('real PDF import smoke parse', () => {
     expect(envelope.clientCandidates[0]?.dob).toBe('26/09/1983');
     expect(envelope.clientCandidates[0]?.nhs).toBe('4906744699');
     expect(envelope.clientCandidates[0]?.name).not.toMatch(/Hazel Care/i);
+  });
+
+  it('parses Contact-details.pdf as client contact details', async () => {
+    if (!fs.existsSync(CONTACT_DETAILS_PDF)) return;
+    const { text, envelope } = await parsePdf(CONTACT_DETAILS_PDF);
+    expect(text.trim().length).toBeGreaterThan(0);
+    expect(envelope.source.detectedType).toBe('contact-details');
+    expect(envelope.clientCandidates[0]?.name).toBe('Alistair Gunn');
+    expect(envelope.contactDetails?.contacts.length).toBeGreaterThanOrEqual(4);
+    expect(envelope.contactDetails?.contacts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ relationship: 'GP' }),
+      expect.objectContaining({ relationship: 'Father' }),
+      expect.objectContaining({ relationship: 'Mother' }),
+    ]));
   });
 });

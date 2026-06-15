@@ -1,5 +1,5 @@
 import type { FullClient } from './client-store';
-import { emptyClient, loadClients, resolveClientMatch, saveClient } from './client-store';
+import { emptyCareCircle, emptyClient, loadClients, resolveClientMatch, saveClient, type CareCircleContact } from './client-store';
 import { mergeClientIdentity } from './client-identity-merge';
 import { mergeCarePlanData, mergeRiskData, mergeSupportPlanData } from './intel-merge';
 import type { ImportTarget, NormalizedImportEnvelope } from './import-intelligence';
@@ -59,6 +59,31 @@ function pickClient(envelope: NormalizedImportEnvelope, opts: RouteImportOptions
   return { client: emptyClient(), existed: false, requiresManualSelection: opts.clientMode !== 'global' };
 }
 
+function contactKey(contact: CareCircleContact) {
+  return [
+    contact.name.trim().toLowerCase(),
+    contact.relationship.trim().toLowerCase(),
+    contact.email.trim().toLowerCase(),
+    contact.phone.replace(/\s+/g, ''),
+  ].join('|');
+}
+
+function mergeCareCircleContacts(existing: CareCircleContact[], incoming: CareCircleContact[]) {
+  const merged = [...existing];
+  const seen = new Set(merged.map(contactKey));
+  let added = 0;
+
+  for (const contact of incoming) {
+    const key = contactKey(contact);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(contact);
+    added++;
+  }
+
+  return { contacts: merged, added };
+}
+
 export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImportOptions): RouteImportResult {
   const messages: string[] = [];
   const warnings: string[] = [...envelope.warnings];
@@ -74,7 +99,7 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       return { ok: false, page: 'upload', messages: [], warnings: ['Selected client no longer exists. Choose a valid client and retry.'] };
     }
 
-    const needsClientWrite = (opts.targets.includes('client-docs') || opts.targets.includes('templates')) && !!(envelope.admission || envelope.supportPlan);
+    const needsClientWrite = (opts.targets.includes('client-docs') || opts.targets.includes('templates')) && !!(envelope.admission || envelope.supportPlan || envelope.contactDetails);
     let preValidatedPick: { client: FullClient; existed: boolean; requiresManualSelection: boolean } | null = null;
     if (needsClientWrite) {
       preValidatedPick = pickClient(envelope, opts);
@@ -102,7 +127,7 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
 
     let requiresManualClientSelection = false;
     if (opts.targets.includes('client-docs') || opts.targets.includes('templates')) {
-      if (envelope.admission || envelope.supportPlan) {
+      if (envelope.admission || envelope.supportPlan || envelope.contactDetails) {
         const picked = preValidatedPick || pickClient(envelope, opts);
         const client = picked.client;
         const today = new Date().toLocaleDateString('en-GB');
@@ -132,6 +157,27 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
           const mergedCount = client.supportPlan?.needs?.length || 0;
           const delta = Math.max(0, mergedCount - previousCount);
           messages.push(`${client.name || 'Client'} support plan merged (${mergedCount} areas, +${delta} new).`);
+        }
+
+        if (envelope.contactDetails) {
+          if (envelope.contactDetails.clientName && !client.name) {
+            client.name = envelope.contactDetails.clientName;
+            client.preferredName = envelope.contactDetails.clientName.split(/\s+/)[0] || '';
+          }
+          if (envelope.contactDetails.clientAddress && !client.address) {
+            client.address = envelope.contactDetails.clientAddress;
+          }
+
+          const reviewDate = client.reviewDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+          const circle = client.careCircle || emptyCareCircle(reviewDate);
+          const merged = mergeCareCircleContacts(circle.contacts || [], envelope.contactDetails.contacts);
+          client.careCircle = {
+            ...circle,
+            mode: circle.mode === 'off' && merged.contacts.length ? 'standard_family_window' : circle.mode,
+            contacts: merged.contacts,
+            notes: circle.notes || 'Imported contacts require consent, relationship, and sharing-boundary verification before external communication.',
+          };
+          messages.push(`${client.name || 'Client'} contacts merged into Care Circle (${merged.contacts.length} total, +${merged.added} new).`);
         }
 
         saveClient(client as FullClient);
