@@ -3,9 +3,10 @@ import type { WeekSummary, Page, PageContext } from '../lib/types';
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { computeStaffMonitoring, flattenWeekEntries } from '../lib/staff-monitoring';
+import { loadClients } from '../lib/client-store';
 import {
   TrendingUp, AlertCircle, Users, Home, Activity, ShieldAlert,
-  ChevronRight, RefreshCw, CheckCircle,
+  Archive, ChevronRight, RefreshCw, CheckCircle,
 } from 'lucide-react';
 
 interface Props {
@@ -30,9 +31,19 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
   }, [weekDataProp]);
 
   const weekData = weekDataProp || storedWeekData;
+  const packReviewRows = useMemo(() => loadClients().flatMap(client =>
+    (client.packImports || []).map(pack => ({
+      clientName: client.name || pack.candidateClientName || 'Draft client',
+      pack,
+      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
+      liveReady: !!client.liveGateSummary?.liveReady,
+    }))
+  ), []);
+  const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
 
   // Use the REAL staff quality scores per house
-  const snapshot = useMemo(() => computeStaffMonitoring(weekData, {}), [weekData]);
+  const snapshot = useMemo(() => computeStaffMonitoring(weekData, { house: 'all' }), [weekData]);
 
   const houseData = useMemo(() => {
     if (!weekData) return [];
@@ -61,11 +72,11 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
         redFlags,
         amberFlags,
         avgQuality,
-        status: redFlags > 2 ? 'critical' : redFlags > 0 ? 'review' : 'operational',
+        status: (redFlags > 2 ? 'critical' : redFlags > 0 ? 'review' : 'operational') as 'critical' | 'review' | 'operational',
       };
     }).sort((a, b) => {
       // Rank: critical first, then by red flags, then quality descending
-      const statusOrder = { critical: 0, review: 1, operational: 2 };
+      const statusOrder: Record<'critical' | 'review' | 'operational', number> = { critical: 0, review: 1, operational: 2 };
       return statusOrder[a.status] - statusOrder[b.status] || b.redFlags - a.redFlags;
     });
   }, [weekData, snapshot]);
@@ -100,12 +111,21 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
         </div>
         <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-4 text-center">No Sites Registered</h2>
         <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-10 text-center max-w-sm">Upload a CSV export to initialise the multi-site governance view.</p>
+        {packReviewRows.length > 0 && (
+          <div className="mb-8 max-w-xl hc-clay-raised rounded-[2rem] p-5 border border-flag-amber/20 text-center">
+            <Archive className="w-5 h-5 text-flag-amber mx-auto mb-2" />
+            <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em]">Client pack review debt active</div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-2">
+              {draftPackCount} draft pack{draftPackCount === 1 ? '' : 's'} / {packReviewItems} file review item{packReviewItems === 1 ? '' : 's'}
+            </p>
+          </div>
+        )}
         <button onClick={() => setPage?.('upload')} className="btn-clay btn-clay-teal h-[60px] px-10">Import Hub</button>
       </div>
     );
   }
 
-  const STATUS_CONFIG = {
+  const STATUS_CONFIG: Record<'critical' | 'review' | 'operational', { label: string; dot: string; badge: string; glow: string }> = {
     critical:    { label: 'Critical',    dot: 'bg-flag-red animate-pulse shadow-[0_0_8px_#d94e4e]', badge: 'bg-flag-red/10 text-flag-red border-flag-red/30',   glow: 'bg-flag-red/5' },
     review:      { label: 'Review',      dot: 'bg-flag-amber animate-pulse',                         badge: 'bg-flag-amber/10 text-flag-amber border-flag-amber/30', glow: 'bg-flag-amber/5' },
     operational: { label: 'Operational', dot: 'bg-flag-green',                                       badge: 'bg-flag-green/10 text-flag-green border-flag-green/30', glow: '' },
@@ -128,6 +148,23 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
           <span className="text-[9px] font-black text-hc-teal uppercase tracking-[0.3em]">Live · {snapshot.staff.length} Personnel Scored</span>
         </div>
       </div>
+
+      {packReviewRows.length > 0 && (
+        <div className="hc-clay-raised border border-flag-amber/20 p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="w-11 h-11 rounded-2xl bg-flag-amber/10 flex items-center justify-center shrink-0">
+            <Archive className="w-5 h-5 text-flag-amber" />
+          </div>
+          <div className="flex-1">
+            <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em]">Onboarding governance queue</div>
+            <p className="text-[11px] text-hc-muted font-semibold mt-1">
+              {draftPackCount} draft pack{draftPackCount === 1 ? '' : 's'} and {packReviewItems} imported file review item{packReviewItems === 1 ? '' : 's'} remain outside live operational truth.
+            </p>
+          </div>
+          <button onClick={() => setPage?.('client-docs')} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+            Review Clients
+          </button>
+        </div>
+      )}
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

@@ -441,20 +441,20 @@ function HardwareBurnSection() {
         </div>
         <div>
           <h2 className="text-lg font-black text-flag-red uppercase tracking-tight">Hardware Burn</h2>
-          <p className="text-[10px] font-bold text-flag-red/60 uppercase tracking-widest opacity-80 leading-tight">Total Sovereign Restoration</p>
+          <p className="text-[10px] font-bold text-flag-red/60 uppercase tracking-widest opacity-80 leading-tight">Full local data reset</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-          Immediate destructive purge of all local Intelligence, Credentials, and Session metadata. This node will be wiped from existence.
+          Immediate destructive clear of all local care records, credentials, and session metadata on this device.
         </p>
 
         <button
           onMouseDown={(e) => {
             e.currentTarget.classList.add('scale-95', 'bg-black');
             const timer = setTimeout(async () => {
-              if (confirm('NUCLEAR PURGE: This will wipe EVERYTHING on this hardware. Proceed?')) {
+              if (confirm('FULL LOCAL RESET: This will wipe all Care Ops data on this device. Proceed?')) {
                 await purgeSystemDataAsync();
               }
             }, 2000);
@@ -533,7 +533,7 @@ export function SettingsPage({ onSignOut }: Props) {
             {pinError && <p className="text-[9px] font-black text-flag-red text-center uppercase tracking-widest animate-shake">Invalid Access Key</p>}
           </div>
           <button onClick={handlePinSubmit} className="w-full py-5 rounded-2xl btn-tactical text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-            Unlock Sovereign Core
+            Unlock Admin Settings
           </button>
           <div className="flex items-center gap-3 opacity-40">
             <Lock size={12} className="text-hc-muted" />
@@ -606,7 +606,7 @@ export function SettingsPage({ onSignOut }: Props) {
                 </div>
                 <div className="flex items-center justify-between p-4 hc-clay-inset rounded-2xl">
                   <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Auth Level</span>
-                  <span className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Sovereign Admin</span>
+                  <span className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Admin</span>
                 </div>
                 <div className="flex items-center justify-between p-4 hc-clay-inset rounded-2xl">
                   <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Platform</span>

@@ -1,10 +1,11 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Activity, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
+import { Activity, Archive, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 import type { WeekSummary, Action, Incident, Page, PageContext } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { useCollapseStore } from '../lib/collapse-store';
 import { detectClinicalGaps } from '../lib/continuity-engine';
+import { loadClients } from '../lib/client-store';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -57,6 +58,16 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const [filteredData, setFilteredData] = useState<WeekSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [totalInStore, setTotalInStore] = useState(0);
+  const packReviewRows = useMemo(() => loadClients().flatMap(client =>
+    (client.packImports || []).map(pack => ({
+      clientName: client.name || pack.candidateClientName || 'Draft client',
+      pack,
+      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
+      liveReady: !!client.liveGateSummary?.liveReady,
+    }))
+  ), []);
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
+  const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
 
   const {
     collapseAll: collapseAllSections,
@@ -160,11 +171,29 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         <div className="w-24 h-24 rounded-[2.5rem] hc-clay-inset flex items-center justify-center mb-8 animate-float">
           <Zap className="w-12 h-12 text-hc-teal" />
         </div>
-        <h2 className="text-2xl font-black text-hc-text mb-3 uppercase tracking-tight">Intelligence Feed Offline</h2>
+        <h2 className="text-2xl font-black text-hc-text mb-3 uppercase tracking-tight">No Care Records Loaded</h2>
         <p className="text-hc-muted text-[11px] font-bold uppercase tracking-widest mb-10 text-center max-w-xs leading-relaxed">
           Import a clinical file, roster, ZIP pack, or pasted assessment to start the dashboard.
         </p>
-        <button onClick={() => setPage('upload')} className="btn-tactical shadow-2xl">OPEN IMPORT HUB</button>
+        {packReviewRows.length > 0 && (
+          <div className="mb-8 w-full max-w-2xl hc-clay-raised rounded-[2rem] p-5 border border-flag-amber/20">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <Archive className="w-4 h-4 text-flag-amber" />
+              <span className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em]">Client pack review queue active</span>
+            </div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest text-center">
+              {draftPackCount} draft pack{draftPackCount === 1 ? '' : 's'} / {packReviewItems} file review item{packReviewItems === 1 ? '' : 's'}
+            </p>
+          </div>
+        )}
+        <div className="flex flex-wrap justify-center gap-3">
+          <button onClick={() => setPage('upload')} className="btn-tactical shadow-2xl">OPEN IMPORT HUB</button>
+          {packReviewRows.length > 0 && (
+            <button onClick={() => setPage('client-docs')} className="btn-clay shadow-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest">
+              Review Client Packs
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -259,6 +288,30 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
         </div>
 
+        {packReviewRows.length > 0 && (
+          <div className="hc-clay-raised border border-flag-amber/20 p-5 rounded-2xl flex flex-col xl:flex-row xl:items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-flag-amber/10 flex items-center justify-center shrink-0">
+              <Archive className="w-5 h-5 text-flag-amber" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em]">Client pack review queue</div>
+              <p className="text-[11px] text-hc-muted font-semibold mt-1">
+                {draftPackCount} draft pack{draftPackCount === 1 ? '' : 's'} still need gate review. {packReviewItems} imported file review item{packReviewItems === 1 ? '' : 's'} remain visible.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {packReviewRows.slice(0, 3).map(row => (
+                <span key={`${row.clientName}-${row.pack.packId}`} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">
+                  {row.clientName}: {row.reviewItems} review
+                </span>
+              ))}
+            </div>
+            <button onClick={() => setPage('client-docs')} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+              Review Packs
+            </button>
+          </div>
+        )}
+
         {/* -- KPI PODS -- */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
@@ -280,7 +333,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         {/* â”€â”€ ENTRY TYPE VECTOR FEED â”€â”€ */}
         {data.entryTypes && Object.keys(data.entryTypes).length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">Signal Type Distribution</h2>
+            <h2 className="text-[10px] font-black text-hc-muted uppercase tracking-[0.4em] px-2">Record Type Distribution</h2>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
               {Object.entries(data.entryTypes)
                 .sort(([, a], [, b]) => b - a)
@@ -392,7 +445,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
         })()}
 
         {/* â”€â”€ REGIONAL OPERATIONS MATRIX â”€â”€ */}
-        <Section id="regional" title="Regional Operations Matrix" count={houseStats.length} collapsed={isSectionCollapsed('regional')} onToggle={() => toggleSection('regional')}>
+        <Section id="regional" title="Service Overview" count={houseStats.length} collapsed={isSectionCollapsed('regional')} onToggle={() => toggleSection('regional')}>
 
           {houseStats.length === 0 ? (
             <div className="hc-clay-raised rounded-2xl p-12 text-center">
@@ -413,7 +466,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
                   </div>
                   <div className="grid grid-cols-2 gap-3 relative z-10">
                     <div className="hc-clay-inset p-4 flex flex-col items-center gap-1 rounded-xl">
-                      <span className="text-[9px] font-black text-hc-muted uppercase opacity-60">Signals</span>
+                      <span className="text-[9px] font-black text-hc-muted uppercase opacity-60">Records</span>
                       <span className="text-2xl font-black text-hc-text tabular-nums">{h.entries.length}</span>
                     </div>
                     <div className={`hc-clay-inset p-4 flex flex-col items-center gap-1 rounded-xl transition-all ${h.red > 0 ? 'bg-flag-red/5' : ''}`}>
@@ -467,4 +520,3 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     </div>
   );
 }
-

@@ -12,6 +12,7 @@ import { buildPBSFromProfileEvidence } from '../lib/profile-intelligence-fill';
 import { Sparkles, ChevronRight, ArrowLeft, Plus, Printer, Trash2, CheckCircle } from 'lucide-react';
 import type { FullClient } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
+import { SourceEvidenceStrip } from '../components/SourceEvidenceStrip';
 
 interface Props {
   clientId: string;
@@ -289,7 +290,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
       const sourceCarePlan = parsed.carePlan;
 
       setClient(prev => {
-        const nextPbs = mergePBSData(prev.pbs, parsed.pbs || null) || { ...(prev.pbs || emptyPBS(today)) };
+        const parsedPbs = parsed.client.pbs || null;
+        const nextPbs = mergePBSData(prev.pbs, parsedPbs) || { ...(prev.pbs || emptyPBS(today)) };
 
         if (sourceCarePlan?.biography && !nextPbs.aboutText) nextPbs.aboutText = sourceCarePlan.biography;
         if (sourceRisk?.risks?.length) {
@@ -407,6 +409,8 @@ export function PBSBuilder({ clientId, onBack }: Props) {
           </button>
         </div>
       </div>
+
+      <SourceEvidenceStrip client={client} title="PBS" categories={['pbs', 'risk', 'admission', 'support_plan']} />
 
       <div className="flex flex-1 overflow-hidden px-4 pb-4 gap-4">
         {/* Section nav */}

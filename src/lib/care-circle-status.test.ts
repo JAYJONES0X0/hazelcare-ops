@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { getCareCircleStatus, careCircleModeLabel } from './care-circle-status';
-import type { FullClient } from './client-store';
+import { emptyClient, type FullClient } from './client-store';
 
 describe('care circle status', () => {
   it('marks unresolved family items as not share-ready', () => {
     const status = getCareCircleStatus({
+      ...emptyClient(),
       name: 'Ready With Concern',
       careCircle: {
         mode: 'standard_family_window',
@@ -47,7 +48,7 @@ describe('care circle status', () => {
         activity: [],
         notes: '',
       },
-    } as FullClient);
+    } satisfies FullClient);
 
     expect(status.ready).toBe(false);
     expect(status.issues).toContain('1 open item');

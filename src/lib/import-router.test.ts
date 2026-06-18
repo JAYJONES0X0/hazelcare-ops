@@ -73,6 +73,7 @@ describe('import-router rollback', () => {
         weekSummary: mergedWeekData,
         admission: null,
         supportPlan: null,
+        contactDetails: null,
         shifts: [],
         warnings: [],
         unmappedFields: [],

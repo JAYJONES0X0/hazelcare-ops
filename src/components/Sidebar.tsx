@@ -212,7 +212,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
               <div className="flex items-center justify-between px-2">
                 <div className="flex flex-col">
                   <span className="text-[8px] font-black text-hc-teal uppercase tracking-widest mb-1">Status</span>
-                  <span className="text-[10px] font-black text-hc-text uppercase tabular-nums">{weekData ? Object.values(weekData.houses).length : 0} Sites Active</span>
+                  <span className="text-[10px] font-black text-hc-text uppercase tabular-nums">{weekData ? Object.values(weekData.houses).length : 0} Units Loaded</span>
                 </div>
                 <div className="w-2 h-2 rounded-full bg-hc-green animate-pulse shadow-[0_0_8px_var(--hc-green)]" />
               </div>
@@ -238,7 +238,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
 
           <div className={`flex items-center gap-2 ${collapsed ? 'flex-col' : ''}`}>
             {collapsed && (
-              <div className="w-2 h-2 rounded-full bg-hc-green animate-pulse mb-2" title={`${weekData ? Object.values(weekData.houses).length : 0} sites active`} />
+              <div className="w-2 h-2 rounded-full bg-hc-green animate-pulse mb-2" title={`${weekData ? Object.values(weekData.houses).length : 0} units loaded`} />
             )}
             {skinSwitcher}
             <button

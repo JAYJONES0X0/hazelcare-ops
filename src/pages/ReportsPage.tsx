@@ -94,18 +94,17 @@ function buildStaffActivityHtml(weekData: WeekSummary): string {
     <tbody>${rows}</tbody></table></body></html>`;
 }function buildRiskMatrixHtml(weekData: WeekSummary): string {
   const today = new Date().toLocaleDateString('en-GB');
-  const entries = flattenWeekEntries(weekData);
-  const profiles = generateRiskProfiles(entries);
+  const profiles = generateRiskProfiles(weekData);
   const LEVEL_COLOR: Record<string, string> = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#22c55e' };
   const rows = profiles.map(p => {
     const color = LEVEL_COLOR[p.riskLevel] || '#64748b';
-    const topFlag = p.redFlags[0]?.entry?.slice(0, 80) || p.amberFlags[0]?.entry?.slice(0, 80) || '—';
+    const topFlag = p.topConcerns[0]?.slice(0, 80) || p.recentEntries[0]?.entry?.slice(0, 80) || 'No lead indicator';
     return `<tr>
       <td style="padding:9px 14px;font-weight:700;border-bottom:1px solid #e2e8f0">${p.name}</td>
       <td style="padding:9px 14px;border-bottom:1px solid #e2e8f0">${p.house}</td>
       <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:900;color:${color}">${p.riskLevel.toUpperCase()}</td>
-      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#ef4444">${p.redFlags.length}</td>
-      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#f59e0b">${p.amberFlags.length}</td>
+      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#ef4444">${p.redFlags}</td>
+      <td style="padding:9px 14px;text-align:center;border-bottom:1px solid #e2e8f0;color:#f59e0b">${p.amberFlags}</td>
       <td style="padding:9px 14px;font-size:10px;color:#64748b;border-bottom:1px solid #e2e8f0;max-width:220px">${topFlag}</td>
     </tr>`;
   }).join('');

@@ -35,7 +35,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: StaffMember; onSave: (s
     <div className="fixed inset-0 bg-hc-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="hc-clay-raised w-full max-w-lg p-10 flex flex-col gap-8 relative overflow-hidden" onClick={e => e.stopPropagation()}>
         <div>
-          <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Personnel Profile</h3>
+          <h3 className="text-2xl font-black text-hc-text tracking-tighter uppercase tabular-nums">Staff Profile</h3>
           <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.4em] mt-2">Governance & Roster Configuration</p>
         </div>
         
@@ -74,7 +74,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: StaffMember; onSave: (s
 
         <div className="flex gap-4 pt-4">
           <button onClick={() => { if (form.name.trim()) onSave(form); }} disabled={!form.name.trim()} className="btn-clay btn-clay-teal flex-1 h-[60px] text-[11px]">
-            Save Personnel Unit
+            Save Staff Record
           </button>
           <button onClick={onClose} className="btn-clay flex-1 h-[60px] text-[11px] text-hc-muted">
             Cancel
@@ -304,7 +304,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
              <div className="w-10 h-10 rounded-2xl hc-clay-raised flex items-center justify-center">
                 <Users size={20} className="text-hc-teal" />
              </div>
-             <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase">Personnel Ledger</h1>
+             <h1 className="text-3xl font-black text-hc-text tracking-tighter uppercase">Staff Directory</h1>
           </div>
           <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.4em] ml-14">Organisational Asset Oversight & Stability Matrix</p>
         </div>
@@ -315,7 +315,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Active_Personnel', value: totalActive, colorClass: 'text-hc-teal' },
+          { label: 'Active Staff', value: totalActive, colorClass: 'text-hc-teal' },
           { label: 'Off_Sick', value: totalSickness, colorClass: 'text-hc-red' },
           { label: 'Sickness_Load', value: totalSicknessEvents, colorClass: 'text-hc-amber' },
           { label: 'Latency_Events', value: totalLatenessEvents, colorClass: 'text-hc-muted' },
@@ -330,7 +330,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
       <div className="hc-clay-raised p-6 flex flex-col md:flex-row gap-6 items-center">
         <div className="relative group flex-1">
            <Search className="w-5 h-5 text-hc-muted absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-hc-teal transition-colors" />
-           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="QUERY PERSONNEL DATABASE..." 
+           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search staff records..." 
               className="hc-clay-inset w-full pl-12 pr-6 py-4 text-sm font-bold text-hc-text outline-none focus:ring-2 focus:ring-hc-teal/20" />
         </div>
         <div className="flex items-center gap-4">
@@ -346,7 +346,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
         {Object.entries(byHouse).sort(([a], [b]) => a.localeCompare(b)).map(([house, members]) => (
           <div key={house} className="flex flex-col gap-8">
              <div className="flex items-center gap-6 p-4">
-                <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase">{house} COMMAND</h2>
+                <h2 className="text-2xl font-black text-hc-text tracking-tighter uppercase">{house} Team</h2>
                 <div className="hc-clay-pill px-4 py-1.5 hc-clay-raised text-[11px] font-black text-hc-teal uppercase">{members.length} UNITS</div>
              </div>
 
@@ -402,7 +402,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
       {filtered.length === 0 && (
         <div className="hc-clay-inset py-32 text-center">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-black text-hc-text mb-2 uppercase tracking-tight">Personnel Database Empty</div>
+          <div className="text-lg font-black text-hc-text mb-2 uppercase tracking-tight">Staff Directory Empty</div>
           <div className="text-[11px] text-hc-muted uppercase tracking-[0.4em] font-bold">Clear sector filters or enroll a new unit to activate intelligence.</div>
         </div>
       )}

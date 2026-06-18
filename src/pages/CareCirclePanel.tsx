@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle, Copy, FileText, Link2, MessageSquare, Plus, Printer, Save, ShieldCheck, Sparkles, Trash2, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle, Copy, FileText, Link2, LockKeyhole, MessageSquare, Plus, Printer, Save, ShieldCheck, Sparkles, Trash2, Users } from 'lucide-react';
 import {
   emptyCareCircle,
   loadClients,
@@ -114,6 +114,36 @@ function actionPriorityFor(priority: CareCircleConcern['priority']): ActionPrior
   return priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
 }
 
+function createContactDraft(): CareCircleContact {
+  return {
+    id: uid(),
+    name: '',
+    relationship: '',
+    email: '',
+    phone: '',
+    permissionLevel: 'reassurance',
+    verified: false,
+    consentBasis: 'Consent confirmed and recorded by manager.',
+    restrictions: '',
+    reviewDate: todayUk(),
+  };
+}
+
+function createConcernDraft(): CareCircleConcern {
+  return {
+    id: uid(),
+    type: 'concern',
+    source: '',
+    detail: '',
+    owner: '',
+    priority: 'medium',
+    status: 'open',
+    createdAt: todayIso(),
+    response: '',
+    dueDate: dueDateFor('medium'),
+  };
+}
+
 export function CareCirclePanel({ clientId, onBack }: Props) {
   const [clients, setClients] = useState<FullClient[]>(() => loadClients());
   const [copiedId, setCopiedId] = useState('');
@@ -122,8 +152,8 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const [shareOverride, setShareOverride] = useState(false);
   const [storedEntries, setStoredEntries] = useState<CareEntry[]>([]);
   const [entryStoreLoaded, setEntryStoreLoaded] = useState(false);
-  const [contactDraft, setContactDraft] = useState<CareCircleContact>(() => newContact());
-  const [concernDraft, setConcernDraft] = useState<CareCircleConcern>(() => newConcern());
+  const [contactDraft, setContactDraft] = useState<CareCircleContact>(() => createContactDraft());
+  const [concernDraft, setConcernDraft] = useState<CareCircleConcern>(() => createConcernDraft());
   const client = clients.find((item) => item.id === clientId);
 
   useEffect(() => {
@@ -153,9 +183,19 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const shareReadiness = getCareCircleShareReadiness(circle, shareAudience);
   const readinessIssues = shareReadiness.issues;
   const shareReady = shareReadiness.ready;
-  const shareOverrideAvailable = !shareReady && canReleaseCareCircleSharePack(shareReadiness, true);
-  const canReleaseSharePack = canReleaseCareCircleSharePack(shareReadiness, shareOverride);
+  const careCircleEnabled = circle.mode !== 'off';
+  const contacts = circle.contacts || [];
+  const verifiedContacts = contacts.filter((contact) => contact.verified && contactHasRoute(contact) && !contactExpired(contact));
+  const openItems = (circle.concerns || []).filter((item) => item.status !== 'resolved');
+  const evidenceSourceCount = sourceRefs.length;
+  const shareOverrideAvailable = careCircleEnabled && !shareReady && canReleaseCareCircleSharePack(shareReadiness, true);
+  const canReleaseSharePack = careCircleEnabled && canReleaseCareCircleSharePack(shareReadiness, shareOverride);
   const circleInsight = getCareCircleOperationalInsight(circle, shareReadiness);
+  const activationIssues = [
+    !careCircleEnabled ? 'Choose a visibility mode before any family or professional pack can leave Care Ops.' : '',
+    !verifiedContacts.length ? 'Add and verify at least one contact with a safe contact route.' : '',
+    !evidenceSourceCount ? 'No reviewed source evidence is available for a share-ready update yet.' : '',
+  ].filter(Boolean);
 
   useEffect(() => {
     setReviewDraft(generatedSummary);
@@ -197,37 +237,8 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
     });
   }
 
-  function newContact(): CareCircleContact {
-    return {
-      id: uid(),
-      name: '',
-      relationship: '',
-      email: '',
-      phone: '',
-      permissionLevel: 'reassurance',
-      verified: false,
-      consentBasis: 'Consent confirmed and recorded by manager.',
-      restrictions: '',
-      reviewDate: todayUk(),
-    };
-  }
-
-  function newConcern(): CareCircleConcern {
-    return {
-      id: uid(),
-      type: 'concern',
-      source: '',
-      detail: '',
-      owner: '',
-      priority: 'medium',
-      status: 'open',
-      createdAt: todayIso(),
-      response: '',
-      dueDate: dueDateFor('medium'),
-    };
-  }
-
   async function copyUpdate(update: CareCircleUpdate | null = null) {
+    if (!update && !careCircleEnabled) return;
     const draftText = reviewDraft || generatedSummary;
     const text = update?.summary || buildCareCircleInternalDraftText({
       clientName: client?.name || '',
@@ -253,7 +264,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   }
 
   function saveGeneratedUpdate() {
-    if (!client) return;
+    if (!client || !careCircleEnabled) return;
     const update: CareCircleUpdate = {
       id: uid(),
       dateFrom: entries[entries.length - 1]?.date || todayUk(),
@@ -288,7 +299,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
       { contacts: [contactDraft, ...(circle.contacts || [])] },
       activity('contact_added', 'Contact added', `${contactDraft.name} added as ${permissionLabel(contactDraft.permissionLevel)}.`, contactDraft.id)
     );
-    setContactDraft(newContact());
+    setContactDraft(createContactDraft());
   }
 
   function removeContact(id: string) {
@@ -327,7 +338,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
       { concerns: [linkedConcern, ...(circle.concerns || [])] },
       activity('concern_logged', 'Care Circle item logged', `Internal action created for ${concernTypeLabel(concern.type)}.`, linkedConcern.id)
     );
-    setConcernDraft(newConcern());
+    setConcernDraft(createConcernDraft());
   }
 
   function updateConcern(id: string, patch: Partial<CareCircleConcern>) {
@@ -415,16 +426,16 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
               <span className="pill pill-purple text-[9px] font-black uppercase tracking-widest">Care Circle</span>
             </div>
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-hc-muted mt-1">
-              Optional family and professional visibility layer
+              {careCircleEnabled ? 'Optional family and professional visibility layer' : 'Off: setup only, no external sharing'}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
           {(Object.keys(MODE_LABELS) as CareCircleMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setMode(mode)}
-              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${circle.mode === mode ? 'btn-tactical' : 'btn-clay text-hc-muted'}`}
+              className={`px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${circle.mode === mode ? 'btn-tactical' : 'btn-clay text-hc-muted'}`}
             >
               {modeLabel(mode)}
             </button>
@@ -432,27 +443,72 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
         </div>
       </div>
 
+      {!careCircleEnabled && (
+        <section className="hc-clay-raised rounded-[2rem] p-5 border border-hc-teal/20 mb-6">
+          <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-hc-teal shrink-0">
+                <LockKeyhole className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="section-header text-[10px] mb-2">Care Circle is switched off</div>
+                <p className="text-sm font-bold text-hc-text leading-relaxed max-w-4xl">
+                  This is a preparation area only. You can add contacts, record consent boundaries, and log family/professional queries, but no family update or share pack can be copied or printed until a manager chooses a visibility mode and passes the gates.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {activationIssues.map((issue) => (
+                    <span key={issue} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{issue}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['light_reassurance', 'standard_family_window', 'collaborative', 'professional_access'] as CareCircleMode[]).map((mode) => (
+                <button
+                  key={`enable-${mode}`}
+                  onClick={() => setMode(mode)}
+                  className="btn-clay rounded-xl px-4 py-3 text-[8px] font-black uppercase tracking-widest text-hc-muted"
+                >
+                  Enable {modeLabel(mode)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 2xl:grid-cols-[1.05fr_0.95fr] gap-6 mb-6">
         <section className="hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <div className="section-header text-[10px] mb-2 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-hc-teal" />
-                Family-safe update builder
+                {careCircleEnabled ? 'Family-safe update builder' : 'Draft preview locked'}
               </div>
               <p className="text-xs text-hc-muted font-medium max-w-2xl leading-relaxed">
-                Drafts a shareable update from client evidence. This does not publish externally; a manager reviews, edits, copies, and logs it.
+                {careCircleEnabled
+                  ? 'Drafts a shareable update from client evidence. This does not publish externally; a manager reviews, edits, copies, and logs it.'
+                  : 'The draft can be inspected, but copy and save are locked while Care Circle is off.'}
               </p>
             </div>
-            <span className={`pill text-[9px] font-black uppercase tracking-widest ${shareability === 'green' ? 'pill-green' : shareability === 'amber' ? 'pill-amber' : 'pill-red'}`}>
-              {shareability} shareability
+            <span className={`pill text-[9px] font-black uppercase tracking-widest ${!careCircleEnabled ? 'pill-blue' : shareability === 'green' ? 'pill-green' : shareability === 'amber' ? 'pill-amber' : 'pill-red'}`}>
+              {careCircleEnabled ? `${shareability} shareability` : 'sharing off'}
             </span>
           </div>
+          {!careCircleEnabled && (
+            <div className="rounded-2xl border border-hc-amber/20 bg-hc-amber/10 p-4 mb-4 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-hc-amber mt-0.5 shrink-0" />
+              <p className="text-xs font-bold text-hc-text leading-relaxed">
+                No family member, professional, or external contact should receive this content yet. Turn on an approved mode, verify contacts, and review evidence first.
+              </p>
+            </div>
+          )}
           <textarea
             value={reviewDraft}
             onChange={(event) => setReviewDraft(event.target.value)}
+            disabled={!careCircleEnabled}
             rows={12}
-            className="w-full hc-clay-inset rounded-2xl p-5 text-sm text-hc-text font-medium leading-relaxed resize-y focus:outline-none"
+            className={`w-full hc-clay-inset rounded-2xl p-5 text-sm text-hc-text font-medium leading-relaxed resize-y focus:outline-none ${careCircleEnabled ? '' : 'opacity-65 cursor-not-allowed'}`}
           />
           <div className="mt-4 rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
             <div className="section-header text-[9px] mb-3 flex items-center gap-2">
@@ -470,17 +526,25 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             ) : !entryStoreLoaded ? (
               <p className="text-[11px] text-hc-muted font-bold">Syncing diary source entries from the local evidence store...</p>
             ) : (
-              <p className="text-[11px] text-hc-muted font-bold">No diary source entries are currently loaded for this person.</p>
+              <p className="text-[11px] text-hc-muted font-bold">No diary entries or reviewed document evidence are loaded for this person yet. Import source records before treating any update as share-ready.</p>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-3 mt-4">
-            <button onClick={() => copyUpdate()} className="btn-clay rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+            <button
+              onClick={() => copyUpdate()}
+              disabled={!careCircleEnabled}
+              className={`rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${careCircleEnabled ? 'btn-clay' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+            >
               <Copy className="w-4 h-4" />
-              {copiedId === 'draft' ? 'Copied' : 'Copy Internal Draft'}
+              {copiedId === 'draft' ? 'Copied' : careCircleEnabled ? 'Copy Internal Draft' : 'Copy Locked'}
             </button>
-            <button onClick={saveGeneratedUpdate} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+            <button
+              onClick={saveGeneratedUpdate}
+              disabled={!careCircleEnabled}
+              className={`rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${careCircleEnabled ? 'btn-tactical' : 'hc-clay-inset text-hc-muted/60 cursor-not-allowed'}`}
+            >
               <Save className="w-4 h-4" />
-              Save Reviewed Update
+              {careCircleEnabled ? 'Save Reviewed Update' : 'Save Locked'}
             </button>
             <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
               {entryStoreLoaded ? entries.length : 'Syncing'} source entries scanned
@@ -493,6 +557,14 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             <ShieldCheck className="w-4 h-4 text-hc-teal" />
             Consent and boundaries
           </div>
+          {!careCircleEnabled && (
+            <div className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4 mb-4">
+              <div className="section-header text-[8px] mb-2">Required before activation</div>
+              <p className="text-xs font-bold text-hc-muted leading-relaxed">
+                Confirm consent, best-interest position where relevant, relationship permissions, safeguarding boundaries, and what must never be shared.
+              </p>
+            </div>
+          )}
           <textarea
             value={circle.notes || ''}
             onChange={(event) => updateCircle({ notes: event.target.value })}
@@ -502,15 +574,15 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           />
           <div className="grid grid-cols-3 gap-3">
             <div className="hc-clay-inset rounded-2xl p-4">
-              <div className="text-xl font-black text-hc-text">{circle.contacts?.length || 0}</div>
-              <div className="section-header text-[9px]">Contacts</div>
+              <div className="text-xl font-black text-hc-text">{contacts.length}</div>
+              <div className="section-header text-[9px]">Contacts added</div>
             </div>
             <div className="hc-clay-inset rounded-2xl p-4">
-              <div className="text-xl font-black text-hc-text">{circle.updates?.length || 0}</div>
-              <div className="section-header text-[9px]">Updates</div>
+              <div className="text-xl font-black text-hc-text">{verifiedContacts.length}</div>
+              <div className="section-header text-[9px]">Verified</div>
             </div>
             <div className="hc-clay-inset rounded-2xl p-4">
-              <div className="text-xl font-black text-hc-text">{circle.concerns?.filter((item) => item.status !== 'resolved').length || 0}</div>
+              <div className="text-xl font-black text-hc-text">{openItems.length}</div>
               <div className="section-header text-[9px]">Open items</div>
             </div>
           </div>
@@ -522,16 +594,26 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
           <div>
             <div className="section-header text-[10px] mb-2 flex items-center gap-2">
               <Printer className="w-4 h-4 text-hc-teal" />
-              Permission-aware share pack
+              {careCircleEnabled ? 'Permission-aware share pack' : 'Share pack locked'}
             </div>
             <p className="text-xs text-hc-muted font-medium max-w-3xl leading-relaxed">
-              Builds a controlled family or professional pack from the latest reviewed update. Internal evidence references stay inside Care Ops unless separately authorised.
+              {careCircleEnabled
+                ? 'Builds a controlled family or professional pack from the latest reviewed update. Internal evidence references stay inside Care Ops unless separately authorised.'
+                : 'No family or professional pack can be released while Care Circle is off. Prepare the evidence, contacts, and boundaries, then activate a mode.'}
             </p>
           </div>
-          <div className={`pill text-[9px] font-black uppercase tracking-widest ${shareReady ? 'pill-green' : 'pill-amber'}`}>
-            {shareReady ? 'Ready to share' : `${readinessIssues.length} checks`}
+          <div className={`pill text-[9px] font-black uppercase tracking-widest ${!careCircleEnabled ? 'pill-blue' : shareReady ? 'pill-green' : 'pill-amber'}`}>
+            {!careCircleEnabled ? 'Off' : shareReady ? 'Ready to share' : `${readinessIssues.length} checks`}
           </div>
         </div>
+        {!careCircleEnabled && (
+          <div className="rounded-2xl border border-hc-teal/20 bg-hc-teal/10 p-4 mt-5 flex items-start gap-3">
+            <LockKeyhole className="w-4 h-4 text-hc-teal mt-0.5 shrink-0" />
+            <p className="text-xs font-bold text-hc-text leading-relaxed">
+              Release controls are intentionally disabled. This avoids the dangerous state where a contact list exists but consent, evidence, and sharing boundaries are not reviewed.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 mt-5">
           <div className="hc-clay-inset rounded-2xl p-4">
             <div className="section-header text-[8px] mb-2">Window</div>
@@ -568,7 +650,8 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 setShareAudience(event.target.value as ShareAudience);
                 setShareOverride(false);
               }}
-              className="w-full hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none"
+              disabled={!careCircleEnabled}
+              className={`w-full hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none ${careCircleEnabled ? '' : 'opacity-65 cursor-not-allowed'}`}
               aria-label="Share pack audience"
             >
               {(Object.keys(PERMISSION_LABELS) as ShareAudience[]).map((level) => (
@@ -634,9 +717,12 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
 
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
         <section className="hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
-          <div className="section-header text-[10px] mb-5 flex items-center gap-2">
-            <Users className="w-4 h-4 text-hc-teal" />
-            Contacts and permissions
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <div className="section-header text-[10px] flex items-center gap-2">
+              <Users className="w-4 h-4 text-hc-teal" />
+              Contacts and permissions
+            </div>
+            {!careCircleEnabled && <span className="pill pill-blue text-[8px] font-black uppercase tracking-widest">Setup only</span>}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
             <input value={contactDraft.name} onChange={(event) => setContactDraft({ ...contactDraft, name: event.target.value })} placeholder="Name" className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-bold text-hc-text focus:outline-none" />
@@ -663,7 +749,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             Add Contact
           </button>
           <div className="space-y-3">
-            {(circle.contacts || []).map((contact) => (
+            {contacts.map((contact) => (
               <div key={contact.id} className="bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4 flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm font-black text-hc-text">{contact.name}</div>
@@ -688,13 +774,24 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 </div>
               </div>
             ))}
+            {contacts.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-hc-border/40 bg-hc-border/10 p-5">
+                <div className="section-header text-[9px] mb-2">No contacts reviewed yet</div>
+                <p className="text-xs font-bold text-hc-muted leading-relaxed">
+                  Add family, representatives, advocates, or professionals here as unverified contacts first. They only become releasable once consent, route, review date, and boundaries are checked.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
         <section className="hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
-          <div className="section-header text-[10px] mb-5 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-hc-teal" />
-            Concerns, compliments, and questions
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <div className="section-header text-[10px] flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-hc-teal" />
+              Concerns, compliments, and questions
+            </div>
+            {!careCircleEnabled && <span className="pill pill-blue text-[8px] font-black uppercase tracking-widest">Internal log</span>}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
             <select value={concernDraft.type} onChange={(event) => setConcernDraft({ ...concernDraft, type: event.target.value as CareCircleConcern['type'] })} className="hc-clay-inset rounded-xl px-4 py-3 text-sm font-black text-hc-text focus:outline-none">
@@ -775,6 +872,14 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
                 </div>
               );
             })}
+            {(circle.concerns || []).length === 0 && (
+              <div className="rounded-2xl border border-dashed border-hc-border/40 bg-hc-border/10 p-5">
+                <div className="section-header text-[9px] mb-2">No family/professional items logged</div>
+                <p className="text-xs font-bold text-hc-muted leading-relaxed">
+                  Use this as the internal trace for questions, concerns, compliments, and actions before any Care Circle visibility is enabled.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </div>

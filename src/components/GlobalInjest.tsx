@@ -8,7 +8,7 @@ import { loadWeekData } from '../lib/storage';
 import { appendEntries } from '../lib/entry-store';
 import { enrichEntriesWithRoster, parseClientRosterCSV, saveRosterShifts } from '../lib/roster-store';
 import { parseRosterCSV as parseGroupedRosterCSV } from '../lib/universal-parser';
-import type { NormalizedImportEnvelope } from '../lib/import-intelligence';
+import type { ImportTarget, NormalizedImportEnvelope } from '../lib/import-intelligence';
 import type { WeekSummary } from '../lib/types';
 import { ORG_CONFIG } from '../lib/config';
 
@@ -81,10 +81,10 @@ export function GlobalInjest({ file, onClose, onDataParsed }: Props) {
     }
   };
 
-  const mapBatchTargets = (env: NormalizedImportEnvelope, fallback: 'reports' | 'templates' | 'client-docs') => {
-    if (env.source.detectedType === 'roster' || env.shifts?.length) return ['roster' as const];
-    if (env.diaryEntries?.length || env.weekSummary) return ['reports' as const];
-    if (env.admission || env.supportPlan) return ['client-docs' as const];
+  const mapBatchTargets = (env: NormalizedImportEnvelope, fallback: ImportTarget): ImportTarget[] => {
+    if (env.source.detectedType === 'roster' || env.shifts?.length) return ['roster'];
+    if (env.diaryEntries?.length || env.weekSummary) return ['reports'];
+    if (env.admission || env.supportPlan || env.contactDetails) return ['client-docs'];
     return [fallback];
   };
 
@@ -98,8 +98,8 @@ export function GlobalInjest({ file, onClose, onDataParsed }: Props) {
         clientRaw: shift.house || shift.staffId || 'Unassigned',
         house: '',
         date: shift.date,
-        startTime: shift.startTime,
-        endTime: shift.endTime,
+        startTime: shift.startTime || '',
+        endTime: shift.endTime || '',
         carers: shift.staffId ? [shift.staffId] : [],
         durationHours: shift.hours,
         shiftType: shift.type === 'long_day' ? 'long' : shift.type,

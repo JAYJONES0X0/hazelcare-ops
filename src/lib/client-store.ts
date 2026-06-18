@@ -168,12 +168,137 @@ export interface SupportPlanData {
 }
 
 // ─── FULL CLIENT ───────────────────────────────────────────────────────────────
+export type PackStatus =
+  | 'PACK_RECEIVED'
+  | 'DRAFT_CLIENT'
+  | 'REVIEWED_CLIENT'
+  | 'LIVE_CLIENT'
+  | 'REVIEW_REQUIRED'
+  | 'PARTIALLY_REVIEWED'
+  | 'LIVE_READY'
+  | 'FAILED';
+
+export type PackFileCategory =
+  | 'admission'
+  | 'care_plan'
+  | 'support_plan'
+  | 'pbs'
+  | 'risk'
+  | 'medication'
+  | 'finance'
+  | 'tenancy'
+  | 'mental_health_legal'
+  | 'contact_details'
+  | 'profile_image'
+  | 'welcome_admin'
+  | 'diary'
+  | 'roster'
+  | 'transcript'
+  | 'screenshot'
+  | 'irrelevant'
+  | 'unknown';
+
+export type PackParseStatus =
+  | 'PARSED'
+  | 'PARTIAL'
+  | 'ATTACHED_ONLY'
+  | 'OCR_REQUIRED'
+  | 'AI_REVIEW_REQUIRED'
+  | 'FAILED'
+  | 'SKIPPED_WITH_REASON';
+
+export type PackTargetScreen =
+  | 'Client Records'
+  | 'Vault Docs'
+  | 'Care Circle'
+  | 'Risk/PBS'
+  | 'Care Plan'
+  | 'Medication'
+  | 'Finance/Legal'
+  | 'Task Packs'
+  | 'Review Queue'
+  | 'Unknown';
+
+export interface PackFileManifestRow {
+  fileId: string;
+  packId: string;
+  originalFileName: string;
+  fileType: string;
+  sizeBytes: number;
+  category: PackFileCategory;
+  classificationConfidence: number;
+  parseStatus: PackParseStatus;
+  targetScreen: PackTargetScreen;
+  clientMatch: {
+    clientId: string | null;
+    name: string | null;
+    confidence: number;
+    matchReason: string;
+  };
+  extractedFieldsCount: number;
+  evidenceLinksCreated: number;
+  reviewRequired: boolean;
+  rejectedReasons: string[];
+  vaultAttachmentStatus?: 'attached' | 'not_attached' | 'rejected' | 'unsupported';
+}
+
+export interface PackImport {
+  packId: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  sourceName: string;
+  sourceType: 'zip' | 'pdf' | 'multi-file' | 'single-file';
+  status: PackStatus;
+  candidateClientId: string | null;
+  candidateClientName: string | null;
+  identityConfidence: number;
+  filesTotal: number;
+  filesParsed: number;
+  filesAttached: number;
+  filesFailed: number;
+  filesNeedsReview: number;
+  manifestRows: PackFileManifestRow[];
+  auditEventIds: string[];
+}
+
+export interface ClientOnboardingGate {
+  id: string;
+  label: string;
+  status: 'passed' | 'blocked' | 'review';
+  detail: string;
+}
+
+export interface ClientLiveGateSummary {
+  liveReady: boolean;
+  gates: ClientOnboardingGate[];
+  missingGates: ClientOnboardingGate[];
+  blockedReasons: string[];
+  openReviewItems: number;
+  identityReviewed: boolean;
+  contactsReviewed: boolean;
+  consentBoundariesReviewed: boolean;
+  careSupportPlanSource: 'present' | 'missing' | 'explicitly_missing';
+  riskSource: 'present' | 'missing' | 'explicitly_missing';
+  pbsSource: 'present' | 'missing' | 'explicitly_missing';
+  medicationSource: 'present' | 'missing' | 'explicitly_missing';
+  financeLegalReviewed: boolean;
+  unknownDocumentsReviewedOrDeferred: boolean;
+}
+
 export interface ClientDocument {
   id: string;
   name: string;
   url: string;
   type: string;
   uploadedAt: string;
+  packId?: string;
+  fileId?: string;
+  category?: PackFileCategory;
+  parseStatus?: PackParseStatus;
+  classificationConfidence?: number;
+  reviewRequired?: boolean;
+  sourceFileName?: string;
+  rejectedReasons?: string[];
 }
 
 export interface VaultDoc {
@@ -181,6 +306,15 @@ export interface VaultDoc {
   name: string;
   text: string;
   uploadedAt: string;
+  packId?: string;
+  fileId?: string;
+  category?: PackFileCategory;
+  parseStatus?: PackParseStatus;
+  classificationConfidence?: number;
+  reviewRequired?: boolean;
+  sourceFileName?: string;
+  targetScreen?: PackTargetScreen;
+  rejectedReasons?: string[];
 }
 
 export type CareCircleMode =
@@ -203,6 +337,12 @@ export interface CareCircleContact {
   consentBasis: string;
   restrictions: string;
   reviewDate: string;
+  sourceDocument?: string;
+  sourceFileId?: string;
+  confidence?: number;
+  consentStatus?: 'unverified' | 'review_required' | 'reviewed';
+  sharingBoundary?: 'review_required' | 'reassurance_only' | 'care_plan' | 'professional';
+  managerReviewed?: boolean;
 }
 
 export interface CareCircleUpdate {
@@ -262,6 +402,10 @@ export interface FullClient extends ClientBasic {
   careCircle?: CareCircleData;
   clinicalBriefing?: string;
   vaultDocs?: VaultDoc[];
+  onboardingStatus?: PackStatus;
+  onboardingGates?: ClientOnboardingGate[];
+  liveGateSummary?: ClientLiveGateSummary;
+  packImports?: PackImport[];
 }
 
 // ─── STORAGE ───────────────────────────────────────────────────────────────────
@@ -342,6 +486,12 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
             consentBasis: cleanText(contact.consentBasis, 220),
             restrictions: cleanText(contact.restrictions, 260),
             reviewDate: cleanText(contact.reviewDate, 40),
+            sourceDocument: cleanText(contact.sourceDocument, 180),
+            sourceFileId: cleanText(contact.sourceFileId, 80),
+            confidence: contact.confidence,
+            consentStatus: contact.consentStatus,
+            sharingBoundary: contact.sharingBoundary,
+            managerReviewed: contact.managerReviewed,
           }))
         : [],
       updates: Array.isArray(client.careCircle.updates)
@@ -383,6 +533,35 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
         }))
       : [],
     vaultDocs: compactVaultDocs(client.vaultDocs, aggressive),
+    onboardingStatus: client.onboardingStatus,
+    onboardingGates: Array.isArray(client.onboardingGates) ? client.onboardingGates.map((gate) => ({
+      ...gate,
+      label: cleanText(gate.label, 120),
+      detail: cleanText(gate.detail, 260),
+    })) : undefined,
+    liveGateSummary: client.liveGateSummary,
+    packImports: Array.isArray(client.packImports)
+      ? client.packImports.slice(0, aggressive ? 4 : 12).map((pack) => ({
+          ...pack,
+          sourceName: cleanText(pack.sourceName, 180),
+          candidateClientName: cleanText(pack.candidateClientName, 160) || null,
+          manifestRows: Array.isArray(pack.manifestRows)
+            ? pack.manifestRows.slice(0, aggressive ? 12 : 80).map((row) => ({
+                ...row,
+                originalFileName: cleanText(row.originalFileName, 180),
+                clientMatch: {
+                  ...row.clientMatch,
+                  name: cleanText(row.clientMatch.name, 160) || null,
+                  matchReason: cleanText(row.clientMatch.matchReason, 180),
+                },
+                rejectedReasons: Array.isArray(row.rejectedReasons)
+                  ? row.rejectedReasons.slice(0, 8).map((reason) => cleanText(reason, 240))
+                  : [],
+              }))
+            : [],
+          auditEventIds: Array.isArray(pack.auditEventIds) ? pack.auditEventIds.slice(0, 40).map((id) => cleanText(id, 80)) : [],
+        }))
+      : undefined,
     clinicalBriefing,
     updatedAt: cleanText(client.updatedAt, 40),
     createdAt: cleanText(client.createdAt, 40),
@@ -671,6 +850,25 @@ export function emptyClient(): FullClient {
     supportPlan: null,
     documents: [],
     careCircle: emptyCareCircle(reviewDate),
+    onboardingStatus: 'PACK_RECEIVED',
+    onboardingGates: [],
+    liveGateSummary: {
+      liveReady: false,
+      gates: [],
+      missingGates: [],
+      blockedReasons: [],
+      openReviewItems: 0,
+      identityReviewed: false,
+      contactsReviewed: false,
+      consentBoundariesReviewed: false,
+      careSupportPlanSource: 'missing',
+      riskSource: 'missing',
+      pbsSource: 'missing',
+      medicationSource: 'missing',
+      financeLegalReviewed: false,
+      unknownDocumentsReviewedOrDeferred: false,
+    },
+    packImports: [],
   };
 }
 

@@ -1,9 +1,9 @@
-import type { CareEntry, WeekSummary, EscalationTier, EscalationItem } from './types';
+import type { CareEntry, WeekSummary, EscalationTier } from './types';
 import { scoreEntry, getTopGaps } from './entry-rubric';
 import { getRepeatTargets } from './staff-monitoring-store';
 import { computeCoverageSummary, isDailySupportEntry, type CoveragePlan, type CoverageSummary } from './coverage-plan';
 
-export type { EscalationTier, EscalationItem } from './types';
+export type { EscalationTier } from './types';
 
 export interface MonitoringFilters {
   house: string | 'all';
@@ -236,11 +236,11 @@ export function computeStaffMonitoring(week: WeekSummary | null, filters: Monito
     }
     for (const shiftEntries of shiftsByClientDate.values()) {
       const hasNarrativeAnchor = shiftEntries.some(e => 
-        (e.category === 'handover' || (e.incidentType || '').toLowerCase().includes('handover')) || 
+        e.category === 'handover' || 
         ((e.entry?.length || 0) >= 150)
       );
       if (hasNarrativeAnchor) {
-         validClinicalEntries.push(...shiftEntries.filter(e => (e.category === 'handover' || (e.incidentType || '').toLowerCase().includes('handover')) || ((e.entry?.length || 0) >= 150)));
+         validClinicalEntries.push(...shiftEntries.filter(e => e.category === 'handover' || ((e.entry?.length || 0) >= 150)));
       } else {
          validClinicalEntries.push(...shiftEntries);
          penalizableShortEntries += shiftEntries.filter(e => (e.entry?.length || 0) < SHORT_LEN).length;

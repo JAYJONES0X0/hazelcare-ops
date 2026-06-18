@@ -10,16 +10,21 @@ import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import { CareCirclePanel } from './CareCirclePanel';
-import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users } from 'lucide-react';
+import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users, Archive } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
 import { buildCareCircleOversightCsv, buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from '../lib/care-circle-oversight';
 import { careCircleModeLabel } from '../lib/care-circle-status';
 import { downloadText } from '../lib/coordinator-export-pack';
+import type { Page } from '../lib/types';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
-export function ClientDocsPage() {
+interface Props {
+  setPage?: (page: Page) => void;
+}
+
+export function ClientDocsPage({ setPage }: Props = {}) {
   const [subView, setSubView] = useState<SubView>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [clients, setClients] = useState<FullClient[]>(() => loadClients());
@@ -43,6 +48,10 @@ export function ClientDocsPage() {
   const [sessionIntel, setSessionIntel] = useState<IntelAnalysisResult | null>(null);
 
   const refresh = () => setClients(loadClients());
+  const openClientPackImport = () => {
+    if (setPage) setPage('upload');
+    else setSubView('import');
+  };
 
   const openPBS = (id: string) => { setSelectedId(id); setSubView('pbs'); };
   const openRisk = (id: string) => { setSelectedId(id); setSubView('risk'); };
@@ -526,11 +535,11 @@ export function ClientDocsPage() {
                     </div>
                   </div>
 
-                  {sessionIntel?.gaps?.length > 0 && (
+                  {(sessionIntel?.gaps?.length || 0) > 0 && (
                     <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
                       <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">AI gap cues</div>
                       <div className="space-y-1">
-                        {sessionIntel.gaps.slice(0, 4).map((gap: string, idx: number) => (
+                        {(sessionIntel?.gaps || []).slice(0, 4).map((gap: string, idx: number) => (
                           <div key={idx} className="text-[10px] text-hc-text/70 leading-relaxed">
                             • {gap}
                           </div>
@@ -602,6 +611,18 @@ export function ClientDocsPage() {
   const circleWaitingResponses = circleRows.reduce((sum, row) => sum + row.waitingResponses, 0);
   const circleOverdueResponses = circleRows.reduce((sum, row) => sum + row.overdueItems, 0);
   const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
+  const packQueue = clients.flatMap(client =>
+    (client.packImports || []).map(pack => ({
+      client,
+      pack,
+      unresolved: pack.manifestRows.filter(row => row.reviewRequired).length,
+      criticalMissing: [
+        client.carePlan?.domains?.some(d => d.enabled || d.identifiedNeed) ? '' : 'care plan source',
+        client.risk?.risks?.some(r => r.title || r.description) ? '' : 'reviewed risk state',
+        client.careCircle?.contacts?.length ? '' : 'reviewed contacts',
+      ].filter((item): item is string => Boolean(item)),
+    }))
+  ).sort((a, b) => b.unresolved - a.unresolved || b.pack.uploadedAt.localeCompare(a.pack.uploadedAt));
 
   function printCareCircleOversight() {
     const win = window.open('', '_blank', 'width=1200,height=900');
@@ -642,6 +663,11 @@ export function ClientDocsPage() {
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
           </select>
+          <button onClick={openClientPackImport}
+            className="flex items-center gap-2.5 btn-tactical text-[10px] px-5 py-3 rounded-xl">
+            <Upload className="w-4 h-4" />
+            Upload Client Pack
+          </button>
           <button onClick={() => { setImportTarget(null); setSubView('import'); }}
             className="flex items-center gap-2.5 btn-clay text-[10px] px-5 py-3 rounded-xl group">
             <Sparkles className="w-4 h-4 text-hc-teal group-hover:scale-110 transition-transform" />
@@ -680,6 +706,54 @@ export function ClientDocsPage() {
             <svg className="w-4 h-4 text-hc-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
+      )}
+
+      {packQueue.length > 0 && (
+        <section className="mb-8 hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="section-header text-[10px] mb-2 flex items-center gap-2">
+                <Archive className="w-4 h-4 text-flag-amber" />
+                Client Pack Review Queue
+              </div>
+              <p className="text-xs text-hc-muted font-medium max-w-3xl leading-relaxed">
+                Imported packs stay in draft until identity, evidence, risks, contacts, and review gaps are resolved. Nothing here is silently live.
+              </p>
+            </div>
+            <button onClick={openClientPackImport}
+              className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+              Upload Client Pack
+            </button>
+          </div>
+          <div className="space-y-3">
+            {packQueue.slice(0, 8).map(({ client, pack, unresolved, criticalMissing }) => (
+              <div key={`${client.id}-${pack.packId}`} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-sm font-black text-hc-text">{client.name || pack.candidateClientName || 'Draft client'}</span>
+                    <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{pack.status.replace(/_/g, ' ')}</span>
+                    <span className="pill text-[8px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20">{pack.filesTotal} files seen</span>
+                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${unresolved ? 'pill-red' : 'pill-green'}`}>
+                      {unresolved} review item{unresolved === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesParsed} parsed</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesAttached} attached only</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesFailed} failed/skipped</span>
+                    {criticalMissing.map(item => (
+                      <span key={item} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">Missing {item}</span>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={() => setFilterText(client.name)}
+                  className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                  Review Profile
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {circleRows.length > 0 && (
@@ -777,10 +851,31 @@ export function ClientDocsPage() {
 
       {/* Client cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-24 hc-clay-raised rounded-3xl animate-in zoom-in duration-700">
+        <div className="text-center py-20 px-6 hc-clay-raised rounded-3xl animate-in zoom-in duration-700">
+          <div className="hidden">
           <div className="text-5xl mb-6 opacity-20">👥</div>
-          <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No People Added Yet'}</div>
-          <div className="text-[10px] text-hc-muted uppercase tracking-[0.2em] font-bold">{filterText ? 'Try a different search' : 'Click "Add Person" to get started'}</div>
+          </div>
+          <div className="mx-auto mb-6 w-16 h-16 rounded-2xl bg-hc-teal/10 border border-hc-teal/20 flex items-center justify-center">
+            <Archive className="w-8 h-8 text-hc-teal" />
+          </div>
+          <div className="text-lg font-extrabold text-hc-text mb-2 uppercase tracking-tight">{filterText ? 'No matches found' : 'No Client Pack Imported Yet'}</div>
+          <div className="text-xs text-hc-muted font-semibold max-w-2xl mx-auto leading-relaxed">
+            {filterText
+              ? 'Try a different search.'
+              : 'Start with a ZIP, PDF, DOCX, image, admission pack, care plan, PBS, medication, finance, contact, or tenancy document. The OS will create a draft profile and show every file it saw before anything becomes live.'}
+          </div>
+          {!filterText && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button onClick={openClientPackImport}
+                className="btn-tactical rounded-xl px-7 py-3 text-[10px] font-black uppercase tracking-widest">
+                Upload Client Pack
+              </button>
+              <button onClick={() => setShowNewModal(true)}
+                className="btn-clay rounded-xl px-7 py-3 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                Add Person Manually
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
@@ -789,6 +884,12 @@ export function ClientDocsPage() {
             const hasRisk = !!(client.risk && client.risk.risks.some(r => r.title));
             const hasCarePlan = !!(client.carePlan && client.carePlan.domains.some(d => d.enabled));
             const hasCareCircle = !!(client.careCircle && client.careCircle.mode !== 'off');
+            const packImports = client.packImports || [];
+            const manifestRows = packImports.flatMap(pack => pack.manifestRows);
+            const reviewedRows = manifestRows.filter(row => !row.reviewRequired);
+            const reviewRows = manifestRows.filter(row => row.reviewRequired);
+            const liveGate = client.liveGateSummary;
+            const onboardingStatus = client.onboardingStatus || (packImports.length ? 'DRAFT_CLIENT' : 'LIVE_CLIENT');
             const cpDomains = client.carePlan?.domains.filter(d => d.enabled) || [];
             const cpFilled = cpDomains.filter(d => d.identifiedNeed).length;
 
@@ -876,6 +977,14 @@ export function ClientDocsPage() {
                     <span className={`pill text-[9px] font-black uppercase tracking-wide ${hasCareCircle ? 'bg-[#5d0565]/10 text-[#5d0565] border border-[#5d0565]/25' : 'pill-blue'}`}>
                       Care Circle {hasCareCircle ? 'On' : 'Off'}
                     </span>
+                    <span className={`pill text-[9px] font-black uppercase tracking-wide ${liveGate?.liveReady ? 'pill-green' : packImports.length ? 'pill-amber' : 'pill-blue'}`}>
+                      {onboardingStatus.replace(/_/g, ' ')}
+                    </span>
+                    {manifestRows.length > 0 && (
+                      <span className={`pill text-[9px] font-black uppercase tracking-wide ${reviewRows.length ? 'pill-red' : 'pill-green'}`}>
+                        {manifestRows.length} files seen / {reviewRows.length} need review
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex flex-wrap items-center gap-8">
@@ -950,6 +1059,12 @@ export function ClientDocsPage() {
                     </div>
 
                     <div className="flex items-center gap-4 ml-auto">
+                      <button onClick={openClientPackImport}
+                        className="inline-flex items-center gap-2 text-[10px] font-black text-hc-muted uppercase tracking-widest hover:text-hc-text transition-colors">
+                        <Archive className="w-3.5 h-3.5" />
+                        Import Pack
+                      </button>
+                      <div className="h-4 w-px bg-hc-border/40" />
                       <button onClick={() => openCareCircle(client.id)}
                         className="inline-flex items-center gap-2 text-[10px] font-black text-[#5d0565] uppercase tracking-widest hover:text-hc-text transition-colors">
                         <Users className="w-3.5 h-3.5" />
@@ -1018,6 +1133,61 @@ export function ClientDocsPage() {
                     </div>
                   )}
                 </div>
+
+                {manifestRows.length > 0 && (
+                  <div className="border-t border-hc-border/20 px-8 py-5 bg-hc-bone/50">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
+                      <div>
+                        <div className="section-header text-[10px] tracking-widest opacity-70 mb-1">Imported Pack Evidence</div>
+                        <p className="text-[11px] text-hc-muted font-semibold leading-relaxed max-w-3xl">
+                          Source files are attached before they are trusted. Generated care outputs should only use rows that have visible source evidence and review status.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <span className="pill pill-blue text-[8px] font-black uppercase tracking-widest">{manifestRows.length} seen</span>
+                        <span className="pill pill-green text-[8px] font-black uppercase tracking-widest">{reviewedRows.length} reviewed/ready</span>
+                        <span className={`pill ${reviewRows.length ? 'pill-red' : 'pill-green'} text-[8px] font-black uppercase tracking-widest`}>{reviewRows.length} needs review</span>
+                      </div>
+                    </div>
+                    {liveGate && !liveGate.liveReady && liveGate.missingGates.length > 0 && (
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        {liveGate.missingGates.slice(0, 5).map(gate => (
+                          <span key={gate.id} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">Gate: {gate.label}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {manifestRows.slice(0, 6).map(row => (
+                        <div key={row.fileId} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-black text-hc-text truncate" title={row.originalFileName}>{row.originalFileName}</div>
+                              <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest">{row.targetScreen} source</div>
+                            </div>
+                            <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.reviewRequired ? 'pill-amber' : 'pill-green'}`}>
+                              {row.reviewRequired ? 'Needs Review' : 'Ready'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="pill pill-blue text-[8px] font-black uppercase tracking-widest">{row.category.replace(/_/g, ' ')}</span>
+                            <span className="pill text-[8px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20">{row.parseStatus.replace(/_/g, ' ')}</span>
+                            <span className="text-[9px] font-bold text-hc-muted uppercase tracking-widest">{Math.round(row.classificationConfidence * 100)}% confidence</span>
+                          </div>
+                          {row.rejectedReasons.length > 0 && (
+                            <div className="mt-3 text-[10px] text-hc-muted font-semibold leading-relaxed">
+                              {row.rejectedReasons.slice(0, 2).join(' | ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {manifestRows.length > 6 && (
+                      <div className="mt-3 text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                        +{manifestRows.length - 6} more source file{manifestRows.length - 6 === 1 ? '' : 's'} in the manifest
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Care plan domains preview */}
                 {hasCarePlan && cpDomains.length > 0 && (

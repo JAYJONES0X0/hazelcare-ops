@@ -452,7 +452,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
         </div>
         <div className="flex flex-wrap gap-4">
           <button onClick={() => allCollapsed(STAFF_IDS) ? expandAll(STAFF_IDS) : collapseAll(STAFF_IDS)} className="px-6 py-3.5 rounded-2xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-text hover:text-hc-teal transition-all shadow-xl active:hc-clay-pressed">
-            {allCollapsed(STAFF_IDS) ? 'Expand All Units' : 'Collapse All Matrix'}
+            {allCollapsed(STAFF_IDS) ? 'Expand All Staff' : 'Collapse All Staff'}
           </button>
           <button type="button" onClick={() => document.getElementById('daily-sync-input')?.click()} disabled={importLoading}
             className="flex items-center gap-3 px-8 py-3.5 rounded-2xl btn-tactical text-[11px] font-black cursor-pointer shadow-2xl">
@@ -630,7 +630,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
              <div className="flex flex-col items-center">
                 <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
                 <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Quantifying Clinical Matrix</div>
-                <div className="text-[10px] text-hc-muted uppercase mt-2 tracking-widest">Scanning 13,000+ Personnel Signals</div>
+                <div className="text-[10px] text-hc-muted uppercase mt-2 tracking-widest">Reviewing staff notes</div>
              </div>
           </div>
         )}
@@ -1248,8 +1248,8 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
           ) : !coachTaskStaff ? (
             <div className="hc-clay-raised p-16 flex flex-col items-center justify-center opacity-30 text-center sticky top-10 bg-hc-bg/30 h-[400px]">
                <MessageSquare className="w-16 h-16 text-hc-muted mb-8" strokeWidth={1} />
-               <div className="text-[12px] font-black uppercase tracking-[0.4em] mb-4">Command Awaiting Input</div>
-               <p className="text-[10px] font-bold uppercase tracking-widest max-w-xs">Select personnel record to initialise studio.</p>
+               <div className="text-[12px] font-black uppercase tracking-[0.4em] mb-4">Select a Staff Member</div>
+               <p className="text-[10px] font-bold uppercase tracking-widest max-w-xs">Choose a staff record to open the coaching panel.</p>
             </div>
           ) : null}
         </div>

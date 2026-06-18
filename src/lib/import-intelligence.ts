@@ -11,6 +11,9 @@ export interface SourceMeta {
   parserProfile: string;
   detectedType: ImportType;
   confidence: number;
+  sizeBytes?: number;
+  mimeType?: string;
+  dataUrl?: string;
 }
 
 export interface ExtractedClientIdentity {

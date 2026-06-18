@@ -6,7 +6,7 @@ import { mergeCarePlanData, mergePBSData, mergeRiskData, mergeSupportPlanData } 
 import { buildEnvelopeFromRaw } from './import-profiles';
 import { buildCarePlanFromProfileEvidence, buildPBSFromProfileEvidence } from './profile-intelligence-fill';
 
-export type IntelImportKind = 'admission' | 'support-plan' | 'diary' | 'roster' | 'unknown' | 'ai';
+export type IntelImportKind = 'admission' | 'support-plan' | 'diary' | 'roster' | 'contact-details' | 'unknown' | 'ai';
 
 export interface IntelImportSummary {
   kind: IntelImportKind;

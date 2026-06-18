@@ -13,6 +13,7 @@ import { buildRiskItemCopy } from '../lib/risk-assistant';
 import { Sparkles, ChevronRight, Download, Shield, Check } from 'lucide-react';
 import type { FullClient, RiskItem, AgencyRow } from '../lib/client-store';
 import type { Sig } from '../components/SignaturePad';
+import { SourceEvidenceStrip } from '../components/SourceEvidenceStrip';
 
 interface Props {
   clientId: string;
@@ -547,6 +548,8 @@ export function RiskBuilder({ clientId, onBack }: Props) {
           </button>
         </div>
       </div>
+
+      <SourceEvidenceStrip client={client} title="Risk" categories={['risk', 'pbs', 'admission', 'support_plan']} />
 
       <div className="flex-1 overflow-y-auto p-12 scrollbar-thin">
         <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-6 duration-700 pb-32">

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive, Users } from 'lucide-react';
 import JSZip from 'jszip';
-import { emptyClient, loadClients, type FullClient } from '../lib/client-store';
+import { emptyClient, loadClients, type FullClient, type PackFileManifestRow } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
 import type { WeekSummary, Page } from '../lib/types';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
@@ -16,8 +16,9 @@ import { extractFileText } from '../lib/universal-extractor';
 import { appendEntries } from '../lib/entry-store';
 import { parseClientRosterCSV, saveRosterShifts, getRosterSummary, type RosterSummary } from '../lib/roster-store';
 import { enrichEntriesWithRoster } from '../lib/roster-store';
+import { buildPackFileManifestRow } from '../lib/client-pack';
 
-type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'roster' | 'unknown';
+type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'contact-details' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
 
 interface Props {
@@ -64,6 +65,7 @@ function errorMessage(error: unknown, fallback = 'unknown error'): string {
 
 interface ZipGuidanceRow {
   id: string;
+  packId: string;
   fileName: string;
   detectedType: UploadDetectedType;
   parserProfile: string;
@@ -71,6 +73,7 @@ interface ZipGuidanceRow {
   suggestedTargets: ImportTarget[];
   suggestedClient: string;
   envelope: NormalizedImportEnvelope;
+  manifestRow: PackFileManifestRow;
   selectedTarget: ImportTarget | 'skip';
   clientMode: ClientMode;
   selectedClientId: string | null;
@@ -122,7 +125,7 @@ function getClientHintFromEnvelope(envelope: NormalizedImportEnvelope, fileName:
     if (best) return best;
   }
 
-  const houseHint = Object.keys(envelope.weekSummary?.houses || {}).find(isUsableClientHint);
+  const houseHint = Object.keys(envelope.weekSummary?.houses || {}).find((name) => isUsableClientHint(name));
   if (houseHint) return houseHint;
 
   const admissionName = envelope.admission?.client?.name;
@@ -153,9 +156,10 @@ function withTimeout<T>(work: Promise<T>, ms: number, label: string): Promise<T>
 async function extractZipGuidance(file: File, onProgress?: (p: number) => void): Promise<{ combined: string; rows: ZipGuidanceRow[]; readErrors: string[] }> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const entries = Object.values(zip.files).filter(entry => !entry.dir);
-  const supported = entries.filter(entry => /\.(txt|csv|tsv|md|pdf|docx|xlsx|xls|xlsm)$/i.test(entry.name));
+  const supported = entries.filter(entry => /\.(txt|csv|tsv|md|pdf|docx|xlsx|xls|xlsm|jpg|jpeg|png|webp|gif)$/i.test(entry.name));
   if (!supported.length) return { combined: '', rows: [], readErrors: [] };
 
+  const packId = `pack-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   let combined = '';
   const rows: ZipGuidanceRow[] = [];
   const readErrors: string[] = [];
@@ -163,21 +167,40 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
     const displayName = entry.name.split('/').pop() || entry.name;
     try {
       const ext = entry.name.split('.').pop()?.toLowerCase();
+      const sizeBytes = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize || 0;
       let text = '';
+      let imageDataUrl = '';
+      const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '');
       if (ext === 'pdf' || ext === 'docx' || ext === 'xlsx' || ext === 'xls' || ext === 'xlsm') {
         const blob = await entry.async('blob');
         const nestedFile = new File([blob], displayName);
         text = await withTimeout(extractFileText(nestedFile), 15_000, displayName);
+      } else if (isImage) {
+        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        imageDataUrl = `data:${mime};base64,${await withTimeout(entry.async('base64'), 8_000, displayName)}`;
       } else {
         text = await withTimeout(entry.async('text'), 8_000, displayName);
       }
-      const envelope = buildEnvelopeWithExtractionGuard(displayName, text);
+      const envelope = isImage ? emptyEnvelope(displayName, '') : buildEnvelopeWithExtractionGuard(displayName, text);
+      envelope.source.sizeBytes = sizeBytes || text.length;
+      if (isImage) {
+        envelope.source.parserProfile = 'profile-image';
+        envelope.source.mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        envelope.source.dataUrl = imageDataUrl;
+        envelope.suggestedTargets = ['client-docs'];
+        envelope.warnings.push('Image file attached to client evidence vault; no text parsing attempted.');
+      }
       const suggestedClient = getClientHintFromEnvelope(envelope, displayName);
+      const manifestRow = buildPackFileManifestRow({ packId, envelope, fileName: displayName, sizeBytes });
+      const suggestedTarget =
+        envelope.suggestedTargets[0] ||
+        (manifestRow.category === 'roster' ? 'roster' : manifestRow.category === 'diary' ? 'reports' : 'client-docs');
       if (onProgress) onProgress(Math.round(((i + 1) / supported.length) * 100));
       return {
         text: text.trim() ? `\n\n--- FILE: ${displayName} ---\n${text}` : '',
         row: {
           id: `${entry.name}-${uid()}`,
+          packId,
           fileName: displayName,
           detectedType: envelope.source.detectedType,
           parserProfile: envelope.source.parserProfile,
@@ -185,7 +208,8 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
           suggestedTargets: envelope.suggestedTargets,
           suggestedClient,
           envelope,
-          selectedTarget: envelope.suggestedTargets[0] || 'skip',
+          manifestRow,
+          selectedTarget: suggestedTarget,
           clientMode: 'global' as ClientMode,
           selectedClientId: findClientIdByNameHint(suggestedClient),
           include: true,
@@ -197,10 +221,12 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
     }
   }));
 
-  results.filter(r => r && !r.error).forEach(r => {
-    combined += r!.text;
-    rows.push(r!.row);
-  });
+  for (const result of results) {
+    if (!result) continue;
+    if ('error' in result) continue;
+    combined += result.text;
+    rows.push(result.row as ZipGuidanceRow);
+  }
   const dominantClient = rows
     .map(row => row.suggestedClient)
     .filter(isUsableClientHint)
@@ -214,10 +240,16 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
       if (!isUsableClientHint(row.suggestedClient)) {
         row.suggestedClient = packClient;
         row.selectedClientId = findClientIdByNameHint(packClient);
+        row.envelope.clientCandidates = [{ name: packClient, preferredName: packClient.split(/\s+/)[0] || '' }];
+      }
+      if (!row.envelope.clientCandidates.length) {
+        row.envelope.clientCandidates = [{ name: row.suggestedClient, preferredName: row.suggestedClient.split(/\s+/)[0] || '' }];
       }
     });
   }
-  results.filter(r => r && r.error).forEach(r => readErrors.push(r!.error));
+  for (const result of results) {
+    if (result && 'error' in result && result.error) readErrors.push(result.error);
+  }
 
   if (onProgress) onProgress(100);
   return { combined, rows, readErrors };
@@ -248,8 +280,8 @@ function buildPreview(envelope: NormalizedImportEnvelope): PreviewData {
     base.dob = envelope.admission.client.dob;
     base.domainsDetected = envelope.admission.carePlan.domains.filter(d => d.enabled).length;
   }
-  if (envelope.diaryEntries?.length) base.rawItems = envelope.diaryEntries;
-  else if (envelope.shifts?.length) base.rawItems = envelope.shifts;
+  if (envelope.diaryEntries?.length) base.rawItems = envelope.diaryEntries.map(entry => ({ ...entry }));
+  else if (envelope.shifts?.length) base.rawItems = envelope.shifts.map(shift => ({ ...shift }));
   return base;
 }
 
@@ -322,7 +354,7 @@ function VerificationGrid({ items, type, onUpdate }: { items: VerificationItem[]
           <thead className="sticky top-0 bg-hc-bg z-20 shadow-sm">
             <tr className="border-b border-hc-muted/10">
               {type === 'roster' ? (
-                ['Personnel', 'Asset', 'Temporal', 'Duration'].map(h => <th key={h} className="px-6 py-4 text-[11px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
+                ['Staff', 'Unit', 'Date/Time', 'Duration'].map(h => <th key={h} className="px-6 py-4 text-[11px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               ) : (
                 ['Temporal', 'Subject', 'Asset', 'Diagnostic'].map(h => <th key={h} className="px-6 py-4 text-[11px] font-black uppercase text-hc-muted tracking-widest">{h}</th>)
               )}
@@ -461,8 +493,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             clientRaw: shift.house || shift.staffId || 'Unassigned',
             house: '',
             date: shift.date,
-            startTime: shift.startTime,
-            endTime: shift.endTime,
+            startTime: shift.startTime || '',
+            endTime: shift.endTime || '',
             carers: shift.staffId ? [shift.staffId] : [],
             durationHours: shift.hours,
             shiftType: shift.type === 'long_day' ? 'long' : shift.type,
@@ -511,8 +543,20 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     let success = 0;
     let entriesAdded = 0;
     let shiftsAdded = 0;
+    const packId = rows[0]?.packId || `pack-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const packRows = rows.map(r => buildPackFileManifestRow({
+      packId,
+      envelope: r.envelope,
+      fileName: r.fileName,
+      clientId: r.selectedClientId,
+      clientName: isUsableClientHint(r.suggestedClient) ? r.suggestedClient : null,
+      clientConfidence: isUsableClientHint(r.suggestedClient) ? 0.78 : 0,
+      matchReason: isUsableClientHint(r.suggestedClient) ? 'Shared pack identity inferred from uploaded bundle.' : 'No usable client identity found.',
+      sizeBytes: r.envelope.source.sizeBytes,
+    }));
     for (const r of rows) {
       const selectedTarget = r.selectedTarget as ImportTarget;
+      const packRow = packRows.find(row => row.originalFileName === r.fileName) || r.manifestRow;
       if (selectedTarget === 'roster') {
         let shifts = parseClientRosterCSV(r.envelope.rawText || '');
         if (shifts.length === 0) {
@@ -523,8 +567,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             clientRaw: shift.house || shift.staffId || 'Unassigned',
             house: '',
             date: shift.date,
-            startTime: shift.startTime,
-            endTime: shift.endTime,
+            startTime: shift.startTime || '',
+            endTime: shift.endTime || '',
             carers: shift.staffId ? [shift.staffId] : [],
             durationHours: shift.hours,
             shiftType: shift.type === 'long_day' ? 'long' : shift.type,
@@ -538,7 +582,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         continue;
       }
 
-      const res = routeImport(r.envelope, { targets: [selectedTarget], clientMode: r.clientMode, selectedClientId: r.selectedClientId });
+      const res = routeImport(r.envelope, {
+        targets: [selectedTarget],
+        clientMode: r.clientMode,
+        selectedClientId: r.selectedClientId,
+        packId,
+        packSourceName: preview?.fileName || 'Client Pack',
+        packRow,
+        packRows,
+      });
       if (res.ok) {
         success++;
         if (r.envelope.diaryEntries?.length) {
@@ -551,7 +603,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       const data = loadWeekData();
       if (data) onDataParsed(data);
       getRosterSummary().then(setRosterStatus).catch(() => {});
-      setResultMsg(`Processed ${rows.length} files: ${success} imported. ${entriesAdded} diary entries and ${shiftsAdded} roster shifts added.`);
+      const parsed = packRows.filter(row => row.parseStatus === 'PARSED').length;
+      const needsReview = packRows.filter(row => row.reviewRequired).length;
+      const attachedOnly = packRows.filter(row => row.parseStatus !== 'PARSED' && row.parseStatus !== 'FAILED' && row.parseStatus !== 'SKIPPED_WITH_REASON').length;
+      setResultMsg(`Client pack processed: ${rows.length} files seen, ${success} imported, ${parsed} parsed, ${attachedOnly} attached only, ${needsReview} need review. ${entriesAdded} diary entries and ${shiftsAdded} roster shifts added.`);
       setStep('done');
     } else { setErrorMsg('Unit ingestion failed.'); setStep('error'); }
   };
@@ -570,12 +625,14 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     const diaryEntries = row.envelope.diaryEntries?.length || row.envelope.weekSummary?.totalEntries || 0;
     const shifts = row.envelope.shifts?.length || 0;
     const supportNeeds = row.envelope.supportPlan?.needs?.length || 0;
+    const contacts = row.envelope.contactDetails?.contacts?.length || 0;
     if (row.parseError) return 'Parse fault';
     if (row.detectedType === 'roster') return `${shifts} shifts`;
     if (row.detectedType === 'support-plan') return `${supportNeeds} needs`;
+    if (row.detectedType === 'contact-details') return `${contacts} contacts`;
     if (row.detectedType === 'admission') return `${row.envelope.clientCandidates?.length || 0} clients`;
     if (diaryEntries > 0) return `${diaryEntries} entries`;
-    return 'No rows';
+    return row.manifestRow.parseStatus === 'OCR_REQUIRED' ? 'OCR review' : 'Attach only';
   };
 
   return (
@@ -599,7 +656,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 ? `Roster Active · ${rosterStatus.totalCarers} Staff · ${rosterStatus.totalClients} Clients`
                 : 'No Roster Loaded · Upload Roster First'}
             </div>
-            <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Command Center</button>
+            <button onClick={() => setPage('dashboard')} className="px-8 py-3.5 rounded-2xl hc-clay-raised text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all">Dashboard</button>
             <button onClick={reset} className="px-8 py-3.5 rounded-2xl hc-clay-raised border border-hc-muted/5 text-[11px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-text transition-all">Purge Buffer</button>
           </div>
         </div>
@@ -612,7 +669,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                  <Upload className="w-10 h-10 text-hc-teal" />
               </div>
               <div className="text-center">
-                <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Initialise Intake Stream</div>
+                <div className="text-xl font-black text-hc-text uppercase tracking-[0.3em] mb-4">Import Care Records</div>
                 <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] leading-loose">
                   Drop ZIP packs, PDF assessments, CSV/Excel diary exports,<br />or roster files
                 </p>
@@ -712,7 +769,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       ZIP Contents Mapping
                     </div>
                     <div className="text-[10px] font-black text-hc-muted uppercase tracking-[0.22em] mt-2">
-                      {zipIncludedCount} of {zipGuidance.length} files queued · Diary {zipTypeCounts.diary || 0} · Docs {(zipTypeCounts.admission || 0) + (zipTypeCounts['support-plan'] || 0)} · Roster {zipTypeCounts.roster || 0} · Unknown {zipTypeCounts.unknown || 0}
+                      {zipIncludedCount} of {zipGuidance.length} files queued · Diary {zipTypeCounts.diary || 0} · Client docs {(zipTypeCounts.admission || 0) + (zipTypeCounts['support-plan'] || 0) + (zipTypeCounts['contact-details'] || 0) + (zipTypeCounts.unknown || 0)} · Roster {zipTypeCounts.roster || 0} · Review {zipGuidance.filter(row => row.manifestRow.reviewRequired).length}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -723,10 +780,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       Include All
                     </button>
                     <button
-                      onClick={() => setZipGuidance(rows => rows.map(row => row.detectedType === 'unknown' ? { ...row, include: false, selectedTarget: 'skip' } : row))}
+                      onClick={() => setZipGuidance(rows => rows.map(row => row.detectedType === 'unknown' ? { ...row, include: true, selectedTarget: 'client-docs' } : row))}
                       className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted"
                     >
-                      Skip Unknown
+                      Attach Unknowns
                     </button>
                     <button
                       onClick={() => setZipGuidance(rows => rows.map(row => row.detectedType === 'diary' ? { ...row, include: true, selectedTarget: 'reports' } : row))}
@@ -735,10 +792,10 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                       Diaries to Reports
                     </button>
                     <button
-                      onClick={() => setZipGuidance(rows => rows.map(row => (row.detectedType === 'admission' || row.detectedType === 'support-plan') ? { ...row, include: true, selectedTarget: 'client-docs' } : row))}
+                      onClick={() => setZipGuidance(rows => rows.map(row => (row.detectedType !== 'diary' && row.detectedType !== 'roster') ? { ...row, include: true, selectedTarget: 'client-docs' } : row))}
                       className="px-4 py-3 rounded-xl hc-clay-raised text-[10px] font-black uppercase tracking-widest text-hc-muted"
                     >
-                      Docs to Clients
+                      Pack to Client Docs
                     </button>
                   </div>
                 </div>
@@ -792,6 +849,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                               <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-hc-muted">
                                 {Math.round(row.confidence * 100)}% · {row.parserProfile}
                               </div>
+                              <div className={`mt-2 inline-flex items-center px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                row.manifestRow.reviewRequired ? 'bg-flag-amber/10 text-flag-amber' : 'bg-flag-green/10 text-flag-green'
+                              }`}>
+                                {row.manifestRow.category.replace(/_/g, ' ')} · {row.manifestRow.parseStatus.replace(/_/g, ' ')}
+                              </div>
                             </td>
                             <td className="px-5 py-4 align-top text-[10px] font-black uppercase tracking-widest text-hc-text">
                               {zipMetric(row)}
@@ -821,7 +883,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                                 })}
                                 className="w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
                               >
-                                <option value="global">Global Ledger</option>
+                                <option value="global">Shared Record Store</option>
                                 <option value="auto">Auto Resolve</option>
                                 <option value="specific">Specific Client</option>
                               </select>
@@ -878,12 +940,12 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
               <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                  <div className="w-2 h-2 rounded-full bg-hc-teal shadow-[0_0_10px_#14b8a6]" />
-                 Operational Routing Configuration
+                 Import Routing
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
                 <div className="space-y-6">
-                  <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Dispatch Targets</label>
+                  <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Save To</label>
                   <div className="grid grid-cols-2 gap-4">
                     {['reports', 'templates', 'client-docs', 'roster'].map(t => (
                       <label key={t} className={`flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all border
@@ -898,15 +960,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                   </div>
                 </div>
                 <div className="space-y-6">
-                   <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Entity Resolution Strategy</label>
+                   <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Client Matching</label>
                    <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
-                     <option value="global">Ingest to Global Ledger</option>
-                     <option value="auto">Auto-Synthesise Intelligence</option>
+                     <option value="global">Save to shared record store</option>
+                     <option value="auto">Auto-match clients</option>
                      <option value="specific">Import into one selected client</option>
                    </select>
                    {clientMode === 'specific' && (
                      <select value={selectedClientId || ''} onChange={e => setSelectedClientId(e.target.value)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner animate-in slide-in-from-top-2">
-                        <option value="">Select Personnel Record...</option>
+                        <option value="">Select Client...</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                      </select>
                    )}
@@ -914,8 +976,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
               </div>
 
               <div className="flex gap-6 pt-10 border-t border-hc-muted/10">
-                <button onClick={() => handleConfirm()} className="flex-1 py-5 rounded-[1.5rem] btn-tactical text-hc-bg text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">Execute Intake Mapping</button>
-                <button onClick={reset} className="px-12 hc-clay-raised border border-hc-muted/5 text-hc-muted py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:text-hc-text active:scale-95 transition-all shadow-xl">Discard Cycle</button>
+                <button onClick={() => handleConfirm()} className="flex-1 py-5 rounded-[1.5rem] btn-tactical text-hc-bg text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">Import Records</button>
+                <button onClick={reset} className="px-12 hc-clay-raised border border-hc-muted/5 text-hc-muted py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest hover:text-hc-text active:scale-95 transition-all shadow-xl">Discard Import</button>
               </div>
             </div>
           </div>
@@ -926,11 +988,11 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
             <div className="w-28 h-24 rounded-[2.5rem] bg-flag-green/10 border-2 border-flag-green/30 flex items-center justify-center mb-12 shadow-2xl shadow-flag-green/10">
                <Check className="w-12 h-12 text-flag-green" strokeWidth={3} />
             </div>
-            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-4">Stream Ingest Successful</h2>
+            <h2 className="text-3xl font-black text-hc-text tracking-tighter uppercase mb-4">Import Complete</h2>
             <p className="text-[11px] text-hc-muted text-center max-w-sm mb-16 uppercase leading-relaxed tracking-[0.2em] font-black">"{resultMsg}"</p>
             <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-              <button onClick={() => setPage('dashboard')} className="py-5 hc-clay-raised rounded-2xl text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all shadow-xl">Command Center</button>
-              <button onClick={reset} className="py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl">Next Segment</button>
+              <button onClick={() => setPage('dashboard')} className="py-5 hc-clay-raised rounded-2xl text-[11px] font-black uppercase tracking-widest text-hc-text hover:brightness-95 transition-all shadow-xl">Dashboard</button>
+              <button onClick={reset} className="py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-2xl">Import More</button>
             </div>
           </div>
         )}
@@ -938,9 +1000,9 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         {step === 'error' && (
           <div className="flex-1 flex flex-col items-center justify-center py-24">
             <AlertTriangle className="w-16 h-16 text-flag-red mb-8 animate-pulse" />
-            <h2 className="text-2xl font-black text-flag-red uppercase tracking-tighter mb-4">Ingest Fault Protocol</h2>
+            <h2 className="text-2xl font-black text-flag-red uppercase tracking-tighter mb-4">Import Failed</h2>
             <p className="text-[11px] text-hc-muted text-center max-w-md mb-12 font-mono italic">"{errorMsg}"</p>
-            <button onClick={reset} className="px-12 py-4 hc-clay-raised border border-hc-muted/10 text-hc-text text-[11px] font-black uppercase tracking-widest rounded-2xl hover:brightness-95 transition-all shadow-xl">Reset Intake Module</button>
+            <button onClick={reset} className="px-12 py-4 hc-clay-raised border border-hc-muted/10 text-hc-text text-[11px] font-black uppercase tracking-widest rounded-2xl hover:brightness-95 transition-all shadow-xl">Try Again</button>
           </div>
         )}
       </div>
@@ -948,7 +1010,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       <div className="mt-auto p-8 flex justify-center border-t border-hc-muted/10 bg-black/[0.02]">
         <div className="flex items-center gap-3 text-[11px] font-black text-hc-muted uppercase tracking-[0.4em]">
            <div className="w-1.5 h-1.5 rounded-full bg-hc-teal animate-pulse" />
-           Import extraction audit // Local browser processing
+           Import extraction audit / Local browser processing
         </div>
       </div>
     </div>

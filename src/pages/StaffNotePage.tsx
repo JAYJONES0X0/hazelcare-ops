@@ -8,6 +8,8 @@ import { loadClients } from '../lib/client-store';
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { getAllRosterShifts } from '../lib/roster-store';
 import { buildOsIntelligenceContextFromState } from '../lib/os-intelligence-context';
+import { NoteWorkspace } from './NoteWorkspace';
+import { TemplatesPage } from './TemplatesPage';
 
 interface SpeechRecognitionResultLike {
   isFinal: boolean;
@@ -493,7 +495,6 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
     </div>
   );
 }
-
 
 
 

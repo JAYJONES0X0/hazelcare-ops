@@ -107,10 +107,6 @@ function extractSupportPlanCandidateProfile(rawText: string, fileName: string): 
   return inferred ? { name: inferred, preferredName: inferred.split(/\s+/)[0] } : {};
 }
 
-function extractSupportPlanCandidate(rawText: string, fileName: string): string {
-  return extractSupportPlanCandidateProfile(rawText, fileName).name || '';
-}
-
 function looksLikeDelimitedDiaryText(rawText: string): boolean {
   const lines = rawText
     .replace(/^\uFEFF/, '')

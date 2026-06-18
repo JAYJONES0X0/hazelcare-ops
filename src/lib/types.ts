@@ -232,6 +232,7 @@ export interface PageContext {
   client?: string;
   house?: string;
   severity?: string;
+  coveragePlan?: unknown;
 }
 
 // Moved here from lib/staff-monitoring.ts to break circular dep with staff-monitoring-store.ts

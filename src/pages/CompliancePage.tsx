@@ -87,7 +87,7 @@ export function CompliancePage({ staff }: Props) {
       setGaps(clinicalGaps);
       
       // Combine ledger staff with discovered staff
-      const discovered = analytics.staff.map(s => {
+      const discovered: ComplianceStaffRow[] = analytics.staff.map(s => {
         const ledgerMatch = staff.find(ls => ls.name === s.carer);
         return {
           id: s.carer,
@@ -182,7 +182,7 @@ export function CompliancePage({ staff }: Props) {
             <input 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="QUERY PERSONNEL RECORDS..." 
+              placeholder="Search staff records..." 
               className="w-full h-[60px] hc-clay-inset pl-16 pr-8 text-[11px] font-black uppercase tracking-[0.2em] text-hc-text focus:outline-none transition-all" 
             />
           </div>
@@ -214,7 +214,7 @@ export function CompliancePage({ staff }: Props) {
                    <div key={gap.id} className="hc-clay-raised p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:scale-[1.01] transition-transform relative overflow-hidden group">
                       {/* Operational Tag */}
                       <div className="absolute top-0 right-0 px-3 py-1 bg-hc-teal/10 border-b border-l border-hc-teal/20 text-[8px] font-black text-hc-teal uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                         Forensic Recon Active
+                         Follow-up suggested
                       </div>
                       
                       <div className="flex items-center gap-6">
@@ -226,19 +226,19 @@ export function CompliancePage({ staff }: Props) {
                                <div className="text-[13px] font-black text-hc-text uppercase tracking-tight">{gap.client}</div>
                                {gap.likelyCarers.length > 0 && <span className="text-[8px] font-black bg-hc-teal/20 text-hc-teal px-2 py-0.5 rounded-full uppercase">Inferred</span>}
                             </div>
-                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">Station: {gap.house} · {gap.date}</div>
+                            <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">Service: {gap.house} · {gap.date}</div>
                          </div>
                       </div>
 
                       <div className="flex flex-col gap-3 md:items-end">
-                         <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Prime Attendance Witness</div>
+                         <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest opacity-60">Likely staff on shift</div>
                          <div className="flex flex-wrap gap-2 justify-end">
                             {gap.likelyCarers.length > 0 ? (
                                gap.likelyCarers.map(c => (
                                  <span key={c} className="pill-teal !px-4 !py-1.5 border-hc-teal/40">{c.toUpperCase()}</span>
                                ))
                             ) : (
-                               <span className="pill-red !px-4 !py-1.5 opacity-60 italic text-[8px]">No Witness Identified (Deep Silence)</span>
+                               <span className="pill-red !px-4 !py-1.5 opacity-60 italic text-[8px]">No matching staff found</span>
                             )}
                          </div>
                       </div>
@@ -252,7 +252,7 @@ export function CompliancePage({ staff }: Props) {
                  {gaps.length === 0 && !booting && (
                     <div className="hc-clay-inset p-20 text-center rounded-[3rem]">
                        <FileCheck className="w-16 h-16 text-hc-teal mx-auto mb-6 opacity-40" />
-                       <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.5em]">Forensic Integrity: 100% — No Coverage Gaps Found.</div>
+                       <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.5em]">Coverage check complete: no gaps found.</div>
                     </div>
                  )}
               </div>
@@ -266,25 +266,25 @@ export function CompliancePage({ staff }: Props) {
                     <h3 className="text-xs font-black text-hc-text uppercase tracking-widest">Audit Context</h3>
                  </div>
                  <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-                   The Sovereign continuity engine scans cross-client telemetry. If Andrew has a gap, but Sarah was recording notes for other clients, the system identifies Sarah as the witness for that missing shift.
+                   Care Ops compares notes across clients and shifts. If one person has a gap, but a staff member was recording nearby notes, the system suggests who may be able to confirm the missing shift.
                  </p>
                  <div className="h-px bg-hc-border opacity-10" />
                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                       <span className="text-[9px] font-black text-hc-muted uppercase tracking-tighter">Database Scan Rank</span>
-                       <span className="text-[10px] font-black text-hc-teal">FORENSIC GRADE</span>
+                       <span className="text-[9px] font-black text-hc-muted uppercase tracking-tighter">Review Depth</span>
+                       <span className="text-[10px] font-black text-hc-teal">Detailed</span>
                     </div>
                     <div className="flex items-center justify-between">
-                       <span className="text-[9px] font-black text-hc-muted uppercase tracking-tighter">Cross-Inference</span>
+                       <span className="text-[9px] font-black text-hc-muted uppercase tracking-tighter">Cross-checking</span>
                        <span className="text-[10px] font-black text-hc-green">ACTIVE</span>
                     </div>
                  </div>
               </div>
 
               <div className="hc-clay-inset p-8 space-y-6 opacity-60">
-                 <h3 className="text-[10px] font-black text-hc-text uppercase tracking-widest">Recovery Protocol</h3>
+                 <h3 className="text-[10px] font-black text-hc-text uppercase tracking-widest">Follow-up</h3>
                  <p className="text-[9px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-                   Use the identified witness list to initiate "Legacy Reconstruction" sessions with relevant personnel to close all clinical gaps.
+                   Use the suggested staff list to follow up missing notes and close care-record gaps.
                  </p>
               </div>
            </div>
@@ -296,7 +296,7 @@ export function CompliancePage({ staff }: Props) {
               <thead>
                 <tr className="bg-black/5 border-b border-hc-muted/10">
                   <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Carer Identity</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Station</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Service</th>
                   <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Documentation Role</th>
                   <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Clinical Accuracy</th>
                   <th className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-[0.3em]">Log Volume</th>
@@ -314,7 +314,7 @@ export function CompliancePage({ staff }: Props) {
                        </div>
                     </td>
                     <td className="px-8 py-6 text-[10px] font-black text-hc-muted uppercase tracking-widest">{s.house}</td>
-                    <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">Support Personnel</td>
+                    <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">Support Staff</td>
                     <td className="px-8 py-6">
                         <div className="flex flex-col gap-1">
                            <span className={`text-[10px] font-black uppercase tracking-widest ${s.qualityScore >= 70 ? 'text-flag-green' : s.qualityScore >= 45 ? 'text-flag-amber' : 'text-flag-red'}`}>
@@ -325,7 +325,7 @@ export function CompliancePage({ staff }: Props) {
                            </div>
                         </div>
                     </td>
-                    <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">{s.entryCount} Intelligence Points</td>
+                    <td className="px-8 py-6 text-[10px] font-bold text-hc-muted uppercase tracking-widest">{s.entryCount} Notes</td>
                     <td className="px-8 py-6">
                         <span className={`pill !bg-hc-bg border border-hc-muted/10 ${s.status === 'Registered' ? 'text-hc-teal' : 'text-hc-amber'}`}>
                           {s.status}

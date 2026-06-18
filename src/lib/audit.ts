@@ -8,7 +8,25 @@ export type AuditAction =
   | 'incident_resolved' 
   | 'compliance_updated'
   | 'settings_changed'
-  | 'review_signed_off';
+  | 'review_signed_off'
+  | 'pack_uploaded'
+  | 'file_classified'
+  | 'file_parse_started'
+  | 'file_parse_completed'
+  | 'file_parse_failed'
+  | 'client_draft_created'
+  | 'client_merge_suggested'
+  | 'client_merged'
+  | 'document_attached_to_vault'
+  | 'contact_imported_unverified'
+  | 'profile_image_attached'
+  | 'ai_used_for_classification'
+  | 'ocr_required'
+  | 'ocr_completed'
+  | 'task_pack_generated'
+  | 'export_created'
+  | 'manager_review_completed'
+  | 'client_promoted_live';
 
 export interface EvidenceLineage {
   sourceType: 'nourish_csv' | 'pdf_import' | 'manual_entry' | 'system_generated';
@@ -53,7 +71,7 @@ export function loadAuditTrail(): AuditEntry[] {
   }
 }
 
-export function logAuditAction(action: AuditAction, details: string, metadata?: Record<string, unknown>, lineage?: EvidenceLineage[]) {
+export function logAuditAction(action: AuditAction, details: string, metadata?: Record<string, unknown>, lineage?: EvidenceLineage[]): AuditEntry {
   const trail = loadAuditTrail();
   const entry: AuditEntry = {
     id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -70,7 +88,10 @@ export function logAuditAction(action: AuditAction, details: string, metadata?: 
   const limitedTrail = trail.slice(0, 1000);
   localStorage.setItem(AUDIT_KEY, JSON.stringify(limitedTrail));
   
-  window.dispatchEvent(new CustomEvent('hc-audit-updated', { detail: entry }));
+  if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hc-audit-updated', { detail: entry }));
+  }
+  return entry;
 }
 
 /**

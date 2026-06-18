@@ -13,6 +13,10 @@ type PdfTextItem = {
   transform?: number[];
 };
 
+type PdfDocumentInit = Parameters<typeof pdfjs.getDocument>[0] & {
+  disableWorker?: boolean;
+};
+
 function getNodeStandardFontDataUrl(): string | undefined {
   if (typeof window !== 'undefined') return undefined;
   const maybeProcess = (globalThis as { process?: { cwd?: () => string } }).process;
@@ -25,13 +29,13 @@ export async function extractPdfText(file: File, onProgress?: (p: number) => voi
   let pdf: Awaited<ReturnType<typeof pdfjs.getDocument>>['promise'] extends Promise<infer T> ? T : never;
   const standardFontDataUrl = getNodeStandardFontDataUrl();
   if (typeof window === 'undefined') {
-    pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true, standardFontDataUrl }).promise;
+    pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true, standardFontDataUrl } as PdfDocumentInit).promise;
   } else {
     try {
-      pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: false }).promise;
+      pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     } catch {
       // Fallback path for environments where Worker setup is restricted.
-      pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true }).promise;
+      pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true } as PdfDocumentInit).promise;
     }
   }
   let fullText = '';

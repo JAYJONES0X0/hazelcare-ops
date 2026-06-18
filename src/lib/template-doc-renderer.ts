@@ -3,7 +3,6 @@ import { TEMPLATES } from './types';
 import { escapeHtml } from './html-escape';
 
 const NAVY = '#0c1829';
-const TEAL = '#0f766e';
 const AUTHORITY = '#5d0565';
 const SLATE = '#334155';
 const MUTED = '#64748b';

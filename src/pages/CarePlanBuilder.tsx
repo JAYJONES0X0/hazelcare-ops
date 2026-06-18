@@ -13,6 +13,7 @@ import type { Sig } from '../components/SignaturePad';
 import { extractFileText } from '../lib/universal-extractor';
 import { mergeClientIdentity } from '../lib/client-identity-merge';
 import { buildCarePlanFromProfileEvidence } from '../lib/profile-intelligence-fill';
+import { SourceEvidenceStrip } from '../components/SourceEvidenceStrip';
 
 interface Props {
   clientId: string;
@@ -434,6 +435,8 @@ export function CarePlanBuilder({ clientId, onBack }: Props) {
           </button>
         </div>
       </div>
+
+      <SourceEvidenceStrip client={client} title="Care Plan" categories={['care_plan', 'support_plan', 'admission']} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Domain sidebar */}

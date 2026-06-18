@@ -323,7 +323,7 @@ export function NoteWorkspace() {
     const gaps = detectClinicalGaps(raw, activeRoster);
     const combined: TimelineItem[] = [
       ...raw.map(e => ({ ...e, type: 'entry' as const })),
-      ...gaps.map(g => ({ ...g, type: 'gap' as const, entry: '', carer: 'SYSTEM_AUDIT' }))
+      ...gaps.map(g => ({ ...g, type: 'gap' as const, entry: '' as const, carer: 'SYSTEM_AUDIT' as const }))
     ];
 
     const sorted = combined.sort((a, b) => {
@@ -455,7 +455,7 @@ export function NoteWorkspace() {
           next[key] = buildShiftContext(
             coveragePlan,
             day.date,
-            day.missingWindows.length ? day.missingWindows : coveragePlan.windows,
+            coveragePlan.windows,
           );
           changed = true;
         }
@@ -570,7 +570,7 @@ export function NoteWorkspace() {
       const rosterSource: Array<RosterShift | Shift> = rosterShifts.length ? rosterShifts : activeRoster;
       const rostered = rosterSource
         .filter(s => s.date === entry.date && ('carers' in s ? s.carers.length > 0 : Boolean(s.staffId || s.id)))
-        .flatMap(s => ('carers' in s && s.carers.length) ? s.carers : [s.staffId || s.id || 'Unknown Carer']);
+        .flatMap(s => ('carers' in s && s.carers.length) ? s.carers : [('staffId' in s ? s.staffId : undefined) || s.id || 'Unknown Carer']);
       if (rostered.length > 0) {
         finalInstructions = `${finalInstructions}\nNOTE: The original record lists a generic carer ('${entry.carer}'), but the official roster for this date (${entry.date}) indicates the staff member on shift was: ${rostered.join(', ')}. Please update the narrative to reflect the correct personnel identity in the first person.`.trim();
       }
@@ -1068,7 +1068,7 @@ export function NoteWorkspace() {
                           )}
                         </div>
 
-                        {hasVaultContext ? (
+                        {hasVaultContext && clientProfile ? (
                           <div className="space-y-1.5">
                             {/* Per-document list */}
                             {(clientProfile.vaultDocs?.length

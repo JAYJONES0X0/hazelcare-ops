@@ -38,11 +38,18 @@ export async function runTaskStressTest() {
       id: `stress-${i}`,
       title: `${baseTitle} (Iteration ${i})`,
       enabled: true,
+      nextReviewDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'),
       identifiedNeed: `STRESS TEST NEED ${i}: This is a high-volume data injection to verify clinical instruction preservation. Matthew requires support with ${baseTitle} to ensure safety and well-being. Detailed evidence follows: ${'X'.repeat(500)}`,
+      levelOfNeed: 3,
       howToAchieve: `STRESS TEST METHOD ${i}: Staff must follow the premium protocol for ${baseTitle}. This involves complex steps and detailed recording in Nourish. Full clinical length is mandatory. ${'Y'.repeat(500)}`,
       riskTitle: `STRESS TEST RISK ${i}: Potential failure in ${baseTitle} reporting.`,
+      riskLikelihood: 3,
+      riskImpact: 3,
       riskMitigation: `STRESS TEST MITIGATION ${i}: Monitor closely and escalate if any deviations are noted. ${'Z'.repeat(500)}`,
-      plannedOutcomes: `Outcome ${i}: Success for client.`
+      plannedOutcomes: `Outcome ${i}: Success for client.`,
+      reviewNote: '',
+      reviewer: '',
+      reviewDate: '',
     });
   }
 

@@ -376,7 +376,7 @@ export default function App() {
                 {page === 'compliance' && <CompliancePage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
                 {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
                 {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
-                {page === 'client-docs' && <ClientDocsPage />}
+                {page === 'client-docs' && <ClientDocsPage setPage={setPage} />}
                 {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={() => {}} />}
                 {page === 'agency' && <AgencyPortalPage />}
                 {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
@@ -414,7 +414,7 @@ export default function App() {
            <div className="absolute inset-0 flex items-center justify-center">
               <div className="hc-clay-raised p-12 flex flex-col items-center gap-6 animate-bounce shadow-2xl border border-hc-teal/5">
                  <Upload className="w-16 h-16 text-hc-teal" />
-                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.4em]">Injest Sovereign Stream</div>
+                 <div className="text-xl font-black text-hc-text uppercase tracking-[0.4em]">Import Care Records</div>
               </div>
            </div>
         </div>
@@ -472,12 +472,12 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
         </div>
         <div className="space-y-4">
           <label className="block space-y-2">
-            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Personnel ID</span>
+            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Email</span>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="Personnel ID"
+              placeholder="Email"
               autoComplete="username"
               className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text shadow-inner focus:outline-none focus:ring-2 focus:ring-hc-teal/40"
             />

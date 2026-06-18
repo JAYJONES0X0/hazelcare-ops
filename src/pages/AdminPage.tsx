@@ -14,7 +14,7 @@ import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { reconcileRosterCsv } from '../lib/continuity-engine';
-import { Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle } from 'lucide-react';
+import { Archive, Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle } from 'lucide-react';
 
 type ClearableDataset = 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets';
 type AdminRefreshWindow = Window & {
@@ -160,7 +160,7 @@ function RosterAccountabilityAudit() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Forensic-Accountability-Report-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `Roster-Accountability-Report-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -181,12 +181,12 @@ function RosterAccountabilityAudit() {
           </div>
           <div>
             <h3 className="text-sm font-black text-hc-text uppercase tracking-tight">Roster Accountability Audit</h3>
-            <p className="text-[10px] font-black text-hc-muted uppercase tracking-widest mt-1">Personnel gap reconstruction (ClientRoster.csv)</p>
+            <p className="text-[10px] font-black text-hc-muted uppercase tracking-widest mt-1">Staff gap review (ClientRoster.csv)</p>
           </div>
         </div>
         <label className="btn-tactical !bg-flag-amber !text-black flex items-center gap-2 cursor-pointer transition-all active:scale-95 shadow-lg">
           <Upload size={14} />
-          {reconciling ? 'RUNNING FORENSICS...' : 'UPLOAD ROSTER CSV'}
+          {reconciling ? 'CHECKING ROSTER...' : 'UPLOAD ROSTER CSV'}
           <input type="file" accept=".csv" onChange={handleRosterReconcile} className="hidden" />
         </label>
       </div>
@@ -196,7 +196,7 @@ function RosterAccountabilityAudit() {
           <div className="flex items-center gap-3">
             <CheckCircle size={16} className="text-flag-green" />
             <div>
-              <div className="text-[10px] font-black text-hc-text uppercase tracking-widest">Audit Terminal Output</div>
+              <div className="text-[10px] font-black text-hc-text uppercase tracking-widest">Roster Check Complete</div>
               <div className="text-[10px] text-hc-muted font-bold uppercase tracking-widest opacity-60">{reconResults.shifts} Shifts Reconciled</div>
             </div>
           </div>
@@ -208,7 +208,7 @@ function RosterAccountabilityAudit() {
       )}
 
       <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] leading-relaxed opacity-60 max-w-2xl">
-        Upload the official personnel roster to identify which staff members were present in the unit but failed to record clinical intelligence for specific service users. A forensic gap report will download automatically.
+        Upload the official staff roster to identify which staff members were present in the unit but did not record care notes for specific service users. A gap report will download automatically.
       </p>
     </div>
   );
@@ -243,7 +243,7 @@ function DataManagerProp
 
   async function handleSurgicalPurge() {
     if (governanceHouse === 'all') return;
-    if (!confirm(`SURGICAL PURGE: Delete all intelligence for ${governanceHouse.toUpperCase()}? This action is forensic and irreversible.`)) return;
+    if (!confirm(`CLEAR DATA: Delete all records for ${governanceHouse.toUpperCase()}? This action is irreversible.`)) return;
     
     setPurgeLoading(true);
     await deleteEntriesByFilterAsync({ house: governanceHouse });
@@ -293,11 +293,11 @@ function DataManagerProp
     <div className="hc-clay-raised border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase text-shimmer">Stored Intelligence</h2>
+          <h2 className="text-xl font-black text-hc-text tracking-tighter uppercase text-shimmer">Stored Care Data</h2>
           <p className="text-[11px] font-bold text-hc-muted uppercase tracking-[0.2em] mt-1">Manage local care datasets and privacy</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => { if (confirm('HARD RESET: This will purge ALL local storage and IndexedDB data, then force a clean reload. Irreversible. Continue?')) onClearEverything(); }}
+          <button onClick={() => { if (confirm('HARD RESET: This will clear ALL local storage and IndexedDB data, then force a clean reload. Irreversible. Continue?')) onClearEverything(); }}
             className="text-[11px] font-black text-flag-red hover:text-hc-text uppercase tracking-[0.2em] px-4 py-2 hc-clay-raised border border-flag-red/20 rounded-xl transition-all hover:bg-flag-red/20">
             Hard Reset System
           </button>
@@ -327,14 +327,14 @@ function DataManagerProp
          <div className="hc-clay-inset p-8 rounded-[2rem] space-y-6">
             <div className="flex items-center gap-3 mb-2">
                <Database className="text-hc-teal" size={18} />
-               <h3 className="text-xs font-black text-hc-text uppercase tracking-widest">Intelligence Volume Map</h3>
+               <h3 className="text-xs font-black text-hc-text uppercase tracking-widest">Storage Volume</h3>
             </div>
             <div className="space-y-4">
                {Object.entries(storageAudit).length > 0 ? Object.entries(storageAudit).sort((a,b) => b[1].size - a[1].size).map(([house, stats]) => (
                   <div key={house} className="flex items-center justify-between group">
                      <div className="flex flex-col">
                         <span className="text-[10px] font-black text-hc-text uppercase tracking-tighter">{house}</span>
-                        <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">{stats.count.toLocaleString()} Intelligence Points</span>
+                        <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">{stats.count.toLocaleString()} Records</span>
                      </div>
                      <div className="flex items-center gap-4">
                         <span className="text-[10px] font-black text-hc-teal tabular-nums">{(stats.size / 1024).toFixed(1)} KB</span>
@@ -349,14 +349,14 @@ function DataManagerProp
             </div>
          </div>
 
-         {/* Surgical Governance Bench */}
+         {/* Targeted Data Removal */}
          <div className="hc-clay-raised p-8 rounded-[2rem] space-y-6 border border-flag-red/10">
             <div className="flex items-center gap-3">
                <ShieldAlert className="text-flag-red" size={18} />
-               <h3 className="text-xs font-black text-flag-red uppercase tracking-widest">Surgical Governance</h3>
+               <h3 className="text-xs font-black text-flag-red uppercase tracking-widest">Targeted Data Removal</h3>
             </div>
             <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-               Target specific units for intelligence deletion. Used for forensic data retention and legal compliance sweeps.
+               Remove records for a specific unit when data retention or privacy rules require it.
             </p>
             <div className="space-y-4 pt-2">
                <div className="flex flex-col gap-2">
@@ -376,7 +376,7 @@ function DataManagerProp
                  className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all font-black text-[10px] uppercase tracking-widest shadow-xl
                    ${governanceHouse === 'all' ? 'hc-clay-raised text-hc-muted opacity-40' : 'bg-flag-red text-hc-bone hover:bg-black active:scale-[0.98]'}`}
                >
-                  <Trash2 size={14} /> {purgeLoading ? 'PURGING...' : `Surgical Purge: ${governanceHouse}`}
+                  <Trash2 size={14} /> {purgeLoading ? 'CLEARING...' : `Clear: ${governanceHouse}`}
                </button>
             </div>
          </div>
@@ -384,7 +384,7 @@ function DataManagerProp
 
       <div className="mt-8 pt-8 flex flex-wrap gap-4 border-t border-white/5 opacity-60">
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-teal uppercase tracking-widest">
-           <HardDrive size={12} /> Registry: INDEXED-DB HIGH-CAPACITY (GIGABYTES)
+           <HardDrive size={12} /> Storage: IndexedDB high-capacity
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black text-hc-muted uppercase tracking-widest">
            <Calendar size={12} /> Retention Policy: ACTIVE
@@ -421,14 +421,25 @@ function DataManagerProp
 }
 
 export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null, clients: FullClient[] }) {
+  const packReviewRows = clients.flatMap(client =>
+    (client.packImports || []).map(pack => ({
+      clientName: client.name || pack.candidateClientName || 'Draft client',
+      pack,
+      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
+      filesTotal: pack.filesTotal,
+      liveReady: !!client.liveGateSummary?.liveReady,
+    }))
+  );
+  const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
 
   const handleClearEverything = async () => {
-    if (!confirm('TOTAL PURGE: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
+    if (!confirm('TOTAL CLEAR: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
     await purgeSystemDataAsync();
   };
 
   const handleClearType = async (type: ClearableDataset) => {
-    if (!confirm(`PURGE: Wipe all ${type.toUpperCase()} records?`)) return;
+    if (!confirm(`CLEAR: Wipe all ${type.toUpperCase()} records?`)) return;
     
     if (type === 'diary') {
       await clearEntryStoreAsync();
@@ -458,6 +469,43 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
       {weekData && <CoordinatorExportCard weekData={weekData} />}
 
       <RosterAccountabilityAudit />
+
+      {packReviewRows.length > 0 && (
+        <div className="hc-clay-raised p-8 rounded-[2.5rem] border border-flag-amber/20 mb-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-flag-amber/10 flex items-center justify-center text-flag-amber shrink-0">
+                <Archive className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-hc-text uppercase tracking-tight">Client pack review governance</h2>
+                <p className="text-[11px] text-hc-muted mt-1 max-w-2xl leading-relaxed">
+                  Imported packs remain draft evidence until manager review gates pass. Admin view keeps pack debt visible outside Client Records.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{draftPackCount} draft packs</span>
+              <span className="pill pill-red text-[8px] font-black uppercase tracking-widest">{packReviewItems} file reviews</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {packReviewRows.slice(0, 6).map(row => (
+              <div key={`${row.clientName}-${row.pack.packId}`} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <span className="text-sm font-black text-hc-text">{row.clientName}</span>
+                  <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.liveReady ? 'pill-green' : 'pill-amber'}`}>
+                    {row.liveReady ? 'Live ready' : 'Draft'}
+                  </span>
+                </div>
+                <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
+                  {row.filesTotal} files seen / {row.reviewItems} need review / {row.pack.filesParsed} parsed
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <DataManagerProp 
         clients={clients} 

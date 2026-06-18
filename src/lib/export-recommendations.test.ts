@@ -12,6 +12,7 @@ describe('export-recommendations', () => {
       houses: [],
       escalations: [],
       dataFreshness: { entryCount: 0 },
+      coverage: null,
     };
     const r = buildExportRecommendations(snap);
     expect(r.some((x) => x.id === 'diary-full')).toBe(true);
