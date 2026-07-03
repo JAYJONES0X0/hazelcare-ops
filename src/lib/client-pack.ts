@@ -1,13 +1,13 @@
 import type { ExtractedClientIdentity, NormalizedImportEnvelope } from './import-intelligence';
 import type {
   ClientLiveGateSummary,
-  FullClient,
   PackFileCategory,
   PackFileManifestRow,
   PackImport,
   PackParseStatus,
   PackTargetScreen,
 } from './client-store';
+export { consolidateDuplicatePackClients } from './client-pack-consolidation';
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -217,120 +217,6 @@ export function applyPackClientIdentity(
       ),
     ],
   }));
-}
-
-function identityQuality(client: FullClient, packId: string) {
-  const packConfidence = Math.max(
-    0,
-    ...(client.packImports || [])
-      .filter(pack => pack.packId === packId)
-      .map(pack => pack.identityConfidence || 0),
-  );
-  let score = packConfidence * 20;
-  if (isPlausiblePersonName(client.name)) score += 25;
-  else score -= 50;
-  if (client.dob) score += 35;
-  if (client.nhs) score += 55;
-  if (client.address) score += 15;
-  if (client.phone) score += 10;
-  if (client.carePlan?.domains?.some(domain => domain.enabled || domain.identifiedNeed)) score += 15;
-  if (client.supportPlan?.needs?.length) score += 15;
-  return score;
-}
-
-function mergePackImportsForOwner(owner: FullClient, packId: string, duplicatePacks: PackImport[]) {
-  const rows = new Map<string, PackFileManifestRow>();
-  const audits = new Set<string>();
-  for (const pack of duplicatePacks) {
-    for (const row of pack.manifestRows || []) {
-      rows.set(row.fileId || row.originalFileName.toLowerCase(), {
-        ...row,
-        clientMatch: {
-          ...row.clientMatch,
-          clientId: owner.id,
-          name: owner.name,
-          confidence: Math.max(row.clientMatch.confidence || 0, owner.dob || owner.nhs ? 0.95 : 0.78),
-          matchReason: 'Pack ownership consolidated to the evidence-backed client identity.',
-        },
-      });
-    }
-    for (const auditId of pack.auditEventIds || []) audits.add(auditId);
-  }
-  const source = duplicatePacks.sort((a, b) => b.identityConfidence - a.identityConfidence)[0];
-  return buildPackImport({
-    packId,
-    sourceName: source?.sourceName || 'Client Pack',
-    sourceType: source?.sourceType,
-    rows: [...rows.values()],
-    candidateClientId: owner.id,
-    candidateClientName: owner.name,
-    identityConfidence: Math.max(source?.identityConfidence || 0, owner.dob || owner.nhs ? 0.95 : 0.78),
-    uploadedBy: source?.uploadedBy,
-    auditEventIds: [...audits],
-  });
-}
-
-function mergeVaultEvidence(owner: FullClient, clients: FullClient[]) {
-  const docs = new Map<string, NonNullable<FullClient['vaultDocs']>[number]>();
-  for (const client of clients) {
-    for (const doc of client.vaultDocs || []) {
-      docs.set(doc.fileId || doc.name.toLowerCase(), doc);
-    }
-  }
-  owner.vaultDocs = [...docs.values()];
-}
-
-function isDisposablePackArtifact(client: FullClient) {
-  if (isPlausiblePersonName(client.name) || client.dob || client.nhs || client.address || client.phone) return false;
-  if (client.carePlan?.domains?.some(domain => domain.enabled || domain.identifiedNeed)) return false;
-  if (client.supportPlan?.needs?.length || client.risk?.risks?.some(risk => risk.title || risk.description)) return false;
-  if (client.careCircle?.contacts?.length || client.careCircle?.updates?.length || client.careCircle?.concerns?.length) return false;
-  return true;
-}
-
-export function consolidateDuplicatePackClients(inputClients: FullClient[]): {
-  clients: FullClient[];
-  changed: boolean;
-  removedClientNames: string[];
-} {
-  let clients = inputClients.map(client => ({
-    ...client,
-    packImports: [...(client.packImports || [])],
-    vaultDocs: [...(client.vaultDocs || [])],
-  }));
-  const removedClientNames: string[] = [];
-  let changed = false;
-
-  const packIds = new Set(clients.flatMap(client => (client.packImports || []).map(pack => pack.packId)));
-  for (const packId of packIds) {
-    const owners = clients.filter(client => (client.packImports || []).some(pack => pack.packId === packId));
-    if (owners.length < 2) continue;
-
-    const ranked = [...owners].sort((a, b) => identityQuality(b, packId) - identityQuality(a, packId));
-    const owner = ranked[0];
-    const losers = ranked.slice(1);
-    const duplicatePacks = owners.flatMap(client => (client.packImports || []).filter(pack => pack.packId === packId));
-
-    mergeVaultEvidence(owner, owners);
-    owner.packImports = [
-      mergePackImportsForOwner(owner, packId, duplicatePacks),
-      ...(owner.packImports || []).filter(pack => pack.packId !== packId),
-    ];
-
-    const loserIdsToRemove = new Set<string>();
-    for (const loser of losers) {
-      loser.packImports = (loser.packImports || []).filter(pack => pack.packId !== packId);
-      loser.vaultDocs = (loser.vaultDocs || []).filter(doc => doc.packId !== packId);
-      if (!loser.packImports.length && !loser.vaultDocs.length && isDisposablePackArtifact(loser)) {
-        loserIdsToRemove.add(loser.id);
-        removedClientNames.push(loser.name);
-      }
-    }
-    clients = clients.filter(client => !loserIdsToRemove.has(client.id));
-    changed = true;
-  }
-
-  return { clients, changed, removedClientNames };
 }
 
 function haystack(envelope: NormalizedImportEnvelope, fileName: string) {

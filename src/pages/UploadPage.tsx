@@ -19,9 +19,9 @@ import { enrichEntriesWithRoster } from '../lib/roster-store';
 import {
   applyPackClientIdentity,
   buildPackFileManifestRow,
-  consolidateDuplicatePackClients,
   resolvePackClientIdentity,
 } from '../lib/client-pack';
+import { consolidateDuplicatePackClients } from '../lib/client-pack-consolidation';
 
 type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'contact-details' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';

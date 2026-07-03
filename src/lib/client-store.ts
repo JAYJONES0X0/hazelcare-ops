@@ -1,5 +1,5 @@
 // ============================================================
-import { consolidateDuplicatePackClients } from './client-pack';
+import { consolidateDuplicatePackClients } from './client-pack-consolidation';
 
 export interface ClientBasic {
   id: string;
