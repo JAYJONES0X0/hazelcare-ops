@@ -7,3 +7,4 @@ smoke-*.png
 tmp*
 *.log
 login-data.json
+nul
