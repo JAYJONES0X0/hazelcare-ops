@@ -212,6 +212,42 @@ describe('operational spine', () => {
     expect(rows[0].missingCriticalEvidence).toContain('Confirm name, DOB, NHS/person ID, and duplicate/merge decision.');
   });
 
+  it('does not show phantom pack imports that have no inventoried files', () => {
+    const client: FullClient = {
+      ...emptyClient(),
+      id: 'client-empty-pack',
+      name: 'Draft Shell',
+      onboardingStatus: 'DRAFT_CLIENT',
+      liveGateSummary: clientLiveGateSummary({
+        identityReviewed: false,
+        hasCarePlanSource: false,
+        riskReviewed: false,
+        contactsReviewed: false,
+        unresolvedFiles: 0,
+      }),
+      packImports: [{
+        packId: 'pack-empty',
+        uploadedAt: '2026-06-18T10:00:00.000Z',
+        uploadedBy: 'tester',
+        sourceName: 'stale-empty-pack',
+        sourceType: 'zip',
+        status: 'DRAFT_CLIENT',
+        candidateClientId: 'client-empty-pack',
+        candidateClientName: 'Draft Shell',
+        identityConfidence: 0,
+        filesTotal: 0,
+        filesParsed: 0,
+        filesAttached: 0,
+        filesFailed: 0,
+        filesNeedsReview: 0,
+        manifestRows: [],
+        auditEventIds: [],
+      }],
+    };
+
+    expect(buildClientPackReviewQueue([client])).toEqual([]);
+  });
+
   it('reviews diary evidence without hiding weak entries', () => {
     const data = week([
       entry({ id: 'e1', entry: 'Alistair accepted support with breakfast and medication. GP appointment needs follow up.' }),

@@ -59,9 +59,20 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const [filteredData, setFilteredData] = useState<WeekSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [totalInStore, setTotalInStore] = useState(0);
-  const packReviewRows = useMemo(() => buildClientPackReviewQueue(loadClients()), []);
+  const [packReviewRows, setPackReviewRows] = useState(() => buildClientPackReviewQueue(loadClients()));
   const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
+
+  useEffect(() => {
+    const refreshPackQueue = () => setPackReviewRows(buildClientPackReviewQueue(loadClients()));
+    refreshPackQueue();
+    window.addEventListener('hc-clients-updated', refreshPackQueue);
+    window.addEventListener('storage', refreshPackQueue);
+    return () => {
+      window.removeEventListener('hc-clients-updated', refreshPackQueue);
+      window.removeEventListener('storage', refreshPackQueue);
+    };
+  }, []);
 
   const {
     collapseAll: collapseAllSections,

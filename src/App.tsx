@@ -59,6 +59,14 @@ type QuickActionRequest = {
 
 export default function App() {
   useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
     // Branding Migration: Clear old hc-org-* keys if they contain old branding
     // This forces the new copper logo defaults for existing users.
     const oldLogo = localStorage.getItem('hc-org-logo');

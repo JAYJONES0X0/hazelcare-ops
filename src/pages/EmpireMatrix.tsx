@@ -33,9 +33,20 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
   }, [weekDataProp]);
 
   const weekData = weekDataProp || storedWeekData;
-  const packReviewRows = useMemo(() => buildClientPackReviewQueue(loadClients()), []);
+  const [packReviewRows, setPackReviewRows] = useState(() => buildClientPackReviewQueue(loadClients()));
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
   const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
+
+  useEffect(() => {
+    const refreshPackQueue = () => setPackReviewRows(buildClientPackReviewQueue(loadClients()));
+    refreshPackQueue();
+    window.addEventListener('hc-clients-updated', refreshPackQueue);
+    window.addEventListener('storage', refreshPackQueue);
+    return () => {
+      window.removeEventListener('hc-clients-updated', refreshPackQueue);
+      window.removeEventListener('storage', refreshPackQueue);
+    };
+  }, []);
 
   // Use the REAL staff quality scores per house
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, { house: 'all' }), [weekData]);

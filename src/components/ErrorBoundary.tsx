@@ -9,6 +9,34 @@ interface State {
   hasError: boolean;
 }
 
+const RECOVERY_STORAGE_KEYS = [
+  'careops-handovers',
+  'hazelcare-compliance-audits',
+  'hazelcare-ops',
+  'hazelcare-staff',
+  'hazelcare-staff-notes',
+  'hc-active-sequences-v1',
+  'hc-active-tracking-v1',
+  'hc-audit-trail-v1',
+  'hc-clients-v2',
+  'hc-coaching-events-v1',
+  'hc-coverage-plan-v1',
+  'hc-current-page',
+  'hc_current_page',
+  'hc-entry-store-v3',
+  'hc-intercept-cache',
+  'hc-module-history-v1',
+  'hc-operational-communications-v1',
+  'hc-operational-output-drafts-v1',
+  'hc-registered-sessions',
+  'hc-staff-monitoring-hourly-v1',
+  'hc-staff-monitoring-outcomes-v1',
+  'hc-staff-monitoring-runs-v1',
+  'hc-staff-register-v1',
+  'hc-template-import-context',
+  'hc-week-data-v2',
+];
+
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false
@@ -20,14 +48,25 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
-    // Auto-clear corrupt localStorage keys on first catch — preserves week data
+    // Auto-clear local app stores on first catch so recovery cannot loop on stale state.
     try {
-      localStorage.removeItem('hazelcare-ops');
-      localStorage.removeItem('hc_current_page');
-      localStorage.removeItem('hc-registered-sessions');
-      localStorage.removeItem('hc-entry-store-v3');
+      for (const key of RECOVERY_STORAGE_KEYS) {
+        localStorage.removeItem(key);
+      }
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('hazelcare-legal-') || key?.startsWith('collapse-state:')) {
+          localStorage.removeItem(key);
+        }
+      }
       indexedDB.deleteDatabase('hazel-care-ops');
     } catch { /* ignore */ }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => undefined);
+    }
   }
 
   public render() {

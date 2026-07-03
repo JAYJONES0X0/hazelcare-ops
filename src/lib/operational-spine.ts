@@ -158,7 +158,9 @@ export function evidenceFromClientOnboarding(client: FullClient): EvidenceItem[]
 
 export function buildClientPackReviewQueue(clients: FullClient[]): ClientPackReviewQueueRow[] {
   return clients
-    .flatMap(client => (client.packImports || []).map(pack => {
+    .flatMap(client => (client.packImports || [])
+      .filter(pack => (pack.filesTotal || pack.manifestRows?.length || 0) > 0)
+      .map(pack => {
       const liveGate = client.liveGateSummary;
       const needsReviewCount = pack.manifestRows.filter(row => row.reviewRequired).length;
       const blockedReasons = liveGate?.blockedReasons?.length
@@ -186,6 +188,7 @@ export function buildClientPackReviewQueue(clients: FullClient[]): ClientPackRev
         liveReady: !!liveGate?.liveReady,
       };
     }))
+    .filter(row => row.needsReviewCount > 0 || row.blockedReasons.length > 0 || !row.liveReady)
     .sort((a, b) =>
       Number(a.liveReady) - Number(b.liveReady) ||
       b.needsReviewCount - a.needsReviewCount ||
