@@ -31,20 +31,132 @@ export type Category =
 // ============================================================
 export type ActionStatus = 'open' | 'in_progress' | 'blocked' | 'completed' | 'overdue';
 export type ActionPriority = 'critical' | 'high' | 'medium' | 'low';
+export type OperationalActionState =
+  | 'not_started'
+  | 'assigned'
+  | 'in_progress'
+  | 'waiting_staff_feedback'
+  | 'waiting_professional'
+  | 'waiting_resident_availability'
+  | 'completed'
+  | 'closed_with_evidence'
+  | 'carry_forward'
+  | 'escalated';
+
+export type EvidenceSourceType =
+  | 'diary_entry'
+  | 'client_pack_file'
+  | 'vault_document'
+  | 'manual_note'
+  | 'communication'
+  | 'system_generated';
+
+export interface EvidenceItem {
+  id: string;
+  sourceType: EvidenceSourceType;
+  sourceId: string;
+  title: string;
+  resident?: string;
+  house?: string;
+  date?: string;
+  excerpt: string;
+  confidence: number;
+  reviewState: 'unreviewed' | 'review_required' | 'reviewed' | 'deferred';
+  usedForOutput: boolean;
+}
+
+export interface ActionStateEvent {
+  id: string;
+  actionId: string;
+  from?: OperationalActionState;
+  to: OperationalActionState;
+  at: string;
+  by: string;
+  reason: string;
+  evidenceIds: string[];
+}
 
 export interface Action {
   id: string;
   title: string;
   description: string;
   house: string;
+  resident?: string;
   owner: string;
   priority: ActionPriority;
   status: ActionStatus;
+  operationalState?: OperationalActionState;
   createdAt: string;
   dueDate: string;
   completedAt?: string;
   sourceEntry?: string;
+  sourceEvidence?: EvidenceItem[];
+  stateHistory?: ActionStateEvent[];
+  carryForward?: boolean;
+  closedWithEvidence?: boolean;
   tags: string[];
+}
+
+export interface CommunicationRecord {
+  id: string;
+  resident?: string;
+  house?: string;
+  recipientType: 'family' | 'professional' | 'internal' | 'audit';
+  recipientName?: string;
+  status: 'draft' | 'reviewed' | 'copied' | 'sent' | 'logged';
+  createdAt: string;
+  reviewedAt?: string;
+  sourceEvidenceIds: string[];
+  outputDraftId?: string;
+  summary: string;
+}
+
+export interface OutputDraft {
+  id: string;
+  type: 'weekly_update' | 'handover' | 'nourish_export' | 'audit_summary';
+  recipientType: CommunicationRecord['recipientType'];
+  resident?: string;
+  house?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  text: string;
+  sourceEvidence: EvidenceItem[];
+  missingEvidence: string[];
+  reviewRequired: boolean;
+  createdAt: string;
+}
+
+export interface ResidentPeriodSummary {
+  resident: string;
+  house?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  entriesReviewed: number;
+  supportOffered: string[];
+  acceptedOrDeclined: string[];
+  activities: string[];
+  appointments: string[];
+  healthConcerns: string[];
+  incidents: string[];
+  refusals: string[];
+  poorEntries: string[];
+  openActionHints: string[];
+  evidenceIds: string[];
+}
+
+export interface HouseDailyState {
+  house: string;
+  dateLabel: string;
+  residentCount: number;
+  evidenceCount: number;
+  openActions: Action[];
+  waitingFeedback: Action[];
+  waitingProfessionals: Action[];
+  appointments: EvidenceItem[];
+  healthFollowUps: EvidenceItem[];
+  escalationFlags: EvidenceItem[];
+  carryForwardItems: Action[];
+  missingEvidence: string[];
 }
 
 // ============================================================

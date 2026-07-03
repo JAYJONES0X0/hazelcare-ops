@@ -3,6 +3,7 @@ import type { Action, ActionStatus, ActionPriority } from '../lib/types';
 import { uid } from '../lib/storage';
 import { useCollapseStore } from '../lib/collapse-store';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
+import { ACTION_STATE_LABELS, mapActionToOperationalState } from '../lib/operational-spine';
 
 interface Props {
   actions: Action[];
@@ -55,11 +56,31 @@ export function ActionsPage({ actions, onUpdate }: Props) {
     const order: ActionStatus[] = ['open', 'in_progress', 'completed'];
     const idx = order.indexOf(action.status);
     const next = order[(idx + 1) % order.length];
+    const fromState = mapActionToOperationalState(action);
+    const toState = next === 'completed'
+      ? (action.sourceEvidence?.length ? 'closed_with_evidence' as const : 'completed' as const)
+      : next === 'in_progress'
+        ? 'in_progress' as const
+        : 'not_started' as const;
     onUpdate(actions.map(a => a.id === action.id ? { 
       ...a, 
       status: next, 
+      operationalState: toState,
       completedAt: next === 'completed' ? new Date().toLocaleDateString('en-GB') : undefined,
-      completedBy: next === 'completed' ? 'Current User' : undefined // To be tied to Auth
+      closedWithEvidence: next === 'completed' && !!a.sourceEvidence?.length,
+      stateHistory: [
+        ...(a.stateHistory || []),
+        {
+          id: uid(),
+          actionId: a.id,
+          from: fromState,
+          to: toState,
+          at: new Date().toISOString(),
+          by: 'Current User',
+          reason: `Status changed to ${next}`,
+          evidenceIds: (a.sourceEvidence || []).map(item => item.id),
+        },
+      ],
     } : a));
   }
 
@@ -74,16 +95,27 @@ export function ActionsPage({ actions, onUpdate }: Props) {
 
   function addAction() {
     if (!newAction.title.trim()) return;
+    const id = uid();
     const action: Action = {
-      id: uid(),
+      id,
       title: newAction.title,
       description: newAction.description,
       house: newAction.house || 'General',
       owner: newAction.owner || 'Unassigned',
       priority: newAction.priority,
       status: 'open',
+      operationalState: newAction.owner ? 'assigned' : 'not_started',
       createdAt: new Date().toLocaleDateString('en-GB'),
       dueDate: newAction.dueDate || '',
+      stateHistory: [{
+        id: uid(),
+        actionId: id,
+        to: newAction.owner ? 'assigned' : 'not_started',
+        at: new Date().toISOString(),
+        by: 'Current User',
+        reason: 'Action created manually',
+        evidenceIds: [],
+      }],
       tags: [],
     };
     onUpdate([action, ...actions]);
@@ -321,10 +353,14 @@ export function ActionsPage({ actions, onUpdate }: Props) {
                         {action.dueDate || '—'}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Status</span>
-                      <span className="text-[11px] font-black uppercase" style={{ color: sc.color }}>{sc.label}</span>
-                    </div>
+                  <div>
+                    <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Status</span>
+                    <span className="text-[11px] font-black uppercase" style={{ color: sc.color }}>{sc.label}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.2em] mb-1 block">Operational State</span>
+                    <span className="text-[11px] font-black uppercase text-hc-teal">{ACTION_STATE_LABELS[mapActionToOperationalState(action)]}</span>
+                  </div>
                   </div>
 
                   {/* Notes */}

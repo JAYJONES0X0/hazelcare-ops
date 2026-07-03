@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { uid } from '../lib/storage';
+import { useState, useEffect, useMemo } from 'react';
+import { loadActions, uid } from '../lib/storage';
 import { ORG_CONFIG } from '../lib/config';
 import type { WeekSummary } from '../lib/types';
 import { ChevronRight } from 'lucide-react';
+import { buildHandoverDraft, toNourishSafeText } from '../lib/operational-spine';
+import { saveCommunicationRecordForDraft, saveOutputDraft } from '../lib/operational-output-store';
 
 interface HandoverItem {
   id: string;
@@ -66,6 +68,12 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
   const [history, setHistory] = useState<Handover[]>(loadHandovers);
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
+  const operationalDraft = useMemo(() => buildHandoverDraft({
+    weekData,
+    actions: loadActions(),
+    house,
+    mode: 'manager',
+  }), [weekData, house]);
 
   useEffect(() => {
     if (!weekData) return;
@@ -134,7 +142,45 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
     return text;
   }
 
-  function copyToClipboard() { navigator.clipboard.writeText(generateHandoverText()); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  function generateOperationalHandoverText(): string {
+    const manualText = items.length > 0 ? generateHandoverText() : '';
+    const lines = [
+      `SHIFT HANDOVER - ${house.toUpperCase()}`,
+      `SHIFT: ${shiftFrom.toUpperCase()} TO ${shiftTo.toUpperCase()}`,
+      `OUTGOING: ${staffOut || '___'} | INCOMING: ${staffIn || '___'}`,
+      '',
+      'EVIDENCE-AWARE SUMMARY',
+      operationalDraft.text,
+      '',
+      manualText ? 'MANUAL ADDITIONS' : '',
+      manualText,
+      '',
+      `${ORG_CONFIG.fullName} | CONFIDENTIAL`,
+    ].filter(Boolean);
+    return toNourishSafeText(lines.join('\n'));
+  }
+
+  function persistOperationalHandover(status: 'copied' | 'logged') {
+    const draft = saveOutputDraft({
+      ...operationalDraft,
+      id: `handover-${uid()}`,
+      text: generateOperationalHandoverText(),
+      house,
+      createdAt: new Date().toISOString(),
+    });
+    saveCommunicationRecordForDraft(draft, {
+      status,
+      summary: `${shiftFrom} to ${shiftTo} handover ${status} for ${house}.`,
+    });
+  }
+
+  function copyToClipboard() {
+    const text = generateOperationalHandoverText();
+    persistOperationalHandover('copied');
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   function saveHandover() {
     const handover: Handover = {
@@ -144,6 +190,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
     };
     const updated = [handover, ...history].slice(0, 50);
     setHistory(updated); saveHandovers(updated);
+    persistOperationalHandover('logged');
     setItems([]); setStaffOut(''); setStaffIn(''); setClientsOfConcern(''); setRedFlags('');
   }
 
@@ -270,7 +317,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
                  </div>
                  <div className="p-8">
                     <pre className="text-[12px] text-hc-text font-black leading-loose whitespace-pre-wrap italic max-h-[500px] overflow-y-auto scrollbar-thin">
-                       {items.length > 0 ? generateHandoverText() : '// Handover will appear here as you add items...'}
+                       {generateOperationalHandoverText()}
                     </pre>
                  </div>
               </div>

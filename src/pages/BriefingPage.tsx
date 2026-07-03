@@ -3,6 +3,7 @@ import type { WeekSummary, Action, Page, PageContext } from '../lib/types';
 import { detectTrends } from '../lib/trends';
 import { useCollapseStore } from '../lib/collapse-store';
 import { Activity, ChevronRight, TrendingUp, AlertTriangle, Upload } from 'lucide-react';
+import { RadarLoader } from '../components/NexusLoader';
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 
@@ -64,7 +65,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
     return (
       <div className="min-h-screen flex items-center justify-center bg-hc-bg">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin" />
+          <RadarLoader color="#2dd4bf" size={40} />
           <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Initialising Briefing Matrix</div>
         </div>
       </div>

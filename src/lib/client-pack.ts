@@ -1,6 +1,7 @@
-import type { NormalizedImportEnvelope } from './import-intelligence';
+import type { ExtractedClientIdentity, NormalizedImportEnvelope } from './import-intelligence';
 import type {
   ClientLiveGateSummary,
+  FullClient,
   PackFileCategory,
   PackFileManifestRow,
   PackImport,
@@ -14,6 +15,322 @@ function id(prefix: string) {
 
 function cleanText(value: string | undefined | null) {
   return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+const NON_PERSON_IDENTITY_TERMS = new Set([
+  'admission',
+  'assessment',
+  'behaviour',
+  'behavioural',
+  'benefits',
+  'care',
+  'client',
+  'contact',
+  'details',
+  'emergency',
+  'finance',
+  'financial',
+  'health',
+  'legal',
+  'medication',
+  'mental',
+  'pack',
+  'pbs',
+  'plan',
+  'positive',
+  'profile',
+  'report',
+  'risk',
+  'support',
+  'tenancy',
+  'welcome',
+]);
+
+function normalizedName(value: string | undefined | null) {
+  return cleanText(value)
+    .replace(/^(mr|mrs|ms|miss|mx|dr)\.?\s+/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9'-]+/g, ' ')
+    .trim();
+}
+
+function isPlausiblePersonName(value: string | undefined | null) {
+  const normalized = normalizedName(value);
+  if (!normalized) return false;
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 4) return false;
+  if (words.some(word => NON_PERSON_IDENTITY_TERMS.has(word))) return false;
+  if (words.some(word => word.length < 2)) return false;
+  return true;
+}
+
+function rawTextContainsName(envelope: NormalizedImportEnvelope, name: string) {
+  const raw = normalizedName(envelope.rawText);
+  const candidate = normalizedName(name);
+  return !!candidate && raw.includes(candidate);
+}
+
+export interface PackClientIdentityResolution {
+  candidate: ExtractedClientIdentity | null;
+  confidence: number;
+  ambiguous: boolean;
+  reason: string;
+  rejectedNames: string[];
+}
+
+export function resolvePackClientIdentity(envelopes: NormalizedImportEnvelope[]): PackClientIdentityResolution {
+  const rejectedNames = new Set<string>();
+  const signals = new Map<string, {
+    candidate: ExtractedClientIdentity;
+    score: number;
+    strongSignals: number;
+    files: Set<string>;
+  }>();
+
+  const addSignal = (
+    envelope: NormalizedImportEnvelope,
+    candidate: ExtractedClientIdentity | undefined | null,
+    score: number,
+    strong: boolean,
+  ) => {
+    const name = cleanText(candidate?.name);
+    if (!name) return;
+    if (!isPlausiblePersonName(name)) {
+      rejectedNames.add(name);
+      return;
+    }
+    const key = normalizedName(name);
+    const current = signals.get(key) || {
+      candidate: { name },
+      score: 0,
+      strongSignals: 0,
+      files: new Set<string>(),
+    };
+    current.score += score;
+    current.strongSignals += strong ? 1 : 0;
+    current.files.add(envelope.source.fileName);
+    current.candidate = {
+      name,
+      preferredName: candidate?.preferredName || current.candidate.preferredName || name.split(/\s+/)[0],
+      dob: candidate?.dob || current.candidate.dob,
+      nhs: candidate?.nhs || current.candidate.nhs,
+    };
+    signals.set(key, current);
+  };
+
+  for (const envelope of envelopes) {
+    const admissionIdentity = envelope.admission?.client;
+    if (admissionIdentity?.name) {
+      addSignal(envelope, admissionIdentity, admissionIdentity.dob || admissionIdentity.nhs ? 1 : 0.88, true);
+    }
+
+    if (envelope.contactDetails?.clientName) {
+      addSignal(envelope, {
+        name: envelope.contactDetails.clientName,
+        preferredName: envelope.contactDetails.clientName.split(/\s+/)[0],
+      }, 0.9, true);
+    }
+
+    for (const candidate of envelope.clientCandidates || []) {
+      const hasIdentityAnchor = !!(candidate.dob || candidate.nhs);
+      const appearsInText = rawTextContainsName(envelope, candidate.name || '');
+      if (!hasIdentityAnchor && !appearsInText) {
+        if (candidate.name) rejectedNames.add(cleanText(candidate.name));
+        continue;
+      }
+      addSignal(envelope, candidate, hasIdentityAnchor ? 0.92 : 0.7, hasIdentityAnchor);
+    }
+
+    const diaryCounts = new Map<string, number>();
+    for (const entry of envelope.diaryEntries || []) {
+      const name = cleanText(entry.client);
+      if (!isPlausiblePersonName(name)) {
+        if (name) rejectedNames.add(name);
+        continue;
+      }
+      diaryCounts.set(name, (diaryCounts.get(name) || 0) + 1);
+    }
+    for (const [name, count] of diaryCounts) {
+      addSignal(envelope, { name }, Math.min(0.85, 0.55 + count * 0.05), count >= 3);
+    }
+  }
+
+  const ranked = [...signals.values()].sort((a, b) =>
+    b.strongSignals - a.strongSignals ||
+    b.score - a.score ||
+    b.files.size - a.files.size
+  );
+  const best = ranked[0];
+  if (!best) {
+    return {
+      candidate: null,
+      confidence: 0,
+      ambiguous: false,
+      reason: 'No identity was supported by document content or structured identity fields.',
+      rejectedNames: [...rejectedNames],
+    };
+  }
+
+  const second = ranked[1];
+  const ambiguous = !!second &&
+    best.strongSignals > 0 &&
+    second.strongSignals > 0 &&
+    second.score >= best.score * 0.85;
+  if (ambiguous) {
+    return {
+      candidate: null,
+      confidence: 0,
+      ambiguous: true,
+      reason: `Conflicting evidence-backed identities were found: ${best.candidate.name} and ${second.candidate.name}.`,
+      rejectedNames: [...rejectedNames],
+    };
+  }
+
+  const confidence = Math.min(0.99, Math.max(
+    best.strongSignals > 0 ? 0.9 : 0.72,
+    best.score / Math.max(1, best.files.size),
+  ));
+  return {
+    candidate: best.candidate,
+    confidence,
+    ambiguous: false,
+    reason: best.strongSignals > 0
+      ? 'Identity resolved from structured document evidence.'
+      : 'Identity resolved from repeated document content and requires review.',
+    rejectedNames: [...rejectedNames],
+  };
+}
+
+export function applyPackClientIdentity(
+  envelopes: NormalizedImportEnvelope[],
+  resolution = resolvePackClientIdentity(envelopes),
+) {
+  if (!resolution.candidate || resolution.ambiguous) {
+    return envelopes.map(envelope => ({ ...envelope, clientCandidates: [] }));
+  }
+  return envelopes.map(envelope => ({
+    ...envelope,
+    clientCandidates: [
+      { ...resolution.candidate! },
+      ...(envelope.clientCandidates || []).filter(candidate =>
+        normalizedName(candidate.name) === normalizedName(resolution.candidate?.name)
+      ),
+    ],
+  }));
+}
+
+function identityQuality(client: FullClient, packId: string) {
+  const packConfidence = Math.max(
+    0,
+    ...(client.packImports || [])
+      .filter(pack => pack.packId === packId)
+      .map(pack => pack.identityConfidence || 0),
+  );
+  let score = packConfidence * 20;
+  if (isPlausiblePersonName(client.name)) score += 25;
+  else score -= 50;
+  if (client.dob) score += 35;
+  if (client.nhs) score += 55;
+  if (client.address) score += 15;
+  if (client.phone) score += 10;
+  if (client.carePlan?.domains?.some(domain => domain.enabled || domain.identifiedNeed)) score += 15;
+  if (client.supportPlan?.needs?.length) score += 15;
+  return score;
+}
+
+function mergePackImportsForOwner(owner: FullClient, packId: string, duplicatePacks: PackImport[]) {
+  const rows = new Map<string, PackFileManifestRow>();
+  const audits = new Set<string>();
+  for (const pack of duplicatePacks) {
+    for (const row of pack.manifestRows || []) {
+      rows.set(row.fileId || row.originalFileName.toLowerCase(), {
+        ...row,
+        clientMatch: {
+          ...row.clientMatch,
+          clientId: owner.id,
+          name: owner.name,
+          confidence: Math.max(row.clientMatch.confidence || 0, owner.dob || owner.nhs ? 0.95 : 0.78),
+          matchReason: 'Pack ownership consolidated to the evidence-backed client identity.',
+        },
+      });
+    }
+    for (const auditId of pack.auditEventIds || []) audits.add(auditId);
+  }
+  const source = duplicatePacks.sort((a, b) => b.identityConfidence - a.identityConfidence)[0];
+  return buildPackImport({
+    packId,
+    sourceName: source?.sourceName || 'Client Pack',
+    sourceType: source?.sourceType,
+    rows: [...rows.values()],
+    candidateClientId: owner.id,
+    candidateClientName: owner.name,
+    identityConfidence: Math.max(source?.identityConfidence || 0, owner.dob || owner.nhs ? 0.95 : 0.78),
+    uploadedBy: source?.uploadedBy,
+    auditEventIds: [...audits],
+  });
+}
+
+function mergeVaultEvidence(owner: FullClient, clients: FullClient[]) {
+  const docs = new Map<string, NonNullable<FullClient['vaultDocs']>[number]>();
+  for (const client of clients) {
+    for (const doc of client.vaultDocs || []) {
+      docs.set(doc.fileId || doc.name.toLowerCase(), doc);
+    }
+  }
+  owner.vaultDocs = [...docs.values()];
+}
+
+function isDisposablePackArtifact(client: FullClient) {
+  if (isPlausiblePersonName(client.name) || client.dob || client.nhs || client.address || client.phone) return false;
+  if (client.carePlan?.domains?.some(domain => domain.enabled || domain.identifiedNeed)) return false;
+  if (client.supportPlan?.needs?.length || client.risk?.risks?.some(risk => risk.title || risk.description)) return false;
+  if (client.careCircle?.contacts?.length || client.careCircle?.updates?.length || client.careCircle?.concerns?.length) return false;
+  return true;
+}
+
+export function consolidateDuplicatePackClients(inputClients: FullClient[]): {
+  clients: FullClient[];
+  changed: boolean;
+  removedClientNames: string[];
+} {
+  let clients = inputClients.map(client => ({
+    ...client,
+    packImports: [...(client.packImports || [])],
+    vaultDocs: [...(client.vaultDocs || [])],
+  }));
+  const removedClientNames: string[] = [];
+  let changed = false;
+
+  const packIds = new Set(clients.flatMap(client => (client.packImports || []).map(pack => pack.packId)));
+  for (const packId of packIds) {
+    const owners = clients.filter(client => (client.packImports || []).some(pack => pack.packId === packId));
+    if (owners.length < 2) continue;
+
+    const ranked = [...owners].sort((a, b) => identityQuality(b, packId) - identityQuality(a, packId));
+    const owner = ranked[0];
+    const losers = ranked.slice(1);
+    const duplicatePacks = owners.flatMap(client => (client.packImports || []).filter(pack => pack.packId === packId));
+
+    mergeVaultEvidence(owner, owners);
+    owner.packImports = [
+      mergePackImportsForOwner(owner, packId, duplicatePacks),
+      ...(owner.packImports || []).filter(pack => pack.packId !== packId),
+    ];
+
+    const loserIdsToRemove = new Set<string>();
+    for (const loser of losers) {
+      loser.packImports = (loser.packImports || []).filter(pack => pack.packId !== packId);
+      loser.vaultDocs = (loser.vaultDocs || []).filter(doc => doc.packId !== packId);
+      if (!loser.packImports.length && !loser.vaultDocs.length && isDisposablePackArtifact(loser)) {
+        loserIdsToRemove.add(loser.id);
+        removedClientNames.push(loser.name);
+      }
+    }
+    clients = clients.filter(client => !loserIdsToRemove.has(client.id));
+    changed = true;
+  }
+
+  return { clients, changed, removedClientNames };
 }
 
 function haystack(envelope: NormalizedImportEnvelope, fileName: string) {

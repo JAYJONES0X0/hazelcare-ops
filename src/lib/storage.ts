@@ -11,6 +11,14 @@ let sessionWeekData: WeekSummary | null = null;
 
 type StorageAdapter = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
+function isStorageAdapter(value: unknown): value is StorageAdapter {
+  const candidate = value as Partial<StorageAdapter> | null | undefined;
+  return !!candidate &&
+    typeof candidate.getItem === 'function' &&
+    typeof candidate.setItem === 'function' &&
+    typeof candidate.removeItem === 'function';
+}
+
 const memoryStorage = (() => {
   const store = new Map<string, string>();
   return {
@@ -27,18 +35,11 @@ const memoryStorage = (() => {
 })();
 
 export function getStorage(): StorageAdapter {
-  if (typeof window !== 'undefined') return window.localStorage;
+  if (typeof window !== 'undefined' && isStorageAdapter(window.localStorage)) return window.localStorage;
 
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   if (descriptor && 'value' in descriptor && descriptor.value) {
-    const injected = descriptor.value as Partial<StorageAdapter>;
-    if (
-      typeof injected.getItem === 'function' &&
-      typeof injected.setItem === 'function' &&
-      typeof injected.removeItem === 'function'
-    ) {
-      return injected as StorageAdapter;
-    }
+    if (isStorageAdapter(descriptor.value)) return descriptor.value;
   }
 
   return memoryStorage;

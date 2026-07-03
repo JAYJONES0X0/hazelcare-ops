@@ -3,6 +3,7 @@ import type { WeekSummary } from '../lib/types';
 import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
 import { clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
 import { clearClientData, clearStaffNotes, type FullClient } from '../lib/client-store';
+import { buildClientPackReviewQueue } from '../lib/operational-spine';
 import {
   downloadText,
   careEntriesToEvidenceCsv,
@@ -421,17 +422,9 @@ function DataManagerProp
 }
 
 export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null, clients: FullClient[] }) {
-  const packReviewRows = clients.flatMap(client =>
-    (client.packImports || []).map(pack => ({
-      clientName: client.name || pack.candidateClientName || 'Draft client',
-      pack,
-      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
-      filesTotal: pack.filesTotal,
-      liveReady: !!client.liveGateSummary?.liveReady,
-    }))
-  );
+  const packReviewRows = buildClientPackReviewQueue(clients);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
-  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
 
   const handleClearEverything = async () => {
     if (!confirm('TOTAL CLEAR: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
@@ -491,7 +484,7 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {packReviewRows.slice(0, 6).map(row => (
-              <div key={`${row.clientName}-${row.pack.packId}`} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+              <div key={`${row.clientName}-${row.packId}`} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <span className="text-sm font-black text-hc-text">{row.clientName}</span>
                   <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.liveReady ? 'pill-green' : 'pill-amber'}`}>
@@ -499,7 +492,7 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
                   </span>
                 </div>
                 <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
-                  {row.filesTotal} files seen / {row.reviewItems} need review / {row.pack.filesParsed} parsed
+                  {row.totalFiles} files seen / {row.needsReviewCount} need review / {row.parsedFiles} parsed
                 </p>
               </div>
             ))}

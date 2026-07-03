@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive, Users } from 'lucide-react';
 import JSZip from 'jszip';
-import { emptyClient, loadClients, type FullClient, type PackFileManifestRow } from '../lib/client-store';
+import { emptyClient, loadClients, saveClients, type FullClient, type PackFileManifestRow } from '../lib/client-store';
 import { loadWeekData, mergeWeekSummaries, uid } from '../lib/storage';
 import type { WeekSummary, Page } from '../lib/types';
 import type { NormalizedImportEnvelope, ImportTarget } from '../lib/import-intelligence';
@@ -16,7 +16,12 @@ import { extractFileText } from '../lib/universal-extractor';
 import { appendEntries } from '../lib/entry-store';
 import { parseClientRosterCSV, saveRosterShifts, getRosterSummary, type RosterSummary } from '../lib/roster-store';
 import { enrichEntriesWithRoster } from '../lib/roster-store';
-import { buildPackFileManifestRow } from '../lib/client-pack';
+import {
+  applyPackClientIdentity,
+  buildPackFileManifestRow,
+  consolidateDuplicatePackClients,
+  resolvePackClientIdentity,
+} from '../lib/client-pack';
 
 type UploadDetectedType = 'diary' | 'admission' | 'support-plan' | 'contact-details' | 'roster' | 'unknown';
 type Step = 'choose' | 'extracting' | 'preview' | 'done' | 'error';
@@ -227,26 +232,28 @@ async function extractZipGuidance(file: File, onProgress?: (p: number) => void):
     combined += result.text;
     rows.push(result.row as ZipGuidanceRow);
   }
-  const dominantClient = rows
-    .map(row => row.suggestedClient)
-    .filter(isUsableClientHint)
-    .reduce((acc, name) => {
-      acc.set(name, (acc.get(name) || 0) + 1);
-      return acc;
-    }, new Map<string, number>());
-  const packClient = [...dominantClient.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  if (packClient) {
-    rows.forEach(row => {
-      if (!isUsableClientHint(row.suggestedClient)) {
-        row.suggestedClient = packClient;
-        row.selectedClientId = findClientIdByNameHint(packClient);
-        row.envelope.clientCandidates = [{ name: packClient, preferredName: packClient.split(/\s+/)[0] || '' }];
-      }
-      if (!row.envelope.clientCandidates.length) {
-        row.envelope.clientCandidates = [{ name: row.suggestedClient, preferredName: row.suggestedClient.split(/\s+/)[0] || '' }];
-      }
+  const identityResolution = resolvePackClientIdentity(rows.map(row => row.envelope));
+  const canonicalEnvelopes = applyPackClientIdentity(rows.map(row => row.envelope), identityResolution);
+  rows.forEach((row, index) => {
+    row.envelope = canonicalEnvelopes[index];
+    row.suggestedClient = identityResolution.candidate?.name || 'Identity unresolved';
+    row.selectedClientId = identityResolution.candidate
+      ? findClientIdByNameHint(identityResolution.candidate.name || '')
+      : null;
+    row.manifestRow = buildPackFileManifestRow({
+      packId,
+      envelope: row.envelope,
+      fileName: row.fileName,
+      clientId: row.selectedClientId,
+      clientName: identityResolution.candidate?.name || null,
+      clientConfidence: identityResolution.confidence,
+      matchReason: identityResolution.reason,
+      sizeBytes: row.envelope.source.sizeBytes,
     });
-  }
+    if (identityResolution.ambiguous) {
+      row.envelope.warnings.push(identityResolution.reason);
+    }
+  });
   for (const result of results) {
     if (result && 'error' in result && result.error) readErrors.push(result.error);
   }
@@ -544,17 +551,44 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     let entriesAdded = 0;
     let shiftsAdded = 0;
     const packId = rows[0]?.packId || `pack-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const packRows = rows.map(r => buildPackFileManifestRow({
+    const identityResolution = resolvePackClientIdentity(rows.map(row => row.envelope));
+    const explicitClientIds = Array.from(new Set(
+      rows
+        .filter(row => row.clientMode === 'specific' && row.selectedClientId)
+        .map(row => row.selectedClientId as string)
+    ));
+    if (explicitClientIds.length > 1) {
+      setErrorMsg('One client pack cannot be routed to multiple client profiles. Select one client for the whole pack.');
+      setStep('error');
+      return;
+    }
+    const needsClientProfile = rows.some(row => row.selectedTarget === 'client-docs' || row.selectedTarget === 'templates');
+    if (needsClientProfile && !identityResolution.candidate && explicitClientIds.length === 0) {
+      setErrorMsg(identityResolution.ambiguous
+        ? `${identityResolution.reason} Select one existing client before importing.`
+        : 'Client identity is unresolved. Select one existing client before importing this pack.');
+      setStep('error');
+      return;
+    }
+
+    const canonicalEnvelopes = applyPackClientIdentity(rows.map(row => row.envelope), identityResolution);
+    const canonicalRows = rows.map((row, index) => ({ ...row, envelope: canonicalEnvelopes[index] }));
+    let lockedClientId =
+      explicitClientIds[0] ||
+      (identityResolution.candidate ? findClientIdByNameHint(identityResolution.candidate.name || '') : null);
+    const lockedClient = lockedClientId ? loadClients().find(client => client.id === lockedClientId) : null;
+    const canonicalName = lockedClient?.name || identityResolution.candidate?.name || null;
+    const packRows = canonicalRows.map(r => buildPackFileManifestRow({
       packId,
       envelope: r.envelope,
       fileName: r.fileName,
-      clientId: r.selectedClientId,
-      clientName: isUsableClientHint(r.suggestedClient) ? r.suggestedClient : null,
-      clientConfidence: isUsableClientHint(r.suggestedClient) ? 0.78 : 0,
-      matchReason: isUsableClientHint(r.suggestedClient) ? 'Shared pack identity inferred from uploaded bundle.' : 'No usable client identity found.',
+      clientId: lockedClientId,
+      clientName: canonicalName,
+      clientConfidence: lockedClientId ? 0.95 : identityResolution.confidence,
+      matchReason: lockedClientId ? 'Pack locked to one selected or previously matched client.' : identityResolution.reason,
       sizeBytes: r.envelope.source.sizeBytes,
     }));
-    for (const r of rows) {
+    for (const r of canonicalRows) {
       const selectedTarget = r.selectedTarget as ImportTarget;
       const packRow = packRows.find(row => row.originalFileName === r.fileName) || r.manifestRow;
       if (selectedTarget === 'roster') {
@@ -584,8 +618,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
 
       const res = routeImport(r.envelope, {
         targets: [selectedTarget],
-        clientMode: r.clientMode,
-        selectedClientId: r.selectedClientId,
+        clientMode: lockedClientId ? 'specific' : 'global',
+        selectedClientId: lockedClientId,
         packId,
         packSourceName: preview?.fileName || 'Client Pack',
         packRow,
@@ -593,6 +627,20 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       });
       if (res.ok) {
         success++;
+        if (!lockedClientId && (selectedTarget === 'client-docs' || selectedTarget === 'templates')) {
+          const owner = loadClients().find(client =>
+            (client.packImports || []).some(pack => pack.packId === packId)
+          );
+          lockedClientId = owner?.id || null;
+          if (owner) {
+            packRows.forEach(row => {
+              row.clientMatch.clientId = owner.id;
+              row.clientMatch.name = owner.name;
+              row.clientMatch.confidence = Math.max(row.clientMatch.confidence, 0.95);
+              row.clientMatch.matchReason = 'Pack locked to one evidence-backed client after the first successful write.';
+            });
+          }
+        }
         if (r.envelope.diaryEntries?.length) {
           const enriched = await enrichEntriesWithRoster(r.envelope.diaryEntries);
           entriesAdded += appendEntries(enriched);
@@ -600,6 +648,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
       }
     }
     if (success > 0) {
+      const consolidation = consolidateDuplicatePackClients(loadClients());
+      if (consolidation.changed) saveClients(consolidation.clients);
       const data = loadWeekData();
       if (data) onDataParsed(data);
       getRosterSummary().then(setRosterStatus).catch(() => {});

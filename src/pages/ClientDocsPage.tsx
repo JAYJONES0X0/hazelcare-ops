@@ -17,6 +17,7 @@ import { buildCareCircleOversightCsv, buildCareCircleOversightReportHtml, buildC
 import { careCircleModeLabel } from '../lib/care-circle-status';
 import { downloadText } from '../lib/coordinator-export-pack';
 import type { Page } from '../lib/types';
+import { buildClientPackReviewQueue } from '../lib/operational-spine';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
@@ -611,18 +612,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
   const circleWaitingResponses = circleRows.reduce((sum, row) => sum + row.waitingResponses, 0);
   const circleOverdueResponses = circleRows.reduce((sum, row) => sum + row.overdueItems, 0);
   const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
-  const packQueue = clients.flatMap(client =>
-    (client.packImports || []).map(pack => ({
-      client,
-      pack,
-      unresolved: pack.manifestRows.filter(row => row.reviewRequired).length,
-      criticalMissing: [
-        client.carePlan?.domains?.some(d => d.enabled || d.identifiedNeed) ? '' : 'care plan source',
-        client.risk?.risks?.some(r => r.title || r.description) ? '' : 'reviewed risk state',
-        client.careCircle?.contacts?.length ? '' : 'reviewed contacts',
-      ].filter((item): item is string => Boolean(item)),
-    }))
-  ).sort((a, b) => b.unresolved - a.unresolved || b.pack.uploadedAt.localeCompare(a.pack.uploadedAt));
+  const packQueue = buildClientPackReviewQueue(clients);
 
   function printCareCircleOversight() {
     const win = window.open('', '_blank', 'width=1200,height=900');
@@ -726,27 +716,27 @@ export function ClientDocsPage({ setPage }: Props = {}) {
             </button>
           </div>
           <div className="space-y-3">
-            {packQueue.slice(0, 8).map(({ client, pack, unresolved, criticalMissing }) => (
-              <div key={`${client.id}-${pack.packId}`} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
+            {packQueue.slice(0, 8).map(row => (
+              <div key={`${row.clientId}-${row.packId}`} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-sm font-black text-hc-text">{client.name || pack.candidateClientName || 'Draft client'}</span>
-                    <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{pack.status.replace(/_/g, ' ')}</span>
-                    <span className="pill text-[8px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20">{pack.filesTotal} files seen</span>
-                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${unresolved ? 'pill-red' : 'pill-green'}`}>
-                      {unresolved} review item{unresolved === 1 ? '' : 's'}
+                    <span className="text-sm font-black text-hc-text">{row.clientName}</span>
+                    <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{(row.onboardingStatus || 'DRAFT_CLIENT').replace(/_/g, ' ')}</span>
+                    <span className="pill text-[8px] font-black uppercase tracking-widest bg-hc-teal/10 text-hc-teal border border-hc-teal/20">{row.totalFiles} files seen</span>
+                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.needsReviewCount ? 'pill-red' : 'pill-green'}`}>
+                      {row.needsReviewCount} review item{row.needsReviewCount === 1 ? '' : 's'}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesParsed} parsed</span>
-                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesAttached} attached only</span>
-                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{pack.filesFailed} failed/skipped</span>
-                    {criticalMissing.map(item => (
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.parsedFiles} parsed</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.totalFiles - row.parsedFiles} attached / unresolved</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.nextAction}</span>
+                    {row.missingCriticalEvidence.slice(0, 3).map(item => (
                       <span key={item} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">Missing {item}</span>
                     ))}
                   </div>
                 </div>
-                <button onClick={() => setFilterText(client.name)}
+                <button onClick={() => setFilterText(row.clientName)}
                   className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
                   Review Profile
                 </button>

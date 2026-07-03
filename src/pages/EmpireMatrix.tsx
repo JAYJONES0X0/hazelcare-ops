@@ -4,6 +4,8 @@ import { getAllEntriesAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
 import { computeStaffMonitoring, flattenWeekEntries } from '../lib/staff-monitoring';
 import { loadClients } from '../lib/client-store';
+import { buildClientPackReviewQueue } from '../lib/operational-spine';
+import { RadarLoader } from '../components/NexusLoader';
 import {
   TrendingUp, AlertCircle, Users, Home, Activity, ShieldAlert,
   Archive, ChevronRight, RefreshCw, CheckCircle,
@@ -31,16 +33,9 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
   }, [weekDataProp]);
 
   const weekData = weekDataProp || storedWeekData;
-  const packReviewRows = useMemo(() => loadClients().flatMap(client =>
-    (client.packImports || []).map(pack => ({
-      clientName: client.name || pack.candidateClientName || 'Draft client',
-      pack,
-      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
-      liveReady: !!client.liveGateSummary?.liveReady,
-    }))
-  ), []);
+  const packReviewRows = useMemo(() => buildClientPackReviewQueue(loadClients()), []);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
-  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
 
   // Use the REAL staff quality scores per house
   const snapshot = useMemo(() => computeStaffMonitoring(weekData, { house: 'all' }), [weekData]);
@@ -96,7 +91,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-hc-bg">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin" />
+          <RadarLoader color="#2dd4bf" size={40} />
           <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Loading Regional Overview</div>
         </div>
       </div>

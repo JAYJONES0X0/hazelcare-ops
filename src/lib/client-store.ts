@@ -1,4 +1,5 @@
 // ============================================================
+import { consolidateDuplicatePackClients } from './client-pack';
 
 export interface ClientBasic {
   id: string;
@@ -433,12 +434,15 @@ function cleanMultiline(value: string | undefined | null, max = 2400): string {
 
 function compactVaultDocs(docs: VaultDoc[] | undefined | null, aggressive = false): VaultDoc[] | undefined {
   if (!docs || !docs.length) return docs || undefined;
-  const limit = aggressive ? 2 : 4;
-  const textLimit = aggressive ? 1200 : 6000;
-  return docs.slice(0, limit).map((doc) => ({
+  return docs.map((doc, index) => ({
     ...doc,
     name: cleanText(doc.name, 140),
-    text: cleanText(doc.text, textLimit),
+    text: cleanText(
+      doc.text,
+      aggressive
+        ? (index < 2 ? 1200 : 160)
+        : (index < 4 ? 6000 : 800),
+    ),
   }));
 }
 
@@ -580,7 +584,12 @@ function notifyClientsChanged() {
 export function loadClients(): FullClient[] {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) as FullClient[] : [];
+    const consolidation = consolidateDuplicatePackClients(parsed);
+    if (consolidation.changed) {
+      tryPersistClients(consolidation.clients.map(client => compactClientForStorage(client)));
+    }
+    return consolidation.clients;
   } catch {
     return [];
   }

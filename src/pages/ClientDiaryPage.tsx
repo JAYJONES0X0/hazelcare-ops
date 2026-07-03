@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import type { WeekSummary, CareEntry, Page, PageContext } from '../lib/types';
+import type { WeekSummary, CareEntry, Page, PageContext, Action } from '../lib/types';
 import { loadClients } from '../lib/client-store';
+import { buildWeeklyUpdateDraft, promoteActionCandidate, reviewDiaryEvidence, toNourishSafeText } from '../lib/operational-spine';
+import { saveCommunicationRecordForDraft, saveOutputDraft } from '../lib/operational-output-store';
 
 // ── PDF import types ──────────────────────────────────────────────────────────
 interface PdfDiaryEntry {
@@ -91,7 +93,7 @@ interface Props {
   weekData: WeekSummary | null;
   setPage: (p: Page) => void;
   pageCtx?: PageContext | null;
-  onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string }) => void;
+  onQuickAction: (opts: { type: 'action' | 'incident'; content?: string; house?: string; client?: string; action?: Action }) => void;
 }
 
 function typeColor(type: string) {
@@ -161,6 +163,9 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
   const [typeFilter, setTypeFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
   const [houseFilter, setHouseFilter] = useState('');
+  const [recipientType, setRecipientType] = useState<'family' | 'professional' | 'internal' | 'audit'>('family');
+  const [draftCopied, setDraftCopied] = useState(false);
+  const [createdActionId, setCreatedActionId] = useState<string | null>(null);
 
   // Context Router Receiver
   useEffect(() => {
@@ -295,6 +300,94 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
     }
     return [...entries].sort((a, b) => b.date.localeCompare(a.date));
   }, [selectedClient, mergedDiary, houseFilter, typeFilter, severityFilter]);
+
+  const selectedReviewData = useMemo<WeekSummary | null>(() => {
+    if (!selectedClient || selectedEntries.length === 0) return null;
+    const houseName = houseFilter || selectedEntries.find(e => e.house)?.house || 'Imported diary evidence';
+    return {
+      dateFrom: selectedEntries[selectedEntries.length - 1]?.date || '',
+      dateTo: selectedEntries[0]?.date || '',
+      totalEntries: selectedEntries.length,
+      houses: {
+        [houseName]: {
+          name: houseName,
+          coordinator: '',
+          entries: selectedEntries,
+          incidents: selectedEntries.filter(e => e.category === 'incident'),
+          safeguarding: selectedEntries.filter(e => e.category === 'safeguarding'),
+          medication: selectedEntries.filter(e => e.category === 'medication'),
+          staffPerformance: selectedEntries.filter(e => e.category === 'staff'),
+          healthSafety: selectedEntries.filter(e => e.category === 'health_safety'),
+          handovers: selectedEntries.filter(e => e.category === 'handover'),
+          dailySupport: selectedEntries.filter(e => e.category === 'daily_support'),
+          flags: {
+            red: selectedEntries.filter(e => e.severity === 'red').length,
+            amber: selectedEntries.filter(e => e.severity === 'amber').length,
+            green: selectedEntries.filter(e => e.severity === 'green').length,
+          },
+        },
+      },
+      allFlags: {
+        red: selectedEntries.filter(e => e.severity === 'red'),
+        amber: selectedEntries.filter(e => e.severity === 'amber'),
+        green: selectedEntries.filter(e => e.severity === 'green'),
+      },
+      entryTypes: selectedEntries.reduce<Record<string, number>>((acc, e) => {
+        acc[e.type] = (acc[e.type] || 0) + 1;
+        return acc;
+      }, {}),
+      clients: [selectedClient],
+      carers: Array.from(new Set(selectedEntries.map(e => e.carer).filter(Boolean))),
+      clientDiary: { [selectedClient]: selectedEntries },
+    };
+  }, [houseFilter, selectedClient, selectedEntries]);
+
+  const diaryReview = useMemo(() => reviewDiaryEvidence({
+    weekData: selectedReviewData,
+    house: selectedReviewData ? Object.keys(selectedReviewData.houses)[0] : undefined,
+    resident: selectedClient || undefined,
+  }), [selectedReviewData, selectedClient]);
+
+  const weeklyDraft = useMemo(() => selectedClient
+    ? buildWeeklyUpdateDraft({
+        resident: selectedClient,
+        recipientType,
+        summary: diaryReview.residentSummaries[0] || null,
+        evidence: diaryReview.evidence,
+        dateFrom: selectedReviewData?.dateFrom,
+        dateTo: selectedReviewData?.dateTo,
+      })
+    : null,
+  [selectedClient, recipientType, diaryReview, selectedReviewData?.dateFrom, selectedReviewData?.dateTo]);
+
+  async function copyWeeklyDraft() {
+    if (!weeklyDraft) return;
+    const text = toNourishSafeText(weeklyDraft.text);
+    const savedDraft = saveOutputDraft({ ...weeklyDraft, text, createdAt: new Date().toISOString() });
+    saveCommunicationRecordForDraft(savedDraft, {
+      status: 'copied',
+      summary: `${recipientType} weekly update copied for manager review.`,
+    });
+    await navigator.clipboard.writeText(text);
+    setDraftCopied(true);
+    setTimeout(() => setDraftCopied(false), 1600);
+  }
+
+  function createActionFromCandidate(candidate: Action) {
+    const action = promoteActionCandidate(candidate, {
+      owner: 'Manager review required',
+      createdAt: new Date().toISOString(),
+    });
+    onQuickAction({
+      type: 'action',
+      content: action.description,
+      house: action.house,
+      client: action.resident,
+      action,
+    });
+    setCreatedActionId(action.id);
+    setTimeout(() => setCreatedActionId(null), 1800);
+  }
 
   // PDF drop zone — shown when no weekData AND no PDF entries yet
   const showDropZone = !weekData && pdfEntries.length === 0;
@@ -466,6 +559,77 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
 
             {/* Stats */}
             <ClientStats entries={mergedDiary[selectedClient] || []} />
+
+            <div className="hc-clay-raised border border-hc-teal/20 rounded-[2rem] p-5 mb-6 space-y-5">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                <div>
+                  <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.35em] mb-2">Diary Review Engine</div>
+                  <h3 className="text-lg font-black text-hc-text uppercase tracking-tight">{selectedClient}</h3>
+                  <p className="text-[11px] text-hc-muted font-bold uppercase tracking-widest mt-1">
+                    {diaryReview.evidence.length} evidence items reviewed · {diaryReview.weakEvidence.length} weak entries · {diaryReview.actionCandidates.length} action candidates
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(['family', 'professional', 'internal', 'audit'] as const).map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setRecipientType(type)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${recipientType === type ? 'bg-hc-teal text-hc-bone shadow-xl' : 'hc-clay-inset text-hc-muted hover:text-hc-text'}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                  <button onClick={copyWeeklyDraft} className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                    {draftCopied ? 'Copied' : 'Copy Nourish-safe'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em] mb-3">Detected meaning</div>
+                  <div className="space-y-2 text-[11px] font-semibold text-hc-text">
+                    <div>Support: {diaryReview.residentSummaries[0]?.supportOffered.length || 0}</div>
+                    <div>Activities: {diaryReview.residentSummaries[0]?.activities.length || 0}</div>
+                    <div>Health / GP: {diaryReview.residentSummaries[0]?.healthConcerns.length || 0}</div>
+                    <div>Incidents / escalation: {diaryReview.residentSummaries[0]?.incidents.length || 0}</div>
+                    <div>Refusals: {diaryReview.residentSummaries[0]?.refusals.length || 0}</div>
+                  </div>
+                </div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em] mb-3">Open action hints</div>
+                  <div className="space-y-2">
+                    {diaryReview.actionCandidates.slice(0, 4).map(candidate => (
+                      <div key={candidate.id} className="rounded-xl border border-hc-border/20 bg-hc-border/10 p-3">
+                        <div className="text-[11px] font-semibold text-hc-text leading-relaxed">{candidate.description}</div>
+                        <button
+                          onClick={() => createActionFromCandidate(candidate)}
+                          className="mt-3 btn-clay rounded-lg px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-hc-teal"
+                        >
+                          {createdActionId ? 'Action created' : 'Create action'}
+                        </button>
+                      </div>
+                    ))}
+                    {!diaryReview.carryForwardHints.length && <div className="text-[11px] font-bold text-hc-muted">No carry-forward action hints found in this selection.</div>}
+                  </div>
+                </div>
+                <div className="hc-clay-inset rounded-2xl p-4">
+                  <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em] mb-3">Weekly update draft</div>
+                  <pre className="text-[11px] text-hc-text font-semibold leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto scrollbar-thin">
+                    {weeklyDraft ? toNourishSafeText(weeklyDraft.text) : 'Select a resident to generate a reviewed draft.'}
+                  </pre>
+                </div>
+              </div>
+
+              {(diaryReview.weakEvidence.length > 0 || diaryReview.missingEvidence.length > 0) && (
+                <div className="rounded-2xl border border-flag-amber/30 bg-flag-amber/5 p-4">
+                  <div className="text-[10px] font-black text-flag-amber uppercase tracking-[0.25em] mb-2">Review required</div>
+                  <p className="text-[11px] text-hc-text font-semibold leading-relaxed">
+                    {diaryReview.weakEvidence.length} weak/short/generic entr{diaryReview.weakEvidence.length === 1 ? 'y' : 'ies'} remain visible. Outputs stay review-required until a manager accepts the evidence.
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3 mb-6 hc-clay-raised border border-white/5 p-3 md:p-4 rounded-xl lg:rounded-2xl shadow-xl backdrop-blur-xl">

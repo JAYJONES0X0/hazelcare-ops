@@ -33,6 +33,16 @@ describe('detectProfile', () => {
     expect(env.clientCandidates[0]?.name).toBe('Jamie Morton');
   });
 
+  it('does not treat a support document title in the filename as a client identity', () => {
+    const env = buildEnvelopeFromRaw(
+      'POSITIVE BEHAVIOURAL ASSESSMENT.docx',
+      'Positive Behaviour Support Plan. Review triggers and proactive support strategies.'
+    );
+
+    expect(env.source.detectedType).toBe('support-plan');
+    expect(env.clientCandidates).toEqual([]);
+  });
+
   it('detects care act needs reassessment text as support-plan', () => {
     const raw = `
 Person Name: Lewis Johnson Person ID: 1554538 Adult - Needs Re-Assessment

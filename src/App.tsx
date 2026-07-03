@@ -3,9 +3,10 @@ import { Analytics } from '@vercel/analytics/react';
 import { Sidebar } from './components/Sidebar';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown, Menu } from 'lucide-react';
+import { RadarLoader } from './components/NexusLoader';
 
 import type { WeekSummary, Action, Incident, StaffMember, Page, PageContext } from './lib/types';
-import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff } from './lib/storage';
+import { loadWeekData, loadActions, saveActions, loadIncidents, saveIncidents, loadStaff, saveStaff, uid } from './lib/storage';
 import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
@@ -46,6 +47,14 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m
 const EmpireMatrix = lazy(() => import('./pages/EmpireMatrix').then(m => ({ default: m.EmpireMatrix })));
 const SovereignTrainingHub = lazy(() => import('./pages/SovereignTrainingHub'));
 const NourishTaskPack = lazy(() => import('./pages/NourishTaskPack').then(m => ({ default: m.NourishTaskPack })));
+
+type QuickActionRequest = {
+  type: 'action' | 'incident';
+  content?: string;
+  house?: string;
+  client?: string;
+  action?: Action;
+};
 
 
 export default function App() {
@@ -151,7 +160,22 @@ export default function App() {
   const [actions, setActions] = useState<Action[]>(() => loadActions());
   const [incidents, setIncidents] = useState<Incident[]>(() => loadIncidents());
   const [staff, setStaff] = useState<StaffMember[]>(() => loadStaff());
-  const [clients] = useState<FullClient[]>(() => loadClients());
+  const [clients, setClients] = useState<FullClient[]>(() => loadClients());
+
+  useEffect(() => {
+    const refreshClients = () => setClients(loadClients());
+    refreshClients();
+    window.addEventListener('hc-clients-updated', refreshClients);
+    window.addEventListener('storage', refreshClients);
+    return () => {
+      window.removeEventListener('hc-clients-updated', refreshClients);
+      window.removeEventListener('storage', refreshClients);
+    };
+  }, []);
+
+  useEffect(() => {
+    setClients(loadClients());
+  }, [page]);
 
   useEffect(() => {
     // Avoid full-history rebuild on startup when session week data already exists.
@@ -181,6 +205,55 @@ export default function App() {
     await handleWeekDataUpdate(data);
     setPage('dashboard');
   }, [handleWeekDataUpdate, setPage]);
+
+  const handleQuickAction = useCallback((opts: QuickActionRequest) => {
+    if (opts.type !== 'action') return;
+    const evidenceId = `ev-quick-${uid()}`;
+    const actionId = `action-${uid()}`;
+    const action: Action = opts.action || {
+      id: actionId,
+      title: opts.client ? `Follow up ${opts.client}` : 'Follow up operational evidence',
+      description: opts.content || 'Review source evidence and decide next action.',
+      house: opts.house || 'General',
+      resident: opts.client,
+      owner: 'Manager review required',
+      priority: 'medium',
+      status: 'open',
+      operationalState: 'not_started',
+      createdAt: new Date().toISOString(),
+      dueDate: '',
+      sourceEvidence: opts.content ? [{
+        id: evidenceId,
+        sourceType: 'manual_note',
+        sourceId: `quick-${actionId}`,
+        title: opts.client ? `${opts.client} quick action source` : 'Quick action source',
+        resident: opts.client,
+        house: opts.house,
+        excerpt: opts.content,
+        confidence: 0.6,
+        reviewState: 'review_required',
+        usedForOutput: false,
+      }] : [],
+      stateHistory: [{
+        id: `state-${uid()}`,
+        actionId,
+        to: 'not_started',
+        at: new Date().toISOString(),
+        by: 'Current User',
+        reason: 'Created from operational evidence.',
+        evidenceIds: opts.content ? [evidenceId] : [],
+      }],
+      carryForward: true,
+      tags: ['quick-action', 'evidence-linked'],
+    };
+    setActions(current => {
+      if (current.some(item => item.id === action.id)) return current;
+      const next = [action, ...current];
+      saveActions(next);
+      return next;
+    });
+    setPage('actions');
+  }, [setPage]);
 
   const handleGlobalDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -289,7 +362,7 @@ export default function App() {
   if (!sessionLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-hc-bg">
-        <div className="w-12 h-12 rounded-full border-4 border-hc-teal/20 border-t-hc-teal animate-spin" />
+        <RadarLoader color="#2dd4bf" size={48} />
       </div>
     );
   }
@@ -358,7 +431,7 @@ export default function App() {
               </div>
               <Suspense fallback={
                 <div className="px-4 sm:px-6 py-10">
-                  <div className="w-10 h-10 rounded-full border-4 border-hc-teal/20 border-t-hc-teal animate-spin" />
+                  <RadarLoader color="#2dd4bf" size={32} />
                 </div>
               }>
                 {page === 'briefing' && <BriefingPage weekData={weekData} actions={actions} setPage={setPage} />}
@@ -375,9 +448,9 @@ export default function App() {
                 {page === 'handover' && <HandoverPage weekData={weekData} />}
                 {page === 'compliance' && <CompliancePage staff={staff} onUpdate={(u) => { setStaff(u); saveStaff(u); }} />}
                 {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
-                {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={() => {}} />}
+                {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={handleQuickAction} />}
                 {page === 'client-docs' && <ClientDocsPage setPage={setPage} />}
-                {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={() => {}} />}
+                {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={handleQuickAction} />}
                 {page === 'agency' && <AgencyPortalPage />}
                 {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
                 {page === 'settings' && canAccessPage(userRole, 'settings') && <SettingsPage onSignOut={handleSignOut} setPage={setPage} />}

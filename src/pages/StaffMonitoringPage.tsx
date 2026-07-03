@@ -11,6 +11,7 @@ import { scoreEntry } from '../lib/entry-rubric';
 import { auditTaskNotes, type TaskNoteCarerSummary, type TaskNoteGap } from '../lib/task-note-auditor';
 import { buildEnvelopeFromRaw } from '../lib/import-profiles';
 import { RefreshCw, ChevronRight, Activity, MessageSquare, History, FileText, Copy, CheckCheck, AlertTriangle, TrendingDown, BookOpen, Zap, Award, ShieldAlert, ClipboardCheck, ClipboardList, ChevronDown } from 'lucide-react';
+import { RadarLoader } from '../components/NexusLoader';
 import type { StaffScorecard } from '../lib/staff-monitoring';
 import { extractFileText } from '../lib/universal-extractor';
 import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
@@ -628,8 +629,8 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
         {booting && (
           <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-hc-surface/50 min-h-[600px]">
              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 border-4 border-hc-teal/20 border-t-hc-teal rounded-full animate-spin mb-4" />
-                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em]">Quantifying Clinical Matrix</div>
+                <RadarLoader color="#2dd4bf" size={48} />
+                <div className="text-[11px] font-black text-hc-teal animate-pulse uppercase tracking-[0.3em] mt-4">Quantifying Clinical Matrix</div>
                 <div className="text-[10px] text-hc-muted uppercase mt-2 tracking-widest">Reviewing staff notes</div>
              </div>
           </div>

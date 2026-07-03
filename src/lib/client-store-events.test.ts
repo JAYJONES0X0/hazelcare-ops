@@ -43,4 +43,32 @@ describe('client store change events', () => {
     expect((dispatchEvent.mock.calls[0][0] as Event).type).toBe('hc-clients-updated');
     expect(loadClients()).toHaveLength(1);
   });
+
+  it('preserves every vault document record when compacting client storage', () => {
+    const localStorage = createLocalStorageMock({ 'hc-schema-v': '3' });
+    vi.stubGlobal('localStorage', localStorage);
+    vi.stubGlobal('window', { dispatchEvent: vi.fn() } as unknown as Window);
+
+    const client = emptyClient();
+    client.name = 'Alistair Gunn';
+    client.vaultDocs = Array.from({ length: 9 }, (_, index) => ({
+      id: `vault-${index}`,
+      name: `Evidence ${index + 1}.pdf`,
+      text: `Evidence text ${index + 1}`,
+      uploadedAt: '2026-06-24T10:00:00.000Z',
+      packId: 'pack-alistair',
+      fileId: `file-${index}`,
+      category: 'unknown' as const,
+      parseStatus: 'ATTACHED_ONLY' as const,
+      classificationConfidence: 0.2,
+      reviewRequired: true,
+      sourceFileName: `Evidence ${index + 1}.pdf`,
+      targetScreen: 'Review Queue' as const,
+      rejectedReasons: [],
+    }));
+
+    saveClient(client);
+
+    expect(loadClients()[0].vaultDocs).toHaveLength(9);
+  });
 });

@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyEnvelope } from './import-intelligence';
 import { buildEnvelopeFromRaw } from './import-profiles';
 import { routeImport } from './import-router';
-import { loadClients } from './client-store';
+import { emptyClient, loadClients } from './client-store';
 import {
+  applyPackClientIdentity,
   buildPackFileManifestRow,
   buildPackImport,
   clientLiveGateSummary,
+  consolidateDuplicatePackClients,
+  resolvePackClientIdentity,
 } from './client-pack';
 
 function storageMock() {
@@ -119,6 +122,123 @@ describe('client pack manifest', () => {
       expect.objectContaining({ id: 'risk', status: 'blocked' }),
       expect.objectContaining({ id: 'contacts', status: 'blocked' }),
       expect.objectContaining({ id: 'files', status: 'blocked' }),
+    ]));
+  });
+
+  it('uses evidence-backed identity for a pack and rejects document titles inferred from filenames', () => {
+    const tenancy = emptyEnvelope('AG Tenancy.pdf', '');
+    tenancy.clientCandidates = [{ name: 'AG Tenancy' }];
+
+    const finance = emptyEnvelope('Financial Assessment.pdf', 'Financial assessment and benefits review.');
+    finance.clientCandidates = [{ name: 'Financial Assessment' }];
+
+    const mentalHealth = emptyEnvelope('Mental Health act AG.pdf', 'Mental Health Act review document.');
+    mentalHealth.clientCandidates = [{ name: 'Mental Health' }];
+
+    const carePlan = buildEnvelopeFromRaw(
+      'Alistair Gunn Care Plan.pdf',
+      'Person ID Full name Date of Birth Gender 102142 MR Alistair Gunn 11/03/1992 Care Plan Nutrition Medication'
+    );
+
+    const admission = buildEnvelopeFromRaw(
+      'Emergency Admisssion Pack Alistair.pdf',
+      'Person ID Full name Date of Birth Gender 102142 MR Alistair Gunn 11/03/1992 Emergency Admission Pack'
+    );
+    admission.clientCandidates = [{
+      name: 'Alistair Gunn',
+      preferredName: 'Alistair',
+      dob: '11/03/1992',
+    }];
+
+    const resolved = resolvePackClientIdentity([tenancy, finance, mentalHealth, carePlan, admission]);
+
+    expect(resolved).toEqual(expect.objectContaining({
+      candidate: expect.objectContaining({
+        name: 'Alistair Gunn',
+        dob: '11/03/1992',
+      }),
+      confidence: expect.any(Number),
+      ambiguous: false,
+    }));
+    expect(resolved.confidence).toBeGreaterThanOrEqual(0.9);
+    expect(resolved.rejectedNames).toEqual(expect.arrayContaining([
+      'AG Tenancy',
+      'Financial Assessment',
+      'Mental Health',
+    ]));
+
+    const canonical = applyPackClientIdentity(
+      [tenancy, finance, mentalHealth, carePlan, admission],
+      resolved,
+    );
+    expect(canonical.every(envelope => envelope.clientCandidates[0]?.name === 'Alistair Gunn')).toBe(true);
+    expect(canonical.every(envelope => envelope.clientCandidates[0]?.dob === '11/03/1992')).toBe(true);
+  });
+
+  it('consolidates duplicate profiles created from one pack without losing vault evidence', () => {
+    const makeClient = (name: string, fileName: string, hasIdentity = false) => {
+      const client = emptyClient();
+      client.id = `client-${name.toLowerCase().replace(/\s+/g, '-')}`;
+      client.name = name;
+      client.preferredName = name.split(/\s+/)[0];
+      if (hasIdentity) {
+        client.dob = '11/03/1992';
+        client.nhs = '486 846 3039';
+      }
+      client.vaultDocs = [{
+        id: `vault-${fileName}`,
+        name: fileName,
+        text: fileName,
+        uploadedAt: '2026-06-24T10:00:00.000Z',
+        packId: 'pack-alistair',
+        fileId: `file-${fileName}`,
+        category: 'unknown',
+        parseStatus: 'ATTACHED_ONLY',
+        classificationConfidence: 0.2,
+        reviewRequired: true,
+        sourceFileName: fileName,
+        targetScreen: 'Review Queue',
+        rejectedReasons: [],
+      }];
+      client.packImports = [{
+        packId: 'pack-alistair',
+        uploadedAt: '2026-06-24T10:00:00.000Z',
+        uploadedBy: 'local-session',
+        sourceName: 'OneDrive_1_6-15-2026.zip',
+        sourceType: 'zip',
+        status: 'DRAFT_CLIENT',
+        candidateClientId: client.id,
+        candidateClientName: name,
+        identityConfidence: hasIdentity ? 0.95 : 0.2,
+        filesTotal: 3,
+        filesParsed: 1,
+        filesAttached: 2,
+        filesFailed: 0,
+        filesNeedsReview: 2,
+        manifestRows: [],
+        auditEventIds: [],
+      }];
+      return client;
+    };
+
+    const result = consolidateDuplicatePackClients([
+      makeClient('Mental Health', 'Mental Health act AG.pdf'),
+      makeClient('Financial Assessment', 'Financial Assessment.pdf'),
+      makeClient('Alistair Gunn', 'Alistair Gunn Care Plan.pdf', true),
+    ]);
+
+    expect(result.changed).toBe(true);
+    expect(result.clients).toHaveLength(1);
+    expect(result.clients[0].name).toBe('Alistair Gunn');
+    expect(result.clients[0].vaultDocs?.map(doc => doc.name)).toEqual(expect.arrayContaining([
+      'Mental Health act AG.pdf',
+      'Financial Assessment.pdf',
+      'Alistair Gunn Care Plan.pdf',
+    ]));
+    expect(result.clients[0].packImports).toHaveLength(1);
+    expect(result.removedClientNames).toEqual(expect.arrayContaining([
+      'Mental Health',
+      'Financial Assessment',
     ]));
   });
 });

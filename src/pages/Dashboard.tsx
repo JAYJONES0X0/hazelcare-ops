@@ -6,6 +6,7 @@ import { buildWeekSummary } from '../lib/universal-parser';
 import { useCollapseStore } from '../lib/collapse-store';
 import { detectClinicalGaps } from '../lib/continuity-engine';
 import { loadClients } from '../lib/client-store';
+import { ACTION_STATE_LABELS, buildClientPackReviewQueue, buildHouseDailyState, mapActionToOperationalState, reviewStaffSafetyEvidence } from '../lib/operational-spine';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -58,15 +59,8 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const [filteredData, setFilteredData] = useState<WeekSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [totalInStore, setTotalInStore] = useState(0);
-  const packReviewRows = useMemo(() => loadClients().flatMap(client =>
-    (client.packImports || []).map(pack => ({
-      clientName: client.name || pack.candidateClientName || 'Draft client',
-      pack,
-      reviewItems: pack.manifestRows.filter(row => row.reviewRequired).length,
-      liveReady: !!client.liveGateSummary?.liveReady,
-    }))
-  ), []);
-  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.reviewItems, 0);
+  const packReviewRows = useMemo(() => buildClientPackReviewQueue(loadClients()), []);
+  const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
 
   const {
@@ -163,6 +157,18 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
 
   // Active data reference
   const data = dateFrom || dateTo ? (filteredData || weekData) : weekData;
+  const dateLabel = dateFrom || dateTo
+    ? `${dateFrom ? formatDisplayDate(dateFrom) : '...'} -> ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
+    : 'All Time';
+  const commandHouse = houseStats[0]?.name || Object.keys(data?.houses || {})[0] || 'No house selected';
+  const houseCommand = useMemo(
+    () => buildHouseDailyState({ weekData: data, actions, house: commandHouse, dateLabel }),
+    [data, actions, commandHouse, dateLabel]
+  );
+  const staffSafetyReview = useMemo(
+    () => reviewStaffSafetyEvidence({ entries: data?.houses[commandHouse]?.entries || [], house: commandHouse }),
+    [data, commandHouse]
+  );
 
   // â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!data) {
@@ -197,10 +203,6 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
       </div>
     );
   }
-
-  const dateLabel = dateFrom || dateTo
-    ? `${dateFrom ? formatDisplayDate(dateFrom) : '…'} → ${dateTo ? formatDisplayDate(dateTo) : 'Today'}`
-    : 'All Time';
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -301,8 +303,8 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             </div>
             <div className="flex flex-wrap gap-2">
               {packReviewRows.slice(0, 3).map(row => (
-                <span key={`${row.clientName}-${row.pack.packId}`} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">
-                  {row.clientName}: {row.reviewItems} review
+                <span key={`${row.clientName}-${row.packId}`} className="pill pill-amber text-[8px] font-black uppercase tracking-widest">
+                  {row.clientName}: {row.needsReviewCount} review
                 </span>
               ))}
             </div>
@@ -311,6 +313,102 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             </button>
           </div>
         )}
+
+        <div className="hc-clay-raised border border-hc-teal/20 p-6 rounded-[2rem] space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.35em] mb-2">Daily House Command</div>
+              <h2 className="text-2xl font-black text-hc-text uppercase tracking-tight">{houseCommand.house}</h2>
+              <p className="text-[11px] text-hc-muted font-bold uppercase tracking-widest mt-1">
+                {houseCommand.evidenceCount} evidence items · {houseCommand.residentCount} residents · {houseCommand.openActions.length} open actions
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setPage('client-diary', { house: houseCommand.house })} className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                Review Diaries
+              </button>
+              <button onClick={() => setPage('handover')} className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                Generate Handover
+              </button>
+              <button onClick={() => setPage('actions')} className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                Create Action
+              </button>
+              <button onClick={() => setPage('communications')} className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                Log Contact
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+            {[
+              ['Waiting staff', houseCommand.waitingFeedback.length],
+              ['Waiting professionals', houseCommand.waitingProfessionals.length],
+              ['Appointments', houseCommand.appointments.length],
+              ['Health follow-up', houseCommand.healthFollowUps.length],
+              ['Risk/escalation', houseCommand.escalationFlags.length],
+              ['Carry forward', houseCommand.carryForwardItems.length],
+              ['Missing evidence', houseCommand.missingEvidence.length],
+            ].map(([label, value]) => (
+              <div key={label} className="hc-clay-inset rounded-2xl p-4">
+                <div className="text-xl font-black text-hc-text tabular-nums">{value}</div>
+                <div className="text-[9px] font-black text-hc-muted uppercase tracking-widest mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {staffSafetyReview.reviewRequired && (
+            <div className="rounded-2xl border border-flag-red/20 bg-flag-red/5 p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+              <div className="flex-1">
+                <div className="text-[10px] font-black text-flag-red uppercase tracking-[0.25em] mb-2">Staff Safety Review</div>
+                <p className="text-[11px] text-hc-text font-semibold leading-relaxed">
+                  {staffSafetyReview.categories.length} category signal{staffSafetyReview.categories.length === 1 ? '' : 's'} found from {staffSafetyReview.evidence.length} evidence item{staffSafetyReview.evidence.length === 1 ? '' : 's'}.
+                  {' '}This guides review; it does not decide safeguarding, police, or clinical action.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {staffSafetyReview.categories.slice(0, 4).map(category => (
+                  <span key={category} className="pill pill-red text-[8px] font-black uppercase tracking-widest">
+                    {category.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+              <button onClick={() => setPage('client-diary', { house: houseCommand.house })} className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-flag-red">
+                Review Evidence
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em] mb-3">Open loops</div>
+              <div className="space-y-2">
+                {houseCommand.openActions.slice(0, 4).map(action => (
+                  <div key={action.id} className="flex items-center justify-between gap-3 text-[11px]">
+                    <span className="font-black text-hc-text uppercase truncate">{action.title}</span>
+                    <span className="text-hc-muted font-black uppercase shrink-0">{ACTION_STATE_LABELS[mapActionToOperationalState(action)]}</span>
+                  </div>
+                ))}
+                {!houseCommand.openActions.length && <div className="text-[11px] font-bold text-hc-muted">No open actions recorded for this house.</div>}
+              </div>
+            </div>
+            <div className="hc-clay-inset rounded-2xl p-4">
+              <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em] mb-3">Evidence alerts</div>
+              <div className="space-y-2">
+                {Array.from(
+                  new Map(
+                    [...houseCommand.escalationFlags, ...houseCommand.healthFollowUps, ...houseCommand.appointments]
+                      .map(item => [item.id, item])
+                  ).values()
+                ).slice(0, 4).map(item => (
+                  <div key={item.id} className="text-[11px] font-semibold text-hc-text leading-relaxed">
+                    <span className="font-black uppercase text-hc-teal">{item.resident || 'Resident'}:</span> {item.excerpt}
+                  </div>
+                ))}
+                {!houseCommand.evidenceCount && <div className="text-[11px] font-bold text-flag-amber">No diary evidence loaded for this house.</div>}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* -- KPI PODS -- */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

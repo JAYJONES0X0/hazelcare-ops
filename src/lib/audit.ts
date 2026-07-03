@@ -1,4 +1,4 @@
-import { loadWeekData } from './storage';
+import { getStorage, loadWeekData } from './storage';
 
 export type AuditAction = 
   | 'document_generated' 
@@ -64,7 +64,7 @@ function resolveUserId(): string {
 
 export function loadAuditTrail(): AuditEntry[] {
   try {
-    const raw = localStorage.getItem(AUDIT_KEY);
+    const raw = getStorage().getItem(AUDIT_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -86,7 +86,7 @@ export function logAuditAction(action: AuditAction, details: string, metadata?: 
   trail.unshift(entry);
   // Keep last 1000 entries to prevent localStorage bloat
   const limitedTrail = trail.slice(0, 1000);
-  localStorage.setItem(AUDIT_KEY, JSON.stringify(limitedTrail));
+  getStorage().setItem(AUDIT_KEY, JSON.stringify(limitedTrail));
   
   if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
     window.dispatchEvent(new CustomEvent('hc-audit-updated', { detail: entry }));
