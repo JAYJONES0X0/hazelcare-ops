@@ -4,7 +4,7 @@ Browser-first operational intelligence for supported living teams. CareOps inges
 
 ## Positioning
 
-CareOps is not a replacement care-record system. It is the operational intelligence layer above systems such as Nourish and CarePlanner. It helps managers see what needs attention now, improve documentation quality, and produce evidence before audit pressure hits.
+CareOps is not a replacement care-record system. It is the supported-living care-operations vertical of the wider Aegis OS thesis: turn fragmented evidence into manager-ready action, reviewed outputs, and audit proof. It can import from existing record systems, but its value is the CareOps operating loop: evidence, action, review, output, and audit.
 
 ## Architecture
 

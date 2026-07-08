@@ -79,7 +79,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
           <Upload className="w-12 h-12 text-hc-teal opacity-20" />
         </div>
         <h2 className="text-3xl font-black text-hc-text tracking-[0.4em] uppercase mb-6 text-center">No Data Yet</h2>
-        <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm">Drop in a CarePlanner or Nourish CSV export to initialise the briefing.</p>
+        <p className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em] mb-12 text-center max-w-sm">Drop in a diary CSV/PDF export to initialise the briefing.</p>
         <button onClick={() => setPage('upload')} className="btn-clay btn-clay-teal h-[70px] px-12">Import Hub</button>
       </div>
     );

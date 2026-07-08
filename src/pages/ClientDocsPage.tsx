@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadClients, saveClient, deleteClient, emptyClient, resolveClientMatch, type ClientDocument, type FullClient } from '../lib/client-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
@@ -10,7 +10,7 @@ import { PBSBuilder } from './PBSBuilder';
 import { RiskBuilder } from './RiskBuilder';
 import { CarePlanBuilder } from './CarePlanBuilder';
 import { CareCirclePanel } from './CareCirclePanel';
-import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users, Archive } from 'lucide-react';
+import { Trash2, AlertTriangle, Sparkles, Loader2, FileText, CheckCircle, Upload, ExternalLink, X, Users, Archive, WalletCards } from 'lucide-react';
 import { uid } from '../lib/storage';
 import { extractFileText } from '../lib/universal-extractor';
 import { buildCareCircleOversightCsv, buildCareCircleOversightReportHtml, buildCareCircleOversightRows } from '../lib/care-circle-oversight';
@@ -18,6 +18,7 @@ import { careCircleModeLabel } from '../lib/care-circle-status';
 import { downloadText } from '../lib/coordinator-export-pack';
 import type { Page } from '../lib/types';
 import { buildClientPackReviewQueue } from '../lib/operational-spine';
+import { buildFinanceOversightSummary, loadFinanceState } from '../lib/client-finance';
 
 type SubView = 'list' | 'pbs' | 'risk' | 'careplan' | 'carecircle' | 'import';
 
@@ -43,6 +44,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
   const [exportLayout, setExportLayout] = useState<ExportLayout>('portrait');
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [copiedToken, setCopiedToken] = useState('');
+  const [financeState, setFinanceState] = useState(() => loadFinanceState());
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const docUploadRef = useRef<HTMLInputElement>(null);
@@ -532,7 +534,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                   <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">Recommended move</div>
                     <div className="text-[11px] text-hc-text/75 leading-relaxed">
-                      Build out the hotspot categories first, then paste each generated note into Nourish under the matching category heading. That keeps the pack readable when printed and gives you a fast manual fallback if AI is not needed.
+                      Build out the hotspot categories first, then route each generated note into the matching CareOps category or the chosen care-record system. That keeps the pack readable when printed and gives you a fast manual fallback if AI is not needed.
                     </div>
                   </div>
 
@@ -613,6 +615,22 @@ export function ClientDocsPage({ setPage }: Props = {}) {
   const circleOverdueResponses = circleRows.reduce((sum, row) => sum + row.overdueItems, 0);
   const circleRecentShares = circleRows.filter(row => row.status.recentShare).length;
   const packQueue = buildClientPackReviewQueue(clients);
+  const financeSummary = buildFinanceOversightSummary({
+    accounts: financeState.accounts,
+    receipts: financeState.receipts,
+    transactions: financeState.transactions,
+    exceptions: financeState.exceptionLog,
+  });
+
+  useEffect(() => {
+    const refreshFinanceState = () => setFinanceState(loadFinanceState());
+    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
+    window.addEventListener('storage', refreshFinanceState);
+    return () => {
+      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
+      window.removeEventListener('storage', refreshFinanceState);
+    };
+  }, []);
 
   function printCareCircleOversight() {
     const win = window.open('', '_blank', 'width=1200,height=900');
@@ -746,6 +764,52 @@ export function ClientDocsPage({ setPage }: Props = {}) {
         </section>
       )}
 
+      {financeSummary.rows.length > 0 && (
+        <section className="mb-8 hc-clay-raised rounded-[2rem] p-6 border border-hc-authority/20">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="section-header text-[10px] mb-2 flex items-center gap-2">
+                <WalletCards className="w-4 h-4 text-hc-authority" />
+                Client Money Review Queue
+              </div>
+              <p className="text-xs text-hc-muted font-medium max-w-3xl leading-relaxed">
+                Money records stay reviewable until receipts, exceptions, balances, and reconciliation evidence are closed. This is financial safeguarding, not accounting automation.
+              </p>
+            </div>
+            <button onClick={() => setPage?.('client-finance')}
+              className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+              Open Money Safeguarding
+            </button>
+          </div>
+          <div className="space-y-3">
+            {financeSummary.rows.slice(0, 8).map(row => (
+              <div key={row.accountId} className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-4 bg-hc-border/10 border border-hc-border/20 rounded-2xl p-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-sm font-black text-hc-text">{row.personName}</span>
+                    <span className="pill pill-purple text-[8px] font-black uppercase tracking-widest">{row.accountLabel}</span>
+                    <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.state === 'urgent' ? 'pill-red' : row.state === 'review' ? 'pill-amber' : 'pill-green'}`}>
+                      {row.state === 'clear' ? 'clear' : row.state}
+                    </span>
+                    <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{row.missingReceipts} missing receipt{row.missingReceipts === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.house}</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.openExceptions} open exception{row.openExceptions === 1 ? '' : 's'}</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.pendingReviews} pending review{row.pendingReviews === 1 ? '' : 's'}</span>
+                    <span className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">{row.nextAction}</span>
+                  </div>
+                </div>
+                <button onClick={() => setPage?.('client-finance')}
+                  className="btn-clay rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-hc-muted">
+                  Review Money
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {circleRows.length > 0 && (
         <section className="mb-8 hc-clay-raised rounded-[2rem] p-6 border border-hc-border/20">
           <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4 mb-5">
@@ -868,7 +932,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+        <div className="client-card-grid gap-6">
           {filtered.map((client, idx) => {
             const hasPBS = !!(client.pbs && client.pbs.aboutText);
             const hasRisk = !!(client.risk && client.risk.risks.some(r => r.title));
@@ -909,7 +973,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <h2 className="text-2xl font-black text-hc-text tracking-tight group-hover:text-hc-teal transition-colors">{client.name}</h2>
+                        <h2 className="text-2xl font-black text-hc-text tracking-tight leading-tight break-words group-hover:text-hc-teal transition-colors">{client.name}</h2>
                         {topRisk > 0 && (
                           <span className="pill text-[9px] font-black uppercase tracking-widest animate-pulse-soft"
                             style={{ background: riskColor + '22', color: riskColor, border: `1px solid ${riskColor}44` }}>
@@ -933,7 +997,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                         <div className="h-3 w-px bg-hc-border/40 hidden md:block" />
                         <div className="flex items-center gap-2">
                           {client.diagnoses.slice(0, 3).map((d, i) => (
-                            <span key={i} className="text-[9px] font-black bg-hc-border/20 border border-hc-border/20 px-2.5 py-0.5 rounded-lg text-hc-muted uppercase tracking-tighter truncate max-w-[140px]">
+                            <span key={i} className="text-[9px] font-black bg-hc-border/20 border border-hc-border/20 px-2.5 py-0.5 rounded-lg text-hc-muted uppercase tracking-tighter max-w-full break-words leading-snug">
                               {d}
                             </span>
                           ))}
@@ -976,8 +1040,8 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex flex-wrap items-center gap-8">
+                  <div className="flex flex-col 2xl:flex-row 2xl:items-start justify-between gap-6">
+                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 min-w-0">
                       {/* PBS */}
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
@@ -1048,26 +1112,26 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 ml-auto">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 min-w-0 2xl:justify-end 2xl:ml-auto">
                       <button onClick={openClientPackImport}
-                        className="inline-flex items-center gap-2 text-[10px] font-black text-hc-muted uppercase tracking-widest hover:text-hc-text transition-colors">
+                        className="inline-flex items-center gap-2 text-[10px] font-black text-hc-muted uppercase tracking-widest hover:text-hc-text transition-colors whitespace-nowrap">
                         <Archive className="w-3.5 h-3.5" />
                         Import Pack
                       </button>
-                      <div className="h-4 w-px bg-hc-border/40" />
+                      <div className="h-4 w-px bg-hc-border/40 hidden sm:block" />
                       <button onClick={() => openCareCircle(client.id)}
-                        className="inline-flex items-center gap-2 text-[10px] font-black text-[#5d0565] uppercase tracking-widest hover:text-hc-text transition-colors">
+                        className="inline-flex items-center gap-2 text-[10px] font-black text-[#5d0565] uppercase tracking-widest hover:text-hc-text transition-colors whitespace-nowrap">
                         <Users className="w-3.5 h-3.5" />
                         Care Circle
                       </button>
-                      <div className="h-4 w-px bg-hc-border/40" />
+                      <div className="h-4 w-px bg-hc-border/40 hidden sm:block" />
                       <button onClick={() => { setImportTarget(client.id); setSubView('import'); }}
-                        className="text-[10px] font-black text-hc-teal uppercase tracking-widest hover:text-hc-text transition-colors">
+                        className="text-[10px] font-black text-hc-teal uppercase tracking-widest hover:text-hc-text transition-colors whitespace-nowrap">
                         Intelligence Sync
                       </button>
-                      <div className="h-4 w-px bg-hc-border/40" />
+                      <div className="h-4 w-px bg-hc-border/40 hidden sm:block" />
                       <button onClick={() => handleDelete(client.id, client.name)}
-                        className="text-[10px] font-black text-hc-muted/40 hover:text-flag-red transition-colors uppercase tracking-widest">
+                        className="text-[10px] font-black text-hc-muted/40 hover:text-flag-red transition-colors uppercase tracking-widest whitespace-nowrap">
                         Delete
                       </button>
                     </div>
@@ -1093,7 +1157,11 @@ export function ClientDocsPage({ setPage }: Props = {}) {
 
                   {(!client.documents || client.documents.length === 0) ? (
                     <div className="py-8 text-center bg-hc-border/10 border border-dashed border-hc-border/40 rounded-2xl">
-                      <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest italic">No external files attached to this profile</p>
+                      <p className="text-[10px] text-hc-muted font-bold uppercase tracking-widest italic px-4 leading-relaxed">
+                        {manifestRows.length
+                          ? 'No manually uploaded external files. Imported pack evidence is shown below.'
+                          : 'No external files attached to this profile'}
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1104,7 +1172,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                               <FileText className="w-4 h-4 text-hc-teal" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black text-hc-text truncate pr-2" title={doc.name}>{doc.name}</p>
+                              <p className="text-[11px] font-black text-hc-text break-words leading-snug pr-2" title={doc.name}>{doc.name}</p>
                               <p className="text-[8px] text-hc-muted font-bold uppercase tracking-tighter">
                                 {new Date(doc.uploadedAt).toLocaleDateString('en-GB')}
                               </p>
@@ -1151,7 +1219,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                         <div key={row.fileId} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
                           <div className="flex items-start justify-between gap-3 mb-2">
                             <div className="min-w-0">
-                              <div className="text-[11px] font-black text-hc-text truncate" title={row.originalFileName}>{row.originalFileName}</div>
+                              <div className="text-[11px] font-black text-hc-text break-words leading-snug" title={row.originalFileName}>{row.originalFileName}</div>
                               <div className="text-[8px] font-black text-hc-muted uppercase tracking-widest">{row.targetScreen} source</div>
                             </div>
                             <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.reviewRequired ? 'pill-amber' : 'pill-green'}`}>

@@ -357,7 +357,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
       '',
       `Hi ${firstName},`,
       '',
-      `I've been reviewing your task notes on the Nourish app and I want to flag some concerns. ${complianceStatement}`,
+      `I've been reviewing your task notes in the care record and I want to flag some concerns. ${complianceStatement}`,
       '',
       `Task notes are not optional extras — they are the legal record that a specific care task was completed to the required standard. When they are blank, vague, or generic, we have no evidence that the care happened at all.`,
       '',
@@ -619,7 +619,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
             disabled={!setPage}
             className="flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 hc-clay-raised text-hc-text disabled:opacity-40"
           >
-            <ClipboardList size={13} /> Open Nourish Task Packs
+            <ClipboardList size={13} /> Open CareOps Task Packs
           </button>
         </div>
       </div>

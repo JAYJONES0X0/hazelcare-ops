@@ -970,15 +970,15 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                     Missing Temporal Boundaries
                  </h3>
                  <p className="text-[12px] font-black text-hc-text/70 uppercase tracking-widest leading-relaxed mb-8 max-w-2xl relative z-10">
-                    To audit 1:1 appointments correctly and group scattered task notes into shifts, the OS needs the Master Roster. Please export the Client or Carer Roster from CarePlanner and drop it below.
+                    To audit 1:1 appointments correctly and group scattered task notes into shifts, the OS needs the Master Roster. Export the Client or Carer Roster from your current record system and drop it below.
                  </p>
                  <div className="flex gap-4 relative z-10 mb-8">
-                   <a href="https://hazelcare.nourishcare.com/roster/client-roster" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-xl shadow-flag-amber/20">
-                     Open Client Roster
-                   </a>
-                   <a href="https://hazelcare.nourishcare.com/roster/carer-roster" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-xl shadow-flag-amber/20">
-                     Open Carer Roster
-                   </a>
+                   <span className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest shadow-xl shadow-flag-amber/20">
+                     Client roster export
+                   </span>
+                   <span className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-flag-amber text-hc-bg text-[11px] font-black uppercase tracking-widest shadow-xl shadow-flag-amber/20">
+                     Carer roster export
+                   </span>
                  </div>
                  <div className="p-8 border-2 border-dashed border-flag-amber/30 rounded-2xl bg-black/[0.02] relative flex flex-col items-center justify-center cursor-pointer hover:bg-flag-amber/10 transition-all z-10">
                     <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files && handleFiles(e.target.files)} />

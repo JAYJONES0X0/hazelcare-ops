@@ -452,8 +452,8 @@ function AgencyDirectory({ agencies, onAddAgency }: { agencies: Agency[]; onAddA
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex items-center justify-between px-2">
-        <div className="section-header text-[11px] text-hc-muted tracking-[0.3em] uppercase">{agencies.length} REGISTERED HUB ENTITIES · RANKED BY VECTOR PERFORMANCE</div>
-        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-2 px-5 py-2 hc-clay-raised border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-hc-text hover:border-hc-teal/40 transition-all shadow-xl">+ Initialize Hub</button>
+        <div className="section-header text-[11px] text-hc-muted tracking-[0.3em] uppercase">{agencies.length} REGISTERED AGENCIES · RANKED BY PERFORMANCE</div>
+        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-2 px-5 py-2 hc-clay-raised border border-hc-teal/20 text-hc-teal-light text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-hc-teal/10 hover:text-hc-text hover:border-hc-teal/40 transition-all shadow-xl">+ Add Agency</button>
       </div>
 
       {showAdd && (

@@ -15,7 +15,7 @@
 - **Audit Trail**: Track when documents were generated, viewed, and exported.
 - **Import Quality Report**: Validate CSV/PDF imports and highlight missing data.
 - **Human Review States**: Enforce "Reviewed by Manager" sign-offs on critical flags.
-- **Parser Validation**: Ensure the Nourish CSV parser handles edge cases without silent failures.
+- **Parser Validation**: Ensure source-system CSV/PDF parsers handle edge cases without silent failures.
 
 ## UX Improvements
 - Implement visual hierarchy for urgency levels in the Morning Briefing.
@@ -31,5 +31,5 @@
 - Role-Based Access Control (RBAC) / Role model for Managers vs. Seniors.
 
 ## Long-Term Vision
-- Seamless integration with CarePlanner and Nourish APIs (if privacy constraints allow).
+- Optional, consented integrations with provider record APIs where privacy, contracts, and security constraints allow.
 - Predictive risk analytics based on longitudinal data trends.

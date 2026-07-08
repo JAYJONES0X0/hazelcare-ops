@@ -191,7 +191,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Nourish-Task-Pack-${client.name.replace(/\s+/g, '-')}.docx`;
+  a.download = `CareOps-Task-Pack-${client.name.replace(/\s+/g, '-')}.docx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -485,7 +485,7 @@ export function NourishTaskPack() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nourish-task-pack-${selectedClient.name.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    a.download = `careops-task-pack-${selectedClient.name.replace(/\s+/g, '-').toLowerCase()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -645,7 +645,7 @@ export function NourishTaskPack() {
               onClick={triggerStressTest ? (e) => e.detail === 3 && triggerStressTest() : undefined}
               className="text-[11px] font-black text-hc-teal uppercase tracking-widest mb-1 cursor-default select-none"
             >
-              Nourish Task Pack Generator
+              CareOps Task Pack Generator
             </h1>
             <p className="text-[10px] text-hc-muted font-bold">
               {selectedClient

@@ -138,7 +138,7 @@ function StaffDocumentDrawer({ staff, onClose }: { staff: StaffMember; onClose: 
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-black text-hc-text tracking-tighter">Staff Intelligence</h2>
-              <span className="pill pill-teal text-[11px] font-black uppercase tracking-widest px-3 shadow-lg glow-teal animate-shimmer">Live Synthesis</span>
+              <span className="pill pill-teal text-[11px] font-black uppercase tracking-widest px-3 shadow-lg glow-teal animate-shimmer">Live</span>
             </div>
             <p className="text-hc-muted text-xs font-bold uppercase tracking-widest">Generating documentation for {staff.name}</p>
           </div>

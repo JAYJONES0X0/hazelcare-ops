@@ -49,6 +49,13 @@ export type EvidenceSourceType =
   | 'vault_document'
   | 'manual_note'
   | 'communication'
+  | 'receipt_image'
+  | 'atm_slip'
+  | 'invoice'
+  | 'bank_statement'
+  | 'cash_count_photo'
+  | 'ledger_import'
+  | 'financial_transaction'
   | 'system_generated';
 
 export interface EvidenceItem {
@@ -113,7 +120,17 @@ export interface CommunicationRecord {
 
 export interface OutputDraft {
   id: string;
-  type: 'weekly_update' | 'handover' | 'nourish_export' | 'audit_summary';
+  type:
+    | 'weekly_update'
+    | 'handover'
+    | 'nourish_export'
+    | 'audit_summary'
+    | 'client_finance_statement'
+    | 'allowance_summary'
+    | 'missing_evidence_report'
+    | 'reconciliation_report'
+    | 'finance_request'
+    | 'finance_audit_pack';
   recipientType: CommunicationRecord['recipientType'];
   resident?: string;
   house?: string;
@@ -338,7 +355,7 @@ export interface AppState {
   shifts: Shift[];
 }
 
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'staff-tools' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'staff-tools' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks' | 'client-finance';
 
 export interface PageContext {
   client?: string;

@@ -269,19 +269,20 @@ function styles(): string {
   return `
   @page { size: A4 portrait; margin: 12mm; }
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { margin: 0; background: #ffffff; color: ${SLATE}; font-family: 'Inter', Arial, sans-serif; font-size: 11px; line-height: 1.5; }
-  .page { min-height: calc(297mm - 24mm); display: flex; flex-direction: column; gap: 18px; }
+  html { background: #ffffff; }
+  body { margin: 0; background: #ffffff; color: ${SLATE}; font-family: 'Inter', Arial, sans-serif; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+  .page { width: 100%; min-height: calc(297mm - 24mm); display: flex; flex-direction: column; gap: 18px; }
   .brand-strip { height: 8px; background: linear-gradient(90deg, var(--accent), ${NAVY}); border-radius: 999px; }
-  .header { display: grid; grid-template-columns: 1fr auto; gap: 28px; padding-bottom: 14px; border-bottom: 1px solid ${BORDER}; }
+  .header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; padding-bottom: 14px; border-bottom: 1px solid ${BORDER}; }
   .eyebrow { color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; }
   h1 { margin: 0; color: ${NAVY}; font-size: 30px; line-height: 1; letter-spacing: -0.02em; font-weight: 900; }
   h2 { margin: 0 0 10px; color: ${NAVY}; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 900; }
   h3 { margin: 0; color: ${NAVY}; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 900; }
-  p { margin: 0; }
+  p { margin: 0; overflow-wrap: anywhere; }
   .meta { color: ${MUTED}; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; }
   .logo { height: 42px; max-width: 120px; object-fit: contain; }
   .org { color: ${MUTED}; font-size: 8px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; text-align: right; margin-top: 8px; }
-  .hero { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 16px; align-items: stretch; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 16px; align-items: stretch; }
   .panel { border: 1px solid ${BORDER}; border-radius: 10px; padding: 16px; background: #fff; break-inside: avoid; }
   .panel.tint { background: ${SURFACE}; }
   .purpose { font-size: 13px; line-height: 1.65; color: ${NAVY}; font-weight: 600; }
@@ -290,23 +291,35 @@ function styles(): string {
   .kpi b { display: block; color: ${NAVY}; font-size: 23px; line-height: 1; font-weight: 900; }
   .kpi span { display: block; color: ${MUTED}; font-size: 8px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 6px; }
   .status { display: inline-flex; align-items: center; border: 1px solid currentColor; border-radius: 999px; padding: 4px 10px; font-size: 8px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid ${BORDER}; break-inside: auto; }
   th { background: ${SURFACE}; color: ${NAVY}; font-size: 8px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; padding: 9px; border: 1px solid ${BORDER}; text-align: left; }
-  td { padding: 9px; border: 1px solid ${BORDER}; vertical-align: top; word-break: break-word; }
+  td { padding: 9px; border: 1px solid ${BORDER}; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
   tr { break-inside: avoid; page-break-inside: avoid; }
   .evidence-list { display: grid; gap: 10px; }
   .evidence { border: 1px solid ${BORDER}; border-left: 5px solid var(--severity); border-radius: 9px; padding: 11px 12px; background: #fff; break-inside: avoid; }
-  .evidence-top { display: flex; justify-content: space-between; gap: 12px; color: ${MUTED}; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-  .entry { color: ${SLATE}; font-size: 10px; line-height: 1.55; }
+  .evidence-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; color: ${MUTED}; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .entry { color: ${SLATE}; font-size: 10px; line-height: 1.55; overflow-wrap: anywhere; }
   .actions { display: grid; gap: 8px; counter-reset: action; }
-  .action { display: grid; grid-template-columns: 26px 1fr 112px; gap: 10px; align-items: start; border: 1px solid ${BORDER}; border-radius: 9px; padding: 10px; background: #fff; break-inside: avoid; }
+  .action { display: grid; grid-template-columns: 26px minmax(0, 1fr) 112px; gap: 10px; align-items: start; border: 1px solid ${BORDER}; border-radius: 9px; padding: 10px; background: #fff; break-inside: avoid; }
+  .action > div { min-width: 0; }
   .action:before { counter-increment: action; content: counter(action); width: 24px; height: 24px; border-radius: 999px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 10px; }
   .owner { color: ${NAVY}; font-size: 8px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; text-align: right; }
   .signoff { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: auto; }
   .line { border-bottom: 1px dashed #94a3b8; min-height: 28px; margin-top: 14px; }
   .footer { margin-top: 8px; padding-top: 10px; border-top: 1px solid ${BORDER}; display: flex; justify-content: space-between; gap: 18px; color: ${MUTED}; font-size: 8px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
   .nil { border: 1px dashed ${BORDER}; border-radius: 10px; padding: 18px; color: ${MUTED}; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.12em; }
+  @media screen {
+    body { padding: 32px; }
+    .page { max-width: 210mm; margin: 0 auto; }
+  }
+  @media (max-width: 760px) {
+    .header, .hero, .grid-2, .signoff { grid-template-columns: 1fr; }
+    .org { text-align: left; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .action { grid-template-columns: 26px minmax(0, 1fr); }
+    .owner { grid-column: 2; text-align: left; }
+  }
   @media print {
     html, body { height: auto; background: #fff; }
     .page { min-height: auto; gap: 14px; }

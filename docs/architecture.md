@@ -10,12 +10,12 @@ CareOps is built as a browser-first, local-first operational intelligence platfo
 - **Hosting**: Vercel for continuous deployment and edge delivery.
 
 ## Data Model & Privacy
-- **Local-First Processing**: All data ingestion (Nourish CSVs, PDFs) occurs entirely within the browser. 
+- **Local-First Processing**: Core evidence ingestion (CSV, PDF, DOCX, ZIP packs, rosters, and pasted text) occurs entirely within the browser where supported.
 - **Persistence**: Application state and parsed data are stored in `localStorage`. There is no persistent backend database for core operations, ensuring that sensitive patient and care data never leaves the facility's local environment unless explicitly exported.
-- **Zero-Transmission Guarantee**: The platform acts as a localized lens over existing data exports (Nourish/CarePlanner) rather than a cloud storage silo.
+- **Zero-Transmission Guarantee**: The platform treats existing record exports as source inputs for its own evidence, action, review, output, and audit loop rather than acting as a cloud storage silo.
 
 ## Parsing Engine
-- **Input Types**: Nourish weekly CSV exports, Word Documents (mammoth.js extraction), and PDFs (client-side text extraction).
+- **Input Types**: Diary CSV exports, roster exports, Word documents (mammoth.js extraction), ZIP packs, pasted text, images, and PDFs (client-side text extraction where possible).
 - **Transformation**: Raw diaries and support plans are parsed and mapped into structured intelligence (flags, risks, compliance gaps, and task packs).
 
 ## Future Expansion (Enterprise Layer)

@@ -17,7 +17,7 @@ export function SourceEvidenceStrip({ client, title, categories }: Props) {
   const parsed = rows.filter(row => row.parseStatus === 'PARSED').length;
 
   return (
-    <div className="mx-4 mb-4 hc-clay-raised rounded-2xl border border-hc-border/20 px-5 py-4 flex flex-col xl:flex-row xl:items-center gap-4">
+    <div className="mx-4 mb-4 hc-clay-raised rounded-2xl border border-hc-border/20 px-5 py-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4">
       <div className="flex-1 min-w-0">
         <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em]">{title} source evidence</div>
         <p className="text-[11px] text-hc-muted font-semibold mt-1">
@@ -26,7 +26,7 @@ export function SourceEvidenceStrip({ client, title, categories }: Props) {
             : `No ${title.toLowerCase()} source file is attached yet. Treat this builder as missing-evidence until a pack or document is imported.`}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 lg:justify-end">
         <span className={`pill ${seen ? 'pill-blue' : 'pill-amber'} text-[8px] font-black uppercase tracking-widest`}>
           {seen ? `${seen} sources` : 'Source missing'}
         </span>
@@ -34,11 +34,19 @@ export function SourceEvidenceStrip({ client, title, categories }: Props) {
           {needsReview ? `${needsReview} review` : seen ? 'Evidence ready' : 'Review required'}
         </span>
       </div>
-      {rows.slice(0, 3).map(row => (
-        <span key={row.fileId} className="text-[9px] font-black text-hc-muted uppercase tracking-widest truncate max-w-[14rem]" title={row.originalFileName}>
-          {row.originalFileName}
-        </span>
-      ))}
+      {rows.length > 0 && (
+        <div className="lg:col-span-2 flex flex-wrap gap-2 min-w-0">
+          {rows.slice(0, 3).map(row => (
+            <span
+              key={row.fileId}
+              className="max-w-full rounded-lg bg-hc-border/10 px-2 py-1 text-[9px] font-black text-hc-muted uppercase tracking-wider leading-snug break-words whitespace-normal"
+              title={row.originalFileName}
+            >
+              {row.originalFileName}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

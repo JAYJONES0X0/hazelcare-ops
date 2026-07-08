@@ -468,7 +468,7 @@ export function formatForExport(client: FullClient, tasks: NourishTask[]): strin
   out += `PURPOSE\n`;
   out += `These tasks are derived directly from ${client.name}'s current care plans, support plans, risk assessments and attached source documents to show what support needs to happen and how it should be evidenced.\n\n`;
   out += `RULES\n`;
-  out += `- Build as Client Tasks in Nourish.\n`;
+  out += `- Build as client task records in CareOps or the chosen care/task system.\n`;
   out += `- Set Task Notes mandatory for all tasks marked [MANDATORY].\n`;
   out += `- Staff must record what was offered, accepted/declined, outcome, and escalation.\n`;
   out += `- Do not change tasks without updating the underlying care plan/risk assessment first.\n`;

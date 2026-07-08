@@ -419,7 +419,7 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
             {pdfLoading ? 'Parsing entries…' : 'Drop a diary PDF here'}
           </div>
           <div className="text-hc-muted text-xs max-w-xs leading-relaxed">
-            Drop a CarePlanner diary export (PDF) directly here. No redirects.
+            Drop a client diary export (PDF) directly here. No redirects.
           </div>
           {!pdfLoading && (
             <span className="text-[11px] font-bold text-hc-teal-light uppercase tracking-widest">or click to browse</span>
@@ -580,7 +580,7 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
                     </button>
                   ))}
                   <button onClick={copyWeeklyDraft} className="btn-tactical rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest">
-                    {draftCopied ? 'Copied' : 'Copy Nourish-safe'}
+                    {draftCopied ? 'Copied' : 'Copy record-system safe'}
                   </button>
                 </div>
               </div>

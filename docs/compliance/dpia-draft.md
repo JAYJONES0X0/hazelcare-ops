@@ -1,7 +1,7 @@
 # CareOps DPIA Draft (Pilot v1)
 
 ## Scope
-CareOps is a local-first operational intelligence layer used by adult social care managers to process exported care records inside a browser session.
+CareOps is a local-first operational intelligence operating system used by adult social care managers to process care evidence inside a browser session and turn it into reviewed actions, outputs, and audit trails.
 
 ## Processing Summary
 - Input sources: provider exports (CSV, XLSX, PDF, DOCX, ZIP, pasted text).
@@ -36,4 +36,3 @@ CareOps is a local-first operational intelligence layer used by adult social car
 
 ## Residual Risk
 Residual risk is acceptable for controlled pilot use with trained operators and explicit governance controls.
-

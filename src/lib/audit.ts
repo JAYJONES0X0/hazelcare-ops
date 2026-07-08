@@ -26,7 +26,27 @@ export type AuditAction =
   | 'task_pack_generated'
   | 'export_created'
   | 'manager_review_completed'
-  | 'client_promoted_live';
+  | 'client_promoted_live'
+  | 'finance_receipt_captured'
+  | 'finance_receipt_batch_captured'
+  | 'finance_receipt_extracted'
+  | 'finance_receipt_review_required'
+  | 'finance_receipt_extraction_failed'
+  | 'finance_transaction_proposed'
+  | 'finance_transaction_confirmed'
+  | 'finance_transaction_edited'
+  | 'finance_transaction_correction_created'
+  | 'finance_receipt_linked'
+  | 'finance_receipt_unlinked'
+  | 'finance_reconciliation_opened'
+  | 'finance_reconciliation_completed'
+  | 'finance_exception_raised'
+  | 'finance_exception_assigned'
+  | 'finance_exception_resolved'
+  | 'finance_reviewer_approved'
+  | 'finance_reviewer_rejected'
+  | 'finance_ledger_imported'
+  | 'finance_export_generated';
 
 export interface EvidenceLineage {
   sourceType: 'nourish_csv' | 'pdf_import' | 'manual_entry' | 'system_generated';

@@ -5,10 +5,11 @@ import { buildWeekSummary } from '../lib/universal-parser';
 import { computeStaffMonitoring, flattenWeekEntries } from '../lib/staff-monitoring';
 import { loadClients } from '../lib/client-store';
 import { buildClientPackReviewQueue } from '../lib/operational-spine';
+import { buildFinanceOversightSummary, loadFinanceState } from '../lib/client-finance';
 import { RadarLoader } from '../components/NexusLoader';
 import {
   TrendingUp, AlertCircle, Users, Home, Activity, ShieldAlert,
-  Archive, ChevronRight, RefreshCw, CheckCircle,
+  Archive, ChevronRight, RefreshCw, CheckCircle, WalletCards,
 } from 'lucide-react';
 
 interface Props {
@@ -34,8 +35,16 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
 
   const weekData = weekDataProp || storedWeekData;
   const [packReviewRows, setPackReviewRows] = useState(() => buildClientPackReviewQueue(loadClients()));
+  const [financeState, setFinanceState] = useState(() => loadFinanceState());
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
   const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
+  const financeSummary = useMemo(() => buildFinanceOversightSummary({
+    accounts: financeState.accounts,
+    receipts: financeState.receipts,
+    transactions: financeState.transactions,
+    exceptions: financeState.exceptionLog,
+  }), [financeState]);
+  const financeReviewItems = financeSummary.totals.openExceptions + financeSummary.totals.pendingReviews;
 
   useEffect(() => {
     const refreshPackQueue = () => setPackReviewRows(buildClientPackReviewQueue(loadClients()));
@@ -45,6 +54,16 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
     return () => {
       window.removeEventListener('hc-clients-updated', refreshPackQueue);
       window.removeEventListener('storage', refreshPackQueue);
+    };
+  }, []);
+
+  useEffect(() => {
+    const refreshFinanceState = () => setFinanceState(loadFinanceState());
+    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
+    window.addEventListener('storage', refreshFinanceState);
+    return () => {
+      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
+      window.removeEventListener('storage', refreshFinanceState);
     };
   }, []);
 
@@ -126,6 +145,15 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
             </p>
           </div>
         )}
+        {financeSummary.rows.length > 0 && (
+          <div className="mb-8 max-w-xl hc-clay-raised rounded-[2rem] p-5 border border-hc-authority/20 text-center">
+            <WalletCards className="w-5 h-5 text-hc-authority mx-auto mb-2" />
+            <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em]">Client money review active</div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest mt-2">
+              {financeSummary.totals.accounts} account{financeSummary.totals.accounts === 1 ? '' : 's'} / {financeSummary.totals.openExceptions} open exception{financeSummary.totals.openExceptions === 1 ? '' : 's'} / {financeSummary.totals.missingReceipts} missing receipt{financeSummary.totals.missingReceipts === 1 ? '' : 's'}
+            </p>
+          </div>
+        )}
         <button onClick={() => setPage?.('upload')} className="btn-clay btn-clay-teal h-[60px] px-10">Import Hub</button>
       </div>
     );
@@ -172,6 +200,34 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
         </div>
       )}
 
+      {financeSummary.rows.length > 0 && (
+        <div className={`hc-clay-raised p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center gap-4 ${
+          financeSummary.totals.urgentRows > 0 ? 'border border-flag-red/25' : 'border border-hc-authority/20'
+        }`}>
+          <div className="w-11 h-11 rounded-2xl bg-hc-authority/10 flex items-center justify-center shrink-0">
+            <WalletCards className="w-5 h-5 text-hc-authority" />
+          </div>
+          <div className="flex-1">
+            <div className="text-[10px] font-black text-hc-text uppercase tracking-[0.25em]">Client money safeguarding queue</div>
+            <p className="text-[11px] text-hc-muted font-semibold mt-1">
+              {financeSummary.totals.accounts} account{financeSummary.totals.accounts === 1 ? '' : 's'} in scope,
+              {' '}{financeSummary.totals.openExceptions} open exception{financeSummary.totals.openExceptions === 1 ? '' : 's'},
+              {' '}and {financeSummary.totals.missingReceipts} missing receipt{financeSummary.totals.missingReceipts === 1 ? '' : 's'} remain visible.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {financeSummary.rows.slice(0, 3).map(row => (
+              <span key={row.accountId} className={`pill text-[8px] font-black uppercase tracking-widest ${row.state === 'urgent' ? 'pill-red' : 'pill-purple'}`}>
+                {row.house}: {row.nextAction}
+              </span>
+            ))}
+          </div>
+          <button onClick={() => setPage?.('client-finance')} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+            Review Money
+          </button>
+        </div>
+      )}
+
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
@@ -181,6 +237,7 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
           { label: 'Avg Doc Quality',  val: `${summaryStats.avgQuality}%`, icon: TrendingUp, color: summaryStats.avgQuality >= 70 ? 'text-flag-green' : summaryStats.avgQuality >= 45 ? 'text-flag-amber' : 'text-flag-red' },
           { label: 'Sites Critical',   val: summaryStats.criticalSites, icon: ShieldAlert, color: summaryStats.criticalSites > 0 ? 'text-flag-red' : 'text-hc-muted' },
           { label: 'Sites Under Review', val: summaryStats.reviewSites, icon: AlertCircle, color: summaryStats.reviewSites > 0 ? 'text-flag-amber' : 'text-hc-muted' },
+          { label: 'Money Review', val: financeReviewItems, icon: WalletCards, color: financeReviewItems > 0 ? 'text-hc-authority' : 'text-hc-muted' },
         ].map(s => (
           <div key={s.label} className="hc-clay-raised p-5 rounded-2xl flex flex-col gap-3">
             <div className={`w-8 h-8 rounded-xl hc-clay-inset flex items-center justify-center ${s.color}`}>

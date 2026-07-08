@@ -303,6 +303,19 @@
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-thin::-webkit-scrollbar { width: 0px; height: 0px; }
 
+/* Operational cards carry dense clinical evidence. Keep columns wide enough
+   that action rows, filenames, and review chips wrap cleanly instead of clipping. */
+.client-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 44rem), 1fr));
+}
+
+.doc-preview-frame {
+  min-width: min(100%, 794px);
+  width: 794px;
+  max-width: 100%;
+}
+
 @layer components {
   /* Primary tactical CTA button */
   .btn-tactical {
@@ -363,6 +376,7 @@
   .pill-red   { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-red/10   text-hc-red   border-hc-red/20; }
   .pill-amber { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-amber/10 text-hc-amber border-hc-amber/20; }
   .pill-green { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-green/10 text-hc-green border-hc-green/20; }
+  .pill-purple { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-authority/10 text-hc-authority border-hc-authority/20; }
   .pill-muted { @apply inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all bg-hc-muted/10 text-hc-muted border-hc-muted/20; }
 }
 

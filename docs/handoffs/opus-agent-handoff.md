@@ -33,4 +33,4 @@ Move this system from an advanced prototype to a 100% pilot-ready, enterprise-tr
    - Remove repetition and move architecture depth into docs
 
 # Desired End State
-An enterprise-grade platform where every feature looks, feels, and operates with 100% trust, serving as the definitive operational intelligence layer above standard care records.
+An enterprise-grade supported-living operating system where every feature looks, feels, and operates with 100% trust, turning fragmented care evidence into reviewed action, operational output, and audit-ready proof.

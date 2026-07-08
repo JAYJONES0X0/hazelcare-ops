@@ -4,7 +4,7 @@
 
 **Goal:** Turn the upload/intelligence screen into a deterministic risk-workbench with optional AI assistance, clustered risk summaries, and per-item copy actions.
 
-**Architecture:** Add a shared risk-clustering helper for deterministic grouping, then wire it into the client document import view so risk categories and hotspot clusters render immediately after parsing. Keep AI optional behind a click-to-open panel that reads the extracted text and current cluster map. Add copy actions to the generated task pack and risk editor so users can move individual names and notes into Nourish without hand-editing.
+**Architecture:** Add a shared risk-clustering helper for deterministic grouping, then wire it into the client document import view so risk categories and hotspot clusters render immediately after parsing. Keep AI optional behind a click-to-open panel that reads the extracted text and current cluster map. Add copy actions to the generated task pack and risk editor so users can move individual names and notes into CareOps or the chosen care-record system without hand-editing.
 
 **Tech Stack:** React 19, TypeScript, Vite, local clipboard API, existing import/analyze pipeline.
 
@@ -145,4 +145,3 @@ Expected: successful Vite build.
 
 Run: `npx.cmd vercel --prod --yes`
 Expected: production deployment URL returned.
-

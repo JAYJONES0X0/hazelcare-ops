@@ -1,7 +1,7 @@
 {
   "name": "Care Ops",
   "short_name": "Care Ops",
-  "description": "Live Intelligence Layer for UK Care Providers",
+  "description": "Live Operating System for UK Care Providers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ddd8c8",

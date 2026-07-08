@@ -4,6 +4,7 @@ import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
 import { clearActions, clearIncidents, loadActions, loadIncidents, exportOpsSnapshot, importOpsSnapshot } from '../lib/storage';
 import { clearClientData, clearStaffNotes, type FullClient } from '../lib/client-store';
 import { buildClientPackReviewQueue } from '../lib/operational-spine';
+import { buildFinanceOversightSummary, loadFinanceState } from '../lib/client-finance';
 import {
   downloadText,
   careEntriesToEvidenceCsv,
@@ -15,7 +16,7 @@ import type { MonitoringFilters } from '../lib/staff-monitoring';
 import { getAllEntriesAsync, getStorageAuditAsync, deleteEntriesByFilterAsync, clearEntryStoreAsync } from '../lib/entry-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { reconcileRosterCsv } from '../lib/continuity-engine';
-import { Archive, Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle } from 'lucide-react';
+import { Archive, Database, Trash2, Calendar, HardDrive, ShieldAlert, ClipboardCheck, Upload, CheckCircle, WalletCards } from 'lucide-react';
 
 type ClearableDataset = 'diary' | 'actions' | 'incidents' | 'clients' | 'notes' | 'targets';
 type AdminRefreshWindow = Window & {
@@ -425,6 +426,23 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
   const packReviewRows = buildClientPackReviewQueue(clients);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
   const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
+  const [financeState, setFinanceState] = useState(() => loadFinanceState());
+  const financeSummary = buildFinanceOversightSummary({
+    accounts: financeState.accounts,
+    receipts: financeState.receipts,
+    transactions: financeState.transactions,
+    exceptions: financeState.exceptionLog,
+  });
+
+  useEffect(() => {
+    const refreshFinanceState = () => setFinanceState(loadFinanceState());
+    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
+    window.addEventListener('storage', refreshFinanceState);
+    return () => {
+      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
+      window.removeEventListener('storage', refreshFinanceState);
+    };
+  }, []);
 
   const handleClearEverything = async () => {
     if (!confirm('TOTAL CLEAR: This will wipe ALL clinical records and registry data. Irreversible. Continue?')) return;
@@ -494,6 +512,45 @@ export function AdminPage({ weekData, clients }: { weekData: WeekSummary | null,
                 <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
                   {row.totalFiles} files seen / {row.needsReviewCount} need review / {row.parsedFiles} parsed
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {financeSummary.rows.length > 0 && (
+        <div className="hc-clay-raised p-8 rounded-[2.5rem] border border-hc-authority/20 mb-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-hc-authority/10 flex items-center justify-center text-hc-authority shrink-0">
+                <WalletCards className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-hc-text uppercase tracking-tight">Client money safeguarding governance</h2>
+                <p className="text-[11px] text-hc-muted mt-1 max-w-2xl leading-relaxed">
+                  Financial evidence remains visible to Admin until receipts, exceptions, balances, and review states are closed.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="pill pill-purple text-[8px] font-black uppercase tracking-widest">{financeSummary.totals.accounts} accounts</span>
+              <span className="pill pill-red text-[8px] font-black uppercase tracking-widest">{financeSummary.totals.openExceptions} exceptions</span>
+              <span className="pill pill-amber text-[8px] font-black uppercase tracking-widest">{financeSummary.totals.missingReceipts} missing receipts</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {financeSummary.rows.slice(0, 6).map(row => (
+              <div key={row.accountId} className="rounded-2xl border border-hc-border/20 bg-hc-border/10 p-4">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <span className="text-sm font-black text-hc-text">{row.personName}</span>
+                  <span className={`pill text-[8px] font-black uppercase tracking-widest ${row.state === 'urgent' ? 'pill-red' : row.state === 'review' ? 'pill-amber' : 'pill-green'}`}>
+                    {row.state === 'clear' ? 'Clear' : row.state}
+                  </span>
+                </div>
+                <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest">
+                  {row.house} / {row.missingReceipts} missing receipts / {row.pendingReviews} review records
+                </p>
+                <p className="text-[11px] font-bold text-hc-text mt-2">{row.nextAction}</p>
               </div>
             ))}
           </div>

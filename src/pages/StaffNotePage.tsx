@@ -293,7 +293,7 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
            <div className="flex items-center gap-4">
               <Layers className="w-5 h-5 text-hc-bone" />
               <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-bone block leading-none mb-1">Intelligence Protocol Assembler</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-bone block leading-none mb-1">Narrative Builder</span>
                 <span className="text-[10px] font-bold text-hc-bone/50 uppercase tracking-widest leading-none">Active Stack: {activeStack?.name || 'None Loaded'}</span>
               </div>
            </div>
@@ -310,7 +310,7 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
               {showStackPicker && (
                 <div className="absolute right-0 top-14 w-80 hc-clay-raised-high bg-hc-surface p-3 z-50 animate-in zoom-in-95 duration-300 shadow-3xl">
                   <div className="p-3 border-b border-hc-border mb-2">
-                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Select Narrative Protocol</span>
+                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Select Narrative Approach</span>
                   </div>
                   <div className="space-y-1.5">
                     {INTELLIGENCE_STACKS.map(s => (

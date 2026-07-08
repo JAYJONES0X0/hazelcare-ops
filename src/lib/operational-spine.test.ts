@@ -333,7 +333,7 @@ describe('operational spine', () => {
     expect(draft.reviewRequired).toBe(true);
   });
 
-  it('normalises output into Nourish-safe plain text', () => {
+  it('normalises output into record-system safe plain text', () => {
     const text = toNourishSafeText('**UPDATE**\n- Action: call GP\n| table | row |\n[ ] checkbox\n✅ done');
     expect(text).toBe('UPDATE\nAction: call GP\ntable   row\ncheckbox\ndone');
   });

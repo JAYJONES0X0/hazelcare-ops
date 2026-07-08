@@ -70,10 +70,10 @@ export function TemplatesPage({ weekData }: Props) {
         <div className="hc-clay-raised w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8">
           <span className="text-xs font-black tracking-[0.2em] text-hc-muted">DOC</span>
         </div>
-        <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em] mb-3">Synthesis Offline</div>
+        <div className="text-[11px] font-black text-hc-teal uppercase tracking-[0.3em] mb-3">Preview Offline</div>
         <h2 className="text-xl font-black text-hc-text mb-3 uppercase tracking-tight">No documents yet</h2>
         <p className="text-hc-muted text-[11px] font-bold text-center max-w-xs uppercase tracking-widest leading-relaxed">
-          Sync regional operational data via Field Ingest to initialise document synthesis.
+          Import diary entries or paste support plans to generate operational documents.
         </p>
       </div>
     );
@@ -81,10 +81,10 @@ export function TemplatesPage({ weekData }: Props) {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col animate-in fade-in duration-500">
-      <div className="shrink-0 border-b border-hc-border/30 px-8 py-5 flex items-center justify-between gap-8">
+      <div className="shrink-0 border-b border-hc-border/30 px-8 py-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Document Library</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="text-[11px] font-black text-hc-teal tracking-[0.2em] uppercase">Build and print care documents</span>
             <div className="h-3 w-px bg-hc-border/40" />
             <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest">{TEMPLATES.length} Templates</span>
@@ -93,7 +93,7 @@ export function TemplatesPage({ weekData }: Props) {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-72 shrink-0 border-r border-hc-border/30 flex flex-col">
+        <div className="w-72 shrink-0 border-r border-hc-border/30 flex flex-col min-w-0">
           <div className="p-4 border-b border-hc-border/20">
             <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Template Selection</span>
           </div>
@@ -110,7 +110,7 @@ export function TemplatesPage({ weekData }: Props) {
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[11px] font-black uppercase tracking-tight ${isSelected ? 'text-hc-teal' : 'text-hc-text'}`}>
+                    <span className={`text-[11px] font-black uppercase tracking-tight leading-snug break-words ${isSelected ? 'text-hc-teal' : 'text-hc-text'}`}>
                       {template.name}
                     </span>
                     {isRecommended && (
@@ -119,7 +119,7 @@ export function TemplatesPage({ weekData }: Props) {
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest leading-tight">{template.desc}</span>
+                  <span className="text-[11px] font-bold text-hc-muted uppercase tracking-widest leading-tight break-words">{template.desc}</span>
                 </button>
               );
             })}
@@ -129,14 +129,14 @@ export function TemplatesPage({ weekData }: Props) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {selectedTemplate ? (
             <>
-              <div className="shrink-0 flex items-center justify-between px-8 py-3 border-b border-hc-border/20">
-                <div className="flex items-center gap-3 min-w-0">
+              <div className="shrink-0 flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-8 py-3 border-b border-hc-border/20">
+                <div className="flex flex-wrap items-center gap-3 min-w-0">
                   <div className="w-1.5 h-4 rounded-full bg-hc-teal shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em] truncate">
+                    <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em] break-words leading-snug">
                       {selectedDefinition?.name || selectedTemplate}
                     </div>
-                    <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest truncate">
+                    <div className="text-[10px] font-bold text-hc-muted uppercase tracking-widest break-words leading-snug">
                       {selectedDefinition?.desc || 'Operational document'}
                     </div>
                   </div>
@@ -163,13 +163,13 @@ export function TemplatesPage({ weekData }: Props) {
                   Print Document
                 </button>
               </div>
-              <div className="flex-1 p-8 overflow-y-auto scrollbar-thin flex justify-center">
-                <div className="w-full max-w-4xl bg-white shadow-2xl relative min-h-[1200px]">
+              <div className="flex-1 p-4 lg:p-8 overflow-auto scrollbar-thin">
+                <div className="doc-preview-frame mx-auto bg-white shadow-2xl relative min-h-[1123px]">
                   <iframe
                     ref={iframeRef}
                     srcDoc={html || ''}
-                    className="w-full h-full min-h-[1200px]"
-                    title="Document Synthesis Preview"
+                    className="w-full h-full min-h-[1123px] border-0 block"
+                    title="Document Preview"
                   />
                 </div>
               </div>

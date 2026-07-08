@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Activity, Archive, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
+import { Activity, Archive, ChevronRight, Shield, Printer, Zap, AlertTriangle, Calendar, RefreshCw, WalletCards } from 'lucide-react';
 import type { WeekSummary, Action, Incident, Page, PageContext } from '../lib/types';
 import { getEntriesForRangeAsync, getStoreBoundsAsync } from '../lib/entry-store';
 import { buildWeekSummary } from '../lib/universal-parser';
@@ -7,6 +7,7 @@ import { useCollapseStore } from '../lib/collapse-store';
 import { detectClinicalGaps } from '../lib/continuity-engine';
 import { loadClients } from '../lib/client-store';
 import { ACTION_STATE_LABELS, buildClientPackReviewQueue, buildHouseDailyState, mapActionToOperationalState, reviewStaffSafetyEvidence } from '../lib/operational-spine';
+import { buildFinanceOversightSummary, loadFinanceState } from '../lib/client-finance';
 
 interface Props {
   weekData: WeekSummary | null;
@@ -60,8 +61,16 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
   const [loading, setLoading] = useState(false);
   const [totalInStore, setTotalInStore] = useState(0);
   const [packReviewRows, setPackReviewRows] = useState(() => buildClientPackReviewQueue(loadClients()));
+  const [financeState, setFinanceState] = useState(() => loadFinanceState());
   const packReviewItems = packReviewRows.reduce((sum, row) => sum + row.needsReviewCount, 0);
   const draftPackCount = packReviewRows.filter(row => !row.liveReady).length;
+  const financeSummary = useMemo(() => buildFinanceOversightSummary({
+    accounts: financeState.accounts,
+    receipts: financeState.receipts,
+    transactions: financeState.transactions,
+    exceptions: financeState.exceptionLog,
+  }), [financeState]);
+  const financeReviewCount = financeSummary.totals.openExceptions + financeSummary.totals.pendingReviews;
 
   useEffect(() => {
     const refreshPackQueue = () => setPackReviewRows(buildClientPackReviewQueue(loadClients()));
@@ -71,6 +80,17 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
     return () => {
       window.removeEventListener('hc-clients-updated', refreshPackQueue);
       window.removeEventListener('storage', refreshPackQueue);
+    };
+  }, []);
+
+  useEffect(() => {
+    const refreshFinanceState = () => setFinanceState(loadFinanceState());
+    refreshFinanceState();
+    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
+    window.addEventListener('storage', refreshFinanceState);
+    return () => {
+      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
+      window.removeEventListener('storage', refreshFinanceState);
     };
   }, []);
 
@@ -203,11 +223,27 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             </p>
           </div>
         )}
+        {financeSummary.rows.length > 0 && (
+          <div className="mb-8 w-full max-w-2xl hc-clay-raised rounded-[2rem] p-5 border border-purple-500/20">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <WalletCards className="w-4 h-4 text-purple-700" />
+              <span className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em]">Client money review active</span>
+            </div>
+            <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest text-center">
+              {financeSummary.totals.accounts} account{financeSummary.totals.accounts === 1 ? '' : 's'} / {financeSummary.totals.openExceptions} open exception{financeSummary.totals.openExceptions === 1 ? '' : 's'} / {financeSummary.totals.missingReceipts} missing receipt{financeSummary.totals.missingReceipts === 1 ? '' : 's'}
+            </p>
+          </div>
+        )}
         <div className="flex flex-wrap justify-center gap-3">
           <button onClick={() => setPage('upload')} className="btn-tactical shadow-2xl">OPEN IMPORT HUB</button>
           {packReviewRows.length > 0 && (
             <button onClick={() => setPage('client-docs')} className="btn-clay shadow-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest">
               Review Client Packs
+            </button>
+          )}
+          {financeSummary.rows.length > 0 && (
+            <button onClick={() => setPage('client-finance')} className="btn-clay shadow-xl px-6 py-3 text-[11px] font-black uppercase tracking-widest">
+              Review Client Money
             </button>
           )}
         </div>
@@ -325,6 +361,34 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
           </div>
         )}
 
+        {financeSummary.rows.length > 0 && (
+          <div className={`hc-clay-raised p-5 rounded-2xl flex flex-col xl:flex-row xl:items-center gap-4 ${
+            financeSummary.totals.urgentRows > 0 ? 'border border-flag-red/25' : 'border border-purple-500/20'
+          }`}>
+            <div className="w-11 h-11 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
+              <WalletCards className="w-5 h-5 text-purple-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-black text-hc-text uppercase tracking-[0.25em]">Client money review queue</div>
+              <p className="text-[11px] text-hc-muted font-semibold mt-1">
+                {financeSummary.totals.openExceptions} open exception{financeSummary.totals.openExceptions === 1 ? '' : 's'},
+                {' '}{financeSummary.totals.missingReceipts} missing receipt{financeSummary.totals.missingReceipts === 1 ? '' : 's'},
+                {' '}and {financeSummary.totals.pendingReviews} record{financeSummary.totals.pendingReviews === 1 ? '' : 's'} needing review.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {financeSummary.rows.slice(0, 3).map(row => (
+                <span key={row.accountId} className={`pill text-[8px] font-black uppercase tracking-widest ${row.state === 'urgent' ? 'pill-red' : 'pill-purple'}`}>
+                  {row.personName}: {row.nextAction}
+                </span>
+              ))}
+            </div>
+            <button onClick={() => setPage('client-finance')} className="btn-tactical rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest">
+              Review Money
+            </button>
+          </div>
+        )}
+
         <div className="hc-clay-raised border border-hc-teal/20 p-6 rounded-[2rem] space-y-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
@@ -430,6 +494,7 @@ export function Dashboard({ weekData, setPage, actions, incidents }: Props) {
             { label: 'Care Gaps',             val: metrics.gaps,                         sub: metrics.criticalGaps > 0 ? `${metrics.criticalGaps} Need Review` : 'Up To Date', color: metrics.gaps > 0 ? 'text-flag-amber' : 'text-hc-muted' },
             { label: 'Urgent Concerns',       val: metrics.totalRedFlags,                sub: 'Immediate Action',  color: 'text-flag-red'   },
             { label: 'Active Incidents',      val: metrics.activeIncidents,              sub: 'Safeguarding',      color: 'text-flag-red'   },
+            { label: 'Money Review',           val: financeReviewCount,                   sub: financeSummary.totals.missingReceipts > 0 ? `${financeSummary.totals.missingReceipts} Missing Receipt${financeSummary.totals.missingReceipts === 1 ? '' : 's'}` : 'Financial Evidence', color: financeReviewCount > 0 ? 'text-purple-700' : 'text-hc-muted' },
           ].map(s => (
             <div key={s.label} className="hc-clay-raised p-6 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-all">
               <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest leading-tight">{s.label}</div>

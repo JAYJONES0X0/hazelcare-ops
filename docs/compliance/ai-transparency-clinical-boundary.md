@@ -1,7 +1,7 @@
 # CareOps AI Transparency & Clinical Safety Boundary
 
 ## Product Position
-CareOps is an operational intelligence layer. It supports manager decision-making and evidence workflows.
+CareOps is an operational intelligence operating system for supported-living management. It supports manager decision-making, evidence workflows, action tracking, reviewed outputs, and audit trails.
 
 ## Not a Clinical Decision Engine
 - CareOps does not diagnose.
@@ -19,4 +19,3 @@ CareOps is an operational intelligence layer. It supports manager decision-makin
 ## Safe Use Rules
 - Use CareOps to prioritise and organise, not to automate final care decisions.
 - Escalate safeguarding/clinical concerns through formal provider pathways.
-

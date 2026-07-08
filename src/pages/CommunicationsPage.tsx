@@ -292,7 +292,7 @@ export function CommunicationsPage() {
           <div className="p-4 hc-clay-raised mb-4 flex items-center justify-between">
             <div className="flex gap-1.5">
               {([
-                { id: 'all', label: 'ALL_VECTORS' },
+                { id: 'all', label: 'ALL' },
                 { id: 'alert', label: 'CRITICAL_ALERTS' },
                 { id: 'gap', label: 'OPS_GAPS' },
                 { id: 'leave', label: 'LEAVE_LOG' },

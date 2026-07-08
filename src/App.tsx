@@ -38,6 +38,7 @@ const CompliancePage = lazy(() => import('./pages/CompliancePage').then(m => ({ 
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const RiskScoresPage = lazy(() => import('./pages/RiskScoresPage').then(m => ({ default: m.RiskScoresPage })));
 const ClientDocsPage = lazy(() => import('./pages/ClientDocsPage').then(m => ({ default: m.ClientDocsPage })));
+const ClientFinancePage = lazy(() => import('./pages/ClientFinancePage').then(m => ({ default: m.ClientFinancePage })));
 const ClientDiaryPage = lazy(() => import('./pages/ClientDiaryPage').then(m => ({ default: m.ClientDiaryPage })));
 const AgencyPortalPage = lazy(() => import('./pages/AgencyPortalPage').then(m => ({ default: m.AgencyPortalPage })));
 const StaffMonitoringPage = lazy(() => import('./pages/StaffMonitoringPage').then(m => ({ default: m.StaffMonitoringPage })));
@@ -458,6 +459,7 @@ export default function App() {
                 {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
                 {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={handleQuickAction} />}
                 {page === 'client-docs' && <ClientDocsPage setPage={setPage} />}
+                {page === 'client-finance' && <ClientFinancePage />}
                 {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={handleQuickAction} />}
                 {page === 'agency' && <AgencyPortalPage />}
                 {page === 'staff-monitoring' && <StaffMonitoringPage weekData={weekData} onDataParsed={handleWeekDataUpdate} setPage={setPage} />}
