@@ -153,7 +153,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
 
   return (
     <div
-      className={`h-full flex flex-col p-3 sm:p-4 bg-hc-bg transition-all duration-300 ease-in-out w-64 fixed inset-y-0 left-0 z-50 ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} md:static md:translate-x-0 md:shadow-none md:z-30 md:shrink-0 ${collapsed ? (compactViewport ? 'md:w-24' : 'md:w-20') : 'md:w-64 md:lg:w-72'}`}
+      className={`h-full flex flex-col p-3 sm:p-4 bg-hc-bg transition-all duration-300 ease-in-out w-80 max-w-[85vw] fixed inset-y-0 left-0 z-50 shadow-2xl ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:static md:translate-x-0 md:shadow-none md:z-30 md:shrink-0 ${collapsed ? (compactViewport ? 'md:w-24' : 'md:w-20') : 'md:w-64 md:lg:w-72'}`}
     >
       <button
         onClick={toggleSidebar}

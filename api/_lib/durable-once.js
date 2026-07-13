@@ -1,5 +1,9 @@
-const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+function sanitizeEnvValue(v) {
+  const firstLine = String(v || '').split(/\r?\n/)[0];
+  return firstLine.trim().replace(/^["']|["']$/g, '').replace(/\/$/, '');
+}
+const UPSTASH_URL = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_URL);
+const UPSTASH_TOKEN = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
 const ALLOW_INMEMORY_FALLBACK = process.env.ALLOW_INMEMORY_REPLAY_FALLBACK === '1';
 
 const inMemoryExpiries = new Map();
@@ -19,14 +23,19 @@ async function consumeOnceInMemory(key, ttlSeconds) {
 }
 
 async function consumeOnceUpstash(key, ttlSeconds) {
-  const url = `${UPSTASH_URL}/set/${encodeURIComponent(key)}/1?EX=${ttlSeconds}&NX=true`;
-  const res = await fetch(url, {
+  const res = await fetch(UPSTASH_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${UPSTASH_TOKEN}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(['SET', key, '1', 'EX', String(ttlSeconds), 'NX']),
   });
-  if (!res.ok) return { ok: false, firstUse: false, error: `Redis responded ${res.status}` };
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    console.warn('[durable-once] upstash rejected:', res.status, bodyText.slice(0, 300));
+    return { ok: false, firstUse: false, error: `Redis responded ${res.status}` };
+  }
   const body = await res.json().catch(() => null);
   return { ok: true, firstUse: body?.result === 'OK' };
 }

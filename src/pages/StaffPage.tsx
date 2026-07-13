@@ -5,6 +5,7 @@ import { Users, Plus, Edit2, Shield, Search } from 'lucide-react';
 import { ORG_CONFIG } from '../lib/config';
 import { getAllEntriesAsync } from '../lib/entry-store';
 import { computeStaffMonitoring } from '../lib/staff-monitoring';
+import { SearchSelect } from '../components/SearchSelect';
 
 interface Props {
   staff: StaffMember[];
@@ -55,9 +56,7 @@ function StaffModal({ staff, onSave, onClose }: { staff: StaffMember; onSave: (s
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[11px] font-black text-hc-muted uppercase tracking-widest ml-1">Primary House</label>
-              <select value={form.house} onChange={e => set('house', e.target.value)} className="hc-clay-inset w-full p-4 text-[11px] font-black uppercase tracking-widest text-hc-text">
-                {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
+              <SearchSelect options={HAZELCARE_HOUSES.map(h => ({ value: h, label: h }))} value={form.house} onChange={v => set('house', v)} placeholder="Select house" />
             </div>
           </div>
           
@@ -335,10 +334,7 @@ export function StaffPage({ staff, onUpdate }: Props) {
         </div>
         <div className="flex items-center gap-4">
            <span className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em]">Sector_Lock:</span>
-           <select value={houseFilter} onChange={e => setHouseFilter(e.target.value)} className="hc-clay-inset px-6 py-4 text-[11px] font-black uppercase tracking-widest text-hc-text min-w-[200px]">
-              <option value="all">ALL SECTORS</option>
-              {houses.map(h => <option key={h} value={h}>{h}</option>)}
-           </select>
+            <SearchSelect options={[{ value: 'all', label: 'ALL SECTORS' }, ...HAZELCARE_HOUSES.map(h => ({ value: h, label: h }))]} value={houseFilter} onChange={setHouseFilter} className="min-w-[200px]" />
         </div>
       </div>
 

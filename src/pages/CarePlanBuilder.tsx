@@ -156,7 +156,7 @@ function DomainEditor({ domain, onChange }: {
       <Field label="Identified Clinical Needs" value={domain.identifiedNeed} onChange={v => up({ identifiedNeed: v })}
         area rows={5} placeholder="Describe the challenges and needs in this area — use the person's own words where possible..." />
 
-      <Field label="Planned Tactical Outcomes" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
+      <Field label="Planned Outcomes" value={domain.plannedOutcomes} onChange={v => up({ plannedOutcomes: v })}
         area rows={4} placeholder="What does success look like? What are we working towards?" />
 
       <Field label="Support Execution Strategy" value={domain.howToAchieve} onChange={v => up({ howToAchieve: v })}

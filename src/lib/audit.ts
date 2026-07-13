@@ -46,7 +46,14 @@ export type AuditAction =
   | 'finance_reviewer_approved'
   | 'finance_reviewer_rejected'
   | 'finance_ledger_imported'
-  | 'finance_export_generated';
+  | 'finance_export_generated'
+  | 'medication_profile_created'
+  | 'medication_order_verified'
+  | 'mar_schedule_generated'
+  | 'mar_recording_started'
+  | 'mar_outcome_recorded'
+  | 'mar_correction_created'
+  | 'medication_export_generated';
 
 export interface EvidenceLineage {
   sourceType: 'nourish_csv' | 'pdf_import' | 'manual_entry' | 'system_generated';

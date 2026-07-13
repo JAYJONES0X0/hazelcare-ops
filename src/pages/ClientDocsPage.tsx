@@ -280,6 +280,16 @@ export function ClientDocsPage({ setPage }: Props = {}) {
     setTimeout(() => iframeRef.current?.contentWindow?.print(), 400);
   };
 
+  useEffect(() => {
+    const refreshFinanceState = () => setFinanceState(loadFinanceState());
+    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
+    window.addEventListener('storage', refreshFinanceState);
+    return () => {
+      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
+      window.removeEventListener('storage', refreshFinanceState);
+    };
+  }, []);
+
   if (subView === 'pbs' && selectedId) return <PBSBuilder clientId={selectedId} onBack={goBack} />;
   if (subView === 'risk' && selectedId) return <RiskBuilder clientId={selectedId} onBack={goBack} />;
   if (subView === 'careplan' && selectedId) return <CarePlanBuilder clientId={selectedId} onBack={goBack} />;
@@ -621,16 +631,6 @@ export function ClientDocsPage({ setPage }: Props = {}) {
     transactions: financeState.transactions,
     exceptions: financeState.exceptionLog,
   });
-
-  useEffect(() => {
-    const refreshFinanceState = () => setFinanceState(loadFinanceState());
-    window.addEventListener('hc-client-finance-updated', refreshFinanceState);
-    window.addEventListener('storage', refreshFinanceState);
-    return () => {
-      window.removeEventListener('hc-client-finance-updated', refreshFinanceState);
-      window.removeEventListener('storage', refreshFinanceState);
-    };
-  }, []);
 
   function printCareCircleOversight() {
     const win = window.open('', '_blank', 'width=1200,height=900');

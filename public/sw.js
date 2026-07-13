@@ -1,4 +1,4 @@
-const CACHE_NAME = 'care-ops-v2';
+const CACHE_NAME = 'care-ops-v3';
 const STATIC_ASSETS = ['/manifest.json', '/favicon.ico', '/careops-logo.png'];
 
 self.addEventListener('install', (event) => {
@@ -19,6 +19,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  const isAsset = /\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/i.test(url.pathname);
+
+  if (isAsset) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      }).catch(() => caches.match(request)),
+    );
+    return;
+  }
 
   const acceptsHtml = request.headers.get('accept')?.includes('text/html');
   if (acceptsHtml) {

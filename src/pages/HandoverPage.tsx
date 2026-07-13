@@ -3,6 +3,7 @@ import { loadActions, uid } from '../lib/storage';
 import { ORG_CONFIG } from '../lib/config';
 import type { WeekSummary } from '../lib/types';
 import { ChevronRight } from 'lucide-react';
+import { SearchSelect } from '../components/SearchSelect';
 import { buildHandoverDraft, toNourishSafeText } from '../lib/operational-spine';
 import { saveCommunicationRecordForDraft, saveOutputDraft } from '../lib/operational-output-store';
 
@@ -214,9 +215,7 @@ export function HandoverPage({ weekData }: { weekData: WeekSummary | null }) {
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-3">
                    <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Site / House</label>
-                   <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-4 py-3 text-[11px] font-black uppercase text-hc-text outline-none shadow-inner bg-transparent">
-                      {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-                   </select>
+                   <SearchSelect options={HOUSES.map(h => ({ value: h, label: h }))} value={house} onChange={setHouse} placeholder="Select house" />
                 </div>
                 <div className="space-y-3">
                    <label className="text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1">Transition</label>

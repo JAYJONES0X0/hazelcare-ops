@@ -10,8 +10,12 @@ const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 const AUTH_DEFAULT_ROLE = (process.env.AUTH_DEFAULT_ROLE || 'manager').toLowerCase();
 const STAFF_LINK_TTL_MINUTES = Number(process.env.STAFF_LINK_TTL_MINUTES || '30');
 const APP_ORIGIN = process.env.APP_ORIGIN || '';
-const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+function sanitizeEnvValue(v) {
+  const firstLine = String(v || '').split(/\r?\n/)[0];
+  return firstLine.trim().replace(/^["']|["']$/g, '').replace(/\/$/, '');
+}
+const UPSTASH_URL = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_URL);
+const UPSTASH_TOKEN = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
 const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 const STAFF_TOOLS = new Set(['notes', 'handover', 'actions', 'incidents']);
@@ -207,6 +211,29 @@ function requireSessionRole(req, res, minRole = 'manager') {
   return role;
 }
 
+// Allows either a manager session (at or above minRole) OR a verified staff share-link cookie
+// for a fixed toolId. Staff opening a share link never get an HC session — only the staff-sac
+// cookie — so endpoints staff actually use (enhance-note) must accept both. toolId is never
+// taken from client input — callers pass the fixed tool the handler actually serves.
+function requireSessionOrStaffAccess(req, res, toolId, minRole = 'senior') {
+  const cookies = parseCookies(req);
+  const managerClaims = AUTH_SESSION_SECRET ? readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET) : null;
+  if (managerClaims) {
+    const role = sanitizeRole(managerClaims.role || AUTH_DEFAULT_ROLE);
+    if (!roleAtLeast(role, minRole)) {
+      res.status(403).json({ error: 'Forbidden', requiredRole: minRole, currentRole: role });
+      return null;
+    }
+    return { via: 'manager', role };
+  }
+
+  if (STAFF_LINK_SECRET && verifyStaffSacCookie(cookies[STAFF_SAC_COOKIE], toolId, STAFF_LINK_SECRET)) {
+    return { via: 'staff-link' };
+  }
+  res.status(401).json({ error: 'Unauthorized' });
+  return null;
+}
+
 // Staff Link Utils
 function base64UrlEncode(input) {
   return Buffer.from(input).toString('base64url');
@@ -262,6 +289,19 @@ async function fetchTokenByLinkId(linkId) {
   return body?.result || null;
 }
 
+async function upstashCmd(cmd) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+  const res = await fetch(UPSTASH_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmd),
+  });
+  if (!res.ok) return null;
+  return res.json().catch(() => null);
+}
+
+const PENDING_NOTES_KEY = 'staffnotes:pending';
+
 export default async function handler(req, res) {
   // Extract route from URL path - Vercel catch-all may not populate req.query.action
   const urlPath = (req.url || '').split('?')[0];
@@ -274,6 +314,9 @@ export default async function handler(req, res) {
     case 'issue-staff-link': return handleIssueStaffLink(req, res);
     case 'verify-staff-link': return handleVerifyStaffLink(req, res);
     case 'staff-sac-status': return handleStaffSacStatus(req, res);
+    case 'submit-note': return handleSubmitNote(req, res);
+    case 'pending-notes': return handlePendingNotes(req, res);
+    case 'ack-note': return handleAckNote(req, res);
     case 'analyze-intel': return handleAnalyzeIntel(req, res);
     case 'enhance-note': return handleEnhanceNote(req, res);
     case 'ghost-write': return handleGhostWrite(req, res);
@@ -338,7 +381,7 @@ async function handleIssueStaffLink(req, res) {
   if (!STAFF_LINK_SECRET) return res.status(500).json({ error: 'Staff link service not configured' });
   if (!requireSessionRole(req, res, 'manager')) return;
 
-  const { toolId } = req.body || {};
+  const { toolId, email } = req.body || {};
   if (!toolId || !STAFF_TOOLS.has(toolId)) return res.status(400).json({ error: 'Invalid staff tool' });
 
   const code = generateAccessCode();
@@ -359,11 +402,43 @@ async function handleIssueStaffLink(req, res) {
   const linkId = generateLinkId();
   const stored = await storeToken(linkId, token, Math.ceil(ttlMs / 1000) + 60);
 
+  // Code is intentionally NOT embedded in the link — link possession alone must not be
+  // enough to authenticate. The code stays a separate factor, typed in on the device.
   const link = stored
     ? `${origin}#staff/${toolId}?id=${linkId}`
     : `${origin}#staff/${toolId}?t=${token}`;
 
-  return res.json({ link, code, expiresAt: payloadObj.exp });
+  let sent = false;
+  if (email && typeof email === 'string' && email.includes('@')) {
+    try {
+      const origin = APP_ORIGIN || `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`;
+      const resendKey = sanitizeEnvValue(process.env.RESEND_API_KEY);
+      if (resendKey) {
+        const { Resend } = await import('resend');
+        const resend = new Resend(resendKey);
+        const { error } = await resend.emails.send({
+          from: 'Care Ops <onboarding@resend.dev>',
+          to: email.trim().toLowerCase(),
+          subject: 'Care Note Request — Access Link',
+          html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="margin:0 0 8px">Your care note link</h2>
+            <p style="color:#555;font-size:14px;line-height:1.5">Tap the button below, then enter the code shown beneath it to get to your note screen.</p>
+            <div style="background:#f5f5f5;border-radius:12px;padding:24px;margin:24px 0;text-align:center">
+              <a href="${link}" style="display:inline-block;background:#14b8a6;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:bold;font-size:14px">Open My Note Screen</a>
+            </div>
+            <div style="background:#fff;border:2px dashed #ddd;border-radius:12px;padding:20px;text-align:center;font-size:22px;letter-spacing:4px;font-weight:bold;margin:24px 0">${code}</div>
+            <p style="color:#999;font-size:12px">Expires in ${STAFF_LINK_TTL_MINUTES} minutes | Works once | If the button doesn't work, copy this link: ${link}</p>
+          </div>`
+        });
+        if (!error) sent = true;
+        else console.warn('[staff-link] resend error:', error);
+      }
+    } catch (e) {
+      console.warn('[staff-link] email send failed:', e.message);
+    }
+  }
+
+  return res.json({ link, code, expiresAt: payloadObj.exp, sent });
 }
 
 async function handleVerifyStaffLink(req, res) {
@@ -430,6 +505,71 @@ async function handleStaffSacStatus(req, res) {
   const raw = cookies[STAFF_SAC_COOKIE];
   const ok = verifyStaffSacCookie(raw, toolId, STAFF_LINK_SECRET);
   return res.json({ ok });
+}
+
+async function handleSubmitNote(req, res) {
+  if (!setCors(req, res)) return res.status(403).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!STAFF_LINK_SECRET) return res.status(500).json({ ok: false, error: 'Staff link service not configured' });
+
+  const cookies = parseCookies(req);
+  const { toolId, client, house, noteType, text, evidenceTrail, staffName } = req.body || {};
+  if (!toolId || !text || typeof text !== 'string' || !text.trim()) {
+    return res.status(400).json({ ok: false, error: 'toolId and text required' });
+  }
+  const raw = cookies[STAFF_SAC_COOKIE];
+  if (!verifyStaffSacCookie(raw, toolId, STAFF_LINK_SECRET)) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+    return res.status(503).json({ ok: false, error: 'Queue not configured' });
+  }
+
+  const id = crypto.randomBytes(8).toString('hex');
+  const note = {
+    id,
+    toolId,
+    client: (client || '').slice(0, 200),
+    house: (house || '').slice(0, 200),
+    noteType: (noteType || '').slice(0, 100),
+    text: text.slice(0, 20_000),
+    evidenceTrail: (evidenceTrail || '').slice(0, 8_000),
+    staffName: (staffName || '').slice(0, 200),
+    submittedAt: Date.now(),
+  };
+
+  const result = await upstashCmd(['HSET', PENDING_NOTES_KEY, id, JSON.stringify(note)]);
+  if (!result || result.error) return res.status(500).json({ ok: false, error: 'Failed to queue note' });
+
+  return res.json({ ok: true, id });
+}
+
+async function handlePendingNotes(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  if (!requireSessionRole(req, res, 'senior')) return;
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return res.json({ notes: [] });
+
+  const result = await upstashCmd(['HGETALL', PENDING_NOTES_KEY]);
+  const flat = result?.result || [];
+  const notes = [];
+  for (let i = 0; i < flat.length; i += 2) {
+    try { notes.push(JSON.parse(flat[i + 1])); } catch { /* skip corrupt entry */ }
+  }
+  notes.sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+  return res.json({ notes });
+}
+
+async function handleAckNote(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!requireSessionRole(req, res, 'senior')) return;
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ ok: false, error: 'id required' });
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return res.status(503).json({ ok: false });
+
+  const result = await upstashCmd(['HDEL', PENDING_NOTES_KEY, id]);
+  if (!result || result.error) return res.status(500).json({ ok: false });
+  return res.json({ ok: true });
 }
 
 // -- Empire AI Router ---------------------------------------------------------
@@ -618,7 +758,7 @@ async function handleEnhanceNote(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  if (!requireSessionRole(req, res, 'senior')) return;
+  if (!requireSessionOrStaffAccess(req, res, 'notes', 'senior')) return;
 
   const { text, noteType, clientName, referenceTemplate, refineInstructions, previousOutput, clinicalContext, includeEvidenceTrail } = req.body || {};
   if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).send('No text provided');

@@ -80,7 +80,7 @@ export function TemplatesPage({ weekData }: Props) {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col animate-in fade-in duration-500">
+    <div className="h-dvh overflow-hidden flex flex-col animate-in fade-in duration-500">
       <div className="shrink-0 border-b border-hc-border/30 px-8 py-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase mb-1">Document Library</h1>

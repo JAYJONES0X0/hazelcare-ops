@@ -48,25 +48,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
-    // Auto-clear local app stores on first catch so recovery cannot loop on stale state.
-    try {
-      for (const key of RECOVERY_STORAGE_KEYS) {
-        localStorage.removeItem(key);
-      }
-      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
-        const key = localStorage.key(i);
-        if (key?.startsWith('hazelcare-legal-') || key?.startsWith('collapse-state:')) {
-          localStorage.removeItem(key);
-        }
-      }
-      indexedDB.deleteDatabase('hazel-care-ops');
-    } catch { /* ignore */ }
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
-        .catch(() => undefined);
-    }
   }
 
   public render() {

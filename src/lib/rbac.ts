@@ -20,6 +20,7 @@ const PAGE_ACCESS: Record<Page, UserRole[]> = {
   reports: ['admin', 'manager', 'senior'],
   risk: ['admin', 'manager', 'senior'],
   'client-docs': ['admin', 'manager', 'senior'],
+  'medication-safety': ['admin', 'manager', 'senior'],
   'client-finance': ['admin', 'manager', 'senior'],
   'client-diary': ['admin', 'manager', 'senior', 'viewer'],
   agency: ['admin', 'manager'],

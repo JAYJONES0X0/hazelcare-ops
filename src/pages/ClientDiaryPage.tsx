@@ -435,7 +435,7 @@ export function ClientDiaryPage({ weekData, setPage, pageCtx, onQuickAction }: P
   }
 
   return (
-    <div className="flex h-screen overflow-hidden animate-in fade-in duration-700"
+    <div className="flex h-dvh overflow-hidden animate-in fade-in duration-700"
       onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={onDrop}

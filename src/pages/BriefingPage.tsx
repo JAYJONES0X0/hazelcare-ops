@@ -63,7 +63,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
 
   if (hydrating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-hc-bg">
+      <div className="min-h-dvh flex items-center justify-center bg-hc-bg p-4">
         <div className="flex flex-col items-center gap-4">
           <RadarLoader color="#2dd4bf" size={40} />
           <div className="text-[10px] font-black text-hc-teal uppercase tracking-[0.3em] animate-pulse">Initialising Briefing Matrix</div>
@@ -74,7 +74,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
 
   if (!weekData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-hc-bg animate-in fade-in duration-1000">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-8 bg-hc-bg animate-in fade-in duration-1000">
         <div className="w-32 h-32 rounded-3xl hc-clay-raised flex items-center justify-center mb-10">
           <Upload className="w-12 h-12 text-hc-teal opacity-20" />
         </div>
@@ -88,13 +88,13 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
   const openActions = actions.filter(a => a.status !== 'completed');
 
   return (
-    <div className="min-h-screen p-10 flex flex-col gap-12 bg-hc-bg overflow-y-auto scrollbar-thin">
+    <div className="min-h-dvh p-4 sm:p-6 lg:p-10 flex flex-col gap-6 sm:gap-8 lg:gap-12 bg-hc-bg overflow-y-auto scrollbar-thin">
       
       {/* ── MISSION HEADER ── */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-10 pb-12 border-b border-hc-border">
         <div>
-          <div className="text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Care Ops // Service Overview</div>
-          <h1 className="text-4xl font-black text-hc-text tracking-[0.3em] uppercase">Daily Briefing</h1>
+          <div className="text-[10px] sm:text-[11px] font-black tracking-[0.4em] text-hc-teal uppercase mb-2">Care Ops // Service Overview</div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-hc-text tracking-[0.15em] sm:tracking-[0.3em] uppercase">Daily Briefing</h1>
         </div>
         
         <div className="flex items-center gap-6">
@@ -106,7 +106,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
              onClick={() => allCollapsed ? expandAllSections(SECTION_IDS) : collapseAllSections(SECTION_IDS)}
              className="btn-clay h-[54px] !rounded-2xl px-8 text-[11px]"
            >
-             {allCollapsed ? 'EXPAND_MATRIX' : 'COLLAPSE_MATRIX'}
+             {allCollapsed ? 'EXPAND ALL' : 'COLLAPSE ALL'}
            </button>
         </div>
       </div>
@@ -125,7 +125,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
                 <div className="flex flex-col gap-2">
                    <div className="text-xs font-black text-hc-text uppercase tracking-wider group-hover:text-hc-teal transition-colors">{a.title}</div>
                    <div className="text-[11px] font-black text-hc-muted tracking-widest flex justify-between uppercase">
-                      <span>Target: {a.owner}</span>
+                      <span>Owner: {a.owner}</span>
                       <span className="tabular-nums">{a.dueDate}</span>
                    </div>
                 </div>
@@ -140,8 +140,8 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
             <table className="w-full text-left border-separate border-spacing-2">
               <thead>
                 <tr className="text-[11px] font-black text-hc-muted uppercase tracking-[0.4em]">
-                  <th className="px-6 py-4">Identifier</th>
-                  <th className="px-6 py-4">Station</th>
+                  <th className="px-6 py-4">Name</th>
+                  <th className="px-6 py-4">House</th>
                   <th className="px-6 py-4 text-center">Alerts</th>
                   <th className="px-6 py-4">Latest Note</th>
                 </tr>
@@ -183,7 +183,7 @@ export function BriefingPage({ weekData: weekDataProp, actions, setPage }: Props
         </Section>
 
         {/* ── STATION PERFORMANCE ── */}
-        <Section id="houses" title="Station Performance Index" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>
+        <Section id="houses" title="House Performance" collapsed={isSectionCollapsed('houses')} onToggle={() => toggleSection('houses')} count={Object.keys(weekData.houses).length}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {Object.values(weekData.houses).map(h => (
               <div key={h.name} className="hc-clay-raised p-8 flex flex-col gap-8 group">

@@ -25,11 +25,10 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <meta name="build-tag" content="m20260710">
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW register error:', err));
-        });
+        navigator.serviceWorker.getRegistrations().then(r => r.forEach(r => r.unregister()));
       }
     </script>
   </body>

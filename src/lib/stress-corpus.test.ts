@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { buildEnvelopeFromRaw } from './import-profiles';
 import { extractFileText } from './universal-extractor';
 
-const CORPUS_DIR = 'C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar';
-const ZIP_PATH = path.join(CORPUS_DIR, 'hazelcare-limited-build-pack.zip');
+const CORPUS_DIR = 'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE';
+const ZIP_PATH = path.join(CORPUS_DIR, 'hazelcare-stress-zip');
 
 type CorpusCase = {
   fileName: string;

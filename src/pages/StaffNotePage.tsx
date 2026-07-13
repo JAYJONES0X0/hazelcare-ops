@@ -1,163 +1,51 @@
-import { useState, useRef, useCallback } from 'react';
-import type { ReactNode } from 'react';
-import { Sparkles, RefreshCw, FileText, LayoutGrid, Layers, Zap, Clock, ShieldCheck, Globe2, Link2, Copy, CheckCircle2, MessageSquare, Database } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Sparkles, RefreshCw, FileText, Clock, ShieldCheck, Zap, Link2, Copy, CheckCircle2, MessageSquare, Database, Mail, Inbox, Trash2, Download } from 'lucide-react';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';
-import type { Page, PageContext } from '../lib/types';
+import type { CareEntry, Page, PageContext } from '../lib/types';
 import { assessNoteStandard, buildProfessionalNoteDirective } from '../lib/note-quality-standard';
 import { loadClients } from '../lib/client-store';
-import { getAllEntriesAsync } from '../lib/entry-store';
+import { loadCustomHouses, addCustomHouse } from '../lib/custom-houses';
+import { getAllEntriesAsync, appendEntriesAsync } from '../lib/entry-store';
 import { getAllRosterShifts } from '../lib/roster-store';
 import { buildOsIntelligenceContextFromState } from '../lib/os-intelligence-context';
+import { LanguageSearchDropdown } from '../components/LanguageSearchDropdown';
+import { SearchSelect } from '../components/SearchSelect';
 import { NoteWorkspace } from './NoteWorkspace';
 import { TemplatesPage } from './TemplatesPage';
 
-interface SpeechRecognitionResultLike {
-  isFinal: boolean;
-  0: { transcript: string };
-}
-
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<SpeechRecognitionResultLike>;
-}
-
+interface SpeechRecognitionResultLike { isFinal: boolean; 0: { transcript: string } }
+interface SpeechRecognitionEventLike { resultIndex: number; results: ArrayLike<SpeechRecognitionResultLike> }
 interface SpeechRecognitionLike {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
+  lang: string; continuous: boolean; interimResults: boolean;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
+  onerror: (() => void) | null; onend: (() => void) | null;
+  start: () => void; stop: () => void;
 }
-
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 const SpeechRecognitionAPI =
   typeof window !== 'undefined'
-    ? ((window as Window & {
-        SpeechRecognition?: SpeechRecognitionCtor;
-        webkitSpeechRecognition?: SpeechRecognitionCtor;
-      }).SpeechRecognition ||
-      (window as Window & { webkitSpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition)
+    ? ((window as Window & { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor }).SpeechRecognition ||
+       (window as Window & { webkitSpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition)
     : null;
 
-const speechSupported = !!SpeechRecognitionAPI;
-
-const VOICE_LANGUAGES = [
-  { code: 'en-GB', label: 'English (UK)', tag: 'UK' },
-  { code: 'en-US', label: 'English (US)', tag: 'US' },
-  { code: 'en-IE', label: 'English (Ireland)', tag: 'IE' },
-  { code: 'fr-FR', label: 'French', tag: 'FR' },
-  { code: 'es-ES', label: 'Spanish', tag: 'ES' },
-  { code: 'de-DE', label: 'German', tag: 'DE' },
-  { code: 'it-IT', label: 'Italian', tag: 'IT' },
-  { code: 'pt-PT', label: 'Portuguese', tag: 'PT' },
-  { code: 'pl-PL', label: 'Polish', tag: 'PL' },
-  { code: 'ro-RO', label: 'Romanian', tag: 'RO' },
-  { code: 'ar-SA', label: 'Arabic', tag: 'AR' },
-  { code: 'hi-IN', label: 'Hindi', tag: 'HI' },
-  { code: 'bn-BD', label: 'Bengali (Bangladesh)', tag: 'BN' },
-  { code: 'ur-PK', label: 'Urdu', tag: 'UR' },
-  { code: 'pa-IN', label: 'Punjabi', tag: 'PA' },
-  { code: 'gu-IN', label: 'Gujarati', tag: 'GU' },
-  { code: 'ta-IN', label: 'Tamil', tag: 'TA' },
-  { code: 'te-IN', label: 'Telugu', tag: 'TE' },
-  { code: 'mr-IN', label: 'Marathi', tag: 'MR' },
-  { code: 'ne-NP', label: 'Nepali', tag: 'NE' },
-  { code: 'yo-NG', label: 'Yoruba', tag: 'YO' },
-  { code: 'ig-NG', label: 'Igbo', tag: 'IG' },
-  { code: 'sw-KE', label: 'Swahili', tag: 'SW' },
-  { code: 'sn-ZW', label: 'Shona', tag: 'SN' },
+const FORMATS = [
+  { id: '', label: 'Standard Note', icon: <FileText size={12} />, desc: 'Time-chronological narrative', directive: 'Write a clear shift note in time-chronological order. Cover: medication, meals, mood, activities, and end-of-shift status. Use simple sentences like a real care worker.' },
+  { id: 'handover', label: 'Shift Handover', icon: <Clock size={12} />, desc: 'Full shift covering all clients', directive: 'Write a full handover note covering every client in the house. Include: general overview, care and interaction, environment and resident mood, medication administration, cleaning completed, safe balances, and concerns. Use the structure from real handover notes.' },
+  { id: 'incident', label: 'Incident', icon: <ShieldCheck size={12} />, desc: 'What happened, actions taken, outcome', directive: 'Document the incident clearly: what happened, time and location, staff actions taken, client response, any injuries or damage, who was notified (GP, manager, family), and follow-up actions. Be factual and precise.' },
+  { id: 'medication', label: 'Medication Note', icon: <Zap size={12} />, desc: 'Administration or refusal', directive: 'Document medication administration or refusal: medication name and dose, time given, how it was taken (with water/juice/food), any refusal and reason given, who was informed, and outcome.' },
 ];
 
-let _voiceLang = 'en-GB';
-function setVoiceLang(lang: string) { _voiceLang = lang; }
-
-function useSpeechToText(onResult: (transcript: string) => void) {
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const [listening, setListening] = useState(false);
-  const stop = useCallback(() => {
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    setListening(false);
-  }, []);
-  const start = useCallback(() => {
-    if (!speechSupported) return;
-    const recognition = new (SpeechRecognitionAPI as SpeechRecognitionCtor)();
-    recognition.lang = _voiceLang;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (event: SpeechRecognitionEventLike) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) onResult(event.results[i][0].transcript);
-      }
-    };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
-  }, [onResult]);
-  return { listening, toggle: () => listening ? stop() : start() };
-}
-
-function MicButton({ fieldKey, voiceLang, onTranscript }: { fieldKey: string; voiceLang: string; onTranscript: (key: string, text: string) => void }) {
-  const { listening, toggle } = useSpeechToText(t => onTranscript(fieldKey, t));
-  const lang = VOICE_LANGUAGES.find(v => v.code === voiceLang) || VOICE_LANGUAGES[0];
-  if (!speechSupported) return null;
-  return (
-    <button type="button" onClick={toggle} className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl
-        ${listening ? 'bg-flag-red/20 border-2 border-flag-red text-flag-red animate-pulse' : 'hc-clay-raised border border-hc-teal/20 text-hc-teal hover:bg-hc-teal/5'}`}>
-      <div className={`w-2 h-2 rounded-full ${listening ? 'bg-flag-red animate-ping' : 'bg-hc-teal'}`} />
-      <span>{listening ? 'LISTENING...' : `${lang?.tag} DICTATE`}</span>
-    </button>
-  );
-}
-
-interface ProtocolStack {
+interface PendingStaffNote {
   id: string;
-  name: string;
-  desc: string;
-  icon: ReactNode;
-  structure: string[];
-  directive: string;
+  client: string;
+  house: string;
+  noteType: string;
+  text: string;
+  evidenceTrail: string;
+  staffName: string;
+  submittedAt: number;
 }
-
-const INTELLIGENCE_STACKS: ProtocolStack[] = [
-  {
-    id: 'hazel_golden_structure',
-    name: 'Hazel Golden Structure',
-    desc: 'Who, what, why, how, outcome and professional language',
-    icon: <FileText size={14} />,
-    structure: ['Who was involved', 'What happened', 'Why support was needed', 'How support was provided', 'Outcome and handover'],
-    directive: buildProfessionalNoteDirective()
-  },
-  { 
-    id: 'day_shift_1to1', 
-    name: 'Day Shift 1:1 Narrative', 
-    desc: 'Temporal blocks with Active Accountability (I supported...)',
-    icon: <Clock size={14} />,
-    structure: ['Morning Routine', '1:1 Engagement (AM)', 'Midday Nutrition', '1:1 Engagement (PM)', 'Evening Outcome'],
-    directive: 'Prioritise chronological flow, first-person accountability, clear intervention-response-outcome detail per block, and handover-ready end status.'
-  },
-  { 
-    id: 'incident_forensic', 
-    name: 'Forensic Incident Stack', 
-    desc: 'ABC pattern with immediate de-escalation evidence',
-    icon: <ShieldCheck size={14} />,
-    structure: ['Antecedent (Trigger)', 'Behaviour (Description)', 'Consequence (Action)', 'Post-Incident Welfare'],
-    directive: 'Use forensic precision: specific trigger, exact behaviour observed, immediate de-escalation steps, safety/risk controls, and welfare follow-up.'
-  },
-  { 
-    id: 'medication_refusal', 
-    name: 'Medication Refusal Protocol', 
-    desc: 'Mental capacity assessment & risk mitigation evidence',
-    icon: <Zap size={14} />,
-    structure: ['Medication Details', 'Reason for Refusal', 'Capacity Prompting', 'Risk Communication', 'MDT Notification'],
-    directive: 'Document refusal with capacity-sensitive language, exact prompts offered, risk explained, patient response, and who was informed (MDT/family/on-call).'
-  }
-];
 
 export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageContext) => void } = {}) {
   const [activeTab] = useState<'dictation' | 'workspace' | 'templates'>('dictation');
@@ -166,31 +54,54 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
   const [freeText, setFreeText] = useState('');
   const [enhancing, setEnhancing] = useState(false);
   const [enhancedNote, setEnhancedNote] = useState('');
+  const [evidenceTrail, setEvidenceTrail] = useState('');
+  const [showEvidence, setShowEvidence] = useState(false);
   const [copied, setCopied] = useState(false);
-  
-  const [activeStack, setActiveStack] = useState<ProtocolStack | null>(null);
-  const [showStackPicker, setShowStackPicker] = useState(false);
+  const [formatId, setFormatId] = useState('');
   const [voiceLang, setVoiceLangState] = useState('en-GB');
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [shareCode, setShareCode] = useState('');
   const [copiedShare, setCopiedShare] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [staffEmail, setStaffEmail] = useState('');
+  const [sentEmail, setSentEmail] = useState(false);
+  const [customHouses, setCustomHouses] = useState<string[]>(() => loadCustomHouses());
+  const [pendingNotes, setPendingNotes] = useState<PendingStaffNote[]>([]);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [busyId, setBusyId] = useState('');
 
-  const setVoiceLangUi = (lang: string) => {
-    setVoiceLangState(lang);
-    setVoiceLang(lang);
-  };
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [listening, setListening] = useState(false);
 
-  const loadStack = (stack: ProtocolStack) => {
-    setActiveStack(stack);
-    const blueprint = stack.structure.map(s => `${s.toUpperCase()}:\n[Awaiting Intelligence...]\n`).join('\n');
-    setFreeText(blueprint);
-    setShowStackPicker(false);
-  };
+  const toggleMic = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+      setListening(false);
+      return;
+    }
+    if (!SpeechRecognitionAPI) return;
+    const r = new (SpeechRecognitionAPI as SpeechRecognitionCtor)();
+    r.lang = voiceLang;
+    r.continuous = true;
+    r.interimResults = true;
+    r.onresult = (event: SpeechRecognitionEventLike) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) setFreeText(prev => prev + ' ' + event.results[i][0].transcript);
+      }
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    recognitionRef.current = r;
+    r.start();
+    setListening(true);
+  }, [listening, voiceLang]);
 
   const wordCount = freeText.split(/\s+/).filter(Boolean).length;
-  const noteAssessment = assessNoteStandard(freeText);
+  const noteAssessment = assessNoteStandard(freeText, enhancedNote);
+
+  const currentFormat = FORMATS.find(f => f.id === formatId);
 
   const enhanceNote = async () => {
     if (!freeText.trim()) return;
@@ -202,25 +113,21 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
       ]);
       const profile = loadClients().find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim()) || null;
       const clinicalContext = buildOsIntelligenceContextFromState({
-        clientName: client,
-        entry: null,
-        entries,
-        clientProfile: profile,
-        rosterShifts,
-        refineInstructions: activeStack?.directive || '',
+        clientName: client, entry: null, entries, clientProfile: profile, rosterShifts,
+        refineInstructions: currentFormat?.directive || '',
         maxChars: 55_000,
       });
       const res = await fetch('/api/staff/enhance-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           text: freeText,
-          noteType: activeStack ? activeStack.name : 'Clinical Entry',
+          noteType: currentFormat ? currentFormat.label : 'Clinical Entry',
           clientName: client,
-          useStack: !!activeStack,
-          stackId: activeStack?.id,
-          stackDirective: activeStack?.directive || '',
-          referenceTemplate: activeStack ? activeStack.structure.map(s => `${s.toUpperCase()}:\n`).join('\n') : '',
-          refineInstructions: buildProfessionalNoteDirective(client, activeStack ? `PROTOCOL DIRECTIVE: ${activeStack.directive}` : ''),
+          useStack: !!currentFormat,
+          stackId: formatId || undefined,
+          stackDirective: currentFormat?.directive || '',
+          referenceTemplate: '',
+          refineInstructions: buildProfessionalNoteDirective(client, currentFormat ? `PROTOCOL DIRECTIVE: ${currentFormat.directive}` : ''),
           clinicalContext,
           includeEvidenceTrail: true,
         }),
@@ -236,23 +143,33 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
         result += decoder.decode(value);
         setEnhancedNote(result);
       }
+      const evIdx = result.lastIndexOf('\n---\nEvidence Trail:');
+      if (evIdx !== -1) {
+        setEnhancedNote(result.slice(0, evIdx));
+        setEvidenceTrail(result.slice(evIdx));
+      } else {
+        setEnhancedNote(result);
+        setEvidenceTrail('');
+      }
     } catch { /* ui handled */ }
     finally { setEnhancing(false); }
   };
 
   const issueStaffLink = async () => {
     setSharing(true);
+    setSentEmail(false);
     try {
       const res = await fetch('/api/staff/issue-staff-link', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toolId: 'notes' }),
+        body: JSON.stringify({ toolId: 'notes', email: staffEmail || undefined }),
       });
-      if (!res.ok) throw new Error('Failed to issue secure link');
+      if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setShareLink(data.link || '');
       setShareCode(data.code || '');
+      if (staffEmail && data.sent) setSentEmail(true);
     } catch {
       setShareLink('');
       setShareCode('');
@@ -261,240 +178,340 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
     }
   };
 
+  const loadPendingNotes = useCallback(async () => {
+    setLoadingPending(true);
+    try {
+      const res = await fetch('/api/staff/pending-notes', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      setPendingNotes(Array.isArray(data.notes) ? data.notes : []);
+    } catch {
+      /* leave list as-is */
+    } finally {
+      setLoadingPending(false);
+    }
+  }, []);
+
+  useEffect(() => { void loadPendingNotes(); }, [loadPendingNotes]);
+
+  const ackNote = async (id: string) => {
+    try {
+      await fetch('/api/staff/ack-note', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+    } catch { /* ignore */ }
+    setPendingNotes(prev => prev.filter(n => n.id !== id));
+  };
+
+  const importNote = async (note: PendingStaffNote) => {
+    setBusyId(note.id);
+    try {
+      const now = new Date();
+      const entry: CareEntry = {
+        id: `staff-${note.id}`,
+        date: now.toLocaleDateString('en-GB'),
+        time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        house: note.house || house,
+        type: note.noteType || 'daily_support',
+        carer: note.staffName || 'Staff (via link)',
+        client: note.client,
+        entry: note.text,
+        severity: 'none',
+        flags: [],
+        category: 'daily_support',
+      };
+      await appendEntriesAsync([entry]);
+      await ackNote(note.id);
+    } finally {
+      setBusyId('');
+    }
+  };
+
   return (
-    <div className="p-6 lg:p-12 max-w-[1700px] mx-auto animate-in fade-in duration-700">
-      
-      <div className="w-full flex flex-wrap items-center gap-3 mb-6">
-        <div className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-teal flex items-center gap-2">
+    <div className="p-4 sm:p-6 lg:p-12 max-w-[1700px] mx-auto animate-in fade-in duration-700">
+      <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
+        <div className="hc-clay-raised px-3 py-2 sm:px-4 sm:py-3 rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-hc-teal flex items-center gap-2">
           <MessageSquare size={13} /> Dictation Studio
         </div>
-        <button
-          type="button"
-          onClick={() => setPage?.('note-workspace')}
-          disabled={!setPage}
-          className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2"
-        >
-          <Sparkles size={13} /> Open Note Workspace
+        <button type="button" onClick={() => setPage?.('note-workspace')} disabled={!setPage} className="hc-clay-raised px-3 py-2 sm:px-4 sm:py-3 rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2">
+          <Sparkles size={13} /> Note Workspace
         </button>
-        <button
-          type="button"
-          onClick={() => setPage?.('templates')}
-          disabled={!setPage}
-          className="hc-clay-raised px-4 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2"
-        >
-          <Database size={13} /> Open Builder Templates
+        <button type="button" onClick={() => setPage?.('templates')} disabled={!setPage} className="hc-clay-raised px-3 py-2 sm:px-4 sm:py-3 rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-hc-text disabled:opacity-40 flex items-center gap-2">
+          <Database size={13} /> Templates
         </button>
       </div>
+
+      {pendingNotes.length > 0 && (
+        <div className="mb-8 sm:mb-12 hc-clay-raised overflow-hidden border border-flag-amber/30 shadow-2xl">
+          <div className="bg-flag-amber/10 px-4 sm:px-8 py-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-4 h-4 text-flag-amber" />
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-flag-amber">
+                {pendingNotes.length} Pending Staff Note{pendingNotes.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button type="button" onClick={() => void loadPendingNotes()} disabled={loadingPending}
+              className="text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-teal flex items-center gap-1"
+            >
+              <RefreshCw className={`w-3 h-3 ${loadingPending ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+          </div>
+          <div className="divide-y divide-hc-border/20">
+            {pendingNotes.map(note => (
+              <div key={note.id} className="p-4 sm:p-6 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[11px] font-black text-hc-text">
+                    {note.client || 'Unnamed client'} <span className="text-hc-muted font-bold">· {note.house || 'No house'}</span>
+                  </div>
+                  <div className="text-[9px] font-bold text-hc-muted uppercase tracking-widest">
+                    {note.staffName ? `${note.staffName} · ` : ''}{new Date(note.submittedAt).toLocaleString('en-GB')}
+                  </div>
+                </div>
+                <pre className="text-[12px] text-hc-text font-medium leading-relaxed whitespace-pre-wrap hc-clay-inset p-3 rounded-xl max-h-40 overflow-y-auto">{note.text}</pre>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => void importNote(note)} disabled={busyId === note.id || !note.client.trim()}
+                    className="px-4 py-2 rounded-xl btn-tactical text-[9px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" /> {busyId === note.id ? 'Importing...' : 'Import to Diary'}
+                  </button>
+                  <button type="button" onClick={() => void ackNote(note.id)} disabled={busyId === note.id}
+                    className="px-4 py-2 rounded-xl hc-clay-raised text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-flag-red flex items-center gap-2"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'dictation' && (
-        <>
-          <div className="mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl">
-        <div className="bg-hc-teal px-8 py-5 flex items-center justify-between">
-           <div className="flex items-center gap-4">
-              <Layers className="w-5 h-5 text-hc-bone" />
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-hc-bone block leading-none mb-1">Narrative Builder</span>
-                <span className="text-[10px] font-bold text-hc-bone/50 uppercase tracking-widest leading-none">Active Stack: {activeStack?.name || 'None Loaded'}</span>
+        <div className="mb-8 sm:mb-12 hc-clay-raised overflow-hidden border border-hc-teal/20 shadow-2xl">
+          <div className="bg-hc-teal px-4 sm:px-8 py-4 sm:py-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-hc-bone">Narrative Builder</span>
+                {currentFormat && <span className="text-[8px] sm:text-[9px] font-bold text-hc-bone/50 uppercase tracking-widest ml-2">Format: {currentFormat.label}</span>}
               </div>
-           </div>
-           
-           <div className="relative">
-              <button
-                onClick={() => setShowStackPicker(!showStackPicker)}
-                className="flex items-center gap-3 px-6 py-2.5 rounded-xl bg-hc-surface border border-hc-border/50 text-[10px] font-black uppercase tracking-widest text-hc-text hover:bg-hc-bone transition-all shadow-md active:scale-95"
-              >
-                <LayoutGrid size={14} />
-                Load Intelligence Stack
-              </button>
-
-              {showStackPicker && (
-                <div className="absolute right-0 top-14 w-80 hc-clay-raised-high bg-hc-surface p-3 z-50 animate-in zoom-in-95 duration-300 shadow-3xl">
-                  <div className="p-3 border-b border-hc-border mb-2">
-                    <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Select Narrative Approach</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {INTELLIGENCE_STACKS.map(s => (
-                      <button 
-                        key={s.id} 
-                        onClick={() => loadStack(s)}
-                        className="w-full text-left p-4 rounded-2xl hover:bg-hc-teal/5 transition-all group flex items-start gap-4"
-                      >
-                        <div className="w-10 h-10 rounded-xl hc-clay-inset flex items-center justify-center text-hc-teal shrink-0">{s.icon}</div>
-                        <div>
-                          <div className="text-[11px] font-black text-hc-text uppercase leading-none mb-1.5 group-hover:text-hc-teal">{s.name}</div>
-                          <div className="text-[9px] font-bold text-hc-muted uppercase leading-tight">{s.desc}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 divide-x divide-hc-border/20 p-2">
-          <div className="p-8 space-y-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Intelligence Input Stream</label>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 hc-clay-inset px-3 py-2 rounded-xl">
-                  <Globe2 className="w-3.5 h-3.5 text-hc-teal" />
-                  <select
-                    value={voiceLang}
-                    onChange={(e) => setVoiceLangUi(e.target.value)}
-                    className="bg-transparent text-[10px] font-black uppercase tracking-widest text-hc-text outline-none"
+              <div className="flex gap-1 overflow-x-auto scrollbar-none">
+                {FORMATS.map(f => (
+                  <button key={f.id} onClick={() => setFormatId(f.id)}
+                    className={`shrink-0 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all ${
+                      formatId === f.id ? 'bg-hc-bone/20 text-hc-bone shadow-lg' : 'text-hc-bone/50 hover:text-hc-bone/80'
+                    }`}
                   >
-                    {VOICE_LANGUAGES.map(v => <option key={v.code} value={v.code}>{v.tag} {v.label}</option>)}
-                  </select>
-                </div>
-                <MicButton fieldKey="freetext" voiceLang={voiceLang} onTranscript={(_, t) => setFreeText(prev => prev + ' ' + t)} />
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </div>
-            <textarea
-              value={freeText}
-              onChange={e => setFreeText(e.target.value)}
-              placeholder="Paste raw notes or dictate... Stacks will automatically organise the data into a forensic-grade narrative."
-              className="w-full hc-clay-inset p-8 text-[13px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none min-h-[450px] scrollbar-none italic"
-            />
-            <div className="hc-clay-inset p-4 rounded-2xl">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Golden Structure Check</span>
-                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                  noteAssessment.status === 'strong'
-                    ? 'bg-flag-green/10 text-flag-green border border-flag-green/20'
-                    : noteAssessment.status === 'needs-review'
-                      ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/20'
-                      : 'bg-flag-red/10 text-flag-red border border-flag-red/20'
-                }`}>
-                  {noteAssessment.score}% standard
-                </span>
+          </div>
+
+          <div className="flex flex-col lg:flex-row p-2">
+            <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <label className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Notes</label>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <LanguageSearchDropdown value={voiceLang} onChange={setVoiceLangState} />
+                  {SpeechRecognitionAPI && (
+                    <button type="button" onClick={toggleMic}
+                      className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${
+                        listening ? 'bg-flag-red/20 border border-flag-red text-flag-red animate-pulse' : 'hc-clay-raised border border-hc-teal/20 text-hc-teal'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${listening ? 'bg-flag-red animate-ping' : 'bg-hc-teal'}`} />
+                      {listening ? 'Listening' : 'Dictate'}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {noteAssessment.checks.filter(check => !check.passed).slice(0, 6).map(check => (
-                  <span key={check.id} className="px-3 py-1.5 rounded-xl bg-hc-border/20 text-[9px] font-black uppercase tracking-widest text-hc-muted">
-                    Missing {check.label}
-                  </span>
-                ))}
-                {noteAssessment.risks.map(risk => (
-                  <span key={risk.id} className="px-3 py-1.5 rounded-xl bg-flag-amber/10 text-[9px] font-black uppercase tracking-widest text-flag-amber border border-flag-amber/20">
-                    {risk.label}
-                  </span>
-                ))}
-                {noteAssessment.status === 'strong' && (
-                  <span className="px-3 py-1.5 rounded-xl bg-flag-green/10 text-[9px] font-black uppercase tracking-widest text-flag-green border border-flag-green/20">
-                    Ready for refinement
-                  </span>
+
+              <textarea value={freeText} onChange={e => setFreeText(e.target.value)}
+                placeholder="Paste or dictate your notes here. Select a format above to tell the AI how to organise the output."
+                className="w-full hc-clay-inset p-4 sm:p-6 lg:p-8 text-[13px] sm:text-[14px] text-hc-text font-medium leading-relaxed resize-none focus:outline-none min-h-[250px] sm:min-h-[350px] lg:min-h-[450px] scrollbar-thin rounded-2xl"
+              />
+
+              <div className="hc-clay-inset p-3 sm:p-4 rounded-2xl">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <span className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Quality Check</span>
+                  {noteAssessment && (
+                    <span className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${
+                      noteAssessment.status === 'strong' ? 'bg-flag-green/10 text-flag-green border border-flag-green/20' :
+                      noteAssessment.status === 'needs-review' ? 'bg-flag-amber/10 text-flag-amber border border-flag-amber/20' :
+                      'bg-flag-red/10 text-flag-red border border-flag-red/20'
+                    }`}>{noteAssessment.score}% standard</span>
+                  )}
+                </div>
+                {noteAssessment && (
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {noteAssessment.checks.filter(c => !c.passed).slice(0, 6).map(c => (
+                      <span key={c.id} className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-hc-border/20 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-hc-muted">
+                        Missing {c.label}
+                      </span>
+                    ))}
+                    {noteAssessment.risks.map(r => (
+                      <span key={r.id} className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-flag-amber/10 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-flag-amber border border-flag-amber/20">
+                        {r.label}
+                      </span>
+                    ))}
+                    {noteAssessment.status === 'strong' && (
+                      <span className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-flag-green/10 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-flag-green border border-flag-green/20">
+                        Ready for refinement
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-            <button onClick={enhanceNote} disabled={!freeText.trim() || enhancing} className="w-full py-5 btn-tactical shadow-2xl flex items-center justify-center gap-4 transition-all active:scale-95">
-              {enhancing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-              Assemble Gold Standard Narrative
-            </button>
-          </div>
 
-          <div className="p-8 space-y-6 bg-hc-teal/[0.01]">
-            <div className="flex items-center justify-between">
-               <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Standardised Output Matrix</label>
-               {enhancedNote && <span className="pill pill-teal text-[9px] animate-pulse">VERIFIED FORENSIC</span>}
+              <button onClick={enhanceNote} disabled={!freeText.trim() || enhancing}
+                className="w-full py-4 sm:py-5 btn-tactical shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 text-[10px] sm:text-[11px] font-black uppercase tracking-widest"
+              >
+                {enhancing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {enhancing ? 'Enhancing...' : 'Assemble Gold Standard Narrative'}
+              </button>
             </div>
-            <div className="hc-clay-inset p-8 min-h-[450px] bg-transparent overflow-y-auto scrollbar-thin">
-              {enhancedNote ? (
-                <pre className="text-[14px] text-hc-text font-black leading-loose whitespace-pre-wrap italic animate-in slide-in-from-bottom-4 duration-1000">
-                  {enhancedNote}
-                </pre>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20">
-                  <FileText className="w-20 h-20 text-hc-muted mb-8" strokeWidth={1} />
-                  <div className="text-[12px] font-black uppercase tracking-[0.4em] mb-3">Awaiting Assembly</div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest max-w-xs">Load a stack and provide clinical raw data to generate a Gold Standard report.</p>
-                </div>
-              )}
+
+            <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 bg-hc-teal/[0.01] border-t lg:border-t-0 lg:border-l border-hc-border/20">
+              <div className="flex items-center justify-between">
+                <label className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Enhanced Output</label>
+                {enhancedNote && <span className="pill pill-teal text-[8px] sm:text-[9px] animate-pulse">READY</span>}
+              </div>
+              <div className="hc-clay-inset p-4 sm:p-6 lg:p-8 min-h-[250px] sm:min-h-[350px] lg:min-h-[450px] bg-transparent overflow-y-auto scrollbar-thin rounded-2xl">
+                {enhancedNote ? (
+                  <div className="space-y-4">
+                    <pre className="text-[13px] sm:text-[14px] text-hc-text font-medium leading-relaxed whitespace-pre-wrap animate-in slide-in-from-bottom-4 duration-1000">
+                      {enhancedNote}
+                    </pre>
+                    {evidenceTrail && (
+                      <div className="border-t border-hc-border/20 pt-3">
+                        <button type="button" onClick={() => setShowEvidence(v => !v)}
+                          className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-hc-muted hover:text-hc-teal transition-colors"
+                        >
+                          {showEvidence ? 'Hide' : 'Show'} evidence trail ({evidenceTrail.split('\n').filter(l => l.includes('*')).length} citations)
+                        </button>
+                        {showEvidence && (
+                          <pre className="mt-2 text-[11px] text-hc-muted font-mono leading-relaxed whitespace-pre-wrap">
+                            {evidenceTrail}
+                          </pre>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-12 sm:py-20">
+                    <FileText className="w-12 h-12 sm:w-20 sm:h-20 text-hc-muted mb-6 sm:mb-8" strokeWidth={1} />
+                    <div className="text-[10px] sm:text-[12px] font-black uppercase tracking-[0.4em] mb-2 sm:mb-3">Awaiting Assembly</div>
+                    <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest max-w-xs">Paste your notes, select a format, and enhance to generate a professional report.</p>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { navigator.clipboard.writeText(enhancedNote); setCopied(true); setTimeout(() => setCopied(false), 2500); }}
+                disabled={!enhancedNote}
+                className={`w-full py-4 sm:py-5 rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-2 ${
+                  copied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'
+                }`}>
+                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied to Clipboard' : 'Copy Enhanced Note'}
+              </button>
             </div>
-            <button
-              onClick={() => { navigator.clipboard.writeText(enhancedNote); setCopied(true); setTimeout(() => setCopied(false), 2500); }}
-              disabled={!enhancedNote}
-              className={`w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all ${copied ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
-            >
-              {copied ? 'COPIED TO CLIPBOARD' : 'COPY REWRITTEN NARRATIVE'}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-4xl mx-auto mt-6">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(v => !v)}
-          className="w-full hc-clay-raised px-6 py-4 rounded-2xl text-left flex items-center justify-between"
+      <div className="max-w-4xl mx-auto">
+        <button type="button" onClick={() => setShowAdvanced(v => !v)}
+          className="w-full hc-clay-raised px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-left flex items-center justify-between"
         >
-          <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Advanced Staff Context</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-hc-teal">{showAdvanced ? 'Hide' : 'Show'}</span>
+          <span className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Advanced: Client Context & Staff Access</span>
+          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-hc-teal">{showAdvanced ? 'Hide' : 'Show'}</span>
         </button>
       </div>
 
       {showAdvanced && (
         <>
-          <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-8 flex flex-wrap gap-8 items-end">
-            <div className="flex-1 min-w-[200px] space-y-3">
-              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Service User Focus</label>
-              <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full Name..." className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner" />
+          <div className="max-w-4xl mx-auto mt-4 sm:mt-6 hc-clay-raised p-4 sm:p-8 flex flex-wrap gap-4 sm:gap-8 items-end">
+            <div className="flex-1 min-w-[160px] sm:min-w-[200px] space-y-2 sm:space-y-3">
+              <label className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Service User</label>
+              <input value={client} onChange={e => setClient(e.target.value)} placeholder="Full Name..." className="w-full hc-clay-inset px-4 sm:px-6 py-3 sm:py-4 text-sm font-black text-hc-text outline-none shadow-inner rounded-xl" />
             </div>
-            <div className="flex-1 min-w-[200px] space-y-3">
-              <label className="text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Location Site</label>
-              <select value={house} onChange={e => setHouse(e.target.value)} className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text outline-none shadow-inner bg-transparent">
-                {HAZELCARE_HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
+            <div className="flex-1 min-w-[160px] sm:min-w-[200px] space-y-2 sm:space-y-3">
+              <label className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest ml-1">Location</label>
+              <SearchSelect
+                options={[...HAZELCARE_HOUSES, ...customHouses].map(h => ({ value: h, label: h }))}
+                value={house} onChange={setHouse}
+                allowCustom onAddCustom={v => setCustomHouses(addCustomHouse(v))}
+              />
             </div>
-            <div className="px-8 py-5 hc-clay-inset flex flex-col items-center">
-              <span className="text-[10px] font-black text-hc-muted uppercase opacity-60 mb-1">Volume</span>
-              <span className="text-xl font-black text-hc-teal tabular-nums">{wordCount} WDS</span>
+            <div className="px-4 sm:px-8 py-3 sm:py-5 hc-clay-inset rounded-xl flex flex-col items-center">
+              <span className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase opacity-60 mb-1">Words</span>
+              <span className="text-lg sm:text-xl font-black text-hc-teal tabular-nums">{wordCount}</span>
             </div>
           </div>
 
-          <div className="max-w-4xl mx-auto mt-6 hc-clay-raised p-6">
-            <div className="flex flex-wrap items-center gap-4 justify-between">
-              <div>
-                <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-1">Staff Share Link</div>
-                <div className="text-[11px] font-bold text-hc-text">Secure one-time access for remote dictation</div>
+          <div className="max-w-4xl mx-auto mt-4 sm:mt-6 hc-clay-raised p-4 sm:p-6 space-y-4">
+            <div className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Staff Share Link</div>
+            <p className="text-[10px] sm:text-[11px] font-bold text-hc-text">Generate a secure link for a staff member to submit notes from their phone. No login required.</p>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-[8px] sm:text-[9px] font-black text-hc-muted uppercase tracking-widest ml-1 mb-1 block">Staff email (optional)</label>
+                <input value={staffEmail} onChange={e => setStaffEmail(e.target.value)} placeholder="staff@email.com" type="email"
+                  className="w-full hc-clay-inset px-4 py-3 sm:py-3.5 text-sm font-bold text-hc-text outline-none shadow-inner rounded-xl" />
               </div>
-              <button
-                onClick={() => void issueStaffLink()}
-                disabled={sharing}
-                className="px-5 py-3 rounded-xl btn-tactical text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+              <button onClick={() => void issueStaffLink()} disabled={sharing}
+                className="px-5 py-3 sm:py-3.5 rounded-xl btn-tactical text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50 shrink-0"
               >
                 <Link2 className={`w-3.5 h-3.5 ${sharing ? 'animate-pulse' : ''}`} />
-                {sharing ? 'Generating...' : 'Generate Staff Link'}
+                {sharing ? 'Generating...' : 'Generate Link'}
               </button>
             </div>
+
             {shareLink && (
-              <div className="mt-4 p-4 hc-clay-inset rounded-2xl">
-                <div className="text-[10px] font-black text-hc-muted uppercase tracking-widest mb-2">Access Code: {shareCode || '-'}</div>
-                <div className="text-[11px] font-bold text-hc-text break-all mb-3">{shareLink}</div>
-                <button
-                  onClick={() => {
-                    void navigator.clipboard.writeText(shareLink);
-                    setCopiedShare(true);
-                    setTimeout(() => setCopiedShare(false), 2000);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${copiedShare ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'}`}
-                >
-                  {copiedShare ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedShare ? 'Copied' : 'Copy Link'}
-                </button>
+              <div className="p-3 sm:p-4 hc-clay-inset rounded-2xl space-y-2">
+                {sentEmail && <p className="text-[9px] sm:text-[10px] font-black text-flag-green uppercase tracking-widest">Link sent to {staffEmail}</p>}
+                <div className="text-[9px] sm:text-[10px] font-black text-hc-muted uppercase tracking-widest">Access Code: <span className="text-hc-text text-[11px] tracking-[0.2em]">{shareCode}</span></div>
+                <div className="text-[10px] sm:text-[11px] font-bold text-hc-text break-all">{shareLink}</div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => { void navigator.clipboard.writeText(shareLink); setCopiedShare(true); setTimeout(() => setCopiedShare(false), 2000); }}
+                    className={`px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${
+                      copiedShare ? 'bg-flag-green text-hc-bone' : 'hc-clay-raised text-hc-text hover:text-hc-teal'
+                    }`}>
+                    {copiedShare ? <CheckCircle2 className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copiedShare ? 'Copied' : 'Copy Link'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const subject = encodeURIComponent('Care Note Request — Access Link');
+                      const body = encodeURIComponent(`Open this link to submit your care note:\n${shareLink}\n\nAccess code: ${shareCode}\n\nThis link and code expire shortly, so open it soon.`);
+                      const to = encodeURIComponent(staffEmail || '');
+                      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`, '_blank', 'noopener');
+                    }}
+                    className="px-3 sm:px-4 py-2 rounded-xl hc-clay-raised text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-hc-text hover:text-hc-teal"
+                  >
+                    <Mail className="w-3 h-3" /> Open in Gmail
+                  </button>
+                  <button
+                    onClick={() => {
+                      const subject = encodeURIComponent('Care Note Request — Access Link');
+                      const body = encodeURIComponent(`Open this link to submit your care note:\n${shareLink}\n\nAccess code: ${shareCode}\n\nThis link and code expire shortly, so open it soon.`);
+                      const to = encodeURIComponent(staffEmail || '');
+                      window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${to}&subject=${subject}&body=${body}`, '_blank', 'noopener');
+                    }}
+                    className="px-3 sm:px-4 py-2 rounded-xl hc-clay-raised text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-hc-text hover:text-hc-teal"
+                  >
+                    <Mail className="w-3 h-3" /> Open in Outlook
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </>
       )}
-      </>
-      )}
 
-      {activeTab === 'workspace' && <div className="-mx-6 lg:-mx-12"><NoteWorkspace /></div>}
-      {activeTab === 'templates' && <div className="-mx-6 lg:-mx-12"><TemplatesPage weekData={null} /></div>}
+      {activeTab === 'workspace' && <div className="-mx-4 sm:-mx-6 lg:-mx-12"><NoteWorkspace /></div>}
+      {activeTab === 'templates' && <div className="-mx-4 sm:-mx-6 lg:-mx-12"><TemplatesPage weekData={null} /></div>}
     </div>
   );
 }
-
-
-

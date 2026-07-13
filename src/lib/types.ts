@@ -355,7 +355,7 @@ export interface AppState {
   shifts: Shift[];
 }
 
-export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'staff-tools' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks' | 'client-finance';
+export type Page = 'briefing' | 'dashboard' | 'communications' | 'upload' | 'templates' | 'actions' | 'incidents' | 'staff' | 'staff-tools' | 'notes' | 'note-workspace' | 'training-hub' | 'handover' | 'compliance' | 'reports' | 'risk' | 'client-docs' | 'client-diary' | 'agency' | 'staff-monitoring' | 'settings' | 'admin' | 'empire-matrix' | 'nourish-tasks' | 'client-finance' | 'medication-safety';
 
 export interface PageContext {
   client?: string;

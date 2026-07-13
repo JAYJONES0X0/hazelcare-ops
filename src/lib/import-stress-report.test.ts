@@ -6,15 +6,7 @@ import { buildEnvelopeFromRaw } from './import-profiles';
 import { extractFileText } from './universal-extractor';
 
 const ROOTS = [
-  'C:\\Users\\brook\\Downloads\\type of datasets extracts from careplanner or similar',
-  'C:\\Users\\brook\\Downloads\\WJ.zip',
-  'C:\\Users\\brook\\Downloads\\careplanner-extracts.zip',
-  'C:\\Users\\brook\\Downloads\\Client-diary (57).csv',
-  'C:\\Users\\brook\\Downloads\\Client-diary (56).csv',
-  'C:\\Users\\brook\\Downloads\\Client-diary (55).csv',
-  'C:\\Users\\brook\\Downloads\\Client-diarykm (53).csv',
-  'C:\\Users\\brook\\Downloads\\Client-roster-from-01_04_2026-to-20_05_2026.pdf',
-  'C:\\Users\\brook\\Downloads\\Client-medication-administration-report.pdf',
+  'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE',
 ];
 
 const SUPPORTED = new Set(['txt', 'csv', 'tsv', 'md', 'pdf', 'docx', 'xlsx', 'xls', 'xlsm', 'zip']);
@@ -66,6 +58,7 @@ function collectFiles(inputPath: string): StressCase[] {
         stack.push(full);
         continue;
       }
+      if (item.name.startsWith('~$')) continue;
       const ext = extOf(item.name);
       if (SUPPORTED.has(ext)) {
         out.push({ source: full, fileName: item.name, size: fs.statSync(full).size, kind: 'file' });
@@ -81,6 +74,7 @@ async function expandZip(file: StressCase): Promise<StressCase[]> {
   for (const entry of Object.values(zip.files)) {
     if (entry.dir) continue;
     const innerName = entry.name.split('/').pop() || entry.name;
+    if (innerName.startsWith('~$')) continue;
     const ext = extOf(innerName);
     if (!SUPPORTED.has(ext) || ext === 'zip') continue;
     cases.push({

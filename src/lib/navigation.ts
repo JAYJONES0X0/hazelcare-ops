@@ -41,6 +41,7 @@ export const MAIN_SECTIONS: MainSection[] = [
       { id: 'client-docs', label: 'Client Records' },
       { id: 'nourish-tasks', label: 'Task Packs' },
       { id: 'risk', label: 'Risk & PBS' },
+      { id: 'medication-safety', label: 'MAR & Medication' },
       { id: 'client-finance', label: 'Money & Safeguarding' },
       { id: 'reports', label: 'Audit Reports' },
     ],

@@ -11,6 +11,7 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { StaffAccessGate } from './components/StaffAccessGate';
 import { getSectionByPage } from './lib/navigation';
 import { canAccessPage, normalizeUserRole, type UserRole } from './lib/rbac';
 import { isSkinTheme, normalizeTheme, type AppTheme } from './lib/theme';
@@ -38,6 +39,7 @@ const CompliancePage = lazy(() => import('./pages/CompliancePage').then(m => ({ 
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const RiskScoresPage = lazy(() => import('./pages/RiskScoresPage').then(m => ({ default: m.RiskScoresPage })));
 const ClientDocsPage = lazy(() => import('./pages/ClientDocsPage').then(m => ({ default: m.ClientDocsPage })));
+const MedicationSafetyPage = lazy(() => import('./pages/MedicationSafetyPage').then(m => ({ default: m.MedicationSafetyPage })));
 const ClientFinancePage = lazy(() => import('./pages/ClientFinancePage').then(m => ({ default: m.ClientFinancePage })));
 const ClientDiaryPage = lazy(() => import('./pages/ClientDiaryPage').then(m => ({ default: m.ClientDiaryPage })));
 const AgencyPortalPage = lazy(() => import('./pages/AgencyPortalPage').then(m => ({ default: m.AgencyPortalPage })));
@@ -86,12 +88,27 @@ export default function App() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [pageId, setPageId] = useState<Page>(() => {
-    const saved = (localStorage.getItem('hc_current_page') as Page) || 'briefing';
+    const validPages: readonly Page[] = ['briefing','dashboard','communications','upload','templates','actions','incidents','staff','staff-tools','notes','note-workspace','training-hub','handover','compliance','reports','risk','client-docs','client-diary','agency','staff-monitoring','settings','admin','empire-matrix','nourish-tasks','client-finance','medication-safety'];
+    const pathMatch = window.location.pathname.match(/\/(\w[\w-]*)$/);
+    const fromPath = pathMatch && validPages.includes(pathMatch[1] as Page) ? pathMatch[1] as Page : null;
+    const saved = fromPath || (localStorage.getItem('hc_current_page') as Page) || 'briefing';
     const role = normalizeUserRole(localStorage.getItem('hc-user-role'));
     return canAccessPage(role, saved) ? saved : 'briefing';
   });
   const [pageCtx, setPageCtx] = useState<PageContext | null>(null);
   const mainRef = useRef<HTMLElement>(null);
+
+  const [hasStaffHash] = useState(() => window.location.hash.startsWith('#staff/'));
+
+  if (hasStaffHash) return <StaffAccessGate />;
+
+  // Clean up URL path after reading deep-link
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path !== '/' && path !== '/index.html') {
+      window.history.replaceState(null, '', '/');
+    }
+  }, []);
 
   const setPage = useCallback((p: Page, ctx?: PageContext) => {
     if (!canAccessPage(userRole, p)) {
@@ -370,7 +387,7 @@ export default function App() {
   }, [authed]); 
   if (!sessionLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-hc-bg">
+      <div className="min-h-dvh flex items-center justify-center bg-hc-bg safe-area">
         <RadarLoader color="#2dd4bf" size={48} />
       </div>
     );
@@ -386,15 +403,15 @@ export default function App() {
   }
 
   return (
-    <div
-      className="relative min-h-screen bg-hc-bg"
-      onDragOver={e => { e.preventDefault(); setIsDraggingFile(true); }}
-      onDragLeave={() => setIsDraggingFile(false)}
-      onDrop={handleGlobalDrop}
-    >
-      <Analytics />
-      <ErrorBoundary>
-        <div className="flex h-screen overflow-hidden">
+      <div
+        className="relative min-h-dvh bg-hc-bg"
+        onDragOver={e => { e.preventDefault(); setIsDraggingFile(true); }}
+        onDragLeave={() => setIsDraggingFile(false)}
+        onDrop={handleGlobalDrop}
+      >
+        <Analytics />
+        <ErrorBoundary>
+          <div className="flex h-dvh overflow-hidden">
           {mobileNavOpen && (
             <div
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
@@ -405,24 +422,24 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
-            <div className="relative z-10 w-full min-h-screen">
-              <div className="sticky top-0 z-20 px-3 sm:px-6 pt-3 pb-2 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
-                <div className="flex items-center gap-2">
+            <div className="relative z-10 w-full">
+              <div className="sticky top-0 z-20 bg-hc-bg border-b border-hc-border/10">
+                <div className="flex items-center gap-1 px-1 sm:px-3 py-1.5 sm:py-2">
                   <button
                     onClick={() => setMobileNavOpen(true)}
                     aria-label="Open navigation"
-                    className="md:hidden shrink-0 w-9 h-9 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal active:hc-clay-pressed"
+                    className="md:hidden shrink-0 w-11 h-11 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal active:hc-clay-pressed"
                   >
-                    <Menu size={18} />
+                    <Menu size={20} />
                   </button>
-                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 pb-1">
+                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1">
                   {activeSection.tabs.filter(tab => canAccessPage(userRole, tab.id)).map(tab => {
                     const active = page === tab.id;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setPage(tab.id)}
-                        className={`shrink-0 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`shrink-0 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all ${
                           active
                             ? 'hc-clay-pressed text-hc-teal border border-hc-teal/20'
                             : 'hc-clay-raised text-hc-muted hover:text-hc-text'
@@ -433,8 +450,13 @@ export default function App() {
                     );
                   })}
                   </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-lg hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted border border-hc-border/20">
-                    Build {buildTag}
+                  {buildTag !== 'unknown' && (
+                    <span className="hidden sm:inline shrink-0 px-2.5 py-1 rounded-lg hc-clay-inset text-[9px] font-black uppercase tracking-widest text-hc-muted border border-hc-border/20">
+                      {buildTag}
+                    </span>
+                  )}
+                  <span className="shrink-0 px-2 py-0.5 rounded-lg bg-hc-teal/10 text-[7px] sm:text-[9px] font-black uppercase tracking-widest text-hc-teal border border-hc-teal/20">
+                    v2
                   </span>
                 </div>
               </div>
@@ -459,6 +481,7 @@ export default function App() {
                 {page === 'reports' && <ReportsPage weekData={weekData} setPage={setPage} />}
                 {page === 'risk' && <RiskScoresPage weekData={weekData} onQuickAction={handleQuickAction} />}
                 {page === 'client-docs' && <ClientDocsPage setPage={setPage} />}
+                {page === 'medication-safety' && <MedicationSafetyPage />}
                 {page === 'client-finance' && <ClientFinancePage />}
                 {page === 'client-diary' && <ClientDiaryPage weekData={weekData} setPage={setPage} pageCtx={activePageCtx} onQuickAction={handleQuickAction} />}
                 {page === 'agency' && <AgencyPortalPage />}
@@ -471,7 +494,7 @@ export default function App() {
             </div>
 
             {/* Floating Navigation Hub */}
-            <div className="fixed bottom-6 right-4 z-[100] flex flex-col gap-1.5 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="hidden md:flex fixed bottom-6 right-4 z-[100] flex-col gap-1.5 opacity-50 hover:opacity-100 transition-opacity">
               <button
                 onClick={scrollToTop}
                 title="Scroll to Top"
@@ -547,7 +570,7 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-hc-bg p-6">
+    <div className="min-h-dvh flex items-center justify-center bg-hc-bg p-6">
       <form onSubmit={handleLogin} className="w-full max-w-sm hc-clay-raised p-10 space-y-8 rounded-[3rem] shadow-2xl border border-hc-muted/5">
         <div>
           <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">Care Ops Access</h1>
