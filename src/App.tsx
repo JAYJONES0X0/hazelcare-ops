@@ -14,7 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { StaffAccessGate } from './components/StaffAccessGate';
 import { getSectionByPage } from './lib/navigation';
 import { canAccessPage, normalizeUserRole, type UserRole } from './lib/rbac';
-import { isSkinTheme, normalizeTheme, type AppTheme } from './lib/theme';
+import { isSkinTheme, normalizeTheme, normalizeBaseTheme, type AppTheme } from './lib/theme';
 import { setAuditIdentity } from './lib/audit';
 import {
   clearLocalPreviewAuth,
@@ -159,6 +159,9 @@ export default function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
     return normalizeTheme(localStorage.getItem('hc-theme'));
   });
+  const [mode, setMode] = useState<'light' | 'dark'>(() => {
+    return normalizeBaseTheme(localStorage.getItem('hc-mode') || localStorage.getItem('hc-base-theme'));
+  });
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [globalInjestFile, setGlobalInjestFile] = useState<File | null>(null);
   const [buildTag] = useState(() => {
@@ -169,18 +172,20 @@ export default function App() {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    // data-theme carries the skin (or the neutral light/dark value when no skin is active);
+    // data-mode always carries light/dark independently so a skin can render in either mode.
+    document.documentElement.setAttribute('data-theme', isSkinTheme(theme) ? theme : mode);
+    document.documentElement.setAttribute('data-mode', mode);
     localStorage.setItem('hc-theme', theme);
-    if (!isSkinTheme(theme)) {
-      localStorage.setItem('hc-base-theme', theme);
-    }
-    
+    localStorage.setItem('hc-mode', mode);
+    localStorage.setItem('hc-base-theme', mode);
+
     // Apply UI persistent settings
     const isCompact = localStorage.getItem('hc-compact-density') === 'true';
     const shadowDepth = Number(localStorage.getItem('hc-shadow-depth')) || 3;
     document.documentElement.classList.toggle('compact-density', isCompact);
     document.documentElement.style.setProperty('--shadow-depth', String(shadowDepth / 3));
-  }, [theme]);
+  }, [theme, mode]);
 
   const [weekData, setWeekData] = useState<WeekSummary | null>(() => loadWeekData());
   const [actions, setActions] = useState<Action[]>(() => loadActions());
@@ -419,7 +424,7 @@ export default function App() {
               aria-hidden="true"
             />
           )}
-          <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+          <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
             <div className="relative z-10 w-full">
