@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Page } from '../lib/types';
 import type { WeekSummary } from '../lib/types';
 import { MAIN_SECTIONS, getSectionByPage } from '../lib/navigation';
-import { isSkinTheme, normalizeBaseTheme, type AppTheme, type SkinTheme } from '../lib/theme';
+import { isSkinTheme, type AppTheme, type SkinTheme } from '../lib/theme';
 
 import { ORG_CONFIG } from '../lib/config';
 
@@ -31,6 +31,8 @@ interface Props {
   weekData: WeekSummary | null;
   theme: AppTheme;
   setTheme: (t: AppTheme) => void;
+  mode: 'light' | 'dark';
+  setMode: (m: 'light' | 'dark') => void;
   onSignOut: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -53,7 +55,7 @@ const skinOptions: Array<{ id: SkinTheme; label: string; color: string }> = [
   { id: 'focus', label: 'Focus copper', color: '#b45309' },
 ];
 
-export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, mobileOpen = false, onMobileClose }: Props) {
+export function Sidebar({ page, setPage, weekData, theme, setTheme, mode, setMode, onSignOut, mobileOpen = false, onMobileClose }: Props) {
   // On mobile the sidebar is an off-canvas drawer; selecting a destination closes it.
   const navigate = (p: Page) => { setPage(p); onMobileClose?.(); };
   const { logo: orgLogo, avatar: userAvatar } = useBrandAssets();
@@ -87,22 +89,15 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
   });
 
   const activeSection = getSectionByPage(page);
+  // Skin (accent color) and mode (light/dark) are independent — picking a skin no longer
+  // knocks you out of dark mode, and toggling dark mode keeps whichever skin is active.
   const selectSkinTheme = (skin: SkinTheme) => {
-    if (theme === skin) {
-      setTheme(normalizeBaseTheme(localStorage.getItem('hc-base-theme')));
-      return;
-    }
-    if (!isSkinTheme(theme)) {
-      localStorage.setItem('hc-base-theme', theme);
-    }
-    setTheme(skin);
+    setTheme(theme === skin ? mode : skin);
   };
   const toggleBaseTheme = () => {
-    const next: AppTheme = theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('hc-base-theme', next);
-    setTheme(next);
+    setMode(mode === 'dark' ? 'light' : 'dark');
   };
-  const nextBaseThemeLabel = theme === 'dark' ? 'Switch to bone mode' : 'Switch to command dark mode';
+  const nextBaseThemeLabel = mode === 'dark' ? 'Switch to bone mode' : 'Switch to command dark mode';
   const currentSkin = isSkinTheme(theme) ? skinOptions.find((skin) => skin.id === theme) : null;
   const skinSwitcher = (
     <div className="relative shrink-0">
@@ -246,7 +241,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, onSignOut, m
               title={nextBaseThemeLabel}
               className="w-10 h-10 rounded-xl hc-clay-raised flex items-center justify-center text-hc-muted hover:text-hc-teal transition-all active:hc-clay-pressed active:scale-95 shrink-0"
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              {mode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             {!collapsed ? (
               <button

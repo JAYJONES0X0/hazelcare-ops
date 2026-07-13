@@ -17,3 +17,10 @@ export function normalizeBaseTheme(value: string | null): BaseTheme {
 export function isSkinTheme(value: AppTheme): value is SkinTheme {
   return SKIN_THEMES.has(value as SkinTheme);
 }
+
+// Skin (accent color) and mode (light/dark) are independent axes — a skin can run in either
+// mode, matching the theme x mode matrix already used on the pitch site. `null` skin means the
+// neutral teal theme.
+export function normalizeSkin(value: string | null): SkinTheme | null {
+  return SKIN_THEMES.has(value as SkinTheme) ? (value as SkinTheme) : null;
+}

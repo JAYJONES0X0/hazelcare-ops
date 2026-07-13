@@ -226,6 +226,145 @@
   --btn-text: #fff8ef;
 }
 
+[data-theme='authority'][data-mode='dark'] {
+  /* AUTHORITY PURPLE — dark */
+  --hc-bg:      #120314;
+  --hc-surface: #1f0822;
+  --hc-surface-2: #2c0f30;
+  --hc-text:    #f3efe0;
+  --hc-muted:   #b9a6bc;
+  --hc-border:  rgba(223, 100, 234, 0.10);
+  --hc-teal-active: #df64ea;
+  --hc-teal-glow:   #b93ec5;
+  --hc-authority-dark: #47034e;
+  --hc-authority:      #df64ea;
+  --hc-authority-mid:  #b93ec5;
+  --hc-authority-soft: #9f5ea5;
+  --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
+  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #df64ea;
+  --btn-text: #120314;
+}
+
+[data-theme='critical'][data-mode='dark'] {
+  /* CRITICAL RED — dark */
+  --hc-bg:      #140407;
+  --hc-surface: #240b10;
+  --hc-surface-2: #331019;
+  --hc-text:    #f3efe0;
+  --hc-muted:   #b9a0a3;
+  --hc-border:  rgba(255, 107, 125, 0.10);
+  --hc-teal-active: #ff6b7d;
+  --hc-teal-glow:   #e54658;
+  --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
+  --hc-critical-dark: #5b1117;
+  --hc-critical:      #ff6b7d;
+  --hc-critical-mid:  #e54658;
+  --hc-critical-soft: #df7c83;
+  --hc-critical-pale: #f0c6c9;
+
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
+  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #ff6b7d;
+  --btn-text: #140407;
+}
+
+[data-theme='clinical'][data-mode='dark'] {
+  /* CLINICAL BLUE — dark */
+  --hc-bg:      #030a14;
+  --hc-surface: #081628;
+  --hc-surface-2: #0f213c;
+  --hc-text:    #f3efe0;
+  --hc-muted:   #a3aebb;
+  --hc-border:  rgba(104, 177, 255, 0.10);
+  --hc-teal-active: #68b1ff;
+  --hc-teal-glow:   #3d8ced;
+  --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
+  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #68b1ff;
+  --btn-text: #030a14;
+}
+
+[data-theme='calm'][data-mode='dark'] {
+  /* CALM SAGE — dark */
+  --hc-bg:      #04100c;
+  --hc-surface: #092019;
+  --hc-surface-2: #0f2e24;
+  --hc-text:    #f3efe0;
+  --hc-muted:   #a3b8ac;
+  --hc-border:  rgba(113, 212, 178, 0.10);
+  --hc-teal-active: #71d4b2;
+  --hc-teal-glow:   #4fb693;
+  --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
+  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #71d4b2;
+  --btn-text: #04100c;
+}
+
+[data-theme='focus'][data-mode='dark'] {
+  /* FOCUS COPPER — dark */
+  --hc-bg:      #140902;
+  --hc-surface: #241206;
+  --hc-surface-2: #33190a;
+  --hc-text:    #f3efe0;
+  --hc-muted:   #bcac9d;
+  --hc-border:  rgba(255, 154, 77, 0.10);
+  --hc-teal-active: #ff9a4d;
+  --hc-teal-glow:   #eb7a23;
+  --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
+
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
+  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+
+  --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-inset:  inset calc(6px * var(--shadow-depth)) calc(6px * var(--shadow-depth)) calc(16px * var(--shadow-depth)) var(--hc-shadow-dark),
+                 inset calc(-4px * var(--shadow-depth)) calc(-4px * var(--shadow-depth)) calc(12px * var(--shadow-depth)) var(--hc-shadow-light);
+  --clay-pressed: inset calc(8px * var(--shadow-depth)) calc(8px * var(--shadow-depth)) calc(20px * var(--shadow-depth)) var(--hc-shadow-dark),
+                  inset calc(-3px * var(--shadow-depth)) calc(-3px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) var(--hc-shadow-light);
+
+  --btn-bg:   #ff9a4d;
+  --btn-text: #140902;
+}
+
 [data-theme='dark'] {
   /* DARK: IMMERSIVE COMMAND — bg darker so surface lifts distinctly */
   --hc-bg:      #091c1c;
