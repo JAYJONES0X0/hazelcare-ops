@@ -89,3 +89,15 @@ export function getSectionByPage(page: Page): MainSection {
     MAIN_SECTIONS[0]
   );
 }
+
+// One quiet accent per section so the nav reads as distinct categories at a glance —
+// used only as an icon/underline tint, never overrides the selected-state pressed/teal
+// treatment that already signals "you are here".
+export const SECTION_ACCENT: Record<MainSectionId, string> = {
+  'mission-control': '#2e8a86',
+  'clinical-intelligence': '#b0475c',
+  'operations-personnel': '#b8842e',
+  'forensic-documentation': '#7a5bb0',
+  'system-governance': '#4a72a3',
+  comms: '#2e8a86',
+};
