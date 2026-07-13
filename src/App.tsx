@@ -10,7 +10,8 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { getSectionByPage } from './lib/navigation';
+import { StaffAccessGate } from './components/StaffAccessGate';
+import { getSectionByPage, SECTION_ACCENT } from './lib/navigation';
 import { canAccessPage, normalizeUserRole, type UserRole } from './lib/rbac';
 import { isSkinTheme, normalizeTheme, normalizeBaseTheme, type AppTheme } from './lib/theme';
 import { setAuditIdentity } from './lib/audit';
@@ -328,9 +329,10 @@ export default function App() {
           <Sidebar page={page} setPage={setPage} weekData={weekData} theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} onSignOut={handleSignOut} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
           <main ref={mainRef} className="flex-1 overflow-y-auto bg-hc-bg relative scrollbar-thin">
-            <div className="relative z-10 w-full min-h-screen">
-              <div className="sticky top-0 z-20 px-3 sm:px-6 pt-3 pb-2 bg-hc-bg/90 backdrop-blur-md border-b border-hc-border/10">
-                <div className="flex items-center gap-2">
+            <div className="relative z-10 w-full">
+              <div className="sticky top-0 z-20 bg-hc-bg border-b border-hc-border/10">
+                <div className="h-[2px] w-full" style={{ background: `linear-gradient(to right, ${SECTION_ACCENT[activeSection.id]}, transparent)` }} />
+                <div className="flex items-center gap-1 px-1 sm:px-3 py-1.5 sm:py-2">
                   <button
                     onClick={() => setMobileNavOpen(true)}
                     aria-label="Open navigation"
@@ -341,14 +343,16 @@ export default function App() {
                   <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 pb-1">
                   {activeSection.tabs.filter(tab => canAccessPage(userRole, tab.id)).map(tab => {
                     const active = page === tab.id;
+                    const accent = SECTION_ACCENT[activeSection.id];
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setPage(tab.id)}
-                        className={`shrink-0 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        style={active ? { color: accent, borderColor: `${accent}33` } : undefined}
+                        className={`shrink-0 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all border ${
                           active
-                            ? 'hc-clay-pressed text-hc-teal border border-hc-teal/20'
-                            : 'hc-clay-raised text-hc-muted hover:text-hc-text'
+                            ? 'hc-clay-pressed border-transparent'
+                            : 'hc-clay-raised text-hc-muted hover:text-hc-text border-transparent'
                         }`}
                       >
                         {tab.label}

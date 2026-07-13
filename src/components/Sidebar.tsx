@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import type { Page } from '../lib/types';
 import type { WeekSummary } from '../lib/types';
-import { MAIN_SECTIONS, getSectionByPage } from '../lib/navigation';
+import { MAIN_SECTIONS, getSectionByPage, SECTION_ACCENT } from '../lib/navigation';
 import { isSkinTheme, type AppTheme, type SkinTheme } from '../lib/theme';
 
 import { ORG_CONFIG } from '../lib/config';
@@ -66,6 +67,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, mode, setMod
     try { return localStorage.getItem('hc-sidebar-collapsed') === 'true'; } catch { return false; }
   });
   const [skinMenuOpen, setSkinMenuOpen] = useState(false);
+  const [hoveredSection, setHoveredSection] = useState<{ id: string; top: number; left: number } | null>(null);
 
   useEffect(() => {
     const syncResponsiveCollapse = () => {
@@ -175,19 +177,26 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, mode, setMod
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 scrollbar-none">
         {MAIN_SECTIONS.map((section) => {
           const active = activeSection.id === section.id;
+          const accent = SECTION_ACCENT[section.id];
           return (
             <button
               key={section.id}
               onClick={() => navigate(section.landing)}
+              onMouseEnter={(e) => {
+                if (!collapsed || compactViewport) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredSection({ id: section.id, top: rect.top + rect.height / 2, left: rect.right + 12 });
+              }}
+              onMouseLeave={() => setHoveredSection((h) => (h?.id === section.id ? null : h))}
               className={`w-full flex items-center rounded-2xl transition-all ${
                 collapsed
                   ? compactViewport ? 'justify-center flex-col gap-1 px-2 py-3' : 'justify-center gap-3 px-4 py-3'
                   : 'justify-start gap-3 px-4 py-3'
               } ${active ? 'hc-clay-pressed text-hc-teal shadow-inner shadow-black/20' : 'hc-clay-raised text-hc-muted hover:text-hc-text'}`}
-              title={section.label}
+              title={collapsed ? undefined : section.label}
               aria-label={section.label}
             >
-              <span className={active ? 'text-hc-teal' : 'opacity-70'}>
+              <span style={{ color: accent }} className={active ? '' : 'opacity-55'}>
                 {sectionIcon[section.label] ?? <LayoutDashboard size={16} />}
               </span>
               {(!collapsed || compactViewport) && (
@@ -198,6 +207,31 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, mode, setMod
             </button>
           );
         })}
+
+        {hoveredSection && collapsed && !compactViewport && createPortal(
+          (() => {
+            const section = MAIN_SECTIONS.find(s => s.id === hoveredSection.id);
+            if (!section) return null;
+            const accent = SECTION_ACCENT[section.id];
+            return (
+              <div
+                className="pointer-events-none fixed z-[100] w-56 animate-in fade-in slide-in-from-left-1 duration-150"
+                style={{ top: hoveredSection.top, left: hoveredSection.left, transform: 'translateY(-50%)' }}
+              >
+                <div className="hc-clay-raised bg-hc-surface rounded-xl border border-hc-border/20 shadow-2xl p-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: accent }} />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-hc-text">{section.label}</span>
+                  </div>
+                  <p className="text-[9px] font-bold text-hc-muted leading-relaxed">
+                    {section.tabs.map(t => t.label).join(' · ')}
+                  </p>
+                </div>
+              </div>
+            );
+          })(),
+          document.body
+        )}
       </div>
 
       <div className="mt-auto pt-6 space-y-4">
