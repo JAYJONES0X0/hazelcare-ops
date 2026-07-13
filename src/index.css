@@ -229,11 +229,11 @@
 [data-theme='authority'][data-mode='dark'] {
   /* AUTHORITY PURPLE — dark */
   --hc-bg:      #120314;
-  --hc-surface: #1f0822;
-  --hc-surface-2: #2c0f30;
+  --hc-surface: #34123c;
+  --hc-surface-2: #451a52;
   --hc-text:    #f3efe0;
-  --hc-muted:   #b9a6bc;
-  --hc-border:  rgba(223, 100, 234, 0.10);
+  --hc-muted:   #c2aec6;
+  --hc-border:  rgba(223, 100, 234, 0.16);
   --hc-teal-active: #df64ea;
   --hc-teal-glow:   #b93ec5;
   --hc-authority-dark: #47034e;
@@ -242,8 +242,8 @@
   --hc-authority-soft: #9f5ea5;
   --hc-authority-pale: #e0b6e4;
 
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
@@ -259,11 +259,11 @@
 [data-theme='critical'][data-mode='dark'] {
   /* CRITICAL RED — dark */
   --hc-bg:      #140407;
-  --hc-surface: #240b10;
-  --hc-surface-2: #331019;
+  --hc-surface: #3d131c;
+  --hc-surface-2: #4f1a25;
   --hc-text:    #f3efe0;
-  --hc-muted:   #b9a0a3;
-  --hc-border:  rgba(255, 107, 125, 0.10);
+  --hc-muted:   #c6a8ac;
+  --hc-border:  rgba(255, 107, 125, 0.16);
   --hc-teal-active: #ff6b7d;
   --hc-teal-glow:   #e54658;
   --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
@@ -273,8 +273,8 @@
   --hc-critical-soft: #df7c83;
   --hc-critical-pale: #f0c6c9;
 
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
@@ -290,17 +290,17 @@
 [data-theme='clinical'][data-mode='dark'] {
   /* CLINICAL BLUE — dark */
   --hc-bg:      #030a14;
-  --hc-surface: #081628;
-  --hc-surface-2: #0f213c;
+  --hc-surface: #123255;
+  --hc-surface-2: #18426e;
   --hc-text:    #f3efe0;
-  --hc-muted:   #a3aebb;
-  --hc-border:  rgba(104, 177, 255, 0.10);
+  --hc-muted:   #aebbc9;
+  --hc-border:  rgba(104, 177, 255, 0.16);
   --hc-teal-active: #68b1ff;
   --hc-teal-glow:   #3d8ced;
   --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
 
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
@@ -316,17 +316,17 @@
 [data-theme='calm'][data-mode='dark'] {
   /* CALM SAGE — dark */
   --hc-bg:      #04100c;
-  --hc-surface: #092019;
-  --hc-surface-2: #0f2e24;
+  --hc-surface: #123d2e;
+  --hc-surface-2: #18523d;
   --hc-text:    #f3efe0;
-  --hc-muted:   #a3b8ac;
-  --hc-border:  rgba(113, 212, 178, 0.10);
+  --hc-muted:   #aac2b3;
+  --hc-border:  rgba(113, 212, 178, 0.16);
   --hc-teal-active: #71d4b2;
   --hc-teal-glow:   #4fb693;
   --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
 
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
@@ -342,17 +342,17 @@
 [data-theme='focus'][data-mode='dark'] {
   /* FOCUS COPPER — dark */
   --hc-bg:      #140902;
-  --hc-surface: #241206;
-  --hc-surface-2: #33190a;
+  --hc-surface: #452811;
+  --hc-surface-2: #5a3517;
   --hc-text:    #f3efe0;
-  --hc-muted:   #bcac9d;
-  --hc-border:  rgba(255, 154, 77, 0.10);
+  --hc-muted:   #c6b6a5;
+  --hc-border:  rgba(255, 154, 77, 0.16);
   --hc-teal-active: #ff9a4d;
   --hc-teal-glow:   #eb7a23;
   --hc-authority-dark: #47034e; --hc-authority: #5d0565; --hc-authority-mid: #7e3285; --hc-authority-soft: #9f5ea5; --hc-authority-pale: #e0b6e4;
 
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
@@ -368,17 +368,17 @@
 [data-theme='dark'] {
   /* DARK: IMMERSIVE COMMAND — bg darker so surface lifts distinctly */
   --hc-bg:      #091c1c;
-  --hc-surface: #0d2d2d;
-  --hc-surface-2: #163a3a;
+  --hc-surface: #124040;
+  --hc-surface-2: #185454;
   --hc-text:    #f3efe0;
-  --hc-muted:   #a6a89f;
-  --hc-border:  rgba(243, 239, 224, 0.04);
+  --hc-muted:   #b0c2c2;
+  --hc-border:  rgba(243, 239, 224, 0.10);
   --hc-teal-active: #40e0cf; /* Bright Electric Teal for Dark Mode */
   --hc-teal-glow:   #2dd4bf;
 
   /* KEY: light component MUST be ≥0.10 or dark mode is completely flat */
-  --hc-shadow-dark:  rgba(0, 0, 0, 0.65);
-  --hc-shadow-light: rgba(255, 255, 255, 0.11);
+  --hc-shadow-dark:  rgba(0, 0, 0, 0.55);
+  --hc-shadow-light: rgba(255, 255, 255, 0.17);
 
   --clay-raised: calc(10px * var(--shadow-depth)) calc(10px * var(--shadow-depth)) calc(28px * var(--shadow-depth)) var(--hc-shadow-dark),
                  calc(-8px * var(--shadow-depth)) calc(-8px * var(--shadow-depth)) calc(22px * var(--shadow-depth)) var(--hc-shadow-light);
