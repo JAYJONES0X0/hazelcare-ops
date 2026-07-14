@@ -228,7 +228,7 @@
 
 [data-theme='authority'][data-mode='dark'] {
   /* AUTHORITY PURPLE — dark */
-  --hc-bg:      #120314;
+  --hc-bg:      #220829;
   --hc-surface: #34123c;
   --hc-surface-2: #451a52;
   --hc-text:    #f3efe0;
@@ -258,7 +258,7 @@
 
 [data-theme='critical'][data-mode='dark'] {
   /* CRITICAL RED — dark */
-  --hc-bg:      #140407;
+  --hc-bg:      #2a0810;
   --hc-surface: #3d131c;
   --hc-surface-2: #4f1a25;
   --hc-text:    #f3efe0;
@@ -289,7 +289,7 @@
 
 [data-theme='clinical'][data-mode='dark'] {
   /* CLINICAL BLUE — dark */
-  --hc-bg:      #030a14;
+  --hc-bg:      #081b30;
   --hc-surface: #123255;
   --hc-surface-2: #18426e;
   --hc-text:    #f3efe0;
@@ -315,7 +315,7 @@
 
 [data-theme='calm'][data-mode='dark'] {
   /* CALM SAGE — dark */
-  --hc-bg:      #04100c;
+  --hc-bg:      #0a2419;
   --hc-surface: #123d2e;
   --hc-surface-2: #18523d;
   --hc-text:    #f3efe0;
@@ -341,7 +341,7 @@
 
 [data-theme='focus'][data-mode='dark'] {
   /* FOCUS COPPER — dark */
-  --hc-bg:      #140902;
+  --hc-bg:      #2c1608;
   --hc-surface: #452811;
   --hc-surface-2: #5a3517;
   --hc-text:    #f3efe0;
@@ -366,8 +366,8 @@
 }
 
 [data-theme='dark'] {
-  /* DARK: IMMERSIVE COMMAND — bg darker so surface lifts distinctly */
-  --hc-bg:      #091c1c;
+  /* DARK: IMMERSIVE COMMAND — bg still carries the teal hue, not near-black */
+  --hc-bg:      #0c2626;
   --hc-surface: #124040;
   --hc-surface-2: #185454;
   --hc-text:    #f3efe0;
