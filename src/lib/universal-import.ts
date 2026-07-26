@@ -4,7 +4,7 @@
 import type { FullClient, CarePlanData, CarePlanDomain, SupportPlanData, SupportPlanNeed, RiskData, RiskItem } from './client-store';
 import { emptyCarePlan, emptyRisk, emptyRisk_item, CARE_PLAN_DOMAINS } from './client-store';
 
-// Maps legacy industry jargon to Premium Care Ops Domains
+// Maps legacy industry jargon to Premium OVSITE Domains
 const DOMAIN_MAP: Record<string, string> = {
   'ACCOMMODATION CLEANLINESS': 'Environment & Physical Safety',
   'BREATHING': 'Respiratory Health & Support',
@@ -911,7 +911,7 @@ function parseCarePlanReport(text: string): { client: Partial<FullClient>; careP
   }
 
   let address = '';
-  const hcMatch = text.match(/(?:Care Ops Support|Care Ops)\s+(\w+)\s+\w+\s+(\w+)\s+(\d+)\s+years?\s+(.+?)(?:,\s*\d+\.\s*Needs|$)/i);
+  const hcMatch = text.match(/(?:OVSITE Support|OVSITE)\s+(\w+)\s+\w+\s+(\w+)\s+(\d+)\s+years?\s+(.+?)(?:,\s*\d+\.\s*Needs|$)/i);
   if (hcMatch) {
     const first = (hcMatch[1] || '').toLowerCase();
     const second = (hcMatch[2] || '').toLowerCase();

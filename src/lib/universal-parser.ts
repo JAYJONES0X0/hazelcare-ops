@@ -2,7 +2,7 @@ import type { CareEntry, WeekSummary, Shift } from './types';
 import { uid } from './storage';
 
 // ============================================================
-// FLAG KEYWORDS — Care Ops Intelligent Detection
+// FLAG KEYWORDS — OVSITE Intelligent Detection
 // ============================================================
 const RED_FLAGS = [
   'refused medication', 'medication refused', 'he refused', 'she refused',

@@ -39,7 +39,7 @@ const client = {
   supportPlan: {
     needs: [{ area: 'Daily routine', canDoMyself: 'Can choose breakfast.', howToSupport: 'Prompt gently.', risks: '' }],
   },
-  clinicalBriefing: 'Internal formulation should stay in Care Ops.',
+  clinicalBriefing: 'Internal formulation should stay in OVSITE.',
 } as unknown as FullClient;
 
 describe('care circle family digest', () => {
@@ -90,6 +90,6 @@ describe('care circle family digest', () => {
 
     expect(refs).toContain('Care plan / Social Engagement & Relationships: Ryan benefits from reassurance before family visits.');
     expect(refs).toContain('Support plan / Daily routine: Can choose breakfast.');
-    expect(refs).toContain('Clinical briefing: Internal formulation should stay in Care Ops.');
+    expect(refs).toContain('Clinical briefing: Internal formulation should stay in OVSITE.');
   });
 });

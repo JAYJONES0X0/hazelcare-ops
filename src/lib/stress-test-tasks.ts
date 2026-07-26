@@ -1,7 +1,7 @@
 import { loadClients, type CarePlanDomain, type FullClient } from './client-store';
 
 /**
- * Stress Test Script for CareOps Task Pack Generator.
+ * Stress Test Script for OVSITE Task Pack Generator.
  * Generates 1,000 synthetic tasks across all domains to verify UI performance 
  * and DOCX export reliability under high load.
  */

@@ -1,15 +1,15 @@
 /**
- * CARE OPS — GLOBAL CONFIGURATION
+ * OVSITE — GLOBAL CONFIGURATION
  * This file controls the branding and identity of the entire engine.
  */
 
 export const ORG_CONFIG = {
-  name: 'Care Ops',
-  fullName: 'Care Ops',
-  shortName: 'CO',
-  domain: 'careops.app',
-  supportEmail: 'support@careops.app',
-  tagline: 'Operational intelligence for care providers',
+  name: 'OVSITE',
+  fullName: 'OVSITE',
+  shortName: 'OV',
+  domain: 'ovsite.co.uk',
+  supportEmail: 'support@ovsite.co.uk',
+  tagline: 'Operational oversight for UK care providers',
 
   // Demo provider shown in showcase data (fictional — not a real provider)
   demoProvider: 'Meadowview Care',
@@ -18,8 +18,8 @@ export const ORG_CONFIG = {
   storagePrefix: 'careops',
 
   // Visuals
-  logoIcon: '/careops-logo.png',
-  logoFull: '/careops-logo.png',
+  logoIcon: '/ovsite-mark.png',
+  logoFull: '/ovsite-mark.png',
 
   // Compliance
   cqcReady: true,

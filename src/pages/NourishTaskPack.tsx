@@ -140,7 +140,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: "CARE OPS · OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
+                new TextRun({ text: "OVSITE · OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
               ]
             })
           ]

@@ -47,6 +47,6 @@ export function buildCareCircleFamilyResponseText(clientName: string, concern: P
     '',
     response || 'No response has been recorded yet.',
     '',
-    'This response is a manager-reviewed family communication. Internal care records and evidence remain in Care Ops.',
+    'This response is a manager-reviewed family communication. Internal care records and evidence remain in OVSITE.',
   ].join('\n');
 }

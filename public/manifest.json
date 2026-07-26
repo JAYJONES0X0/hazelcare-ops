@@ -1,6 +1,6 @@
 {
-  "name": "Care Ops",
-  "short_name": "Care Ops",
+  "name": "OVSITE",
+  "short_name": "OVSITE",
   "description": "Live Intelligence Layer for UK Care Providers",
   "start_url": "/",
   "display": "standalone",

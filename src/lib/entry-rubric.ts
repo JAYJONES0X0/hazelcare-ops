@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────
  * Module-based quality scoring per entry type.
  *
- * Built from two real Care Ops templates:
+ * Built from two real OVSITE templates:
  *   • Core Staff Daily Note (House-level, Environmental, Overview)
  *   • 1:1 Support Note (Client-level, Specific Engagement, Refusals)
  */

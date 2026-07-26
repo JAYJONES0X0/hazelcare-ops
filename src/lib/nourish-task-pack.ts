@@ -463,8 +463,8 @@ export function formatForExport(client: FullClient, tasks: NourishTask[]): strin
   const event = tasks.filter(t => t.frequency === 'event');
   const date = new Date().toLocaleDateString('en-GB');
 
-  let out = `NOTE TITLE: Care Ops Personalised Tasks (Care Plan Aligned) - ${client.name}\n`;
-  out += `Generated: ${date} | Source: Care Ops - Care Plan Builder\n\n`;
+  let out = `NOTE TITLE: OVSITE Personalised Tasks (Care Plan Aligned) - ${client.name}\n`;
+  out += `Generated: ${date} | Source: OVSITE - Care Plan Builder\n\n`;
   out += `PURPOSE\n`;
   out += `These tasks are derived directly from ${client.name}'s current care plans, support plans, risk assessments and attached source documents to show what support needs to happen and how it should be evidenced.\n\n`;
   out += `RULES\n`;

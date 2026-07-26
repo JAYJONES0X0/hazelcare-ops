@@ -192,7 +192,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
   const canReleaseSharePack = careCircleEnabled && canReleaseCareCircleSharePack(shareReadiness, shareOverride);
   const circleInsight = getCareCircleOperationalInsight(circle, shareReadiness);
   const activationIssues = [
-    !careCircleEnabled ? 'Choose a visibility mode before any family or professional pack can leave Care Ops.' : '',
+    !careCircleEnabled ? 'Choose a visibility mode before any family or professional pack can leave OVSITE.' : '',
     !verifiedContacts.length ? 'Add and verify at least one contact with a safe contact route.' : '',
     !evidenceSourceCount ? 'No reviewed source evidence is available for a share-ready update yet.' : '',
   ].filter(Boolean);
@@ -598,7 +598,7 @@ export function CareCirclePanel({ clientId, onBack }: Props) {
             </div>
             <p className="text-xs text-hc-muted font-medium max-w-3xl leading-relaxed">
               {careCircleEnabled
-                ? 'Builds a controlled family or professional pack from the latest reviewed update. Internal evidence references stay inside Care Ops unless separately authorised.'
+                ? 'Builds a controlled family or professional pack from the latest reviewed update. Internal evidence references stay inside OVSITE unless separately authorised.'
                 : 'No family or professional pack can be released while Care Circle is off. Prepare the evidence, contacts, and boundaries, then activate a mode.'}
             </p>
           </div>
