@@ -1,0 +1,23 @@
+CLIENT MONEY & FINANCIAL SAFEGUARDING PACK
+Generated: 08/07/2026, 10:44:15
+Person: Draft client
+Account: Draft client personal money
+House: Unassigned service
+
+BALANCE
+Opening balance: GBP 50.00
+Calculated balance: GBP 35.00
+
+SOURCE EVIDENCE
+receipt-1783503854880-j6vud | receipt.jpg | matched | GBP 12.40 | Tesco Express | confidence=98% | linked=finance-tx-1783503854880-m6xq9 | review=unreviewed
+
+TRANSACTIONS
+2026-07-04T10:30:00.000Z | OUT | GBP 12.40 | Tesco Express | Weekly food shopping | state=disputed | review=review_required | balance=GBP 37.60 | receipts=receipt-1783503854880-j6vud
+2026-07-08T09:44:15.178Z | IN | GBP 2.40 | Tesco Express | Correction: Weekly food shopping | state=confirmed | review=review_required | balance=GBP 40.00 | receipts=receipt-1783503854880-j6vud
+2026-07-08T09:44:15.244Z | OUT | GBP 5.00 | Unspecified purchase | Manual spending record awaiting receipt evidence. | state=confirmed | review=review_required | balance=GBP 35.00 | receipts=missing
+
+RECONCILIATION
+2026-07-08T09:44:14.977Z | approved | expected=GBP 37.60 | calculated=GBP 37.60 | difference=GBP 0.00 | reviewedBy=Current staff member
+
+EXCEPTIONS
+No open exceptions detected.

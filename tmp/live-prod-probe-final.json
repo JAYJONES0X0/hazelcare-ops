@@ -1,0 +1,624 @@
+{
+  "url": "https://care-ops-os.vercel.app/",
+  "finalUrl": "https://care-ops-os.vercel.app/",
+  "title": "Care Ops - Live Operating System",
+  "console": [
+    {
+      "type": "info",
+      "text": "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 14,
+        "column": 0,
+        "lineNumber": 14,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2JL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa0ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2ZL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa2pL7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx3cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxTcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxPcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx_cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx7cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx3cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxTcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxPcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx_cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx7cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx3cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxTcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxPcwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx_cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx7cwhsk.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "info",
+      "text": "Loading the font 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2' violates the following Content Security Policy directive: \"font-src 'self' data:\". The policy is report-only, so the violation has been logged but no further action has been taken.",
+      "location": {
+        "url": "https://care-ops-os.vercel.app/",
+        "line": 34,
+        "column": 0,
+        "lineNumber": 34,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "responses": [
+    {
+      "url": "https://care-ops-os.vercel.app/api/auth/session",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8"
+    }
+  ],
+  "text": "CARE OPS ACCESS\n\nENTER CREDENTIALS TO OPEN THE CARE OPERATIONS HUB\n\nEMAIL\nACCESS KEY\nOPEN OPERATIONS HUB",
+  "bodyClass": null,
+  "htmlHead": "\n    <meta charset=\"UTF-8\">\n    <link rel=\"icon\" href=\"./favicon.ico\">\n    <link rel=\"manifest\" href=\"./manifest.json\">\n    <link rel=\"apple-touch-icon\" href=\"./icon-192.png\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n    <meta name=\"theme-color\" content=\"#1c4e4e\">\n    <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n    <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n    <meta name=\"description\" content=\"Care Ops - Live Intelligence Layer\">\n    <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\">\n    <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap\" rel=\"stylesheet\">\n    <title>Care Ops - Live Operating System</title>\n    <style>\n      @media print {\n        @page { margin: 1.2cm; }\n        /* Suppresses browser-added URL and title in print headers/footers */\n        head title { display: none; }\n      }\n    </style>\n    <script type=\"module\" crossorigin=\"\" src=\"./assets/index-Do57iANQ.js\"></script>\n    <link rel=\"stylesheet\" crossorigin=\"\" href=\"./assets/index-bhTlVtOF.css\">\n  "
+}

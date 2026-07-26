@@ -10,7 +10,6 @@ import { loadClients, type FullClient } from './lib/client-store';
 import { getAllEntriesAsync, appendEntriesAsync } from './lib/entry-store';
 import { buildWeekSummary } from './lib/universal-parser';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { StaffAccessGate } from './components/StaffAccessGate';
 import { getSectionByPage, SECTION_ACCENT } from './lib/navigation';
 import { canAccessPage, normalizeUserRole, type UserRole } from './lib/rbac';
 import { isSkinTheme, normalizeTheme, normalizeBaseTheme, type AppTheme } from './lib/theme';
