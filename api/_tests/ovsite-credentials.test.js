@@ -13,7 +13,7 @@ describe('OVSITE durable credentials', () => {
   });
 
   it('uses AUTH_PASSWORD-compatible bootstrap verification when durable storage is not configured', async () => {
-    const { verifyActivePassword } = await import('../_lib/ovsite-credentials.js');
+    const { verifyActivePassword, verifySessionCredentialState } = await import('../_lib/ovsite-credentials.js');
 
     await expect(verifyActivePassword('Bootstrap-Secret-123', 'Bootstrap-Secret-123')).resolves.toMatchObject({
       ok: true,
@@ -24,6 +24,12 @@ describe('OVSITE durable credentials', () => {
     await expect(verifyActivePassword('wrong', 'Bootstrap-Secret-123')).resolves.toMatchObject({
       ok: true,
       verified: false,
+      source: 'bootstrap',
+    });
+
+    await expect(verifySessionCredentialState({ iat: Date.now() - 60_000 })).resolves.toMatchObject({
+      ok: true,
+      current: true,
       source: 'bootstrap',
     });
   });
@@ -41,7 +47,7 @@ describe('OVSITE durable credentials', () => {
     });
   });
 
-  it('rotates from bootstrap to a durable scrypt hash and rejects the old bootstrap afterwards', async () => {
+  it('rotates from bootstrap to a durable scrypt hash, rejects the old password, and invalidates older sessions', async () => {
     process.env.UPSTASH_REDIS_REST_URL = 'https://example-upstash.invalid';
     process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
 
@@ -77,7 +83,11 @@ describe('OVSITE durable credentials', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const { replaceActivePassword, verifyActivePassword } = await import('../_lib/ovsite-credentials.js');
+    const {
+      replaceActivePassword,
+      verifyActivePassword,
+      verifySessionCredentialState,
+    } = await import('../_lib/ovsite-credentials.js');
 
     const changed = await replaceActivePassword({
       currentPassword: 'Bootstrap-Secret-123',
@@ -101,6 +111,18 @@ describe('OVSITE durable credentials', () => {
     await expect(verifyActivePassword('Bootstrap-Secret-123', 'Bootstrap-Secret-123')).resolves.toMatchObject({
       ok: true,
       verified: false,
+      source: 'durable',
+    });
+
+    const changedAt = Date.parse(parsed.updatedAt);
+    await expect(verifySessionCredentialState({ iat: changedAt - 1 })).resolves.toMatchObject({
+      ok: true,
+      current: false,
+      source: 'durable',
+    });
+    await expect(verifySessionCredentialState({ iat: changedAt + 1 })).resolves.toMatchObject({
+      ok: true,
+      current: true,
       source: 'durable',
     });
   });
