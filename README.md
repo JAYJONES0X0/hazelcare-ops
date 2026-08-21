@@ -56,7 +56,7 @@ npm audit
 
 The CI verification gate runs repository-contained deterministic tests and excludes the workstation-only import stress report whose source corpus is not committed to GitHub. Run that stress corpus separately when the private test inputs are available.
 
-Record the commit SHA and verification result for any production release.
+Record the exact commit SHA and verification result for any production release.
 
 ## Deployment
 
