@@ -106,6 +106,32 @@ export async function verifyActivePassword(candidate, bootstrapPassword = '') {
   };
 }
 
+/**
+ * Checks whether a signed session was minted after the most recent durable
+ * password rotation. Before the first durable rotation there is no server-side
+ * credential epoch, so bootstrap-era sessions continue to use normal expiry.
+ */
+export async function verifySessionCredentialState(claims) {
+  if (!claims) return { ok: true, current: false };
+
+  const stored = await readCredentialRecord();
+  if (!stored.ok) return { ok: false, current: false, error: stored.error };
+  if (!stored.record) return { ok: true, current: true, source: 'bootstrap' };
+
+  const changedAt = Date.parse(stored.record.updatedAt || '');
+  if (!Number.isFinite(changedAt)) {
+    return { ok: false, current: false, error: 'Stored credential rotation timestamp is invalid' };
+  }
+
+  const issuedAt = Number(claims.iat || 0);
+  return {
+    ok: true,
+    current: issuedAt >= changedAt,
+    source: 'durable',
+    changedAt,
+  };
+}
+
 async function recordSecurityEvent(event) {
   if (!hasDurableCredentialStore()) return;
   const payload = JSON.stringify({ event, at: new Date().toISOString() });
