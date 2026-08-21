@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "audit:identity": "node scripts/audit-product-identity.mjs",
     "check:circular": "madge --circular --extensions ts,tsx ./src",
     "prebuild": "npm run check:circular",
     "build": "tsc && vite build",
