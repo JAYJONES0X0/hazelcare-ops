@@ -1,29 +1,40 @@
-# Hazelcare Ops / CareOps
+# OVSITE
 
-Browser-first operational intelligence for supported living teams. CareOps ingests care exports, rosters, PDFs, DOCX files, and ZIP packs, then turns them into manager-ready evidence: dashboards, briefing views, staff monitoring, task packs, reports, document builders, and audit support.
+Operational oversight for UK care providers.
+
+OVSITE is a browser-first operational intelligence layer for adult social care providers. It ingests care exports, rosters, PDFs, DOCX files and ZIP packs, then turns them into manager-ready evidence: dashboards, briefings, staff monitoring, task packs, reports, document builders and audit support.
 
 ## Positioning
 
-CareOps is not a replacement care-record system. It is the operational intelligence layer above systems such as Nourish and CarePlanner. It helps managers see what needs attention now, improve documentation quality, and produce evidence before audit pressure hits.
+OVSITE is not a replacement care-record system. It sits above systems such as Nourish and CarePlanner to help managers see what needs attention now, improve documentation quality, reconstruct evidence and prepare for operational or regulatory scrutiny.
+
+## Canonical product identity
+
+- Product: `OVSITE`
+- Package: `ovsite-os`
+- Production application: `https://app.ovsite.co.uk`
+- Public site: `https://ovsite.co.uk`
+
+Historical CareOps/Hazelcare Ops names may remain inside dated audit artefacts or explicit compatibility/migration code. They are not current product identity.
 
 ## Architecture
 
-- React, TypeScript, Vite.
-- Vercel-hosted SPA with serverless auth endpoints.
-- Local-first care data processing in the browser.
+- React, TypeScript and Vite.
+- Vercel-hosted SPA with serverless authentication endpoints.
+- Local-first care-data processing in the browser.
 - IndexedDB for larger diary-entry history.
-- LocalStorage for settings, actions, compliance state, staff notes, and small operational records.
+- LocalStorage for settings, actions, compliance state, staff notes and small operational records.
 - No automatic upload of care records to a third-party database in the core workflow.
 
-## Core Workflows
+## Core workflows
 
-- Import Hub: ingest CSV, TXT, PDF, DOCX, XLS/XLSX/XLSM, and ZIP packs.
+- Import Hub: ingest CSV, TXT, PDF, DOCX, XLS/XLSX/XLSM and ZIP packs.
 - Dashboard and Briefing: operational overview after import.
 - Care Logs: per-client diary review.
-- Staff Monitoring: documentation, handover, and coverage intelligence.
+- Staff Monitoring: documentation, handover and coverage intelligence.
 - Client Records and Task Packs: care/risk/PBS-oriented evidence builders.
 - Reports and Templates: printable/exportable audit artefacts.
-- Settings/Admin: local backup, restore, governance, and session tools.
+- Settings/Admin: local backup, restore, governance and session tools.
 
 ## Development
 
@@ -34,7 +45,7 @@ npm run dev
 
 ## Verification
 
-Run these before deploying or handing to another agent:
+Run the actual verification suite before deployment or handover. Do not treat historical pass counts as current evidence.
 
 ```bash
 npm run lint
@@ -43,34 +54,38 @@ npm run build
 npm audit
 ```
 
-Expected state after the current hardening pass:
-
-- Build: passes.
-- Tests: 29 files / 72 tests pass.
-- Security audit: 0 vulnerabilities.
-- Lint: 0 errors; warnings remain as technical-debt backlog.
+Record the commit SHA and verification result for any production release.
 
 ## Deployment
 
-Production is deployed through Vercel.
+Production is deployed through Vercel. The application project currently serves `app.ovsite.co.uk`.
 
 ```bash
 npx vercel --prod
 ```
 
-Required environment variables include:
+Authentication configuration currently includes:
 
 - `AUTH_LOGIN_EMAIL`
-- `AUTH_PASSWORD`
+- `AUTH_PASSWORD` as the bootstrap credential
 - `AUTH_SESSION_SECRET`
 - optional role mapping via `AUTH_LOGIN_EMAIL_ROLES`
+- Upstash Redis variables where durable credential/replay state is enabled
 
-## Pilot Boundary
+Environment variables are deployment-scoped. A changed production variable does not retroactively mutate an already-created deployment; redeploy after infrastructure-level changes.
 
-Current state is suitable for controlled founding-pilot use, not unrestricted public SaaS launch. Before full launch, complete:
+## Security and pilot boundary
 
-- Formal RBAC enforcement review across all privileged surfaces.
-- Pilot onboarding SOP and support runbook.
-- Legal review of DPA/DPIA wording.
-- Data backup/export operating procedure for local-first records.
-- Lint warning debt reduction, especially `any`, effect-state, and hook dependency warnings.
+Current state is for controlled founding-pilot use, not unrestricted public SaaS launch. Before full launch, complete and evidence:
+
+- credential and session lifecycle review;
+- formal RBAC enforcement review across privileged surfaces;
+- pilot onboarding SOP and support runbook;
+- legal review of DPA/DPIA wording;
+- data backup/export operating procedure for local-first records;
+- production identity and legacy-key migration verification;
+- lint/security debt review.
+
+## Provenance rule
+
+Do not mechanically rewrite dated audit folders or historical evidence to make them look current. Historical names are evidence of what existed at that point in time. Current runtime, documentation, deployment metadata and user-facing controls must use OVSITE unless a legacy identifier is required solely for compatibility.
