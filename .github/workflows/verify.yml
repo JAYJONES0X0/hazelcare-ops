@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   verify:
-    name: lint-test-build
+    name: lint-test-build-audit
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -36,8 +36,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Deterministic test suite
+        # import-stress-report.test.ts intentionally depends on a private local
+        # care corpus that is never committed. It remains a workstation stress
+        # test; CI runs every deterministic repository-contained test.
+        run: npm test -- --exclude src/lib/import-stress-report.test.ts
 
       - name: Production build
         run: npm run build
+
+      - name: Dependency security audit
+        run: npm audit --audit-level=high
