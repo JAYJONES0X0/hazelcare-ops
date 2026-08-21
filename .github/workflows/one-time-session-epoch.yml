@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   migrate:
-    if: github.event.head_commit.message == 'chore: apply staff session epoch migration'
+    if: github.event.head_commit.message == 'chore: trigger staff session epoch migration'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
