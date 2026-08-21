@@ -452,7 +452,7 @@ async function callGemini(messages, options = {}) {
       temperature: options.temperature ?? 0.25,
       maxOutputTokens: options.max_tokens ?? 2000,
     },
-    ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } } : {}),
+    ...(systemMsg ? { systemInstruction: { parts: [{ text: systemMsg.content }] } : {}),
   };
 
   // Empire key supports 2.5-flash - use it first
@@ -492,8 +492,8 @@ async function callOpenRouter(messages, options = {}) {
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://care-ops-os.vercel.app',
-        'X-Title': 'Care Ops',
+        'HTTP-Referer': 'https://app.ovsite.co.uk',
+        'X-Title': 'OVSITE',
       },
       body: JSON.stringify({
         model,
