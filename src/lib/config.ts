@@ -14,8 +14,8 @@ export const ORG_CONFIG = {
   // Demo provider shown in showcase data (fictional — not a real provider)
   demoProvider: 'Meadowview Care',
 
-  // Storage keys
-  storagePrefix: 'careops',
+  // Canonical runtime storage namespace.
+  storagePrefix: 'ovsite',
 
   // Visuals
   logoIcon: '/ovsite-mark.png',
@@ -42,11 +42,28 @@ export interface OrgSettingsOverride {
   tagline?: string;
 }
 
-const ORG_SETTINGS_KEY = 'hc-org-settings';
+const ORG_SETTINGS_KEY = 'ovsite-org-settings-v1';
+const LEGACY_ORG_SETTINGS_KEY = 'hc-org-settings';
+
+function readOrgSettingsRaw(): string | null {
+  try {
+    const current = localStorage.getItem(ORG_SETTINGS_KEY);
+    if (current) return current;
+
+    // One-way compatibility copy. Historical key is retained during the
+    // migration window so rollback does not destroy an operator's settings.
+    const legacy = localStorage.getItem(LEGACY_ORG_SETTINGS_KEY);
+    if (legacy) {
+      localStorage.setItem(ORG_SETTINGS_KEY, legacy);
+      return legacy;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
 
 export function loadOrgSettings(): typeof ORG_CONFIG & OrgSettingsOverride {
   try {
-    const raw = localStorage.getItem(ORG_SETTINGS_KEY);
+    const raw = readOrgSettingsRaw();
     if (raw) return { ...ORG_CONFIG, ...(JSON.parse(raw) as OrgSettingsOverride) };
   } catch { /* ignore */ }
   return ORG_CONFIG;
@@ -58,7 +75,7 @@ export function saveOrgSettings(settings: OrgSettingsOverride): void {
 
 export function loadRawOrgSettings(): OrgSettingsOverride {
   try {
-    const raw = localStorage.getItem(ORG_SETTINGS_KEY);
+    const raw = readOrgSettingsRaw();
     return raw ? (JSON.parse(raw) as OrgSettingsOverride) : {};
   } catch { return {}; }
 }

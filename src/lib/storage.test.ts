@@ -47,12 +47,18 @@ describe('storage session week data', () => {
     vi.stubGlobal('localStorage', localStorage);
 
     const storage = await import('./storage');
-    const week = makeWeekSummary();
+    // Module initialisation performs the explicit legacy -> OVSITE schema migration.
+    // Clear those calls so this assertion measures saveWeekData itself.
+    localStorage.setItem.mockClear();
+    localStorage.removeItem.mockClear();
 
+    const week = makeWeekSummary();
     storage.saveWeekData(week);
 
     expect(storage.loadWeekData()).toEqual(week);
     expect(localStorage.setItem).not.toHaveBeenCalled();
+    expect(localStorage.removeItem).toHaveBeenCalledWith('ovsite-week-data-v2');
+    expect(localStorage.removeItem).toHaveBeenCalledWith('hc-week-data-v2');
   });
 
   it('excludes weekData from exported backup snapshots', async () => {
@@ -68,6 +74,7 @@ describe('storage session week data', () => {
 
     const snapshot = storage.exportOpsSnapshot();
 
+    expect(snapshot.source).toBe('ovsite');
     expect(snapshot.data.appState.weekData).toBeNull();
     expect(snapshot.data.appState.actions).toEqual([{ id: 'a1' }]);
     expect(snapshot.data.clients).toEqual([{ id: 'c1' }]);
