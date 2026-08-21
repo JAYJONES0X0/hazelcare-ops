@@ -1,29 +1,40 @@
-# OVSITE
+# Hazelcare Ops / CareOps
 
-Operational oversight for UK care providers.
+Browser-first operational intelligence for supported living teams. CareOps ingests care exports, rosters, PDFs, DOCX files, and ZIP packs, then turns them into manager-ready evidence: dashboards, briefing views, staff monitoring, task packs, reports, document builders, and audit support.
 
-OVSITE is a browser-first operational intelligence layer for adult social care providers. It ingests care exports, rosters, PDFs, DOCX files and ZIP packs and turns them into manager-ready operational evidence.
+## Positioning
 
-## Canonical product identity
-
-- Product: `OVSITE`
-- Package: `ovsite-os`
-- Production application: `https://app.ovsite.co.uk`
-- Public site: `https://ovsite.co.uk`
-
-Historical CareOps/Hazelcare Ops names may remain only in dated audit artefacts or explicit compatibility/migration code. They are not current product identity.
+CareOps is not a replacement care-record system. It is the operational intelligence layer above systems such as Nourish and CarePlanner. It helps managers see what needs attention now, improve documentation quality, and produce evidence before audit pressure hits.
 
 ## Architecture
 
-- React, TypeScript and Vite
-- Vercel-hosted SPA and serverless authentication endpoints
-- Local-first care-data processing
-- IndexedDB for larger diary history
-- LocalStorage for smaller operational state
+- React, TypeScript, Vite.
+- Vercel-hosted SPA with serverless auth endpoints.
+- Local-first care data processing in the browser.
+- IndexedDB for larger diary-entry history.
+- LocalStorage for settings, actions, compliance state, staff notes, and small operational records.
+- No automatic upload of care records to a third-party database in the core workflow.
+
+## Core Workflows
+
+- Import Hub: ingest CSV, TXT, PDF, DOCX, XLS/XLSX/XLSM, and ZIP packs.
+- Dashboard and Briefing: operational overview after import.
+- Care Logs: per-client diary review.
+- Staff Monitoring: documentation, handover, and coverage intelligence.
+- Client Records and Task Packs: care/risk/PBS-oriented evidence builders.
+- Reports and Templates: printable/exportable audit artefacts.
+- Settings/Admin: local backup, restore, governance, and session tools.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
 
 ## Verification
 
-Before merge or deployment run:
+Run these before deploying or handing to another agent:
 
 ```bash
 npm run lint
@@ -32,23 +43,34 @@ npm run build
 npm audit
 ```
 
-This recovery patch deliberately does not add or modify GitHub Actions workflows. Verification should be recorded against the exact commit SHA.
+Expected state after the current hardening pass:
 
-## Authentication
+- Build: passes.
+- Tests: 29 files / 72 tests pass.
+- Security audit: 0 vulnerabilities.
+- Lint: 0 errors; warnings remain as technical-debt backlog.
 
-Configuration includes:
+## Deployment
+
+Production is deployed through Vercel.
+
+```bash
+npx vercel --prod
+```
+
+Required environment variables include:
 
 - `AUTH_LOGIN_EMAIL`
-- `AUTH_PASSWORD` as the bootstrap credential
+- `AUTH_PASSWORD`
 - `AUTH_SESSION_SECRET`
-- optional `AUTH_LOGIN_EMAIL_ROLES`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN` for durable password rotation
+- optional role mapping via `AUTH_LOGIN_EMAIL_ROLES`
 
-The first successful in-app password change replaces the bootstrap password with a salted scrypt credential in the durable store. If durable storage is not configured, the change-password endpoint fails explicitly instead of pretending to update the credential.
+## Pilot Boundary
 
-Password rotation clears the browser session that performs the change. Application-session revalidation also checks the credential rotation state. This is not a claim that every privileged server route globally revokes every previously issued session; broader server-route enforcement remains a separate authentication review item.
+Current state is suitable for controlled founding-pilot use, not unrestricted public SaaS launch. Before full launch, complete:
 
-## Provenance
-
-Do not mechanically rewrite historical evidence. Preserve dated audit provenance. Current runtime, active documentation, export filenames and user-facing controls should use OVSITE except where a legacy identifier is retained solely for migration compatibility.
+- Formal RBAC enforcement review across all privileged surfaces.
+- Pilot onboarding SOP and support runbook.
+- Legal review of DPA/DPIA wording.
+- Data backup/export operating procedure for local-first records.
+- Lint warning debt reduction, especially `any`, effect-state, and hook dependency warnings.

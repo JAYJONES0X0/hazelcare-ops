@@ -57,7 +57,7 @@ export function careEntriesToEvidenceCsv(entries: CareEntry[]): string {
 
 export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
   const lines: string[] = [
-    '# OVSITE — COORDINATOR EVIDENCE PACK',
+    '# CAREOPS — COORDINATOR EVIDENCE PACK',
     `Generated (UTC): ${meta.generatedAt}`,
     `Source: ${meta.source === 'upload-hub' ? 'Upload Hub' : 'Staff Intelligence'}`,
     `Window: ${meta.windowLabel}`,
@@ -85,7 +85,7 @@ export function buildCoordinatorReadme(meta: CoordinatorPackMeta): string {
   lines.push('- HTML: print to PDF for meetings / handover packs.');
   lines.push('');
   lines.push('---');
-  lines.push('OVSITE — AUTHORISED PERSONNEL ONLY');
+  lines.push('CAREOPS — AUTHORISED PERSONNEL ONLY');
   return lines.join('\n');
 }
 
@@ -146,7 +146,7 @@ export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: Coordin
   </table>
 
   <div class="footer">
-    OVSITE — Operational Oversight
+    CAREOPS — Precision Care Operations Portals
   </div>
 </body></html>`;
 }

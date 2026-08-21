@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import {
-  ShieldCheck, Activity, Shield, Database, Trash2,
+  ShieldCheck, Lock, Activity, Shield, Database, Trash2,
   ShieldAlert, Building2, Key, Download, Upload, CheckCheck,
   Save, Eye, EyeOff, LogOut, RefreshCw, Settings, User, ImagePlus,
 } from 'lucide-react';
@@ -174,7 +174,7 @@ function SecuritySection({ onSignOut }: { onSignOut: () => void }) {
   const handleChangePassword = async () => {
     if (!current || !newPass || !confirm) { setResult({ ok: false, msg: 'All fields required.' }); return; }
     if (newPass !== confirm) { setResult({ ok: false, msg: 'New passwords do not match.' }); return; }
-    if (newPass.length < 12) { setResult({ ok: false, msg: 'New password must be at least 12 characters.' }); return; }
+    if (newPass.length < 8) { setResult({ ok: false, msg: 'New password must be at least 8 characters.' }); return; }
 
     setLoading(true);
     setResult(null);
@@ -187,9 +187,8 @@ function SecuritySection({ onSignOut }: { onSignOut: () => void }) {
       });
       const json = await res.json() as { ok?: boolean; error?: string };
       if (res.ok && json.ok) {
-        setResult({ ok: true, msg: 'Password changed. Signing out…' });
+        setResult({ ok: true, msg: 'Password updated successfully.' });
         setCurrent(''); setNewPass(''); setConfirm('');
-        window.setTimeout(() => onSignOut(), 600);
       } else {
         setResult({ ok: false, msg: (json.error as string) || 'Failed to update password.' });
       }
@@ -319,7 +318,7 @@ function DataSection() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ovsite-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `care-ops-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -423,7 +422,7 @@ function DataSection() {
   );
 }
 
-// ── Local Device Reset ────────────────────────────────────────────────
+// ── Hardware Burn ────────────────────────────────────────────────
 
 function HardwareBurnSection() {
   const burnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -441,21 +440,21 @@ function HardwareBurnSection() {
           <ShieldAlert size={24} />
         </div>
         <div>
-          <h2 className="text-lg font-black text-flag-red uppercase tracking-tight">Local Device Reset</h2>
+          <h2 className="text-lg font-black text-flag-red uppercase tracking-tight">Hardware Burn</h2>
           <p className="text-[10px] font-bold text-flag-red/60 uppercase tracking-widest opacity-80 leading-tight">Full local data reset</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-          Immediate destructive clear of OVSITE records and settings stored locally in this browser. Server-side credentials are not changed.
+          Immediate destructive clear of all local care records, credentials, and session metadata on this device.
         </p>
 
         <button
           onMouseDown={(e) => {
             e.currentTarget.classList.add('scale-95', 'bg-black');
             const timer = setTimeout(async () => {
-              if (confirm('LOCAL DEVICE RESET: This will wipe OVSITE data stored in this browser. Proceed?')) {
+              if (confirm('FULL LOCAL RESET: This will wipe all OVSITE data on this device. Proceed?')) {
                 await purgeSystemDataAsync();
               }
             }, 2000);
@@ -471,7 +470,7 @@ function HardwareBurnSection() {
           }}
           className="w-full py-5 rounded-2xl bg-flag-red text-hc-bone font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl transition-all duration-300 relative overflow-hidden active:shadow-inner"
         >
-          Hold 2s to Reset Local Data
+          Hold 2s to Initiate Burn
         </button>
       </div>
     </div>
@@ -481,23 +480,75 @@ function HardwareBurnSection() {
 // ── Main Settings Page ───────────────────────────────────────────
 
 export function SettingsPage({ onSignOut }: Props) {
+  const [pin, setPin] = useState('');
+  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinError, setPinError] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>('org');
 
   // Detect node hash on mount
   const [nodeHash] = useState(() => {
-    let hash = localStorage.getItem('ovsite-node-id') || localStorage.getItem('hc-node-hash');
+    let hash = localStorage.getItem('hc-node-hash');
     if (!hash) {
-      hash = 'OV-' + Math.random().toString(36).substring(2, 12).toUpperCase();
-      localStorage.setItem('ovsite-node-id', hash);
+      hash = 'HC-' + Math.random().toString(36).substring(2, 12).toUpperCase();
+      localStorage.setItem('hc-node-hash', hash);
     }
     return hash;
   });
+
+  const handlePinSubmit = () => {
+    if (pin === '236693!') {
+      setPinUnlocked(true);
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setPin('');
+      setTimeout(() => setPinError(false), 1000);
+    }
+  };
+
+  if (!pinUnlocked) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-6 animate-in fade-in duration-1000">
+        <div className="w-full max-w-md hc-clay-raised p-12 rounded-[3.5rem] flex flex-col items-center gap-10 border border-hc-teal/20 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-hc-teal/30 to-transparent" />
+          <div className="w-20 h-20 rounded-[2rem] hc-clay-inset flex items-center justify-center text-hc-teal mb-2">
+            <ShieldCheck size={40} strokeWidth={1.5} />
+          </div>
+          <div className="text-center space-y-3">
+            <h1 className="text-2xl font-black text-hc-text tracking-[0.2em] uppercase">Security Vault</h1>
+            <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.3em] opacity-60 italic">Authorisation Required for System Core</p>
+          </div>
+          <div className="w-full space-y-2">
+            <div className={`p-4 rounded-2xl hc-clay-inset border transition-all duration-300 ${pinError ? 'border-flag-red bg-flag-red/5' : 'border-hc-border/10'}`}>
+              <input
+                type="password"
+                value={pin}
+                onChange={e => setPin(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handlePinSubmit()}
+                placeholder="ENTER KEY"
+                className="w-full bg-transparent text-center text-2xl font-black tracking-[0.4em] text-hc-text placeholder:text-hc-muted/20 outline-none"
+                autoFocus
+              />
+            </div>
+            {pinError && <p className="text-[9px] font-black text-flag-red text-center uppercase tracking-widest animate-shake">Invalid Access Key</p>}
+          </div>
+          <button onClick={handlePinSubmit} className="w-full py-5 rounded-2xl btn-tactical text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+            Unlock Admin Settings
+          </button>
+          <div className="flex items-center gap-3 opacity-40">
+            <Lock size={12} className="text-hc-muted" />
+            <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">E2E Field-Locked Encryption</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const sections = [
     { id: 'org' as Section, label: 'Organisation', icon: <Building2 size={14} /> },
     { id: 'security' as Section, label: 'Security', icon: <Key size={14} /> },
     { id: 'data' as Section, label: 'Data', icon: <Database size={14} /> },
-    { id: 'session' as Section, label: 'Device', icon: <ShieldAlert size={14} /> },
+    { id: 'session' as Section, label: 'Hardware', icon: <ShieldAlert size={14} /> },
   ];
 
   return (
@@ -519,6 +570,10 @@ export function SettingsPage({ onSignOut }: Props) {
             <User size={12} className="text-hc-teal" />
             <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest truncate max-w-[140px]">{nodeHash}</span>
           </div>
+          <button onClick={() => setPinUnlocked(false)} className="px-6 py-2.5 hc-clay-raised text-[9px] font-black uppercase tracking-widest text-hc-teal border border-hc-teal/20 hover:bg-hc-teal/5 transition-all active:hc-clay-pressed flex items-center gap-2 rounded-xl">
+            <Lock size={12} />
+            Lock
+          </button>
         </div>
       </div>
 
@@ -541,7 +596,7 @@ export function SettingsPage({ onSignOut }: Props) {
                 <div className="w-12 h-12 rounded-2xl hc-clay-inset flex items-center justify-center text-hc-teal"><Shield size={24} /></div>
                 <div>
                   <h2 className="text-lg font-black text-hc-text uppercase tracking-tight">Device Identity</h2>
-                  <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">Local browser installation identifier</p>
+                  <p className="text-[10px] font-bold text-hc-muted uppercase tracking-widest opacity-60">This node's hardware fingerprint</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -550,8 +605,8 @@ export function SettingsPage({ onSignOut }: Props) {
                   <span className="text-[11px] font-mono font-bold text-hc-teal uppercase tracking-tighter">{nodeHash}</span>
                 </div>
                 <div className="flex items-center justify-between p-4 hc-clay-inset rounded-2xl">
-                  <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Session</span>
-                  <span className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Authenticated</span>
+                  <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Auth Level</span>
+                  <span className="text-[11px] font-black text-hc-teal uppercase tracking-widest">Admin</span>
                 </div>
                 <div className="flex items-center justify-between p-4 hc-clay-inset rounded-2xl">
                   <span className="text-[10px] font-black text-hc-muted uppercase tracking-widest">Platform</span>

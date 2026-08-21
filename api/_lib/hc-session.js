@@ -1,15 +1,12 @@
 import crypto from 'crypto';
 
-// Legacy cookie name is retained for compatibility during the OVSITE migration.
 export const HC_SESSION_COOKIE = 'hc_session';
 
 export function mintHcSession(secret, ttlHours = 12, claims = {}) {
   if (!secret) throw new Error('Session secret required');
-  const iat = Date.now();
-  const exp = iat + ttlHours * 3600 * 1000;
+  const exp = Date.now() + ttlHours * 3600 * 1000;
   const sessionPayload = {
     v: 2,
-    iat,
     exp,
     role: claims.role || 'manager',
     email: claims.email || '',
@@ -47,7 +44,6 @@ export function readHcSessionClaims(raw, secret) {
     return {
       role: typeof payload.role === 'string' ? payload.role : 'manager',
       email: typeof payload.email === 'string' ? payload.email : '',
-      iat: typeof payload.iat === 'number' ? payload.iat : 0,
       exp: payload.exp,
     };
   } catch {

@@ -1,48 +1,51 @@
 import crypto from 'crypto';
-import { attachHcSessionCookie } from '../_lib/attach-session.js';
+import { attachHcSessionCookie, attachHcSessionCookieWithClaims } from '../_lib/attach-session.js';
+import { getAllowedLoginEmails, getRoleForLoginEmail, isLoginEmailAllowed } from '../_lib/auth-login-allowlist.js';
 import { consumeOnce } from '../_lib/durable-once.js';
-import { HC_SESSION_COOKIE, readHcSessionClaims, secureCookieSuffix } from '../_lib/hc-session.js';
-import { verifySessionCredentialState } from '../_lib/ovsite-credentials.js';
+import { HC_SESSION_COOKIE, readHcSessionClaims, verifyHcSession, secureCookieSuffix } from '../_lib/hc-session.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
 import { STAFF_SAC_COOKIE, verifyAnyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
-import loginHandler from './login.js';
-import sendCodeHandler from './send-code.js';
-import changePasswordHandler from './change-password.js';
 
+const AUTH_PASSWORD = process.env.AUTH_PASSWORD || '';
+const AUTH_EMERGENCY_BYPASS = process.env.AUTH_EMERGENCY_BYPASS === '1';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const SECRET = process.env.CODE_SECRET;
+const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 const TOTP_SECRET = process.env.AUTH_TOTP_SECRET || '';
 const RECOVERY_CODES = (process.env.AUTH_RECOVERY_CODES || '')
   .split(',')
-  .map((value) => value.trim().toUpperCase())
+  .map((x) => x.trim().toUpperCase())
   .filter(Boolean);
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
 const STAFF_LINK_SECRET = process.env.STAFF_LINK_SECRET || '';
 const AUTH_DEFAULT_ROLE = (process.env.AUTH_DEFAULT_ROLE || 'manager').toLowerCase();
-const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean);
 const VALID_ROLES = new Set(['admin', 'manager', 'senior', 'viewer']);
-const rateLimitBuckets = new Map();
 
 function sanitizeRole(role) {
-  const value = String(role || '').trim().toLowerCase();
-  return VALID_ROLES.has(value) ? value : 'manager';
+  const r = String(role || '').trim().toLowerCase();
+  return VALID_ROLES.has(r) ? r : 'manager';
 }
 
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded) return forwarded.split(',')[0].trim();
-  return req.socket?.remoteAddress || 'unknown';
-}
+const rateLimitBuckets = new Map();
 
 function isRateLimited(key, max, windowMs) {
   const now = Date.now();
-  const current = (rateLimitBuckets.get(key) || []).filter((time) => now - time < windowMs);
-  if (current.length >= max) {
-    rateLimitBuckets.set(key, current);
+  const arr = rateLimitBuckets.get(key) || [];
+  const next = arr.filter((t) => now - t < windowMs);
+  if (next.length >= max) {
+    rateLimitBuckets.set(key, next);
     return true;
   }
-  current.push(now);
-  rateLimitBuckets.set(key, current);
+  next.push(now);
+  rateLimitBuckets.set(key, next);
   return false;
+}
+
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (typeof xff === 'string' && xff) return xff.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
 }
 
 function safeEq(a, b) {
@@ -59,83 +62,203 @@ function setCors(req, res) {
   if (origin && host) {
     try { sameOrigin = new URL(origin).host === host; } catch { sameOrigin = false; }
   }
-  const allowed = !origin || sameOrigin || (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin));
+  // No "allow all if unset": permit non-browser callers (no Origin), same-origin
+  // app requests, or origins explicitly listed in AUTH_ALLOWED_ORIGINS.
+  const allowed =
+    !origin || sameOrigin || (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin));
   if (origin && allowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
   res.setHeader('Vary', 'Origin');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   return allowed;
 }
 
+// TOTP Utils
 function base32Decode(input) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   const clean = String(input || '').toUpperCase().replace(/=+$/g, '').replace(/[^A-Z2-7]/g, '');
   let bits = '';
-  for (const character of clean) {
-    const value = alphabet.indexOf(character);
-    if (value === -1) continue;
-    bits += value.toString(2).padStart(5, '0');
+  for (const c of clean) {
+    const val = alphabet.indexOf(c);
+    if (val === -1) continue;
+    bits += val.toString(2).padStart(5, '0');
   }
   const bytes = [];
-  for (let index = 0; index + 8 <= bits.length; index += 8) {
-    bytes.push(parseInt(bits.slice(index, index + 8), 2));
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    bytes.push(parseInt(bits.slice(i, i + 8), 2));
   }
   return Buffer.from(bytes);
 }
 
-function hotp(secretBuffer, counter, digits = 6) {
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigUInt64BE(BigInt(counter));
-  const hmac = crypto.createHmac('sha1', secretBuffer).update(counterBuffer).digest();
+function hotp(secretBuf, counter, digits = 6) {
+  const counterBuf = Buffer.alloc(8);
+  counterBuf.writeBigUInt64BE(BigInt(counter));
+  const hmac = crypto.createHmac('sha1', secretBuf).update(counterBuf).digest();
   const offset = hmac[hmac.length - 1] & 0x0f;
-  const code =
+  const codeInt =
     ((hmac[offset] & 0x7f) << 24) |
     ((hmac[offset + 1] & 0xff) << 16) |
     ((hmac[offset + 2] & 0xff) << 8) |
     (hmac[offset + 3] & 0xff);
-  return String(code % (10 ** digits)).padStart(digits, '0');
+  const mod = 10 ** digits;
+  return String(codeInt % mod).padStart(digits, '0');
 }
 
 function verifyTotp(userCode) {
   if (!TOTP_SECRET) return false;
   const key = base32Decode(TOTP_SECRET);
   if (!key.length) return false;
-  const counter = Math.floor(Date.now() / 1000 / 30);
-  return [-1, 0, 1].some((drift) => safeEq(hotp(key, counter + drift, 6), userCode));
+
+  const timeStep = 30;
+  const counter = Math.floor(Date.now() / 1000 / timeStep);
+  for (const drift of [-1, 0, 1]) {
+    const expected = hotp(key, counter + drift, 6);
+    if (safeEq(expected, userCode)) return true;
+  }
+  return false;
 }
 
 function verifyRecovery(userCode) {
   const normalized = String(userCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (!normalized) return null;
+  if (!normalized) return false;
   const match = RECOVERY_CODES.some((stored) => safeEq(stored.replace(/[^A-Z0-9]/g, ''), normalized));
   return match ? normalized : null;
 }
 
-async function handleVerifyCode(req, res) {
-  if (!setCors(req, res)) return res.status(403).json({ valid: false, error: 'Origin not allowed' });
+export default async function handler(req, res) {
+  // Extract route from URL path — Vercel catch-all may not populate req.query.action
+  const urlPath = (req.url || '').split('?')[0];
+  const segments = urlPath.replace(/^\/api\/auth\/?/, '').split('/').filter(Boolean);
+  const route = segments[0] || (req.query?.action ? (Array.isArray(req.query.action) ? req.query.action[0] : req.query.action) : null);
+
+  if (!route) return res.status(404).json({ error: 'Auth route not found' });
+
+  switch (route) {
+    case 'login': return handleLogin(req, res);
+    case 'send-code': return handleSendCode(req, res);
+    case 'verify-code': return handleVerifyCode(req, res);
+    case 'verify-backup': return handleVerifyBackup(req, res);
+    case 'session': return handleSession(req, res);
+    case 'change-password': return handleChangePassword(req, res);
+    default: return res.status(404).json({ error: 'Unknown auth action' });
+  }
+}
+
+async function handleLogin(req, res) {
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
-  if (!SECRET) return res.status(500).json({ valid: false, error: 'Auth service not configured' });
+  if (!AUTH_PASSWORD) return res.status(500).json({ ok: false, recognized: false, error: 'Server configuration error' });
+
+  const ip = getClientIp(req);
+  if (isRateLimited(`login:${ip}`, 20, 15 * 60 * 1000)) {
+    return res.status(429).json({ ok: false, error: 'Too many attempts' });
+  }
+
+  const { email, password, probe } = req.body || {};
+  if (!email) return res.status(400).json({ ok: false, recognized: false });
+  if (typeof email !== 'string' || !email.includes('@')) return res.status(400).json({ ok: false, error: 'Invalid email format' });
+  const normalizedEmail = email.trim().toLowerCase();
+  
+  const allowedEmails = getAllowedLoginEmails();
+  if (allowedEmails.length === 0) {
+    return res.status(503).json({
+      ok: false,
+      recognized: false,
+      error: 'Login allowlist not configured. Set AUTH_LOGIN_EMAIL in the server environment.',
+    });
+  }
+  
+  const recognized = isLoginEmailAllowed(normalizedEmail);
+  
+  if (probe) {
+    if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
+    return res.json({ ok: true, recognized: true });
+  }
+  
+  if (!password) return res.status(400).json({ ok: false, recognized });
+  if (!recognized) return res.status(403).json({ ok: false, recognized: false, error: 'Not recognised' });
+  if (!safeEq(password, AUTH_PASSWORD)) return res.status(401).json({ ok: false, recognized: true, error: 'Incorrect password' });
+
+  const mappedRole = sanitizeRole(getRoleForLoginEmail(normalizedEmail, AUTH_DEFAULT_ROLE));
+  attachHcSessionCookieWithClaims(res, { email: normalizedEmail, role: mappedRole });
+  return res.json({ ok: true, skip2fa: AUTH_EMERGENCY_BYPASS, role: mappedRole, email: normalizedEmail });
+}
+
+async function handleSendCode(req, res) {
+  if (!setCors(req, res)) return res.status(403).json({ error: 'Origin not allowed' });
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!SECRET || !BOT_TOKEN || !CHAT_ID) return res.status(500).json({ error: 'Auth service not configured' });
+
+  const { email } = req.body || {};
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+  const normalizedEmail = String(email).trim().toLowerCase();
+  if (getAllowedLoginEmails().length === 0) {
+    return res.status(503).json({ error: 'Auth allowlist not configured' });
+  }
+  if (!isLoginEmailAllowed(normalizedEmail)) {
+    return res.status(401).json({ error: 'Not authorised' });
+  }
+  const ip = getClientIp(req);
+  if (isRateLimited(`send:${ip}`, 8, 10 * 60 * 1000) || isRateLimited(`send-email:${normalizedEmail}`, 4, 10 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Too many code requests. Wait and retry.' });
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const bucket = Math.floor(Date.now() / 600000); // 10-min window
+  const token = crypto.createHmac('sha256', SECRET).update(`${code}:${bucket}`).digest('hex');
+
+  const msg = [
+    '🔐 *HazelCare Ops — Access Request*',
+    '',
+    `📧 Email: \`${normalizedEmail}\``,
+    `🔑 Code: \`${code}\``,
+    '',
+    '_Valid 10 minutes. Forward this code to grant access, or ignore to deny._'
+  ].join('\n');
+
+  try {
+    const tg = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' })
+    });
+    const body = await tg.json().catch(() => null);
+    if (!tg.ok || !body?.ok) {
+      return res.status(502).json({ error: 'Failed to send code' });
+    }
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to send code' });
+  }
+
+  res.json({ token });
+}
+
+async function handleVerifyCode(req, res) {
+  if (!setCors(req, res)) return res.status(403).json({ valid: false });
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!SECRET) return res.status(500).json({ valid: false });
 
   const { code, token } = req.body || {};
   if (!code || !token) return res.status(400).json({ valid: false });
-
-  const ip = clientIp(req);
+  const ip = getClientIp(req);
   if (isRateLimited(`verify:${ip}`, 16, 10 * 60 * 1000) || isRateLimited(`verify-token:${String(token).slice(0, 24)}`, 8, 10 * 60 * 1000)) {
     return res.status(429).json({ valid: false });
   }
 
   const bucket = Math.floor(Date.now() / 600000);
-  const valid = [bucket, bucket - 1].some((candidateBucket) => {
-    const expected = crypto.createHmac('sha256', SECRET).update(`${code}:${candidateBucket}`).digest('hex');
-    return String(token).length === expected.length && safeEq(token, expected);
+  const valid = [bucket, bucket - 1].some(b => {
+    const expected = crypto.createHmac('sha256', SECRET).update(`${code}:${b}`).digest('hex');
+    return String(token).length === expected.length && crypto.timingSafeEqual(Buffer.from(String(token)), Buffer.from(expected));
   });
 
   if (valid) attachHcSessionCookie(res);
-  return res.json({ valid });
+  res.json({ valid });
 }
 
 async function handleVerifyBackup(req, res) {
@@ -146,22 +269,20 @@ async function handleVerifyBackup(req, res) {
   const { code, method } = req.body || {};
   const normalizedCode = String(code || '').trim();
   if (!normalizedCode) return res.status(400).json({ valid: false, error: 'Code required' });
-
-  const ip = clientIp(req);
+  const ip = getClientIp(req);
   if (isRateLimited(`backup:${ip}`, 12, 10 * 60 * 1000)) {
     return res.status(429).json({ valid: false, error: 'Too many attempts' });
   }
 
   if (method === 'totp') {
-    const valid = verifyTotp(normalizedCode);
-    if (valid) attachHcSessionCookie(res);
-    return res.json({ valid });
+    const ok = verifyTotp(normalizedCode);
+    if (ok) attachHcSessionCookie(res);
+    return res.json({ valid: ok });
   }
-
   if (method === 'recovery') {
-    const recoveryCode = verifyRecovery(normalizedCode);
-    if (!recoveryCode) return res.json({ valid: false });
-    const digest = crypto.createHash('sha256').update(recoveryCode).digest('hex');
+    const normalizedRecovery = verifyRecovery(normalizedCode);
+    if (!normalizedRecovery) return res.json({ valid: false });
+    const digest = crypto.createHash('sha256').update(normalizedRecovery).digest('hex');
     const once = await consumeOnce(`recovery:${digest}`, 365 * 24 * 60 * 60);
     if (!once.ok) return res.status(500).json({ valid: false, error: once.error });
     if (once.firstUse) attachHcSessionCookie(res);
@@ -172,29 +293,20 @@ async function handleVerifyBackup(req, res) {
 }
 
 async function handleSession(req, res) {
-  if (!setCors(req, res)) return res.status(403).json({ authed: false, error: 'Origin not allowed' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET' && req.method !== 'DELETE') return res.status(405).end();
 
   if (req.method === 'DELETE') {
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Set-Cookie', `${HC_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureCookieSuffix()}`);
+    const secure = secureCookieSuffix();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Set-Cookie', `${HC_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
     return res.json({ ok: true });
   }
 
   const cookies = parseCookies(req);
-  let claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
-  if (claims) {
-    const sessionState = await verifySessionCredentialState(claims);
-    if (!sessionState.ok) {
-      return res.status(503).json({ authed: false, error: sessionState.error || 'Credential service unavailable' });
-    }
-    if (!sessionState.current) {
-      claims = null;
-      res.setHeader('Set-Cookie', `${HC_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureCookieSuffix()}`);
-    }
-  }
-
+  const claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Surrogate-Control', 'no-store');
   res.setHeader('Pragma', 'no-cache');
@@ -202,25 +314,30 @@ async function handleSession(req, res) {
   res.setHeader('Vary', 'Origin, Cookie');
 
   return res.json({
-    authed: Boolean(claims),
+    authed: !!claims,
     staffScoped: verifyAnyStaffSacCookie(cookies[STAFF_SAC_COOKIE], STAFF_LINK_SECRET),
     role: claims?.role ? sanitizeRole(claims.role) : sanitizeRole(AUTH_DEFAULT_ROLE),
     email: claims?.email || '',
   });
 }
 
-export default async function handler(req, res) {
-  const urlPath = (req.url || '').split('?')[0];
-  const segments = urlPath.replace(/^\/api\/auth\/?/, '').split('/').filter(Boolean);
-  const route = segments[0] || (req.query?.action ? (Array.isArray(req.query.action) ? req.query.action[0] : req.query.action) : null);
+async function handleChangePassword(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
 
-  switch (route) {
-    case 'login': return loginHandler(req, res);
-    case 'send-code': return sendCodeHandler(req, res);
-    case 'verify-code': return handleVerifyCode(req, res);
-    case 'verify-backup': return handleVerifyBackup(req, res);
-    case 'session': return handleSession(req, res);
-    case 'change-password': return changePasswordHandler(req, res);
-    default: return res.status(404).json({ error: 'Auth route not found' });
+  const cookies = parseCookies(req);
+  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
+    return res.status(401).json({ ok: false, error: 'Not authenticated' });
   }
+
+  const { current } = req.body || {};
+  if (!current) return res.status(400).json({ ok: false, error: 'Current password required' });
+
+  if (!AUTH_PASSWORD || !safeEq(current, AUTH_PASSWORD)) {
+    return res.status(403).json({ ok: false, error: 'Current password is incorrect' });
+  }
+
+  return res.status(200).json({
+    ok: false,
+    error: 'To change your password, update AUTH_PASSWORD in your Vercel project environment variables and redeploy.',
+  });
 }

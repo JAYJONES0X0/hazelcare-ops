@@ -1,20 +1,12 @@
 import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember, Shift } from './types';
 
-const STORAGE_KEY = 'ovsite-state-v1';
-const WEEK_DATA_KEY = 'ovsite-week-data-v2';
-const CLIENTS_KEY = 'ovsite-clients-v2';
-const STAFF_KEY = 'ovsite-staff-register-v1';
-const STAFF_NOTES_KEY = 'ovsite-staff-notes-v1';
-const SCHEMA_VERSION_KEY = 'ovsite-schema-v';
-
-const LEGACY_STORAGE_KEY = 'hazelcare-ops';
-const LEGACY_WEEK_DATA_KEY = 'hc-week-data-v2';
-const LEGACY_CLIENTS_KEY = 'hc-clients-v2';
-const LEGACY_STAFF_KEY = 'hc-staff-register-v1';
-const LEGACY_STAFF_NOTES_KEY = 'hazelcare-staff-notes';
-const LEGACY_SCHEMA_VERSION_KEY = 'hc-schema-v';
-
-const CURRENT_SCHEMA = '4';
+const STORAGE_KEY = 'hazelcare-ops';
+const WEEK_DATA_KEY = 'hc-week-data-v2';
+const CLIENTS_KEY = 'hc-clients-v2';
+const STAFF_KEY = 'hc-staff-register-v1';
+const STAFF_NOTES_KEY = 'hazelcare-staff-notes';
+const SCHEMA_VERSION_KEY = 'hc-schema-v';
+const CURRENT_SCHEMA = '3';
 let sessionWeekData: WeekSummary | null = null;
 
 type StorageAdapter = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -52,38 +44,16 @@ export function getStorage(): StorageAdapter {
   return memoryStorage;
 }
 
-function copyForward(storage: StorageAdapter, canonicalKey: string, legacyKey: string) {
-  if (storage.getItem(canonicalKey) !== null) return;
-  const legacy = storage.getItem(legacyKey);
-  if (legacy !== null) storage.setItem(canonicalKey, legacy);
-}
-
-/**
- * One-way compatibility migration.
- *
- * New runtime writes use OVSITE keys. Legacy keys are deliberately retained
- * during the migration window so an operator can roll back without losing
- * browser-local evidence. They are not treated as current product identity.
- */
-(function migrateLegacyStorage() {
+// Clear stale state if schema version changed (new deploy with breaking changes)
+(function migrateSchema() {
   try {
     const storage = getStorage();
-    copyForward(storage, STORAGE_KEY, LEGACY_STORAGE_KEY);
-    copyForward(storage, CLIENTS_KEY, LEGACY_CLIENTS_KEY);
-    copyForward(storage, STAFF_KEY, LEGACY_STAFF_KEY);
-    copyForward(storage, STAFF_NOTES_KEY, LEGACY_STAFF_NOTES_KEY);
-
-    // Week data is session-only now; remove stale persisted copies in either namespace.
-    storage.removeItem(WEEK_DATA_KEY);
-    storage.removeItem(LEGACY_WEEK_DATA_KEY);
-
-    if (storage.getItem(SCHEMA_VERSION_KEY) === null) {
-      storage.setItem(
-        SCHEMA_VERSION_KEY,
-        storage.getItem(LEGACY_SCHEMA_VERSION_KEY) || CURRENT_SCHEMA,
-      );
+    if (storage.getItem(SCHEMA_VERSION_KEY) !== CURRENT_SCHEMA) {
+      storage.removeItem(STORAGE_KEY);
+      storage.removeItem('hc_current_page');
+      storage.removeItem('hc-registered-sessions');
+      storage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);
     }
-    storage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);
   } catch { /* ignore */ }
 })();
 
@@ -119,7 +89,7 @@ function slimWeekData(data: AppState['weekData']): AppState['weekData'] {
   for (const [name, house] of Object.entries(data.houses)) {
     houses[name] = {
       ...house,
-      entries: house.entries.map((entry) => ({ ...entry, entry: (entry.entry ?? '').slice(0, 300) })),
+      entries: house.entries.map(e => ({ ...e, entry: (e.entry ?? '').slice(0, 300) })),
     };
   }
   return { ...data, houses };
@@ -133,10 +103,12 @@ function save(state: Partial<AppState>) {
     getStorage().setItem(STORAGE_KEY, serialised);
   } catch (e) {
     if (!isQuotaError(e)) throw e;
+    // Quota exceeded — try again with truncated entry bodies
     try {
       const slim = { ...merged, weekData: slimWeekData(merged.weekData) };
       getStorage().setItem(STORAGE_KEY, JSON.stringify(slim));
     } catch {
+      // Still over quota — remove and let the session run in memory only
       try { getStorage().removeItem(STORAGE_KEY); } catch { /* ignore */ }
     }
   }
@@ -148,11 +120,9 @@ export function loadWeekData(): WeekSummary | null {
 
 export function saveWeekData(data: WeekSummary | null) {
   sessionWeekData = data;
-  try {
-    const storage = getStorage();
-    storage.removeItem(WEEK_DATA_KEY);
-    storage.removeItem(LEGACY_WEEK_DATA_KEY);
-  } catch { /* ignore */ }
+  // Keep weekData in session memory only.
+  // Persisting this in localStorage previously caused stale restores and large payload churn.
+  try { getStorage().removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
 }
 
 function entryFingerprint(entry: CareEntry): string {
@@ -187,12 +157,12 @@ function parseDDMMYYYY(s: string): number {
     const m = parseInt(parts[1], 10);
     let y = parseInt(parts[2], 10);
     if (y < 100) y += 2000;
-    if (parts[0].length === 4) {
-      const [yr, mo, dy] = parts.map(Number);
-      return new Date(yr, mo - 1, dy).getTime();
+    if (parts[0].length === 4) { // YYYY-MM-DD
+       const [yr, mo, dy] = parts.map(Number);
+       return new Date(yr, mo - 1, dy).getTime();
     }
-    const timestamp = new Date(y, m - 1, d).getTime();
-    if (!Number.isNaN(timestamp)) return timestamp;
+    const t = new Date(y, m - 1, d).getTime();
+    if (!Number.isNaN(t)) return t;
   }
   return Date.parse(s) || 0;
 }
@@ -223,13 +193,13 @@ export function mergeWeekSummaries(existing: WeekSummary | null, incoming: WeekS
     if (!left || !right) continue;
 
     const entries = dedupeEntries([...left.entries, ...right.entries]);
-    const incidents = entries.filter((entry) => entry.category === 'incident');
-    const safeguarding = entries.filter((entry) => entry.category === 'safeguarding');
-    const medication = entries.filter((entry) => entry.category === 'medication');
-    const handovers = entries.filter((entry) => entry.category === 'handover');
-    const dailySupport = entries.filter((entry) => entry.category === 'daily_support');
-    const staffPerformance = entries.filter((entry) => entry.category === 'staff');
-    const healthSafety = entries.filter((entry) => entry.category === 'health_safety');
+    const incidents = entries.filter((e) => e.category === 'incident');
+    const safeguarding = entries.filter((e) => e.category === 'safeguarding');
+    const medication = entries.filter((e) => e.category === 'medication');
+    const handovers = entries.filter((e) => e.category === 'handover');
+    const dailySupport = entries.filter((e) => e.category === 'daily_support');
+    const staffPerformance = entries.filter((e) => e.category === 'staff');
+    const healthSafety = entries.filter((e) => e.category === 'health_safety');
 
     mergedHouses[houseName] = {
       ...left,
@@ -243,9 +213,9 @@ export function mergeWeekSummaries(existing: WeekSummary | null, incoming: WeekS
       staffPerformance,
       healthSafety,
       flags: {
-        red: entries.filter((entry) => entry.severity === 'red').length,
-        amber: entries.filter((entry) => entry.severity === 'amber').length,
-        green: entries.filter((entry) => entry.severity === 'green').length,
+        red: entries.filter((e) => e.severity === 'red').length,
+        amber: entries.filter((e) => e.severity === 'amber').length,
+        green: entries.filter((e) => e.severity === 'green').length,
       },
     };
   }
@@ -315,7 +285,6 @@ export function saveStaff(staff: StaffMember[]) {
   try {
     getStorage().setItem(STAFF_KEY, JSON.stringify(staff));
     if (typeof window !== 'undefined') {
-      // Legacy event name retained until all listeners migrate in a later compatibility pass.
       window.dispatchEvent(new Event('hc-staff-updated'));
     }
   } catch (e) {
@@ -334,15 +303,13 @@ export function saveShifts(shifts: Shift[]) {
 
 export function clearWeekData() {
   sessionWeekData = null;
+  try { getStorage().removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
   try {
-    const storage = getStorage();
-    storage.removeItem(WEEK_DATA_KEY);
-    storage.removeItem(LEGACY_WEEK_DATA_KEY);
-    const raw = storage.getItem(STORAGE_KEY);
+    const raw = getStorage().getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       delete parsed.weekData;
-      storage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      getStorage().setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
   } catch { /* ignore */ }
 }
@@ -359,25 +326,16 @@ export function clearSelectedData(type: 'diary' | 'actions' | 'incidents') {
   if (type === 'diary') {
     sessionWeekData = null;
     save({ weekData: null });
-  } else if (type === 'actions') save({ actions: [] });
+  }
+  else if (type === 'actions') save({ actions: [] });
   else if (type === 'incidents') save({ incidents: [] });
 }
 
 export function clearAllData() {
   sessionWeekData = null;
   const storage = getStorage();
-  [
-    WEEK_DATA_KEY,
-    STORAGE_KEY,
-    CLIENTS_KEY,
-    STAFF_KEY,
-    STAFF_NOTES_KEY,
-    LEGACY_WEEK_DATA_KEY,
-    LEGACY_STORAGE_KEY,
-    LEGACY_CLIENTS_KEY,
-    LEGACY_STAFF_KEY,
-    LEGACY_STAFF_NOTES_KEY,
-  ].forEach((key) => storage.removeItem(key));
+  storage.removeItem(WEEK_DATA_KEY);
+  storage.removeItem(STORAGE_KEY);
 }
 
 export function uid(): string {
@@ -387,7 +345,7 @@ export function uid(): string {
 export interface OpsSnapshot {
   version: 1;
   exportedAt: string;
-  source: 'ovsite' | 'hazelcare-ops';
+  source: 'hazelcare-ops';
   data: {
     appState: AppState;
     clients: unknown[];
@@ -411,11 +369,12 @@ export function exportOpsSnapshot(): OpsSnapshot {
     staffNotes = [];
   }
 
+  // weekData is stored separately in WEEK_DATA_KEY (localStorage) — loaded lazily
   const appState = load();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    source: 'ovsite',
+    source: 'hazelcare-ops',
     data: {
       appState: { ...appState, weekData: null },
       clients,
@@ -430,8 +389,7 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   }
 
   const s = snapshot as Partial<OpsSnapshot>;
-  const recognisedSource = s.source === 'ovsite' || s.source === 'hazelcare-ops';
-  if (s.version !== 1 || !recognisedSource || !s.data) {
+  if (s.version !== 1 || s.source !== 'hazelcare-ops' || !s.data) {
     return { ok: false, error: 'Snapshot format is not recognised.' };
   }
 
@@ -451,7 +409,6 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   sessionWeekData = null;
   const storage = getStorage();
   storage.removeItem(WEEK_DATA_KEY);
-  storage.removeItem(LEGACY_WEEK_DATA_KEY);
   storage.setItem(STORAGE_KEY, JSON.stringify(appState));
   storage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
   storage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));

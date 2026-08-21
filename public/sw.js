@@ -1,5 +1,5 @@
-const CACHE_NAME = 'ovsite-v1';
-const STATIC_ASSETS = ['/manifest.json', '/favicon.ico', '/ovsite-mark.png'];
+const CACHE_NAME = 'care-ops-v2';
+const STATIC_ASSETS = ['/manifest.json', '/favicon.ico', '/careops-logo.png'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
