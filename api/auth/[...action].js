@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { attachHcSessionCookie } from '../_lib/attach-session.js';
 import { consumeOnce } from '../_lib/durable-once.js';
 import { HC_SESSION_COOKIE, readHcSessionClaims, secureCookieSuffix } from '../_lib/hc-session.js';
+import { verifySessionCredentialState } from '../_lib/ovsite-credentials.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
 import { STAFF_SAC_COOKIE, verifyAnyStaffSacCookie } from '../_lib/staff-sac-cookie.js';
 import loginHandler from './login.js';
@@ -182,7 +183,18 @@ async function handleSession(req, res) {
   }
 
   const cookies = parseCookies(req);
-  const claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
+  let claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
+  if (claims) {
+    const sessionState = await verifySessionCredentialState(claims);
+    if (!sessionState.ok) {
+      return res.status(503).json({ authed: false, error: sessionState.error || 'Credential service unavailable' });
+    }
+    if (!sessionState.current) {
+      claims = null;
+      res.setHeader('Set-Cookie', `${HC_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureCookieSuffix()}`);
+    }
+  }
+
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Surrogate-Control', 'no-store');
   res.setHeader('Pragma', 'no-cache');
