@@ -1,0 +1,48 @@
+name: OVSITE One-Time Dependency Repair
+
+on:
+  push:
+    branches:
+      - chore/ovsite-production-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: chore/ovsite-production-hardening
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Apply non-breaking security updates
+        run: npm audit fix
+
+      - name: Prove high-severity audit is clear
+        run: npm audit --audit-level=high
+
+      - name: Commit repaired lockfile
+        run: |
+          if git diff --quiet -- package-lock.json package.json; then
+            echo "No dependency lock changes required."
+            exit 0
+          fi
+          git config user.name "OVSITE Verification Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add package-lock.json package.json
+          git commit -m "fix: repair audited dependency lockfile"
+          git push origin HEAD:chore/ovsite-production-hardening
