@@ -54,6 +54,8 @@ npm run build
 npm audit
 ```
 
+The CI verification gate runs repository-contained deterministic tests and excludes the workstation-only import stress report whose source corpus is not committed to GitHub. Run that stress corpus separately when the private test inputs are available.
+
 Record the commit SHA and verification result for any production release.
 
 ## Deployment
@@ -74,11 +76,19 @@ Authentication configuration currently includes:
 
 Environment variables are deployment-scoped. A changed production variable does not retroactively mutate an already-created deployment; redeploy after infrastructure-level changes.
 
+## Credential and session behaviour
+
+- The first successful in-app password rotation replaces the bootstrap password with a salted scrypt credential stored in the configured durable store.
+- After a durable credential exists, the old `AUTH_PASSWORD` bootstrap value no longer authenticates users.
+- Password rotation signs out the browser that performed the change and requires a fresh login.
+- Other previously issued application sessions are not yet globally revoked by password rotation; they remain bounded by the normal session lifetime (currently up to 24 hours). Global session revocation is therefore a remaining auth-hardening item, not a claimed current capability.
+- The Settings page does not use a client-side PIN as an authentication boundary. Access is governed by the authenticated application session and role rules.
+
 ## Security and pilot boundary
 
 Current state is for controlled founding-pilot use, not unrestricted public SaaS launch. Before full launch, complete and evidence:
 
-- credential and session lifecycle review;
+- global session revocation / credential-epoch enforcement across privileged server routes;
 - formal RBAC enforcement review across privileged surfaces;
 - pilot onboarding SOP and support runbook;
 - legal review of DPA/DPIA wording;
