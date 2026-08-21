@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   verify:
-    name: lint-test-build-audit
+    name: identity-lint-test-build-audit
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -32,6 +32,9 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Runtime identity audit
+        run: npm run audit:identity
 
       - name: Lint
         run: npm run lint
