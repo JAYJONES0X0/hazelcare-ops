@@ -1,6 +1,6 @@
-import { HC_SESSION_COOKIE, verifyHcSession, secureCookieSuffix } from '../_lib/hc-session.js';
+import { HC_SESSION_COOKIE, readHcSessionClaims, secureCookieSuffix } from '../_lib/hc-session.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
-import { replaceActivePassword } from '../_lib/ovsite-credentials.js';
+import { replaceActivePassword, verifySessionCredentialState } from '../_lib/ovsite-credentials.js';
 
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || '';
 const AUTH_SESSION_SECRET = process.env.AUTH_SESSION_SECRET || '';
@@ -61,8 +61,18 @@ export default async function handler(req, res) {
   }
 
   const cookies = parseCookies(req);
-  if (!verifyHcSession(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET)) {
+  const claims = readHcSessionClaims(cookies[HC_SESSION_COOKIE], AUTH_SESSION_SECRET);
+  if (!claims) {
     return res.status(401).json({ ok: false, error: 'Not authenticated' });
+  }
+
+  const sessionState = await verifySessionCredentialState(claims);
+  if (!sessionState.ok) {
+    return res.status(503).json({ ok: false, error: sessionState.error || 'Credential service unavailable' });
+  }
+  if (!sessionState.current) {
+    clearSession(res);
+    return res.status(401).json({ ok: false, error: 'Session expired after a credential change. Sign in again.' });
   }
 
   // Accept the current Settings UI contract and the old stub contract during migration.
