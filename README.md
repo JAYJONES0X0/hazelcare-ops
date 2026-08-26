@@ -1,10 +1,66 @@
-# Hazelcare Ops / CareOps
+# OVSITE
 
-Browser-first operational intelligence for supported living teams. CareOps ingests care exports, rosters, PDFs, DOCX files, and ZIP packs, then turns them into manager-ready evidence: dashboards, briefing views, staff monitoring, task packs, reports, document builders, and audit support.
+Operational State Intelligence for UK care providers.
+
+OVSITE is a browser-first control layer that sits above care-record, rostering, medication, document and operational systems. It turns fragmented records and system state into manager-ready evidence, action queues and a continuously testable model of operational reality.
 
 ## Positioning
 
-CareOps is not a replacement care-record system. It is the operational intelligence layer above systems such as Nourish and CarePlanner. It helps managers see what needs attention now, improve documentation quality, and produce evidence before audit pressure hits.
+OVSITE is not a replacement care-record system.
+
+Most care software answers: **what was recorded?**
+
+OVSITE is being built to answer:
+
+- What does the organisation believe is happening?
+- What does each source system say is happening?
+- What can actually be evidenced?
+- Where do those states disagree?
+- What action and evidence are required before the desired state can be treated as verified?
+
+That makes compliance one consumer of the model rather than the whole product.
+
+## Operational State Intelligence
+
+The operational-state engine models important capabilities through seven controls:
+
+1. Available
+2. Enabled
+3. Permissioned
+4. Workflow defined
+5. Trained
+6. Adopted
+7. Evidence verified
+
+A feature being present or enabled is therefore **not** treated as proof that it is operating in reality.
+
+Every control also carries an epistemic state:
+
+- `OBSERVED`
+- `INFERRED`
+- `MODELED`
+- `UNKNOWN`
+- `DISPUTED`
+
+OVSITE computes the delta between desired state and observed state, creates a next-action path, and can promote repeated service-level gaps into cross-service patterns without incorrectly treating one local issue as an organisation-wide failure.
+
+## Evidence Contracts
+
+Operational claims can be bound to explicit evidence chains.
+
+Examples:
+
+```text
+1:1 SUPPORT
+PLAN -> SCHEDULE -> CONTEXT -> DELIVER -> OUTCOME -> ASSURE -> PROVENANCE
+```
+
+```text
+MEDICATION
+ORDER -> STOCK -> SCHEDULE -> ADMINISTRATION -> OUTCOME -> EXCEPTION -> REVIEW -> AUDIT
+```
+
+The design rule is simple: **a claim is not demonstrated merely because a related record exists.** The required evidence chain must be satisfied.
 
 ## Architecture
 
@@ -24,6 +80,7 @@ CareOps is not a replacement care-record system. It is the operational intellige
 - Client Records and Task Packs: care/risk/PBS-oriented evidence builders.
 - Reports and Templates: printable/exportable audit artefacts.
 - Settings/Admin: local backup, restore, governance, and session tools.
+- Operational State Intelligence: desired-state comparison, evidence contracts, provenance-aware verification and cross-service pattern detection.
 
 ## Development
 
@@ -34,7 +91,7 @@ npm run dev
 
 ## Verification
 
-Run these before deploying or handing to another agent:
+Run these before merge or deployment:
 
 ```bash
 npm run lint
@@ -43,12 +100,7 @@ npm run build
 npm audit
 ```
 
-Expected state after the current hardening pass:
-
-- Build: passes.
-- Tests: 29 files / 72 tests pass.
-- Security audit: 0 vulnerabilities.
-- Lint: 0 errors; warnings remain as technical-debt backlog.
+Do not infer deployment readiness from a successful code change alone. Record the exact commit SHA and verification outputs before merge.
 
 ## Deployment
 
@@ -74,3 +126,4 @@ Current state is suitable for controlled founding-pilot use, not unrestricted pu
 - Legal review of DPA/DPIA wording.
 - Data backup/export operating procedure for local-first records.
 - Lint warning debt reduction, especially `any`, effect-state, and hook dependency warnings.
+- Operational State Intelligence UI and persistence layer connected to real provider capability manifests rather than demo-only fixtures.
