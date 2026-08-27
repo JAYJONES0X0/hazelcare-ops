@@ -1,130 +1,287 @@
 import { describe, expect, it } from 'vitest';
 import {
-  blankDesiredControls,
-  blankObservedControls,
-  buildDemoOperationalState,
+  OPERATIONAL_CONTROL_KEYS,
+  createEmptyOperationalLedger,
+  createServiceCapability,
   detectCrossServicePatterns,
-  evaluateCapability,
-  evaluateEvidenceContract,
-  evaluateSnapshot,
-  type EvidenceContract,
-  type EvidenceRef,
-  type OperationalCapability,
+  evaluateOperationalLedger,
+  evaluateServiceCapability,
+  type ControlObservationRecord,
+  type EvidenceBinding,
+  type EvidenceItem,
+  type OperationalControlKey,
+  type OperationalStateLedger,
+  type ServiceCapability,
 } from './operational-state-intelligence';
 
-function capability(overrides: Partial<OperationalCapability> = {}): OperationalCapability {
-  const observed = blankObservedControls();
-  const evidence: EvidenceRef = {
-    id: 'ev-1',
-    sourceType: 'audit',
-    label: 'Manager-reviewed evidence',
-  };
+const NOW = '2026-08-27T00:00:00.000Z';
 
-  for (const key of Object.keys(observed) as Array<keyof typeof observed>) {
-    observed[key] = { value: 'yes', epistemic: 'OBSERVED', evidence: [evidence] };
-  }
-
-  return {
-    id: 'service-a:handover',
-    capabilityId: 'handover',
-    label: 'Structured handover',
-    domain: 'handover',
-    serviceId: 'service-a',
-    sourceSystem: 'Care platform',
-    desired: blankDesiredControls(true),
-    observed,
-    ...overrides,
-  };
+function baseLedger(): OperationalStateLedger {
+  const ledger = createEmptyOperationalLedger('Test Provider', NOW);
+  ledger.providerId = 'org-test';
+  ledger.topology = [
+    { id: 'org-test', name: 'Test Provider', kind: 'organisation' },
+    { id: 'service-a', name: 'Service A', kind: 'service', parentId: 'org-test' },
+    { id: 'service-b', name: 'Service B', kind: 'service', parentId: 'org-test' },
+  ];
+  return ledger;
 }
 
-describe('operational state intelligence', () => {
-  it('does not confuse enabled functionality with verified operational use', () => {
-    const item = capability();
-    item.observed.workflowDefined = {
-      value: 'partial',
-      epistemic: 'INFERRED',
-      evidence: [],
-      note: 'The feature exists, but the operating rule is not yet evidenced.',
-    };
-    item.observed.adopted = {
-      value: 'partial',
-      epistemic: 'INFERRED',
-      evidence: [],
-    };
-    item.observed.evidenceVerified = {
-      value: 'partial',
-      epistemic: 'INFERRED',
-      evidence: [],
-    };
+function addCapability(ledger: OperationalStateLedger, serviceId = 'service-a', definitionId = 'handover'): ServiceCapability {
+  const capability = createServiceCapability(ledger, serviceId, definitionId, 'Test source', NOW);
+  ledger.serviceCapabilities.push(capability);
+  return capability;
+}
 
-    const evaluated = evaluateCapability(item);
+function observe(
+  ledger: OperationalStateLedger,
+  capability: ServiceCapability,
+  control: OperationalControlKey,
+  value: ControlObservationRecord['value'] = 'yes',
+  plane: ControlObservationRecord['plane'] = 'OBSERVED',
+  idSuffix = '',
+): ControlObservationRecord {
+  const record: ControlObservationRecord = {
+    id: `obs:${capability.id}:${control}:${plane}${idSuffix}`,
+    capabilityRecordId: capability.id,
+    control,
+    plane,
+    value,
+    sourceLabel: 'Test observation',
+    observedAt: NOW,
+    recordedAt: NOW,
+  };
+  ledger.observations.push(record);
+  return record;
+}
+
+function bindControlEvidence(
+  ledger: OperationalStateLedger,
+  capability: ServiceCapability,
+  control: OperationalControlKey,
+  options: Partial<EvidenceItem> = {},
+): EvidenceItem {
+  const evidence: EvidenceItem = {
+    id: options.id || `ev:${capability.id}:${control}:${ledger.evidence.length}`,
+    title: options.title || 'Reviewed evidence',
+    sourceType: options.sourceType || 'audit',
+    sourceRef: options.sourceRef || `test://${capability.id}/${control}`,
+    scopeNodeId: options.scopeNodeId || capability.serviceId,
+    observedAt: options.observedAt || NOW,
+    reviewedAt: options.reviewedAt || NOW,
+    reviewedBy: options.reviewedBy || 'Manager',
+    reviewState: options.reviewState || 'ACCEPTED',
+    expiresAt: options.expiresAt,
+    supersedesEvidenceId: options.supersedesEvidenceId,
+  };
+  const binding: EvidenceBinding = {
+    id: `bind:${evidence.id}:${control}`,
+    evidenceId: evidence.id,
+    capabilityRecordId: capability.id,
+    targetType: 'control',
+    control,
+    createdAt: NOW,
+  };
+  ledger.evidence.push(evidence);
+  ledger.evidenceBindings.push(binding);
+  return evidence;
+}
+
+function verifyAllControls(ledger: OperationalStateLedger, capability: ServiceCapability): void {
+  for (const control of OPERATIONAL_CONTROL_KEYS) {
+    observe(ledger, capability, control);
+    bindControlEvidence(ledger, capability, control);
+  }
+}
+
+function bindCompleteContract(ledger: OperationalStateLedger, capability: ServiceCapability): void {
+  const definition = ledger.capabilityDefinitions.find(item => item.id === capability.definitionId)!;
+  const contract = ledger.contracts.find(item => item.id === definition.contractId)!;
+  contract.requirements.filter(item => item.required).forEach(requirement => {
+    const evidence: EvidenceItem = {
+      id: `ev:req:${capability.id}:${requirement.id}`,
+      title: requirement.label,
+      sourceType: requirement.acceptedSourceTypes?.[0] || 'audit',
+      sourceRef: `test://requirement/${requirement.id}`,
+      scopeNodeId: capability.serviceId,
+      observedAt: NOW,
+      reviewedAt: NOW,
+      reviewedBy: 'Manager',
+      reviewState: 'ACCEPTED',
+    };
+    ledger.evidence.push(evidence);
+    ledger.evidenceBindings.push({
+      id: `bind:req:${capability.id}:${requirement.id}`,
+      evidenceId: evidence.id,
+      capabilityRecordId: capability.id,
+      targetType: 'contract_requirement',
+      contractId: contract.id,
+      requirementId: requirement.id,
+      createdAt: NOW,
+    });
+  });
+}
+
+describe('OVSITE Phase 2 operational truth kernel', () => {
+  it('does not confuse enabled functionality with verified operational state', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'available');
+    observe(ledger, capability, 'enabled');
+    bindControlEvidence(ledger, capability, 'available');
+    bindControlEvidence(ledger, capability, 'enabled');
+
+    const evaluated = evaluateServiceCapability(ledger, capability, NOW);
 
     expect(evaluated.status).not.toBe('VERIFIED');
-    expect(evaluated.deltas).toEqual(expect.arrayContaining([
-      expect.objectContaining({ control: 'workflowDefined' }),
-      expect.objectContaining({ control: 'adopted' }),
-      expect.objectContaining({ control: 'evidenceVerified' }),
-    ]));
+    expect(evaluated.controls.enabled.verified).toBe(true);
+    expect(evaluated.controls.workflowDefined.epistemic).toBe('UNKNOWN');
+    expect(evaluated.deltas.some(delta => delta.control === 'workflowDefined')).toBe(true);
   });
 
-  it('only returns VERIFIED when required controls are directly observed and evidenced', () => {
-    const evaluated = evaluateCapability(capability());
+  it('requires direct observation and an exact accepted control binding before a control is verified', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'enabled', 'yes', 'BELIEVED');
+    bindControlEvidence(ledger, capability, 'enabled');
 
+    let evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.controls.enabled.verified).toBe(false);
+    expect(evaluated.controls.enabled.epistemic).toBe('BELIEVED');
+
+    observe(ledger, capability, 'enabled', 'yes', 'OBSERVED', ':direct');
+    evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.controls.enabled.verified).toBe(true);
+    expect(evaluated.controls.enabled.epistemic).toBe('EVIDENCED');
+  });
+
+  it('does not allow rejected, expired, superseded or out-of-scope evidence to verify a control', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'enabled');
+
+    bindControlEvidence(ledger, capability, 'enabled', { id: 'rejected', reviewState: 'REJECTED' });
+    bindControlEvidence(ledger, capability, 'enabled', { id: 'expired', expiresAt: '2026-08-26T00:00:00.000Z' });
+    bindControlEvidence(ledger, capability, 'enabled', { id: 'wrong-scope', scopeNodeId: 'service-b' });
+    bindControlEvidence(ledger, capability, 'enabled', { id: 'old-accepted' });
+    ledger.evidence.push({
+      id: 'replacement',
+      title: 'Replacement pending review',
+      sourceType: 'audit',
+      sourceRef: 'test://replacement',
+      scopeNodeId: 'service-a',
+      observedAt: NOW,
+      reviewState: 'PENDING_REVIEW',
+      supersedesEvidenceId: 'old-accepted',
+    });
+
+    const evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.controls.enabled.verified).toBe(false);
+    expect(evaluated.controls.enabled.evidenceIds).toEqual([]);
+  });
+
+  it('uses the Evidence Contract as an additional verification gate', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger, 'service-a', 'one-to-one');
+    verifyAllControls(ledger, capability);
+
+    let evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.contract?.complete).toBe(false);
+    expect(evaluated.status).toBe('READY');
+    expect(evaluated.deltas.some(delta => delta.targetType === 'contract_requirement')).toBe(true);
+
+    bindCompleteContract(ledger, capability);
+    evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.contract?.complete).toBe(true);
     expect(evaluated.status).toBe('VERIFIED');
-    expect(evaluated.readinessScore).toBe(100);
-    expect(evaluated.deltas).toHaveLength(0);
   });
 
-  it('treats a hard no on a required control as BLOCKED', () => {
-    const item = capability();
-    item.observed.permissioned = {
-      value: 'no',
-      epistemic: 'OBSERVED',
-      evidence: [{ id: 'ev-denied', sourceType: 'system', label: 'Role access check' }],
-    };
+  it('blocks verification while current observations are explicitly disputed', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    verifyAllControls(ledger, capability);
+    observe(ledger, capability, 'adopted', 'no', 'DISPUTED', ':challenge');
 
-    const evaluated = evaluateCapability(item);
+    let evaluated = evaluateServiceCapability(ledger, capability, NOW);
+    expect(evaluated.status).toBe('DISPUTED');
+    expect(evaluated.controls.adopted.disputed).toBe(true);
 
+    const accepted = ledger.observations.find(item => item.capabilityRecordId === capability.id && item.control === 'adopted' && item.plane === 'OBSERVED')!;
+    ledger.disputeResolutions.push({
+      id: 'resolution-1',
+      capabilityRecordId: capability.id,
+      control: 'adopted',
+      resolvedAt: '2026-08-27T00:01:00.000Z',
+      decisionNote: 'Manager reviewed the conflicting assertion and retained the evidenced observation.',
+      acceptedObservationId: accepted.id,
+    });
+
+    evaluated = evaluateServiceCapability(ledger, capability, '2026-08-27T00:02:00.000Z');
+    expect(evaluated.controls.adopted.disputed).toBe(false);
+    expect(evaluated.controls.adopted.verified).toBe(true);
+  });
+
+  it('treats a no on a required foundation control as BLOCKED', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'available', 'no');
+    bindControlEvidence(ledger, capability, 'available');
+
+    const evaluated = evaluateServiceCapability(ledger, capability, NOW);
     expect(evaluated.status).toBe('BLOCKED');
-    expect(evaluated.deltas).toEqual(expect.arrayContaining([
-      expect.objectContaining({ control: 'permissioned', severity: 'high' }),
-    ]));
   });
 
-  it('requires the evidence contract rather than accepting a generic evidence item as proof of the whole claim', () => {
-    const contract: EvidenceContract = {
-      id: 'contract-1to1',
-      name: '1:1 support evidence',
-      description: 'Evidence chain',
-      chain: ['PLAN', 'DELIVER', 'OUTCOME', 'ASSURE'],
-      requirements: [
-        { id: 'plan', label: 'Plan', required: true, acceptedSourceTypes: ['document'] },
-        { id: 'delivery', label: 'Delivery', required: true, acceptedSourceTypes: ['system'] },
-        { id: 'assurance', label: 'Assurance', required: true, acceptedSourceTypes: ['audit'] },
-      ],
-    };
+  it('keeps action ownership attached to deterministic delta keys across recomputation', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'available');
+    bindControlEvidence(ledger, capability, 'available');
 
-    const evidence: EvidenceRef[] = [
-      { id: 'plan-1', sourceType: 'document', label: 'Care plan' },
-      { id: 'delivery-1', sourceType: 'system', label: 'Session record' },
-    ];
+    const first = evaluateServiceCapability(ledger, capability, NOW);
+    const delta = first.deltas.find(item => item.control === 'enabled')!;
+    ledger.actions.push({
+      deltaKey: delta.key,
+      capabilityRecordId: capability.id,
+      assignee: 'Operations Manager',
+      targetDate: '2026-09-01',
+      status: 'IN_PROGRESS',
+      note: 'Configuration review booked.',
+      updatedAt: NOW,
+    });
 
-    const result = evaluateEvidenceContract(contract, evidence);
-
-    expect(result.complete).toBe(false);
-    expect(result.completeness).toBe(67);
-    expect(result.missing.map(item => item.id)).toEqual(['assurance']);
+    const second = evaluateServiceCapability(ledger, capability, NOW);
+    const same = second.deltas.find(item => item.key === delta.key)!;
+    expect(same.ownership).toMatchObject({ assignee: 'Operations Manager', status: 'IN_PROGRESS' });
   });
 
-  it('promotes repeated service-level gaps into a cross-service pattern without calling a single local issue organisational', () => {
-    const snapshot = evaluateSnapshot(buildDemoOperationalState());
-    const patterns = detectCrossServicePatterns(snapshot.capabilities, 2);
+  it('only promotes a repeated gap after it exists at two distinct services', () => {
+    const ledger = baseLedger();
+    const first = addCapability(ledger, 'service-a', 'handover');
+    const second = addCapability(ledger, 'service-b', 'handover');
+    observe(ledger, first, 'available');
+    bindControlEvidence(ledger, first, 'available');
 
-    expect(patterns).toEqual(expect.arrayContaining([
-      expect.objectContaining({ capabilityId: 'handover', scope: 'CROSS_SERVICE' }),
-      expect.objectContaining({ capabilityId: 'one-to-one', scope: 'CROSS_SERVICE' }),
-    ]));
+    let state = evaluateOperationalLedger(ledger, NOW);
+    expect(detectCrossServicePatterns(state.capabilities, 2).some(pattern => pattern.definitionId === 'handover')).toBe(false);
 
-    expect(patterns.some(pattern => pattern.capabilityId === 'rostering-integration')).toBe(false);
+    observe(ledger, second, 'available');
+    bindControlEvidence(ledger, second, 'available');
+    state = evaluateOperationalLedger(ledger, NOW);
+    const patterns = detectCrossServicePatterns(state.capabilities, 2);
+    expect(patterns.some(pattern => pattern.definitionId === 'handover' && pattern.count === 2)).toBe(true);
+  });
+
+  it('is deterministic: evaluation creates no random identifiers or state mutation', () => {
+    const ledger = baseLedger();
+    const capability = addCapability(ledger);
+    observe(ledger, capability, 'available');
+    bindControlEvidence(ledger, capability, 'available');
+    const before = JSON.stringify(ledger);
+
+    const a = evaluateOperationalLedger(ledger, NOW);
+    const b = evaluateOperationalLedger(ledger, NOW);
+
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(JSON.stringify(ledger)).toBe(before);
   });
 });
