@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { buildEnvelopeFromRaw } from './import-profiles';
 import { extractFileText } from './universal-extractor';
 
-const TEST_DIR = 'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE';
+const TEST_DIR = process.env.CAREOPS_STRESS_DIR || 'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE';
+const HAS_STRESS_CORPUS = fs.existsSync(TEST_DIR);
 const SUPPORTED = new Set(['txt', 'csv', 'tsv', 'md', 'pdf', 'docx', 'xlsx', 'xls', 'xlsm', 'zip']);
 const BINARY = new Set(['pdf', 'docx', 'xlsx', 'xls', 'xlsm']);
 
@@ -25,7 +26,7 @@ function discover(root) {
   return out;
 }
 
-describe('careops full stress test', () => {
+describe.skipIf(!HAS_STRESS_CORPUS)('careops full stress test', () => {
   it('processes all files in the test corpus without errors', async () => {
     const files = discover(TEST_DIR);
     expect(files.length).toBeGreaterThan(0);

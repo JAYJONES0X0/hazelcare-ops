@@ -6,8 +6,9 @@ import { buildEnvelopeFromRaw } from './import-profiles';
 import { extractFileText } from './universal-extractor';
 
 const ROOTS = [
-  'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE',
+  process.env.CAREOPS_STRESS_DIR || 'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE',
 ];
+const HAS_STRESS_CORPUS = ROOTS.some((root) => fs.existsSync(root));
 
 const SUPPORTED = new Set(['txt', 'csv', 'tsv', 'md', 'pdf', 'docx', 'xlsx', 'xls', 'xlsm', 'zip']);
 const BINARY_TEXT_EXTS = new Set(['pdf', 'docx', 'xlsx', 'xls', 'xlsm']);
@@ -108,7 +109,7 @@ async function readCaseText(testCase: StressCase): Promise<string> {
   return fs.readFileSync(testCase.source, 'utf8');
 }
 
-describe('import stress report', () => {
+describe.skipIf(!HAS_STRESS_CORPUS)('import stress report', () => {
   it('parses the selected real files and zip entries and writes a report', async () => {
     const directFiles = ROOTS.flatMap(collectFiles);
     const expanded: StressCase[] = [];

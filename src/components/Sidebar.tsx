@@ -166,7 +166,7 @@ export function Sidebar({ page, setPage, weekData, theme, setTheme, mode, setMod
         </div>
         {!collapsed && (
           <div className="text-center overflow-hidden">
-            <div className="text-[10px] font-black tracking-[0.2em] uppercase text-hc-teal whitespace-nowrap">Care Ops</div>
+            <div className="text-[10px] font-black tracking-[0.2em] uppercase text-hc-teal whitespace-nowrap">OVSITE</div>
             <div className="text-[9px] font-bold text-hc-muted uppercase tracking-[0.3em] mt-0.5 whitespace-nowrap">
               {localStorage.getItem('hc-org-name') || ORG_CONFIG.name}
             </div>

@@ -266,7 +266,7 @@ export function CompliancePage({ staff }: Props) {
                     <h3 className="text-xs font-black text-hc-text uppercase tracking-widest">Audit Context</h3>
                  </div>
                  <p className="text-[10px] font-bold text-hc-muted uppercase tracking-wider leading-relaxed">
-                   Care Ops compares notes across clients and shifts. If one person has a gap, but a staff member was recording nearby notes, the system suggests who may be able to confirm the missing shift.
+                   OVSITE compares notes across clients and shifts. If one person has a gap, but a staff member was recording nearby notes, the system suggests who may be able to confirm the missing shift.
                  </p>
                  <div className="h-px bg-hc-border opacity-10" />
                  <div className="space-y-4">

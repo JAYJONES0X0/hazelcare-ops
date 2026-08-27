@@ -140,7 +140,7 @@ async function generateBeautifulDocx(client: FullClient, tasks: NourishTask[]) {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: "CARE OPS · OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
+                new TextRun({ text: "OVSITE · OPERATIONS HUB", bold: true, size: 18, color: "0D9488" })
               ]
             })
           ]
@@ -209,12 +209,6 @@ function TaskCard({ task, index, onUpdate, isUpdated }: { task: NourishTask; ind
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(task.notes);
   const freq = FREQ_CONFIG[task.frequency];
-
-  useEffect(() => {
-    setExpanded(false);
-    setEditingNotes(false);
-    setNotesDraft(task.notes);
-  }, [task.id, task.notes]);
 
   const copyValue = async (kind: 'name' | 'notes', text: string, e?: MouseEvent<HTMLButtonElement>) => {
     e?.stopPropagation();
@@ -372,7 +366,7 @@ function FreqSection({
       {open && (
         <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
           {tasks.map((t, i) => (
-            <TaskCard key={`${freq}-${t.id}`} task={t} index={i + 1} onUpdate={onTaskUpdate} isUpdated={updatedIds?.has(t.id)} />
+            <TaskCard key={`${freq}-${t.id}-${t.notes}`} task={t} index={i + 1} onUpdate={onTaskUpdate} isUpdated={updatedIds?.has(t.id)} />
           ))}
         </div>
       )}
@@ -473,7 +467,7 @@ export function NourishTaskPack() {
     if (!selectedClient || tasks.length === 0) return;
     try {
       await generateBeautifulDocx(selectedClient, tasks);
-    } catch (e) {
+    } catch {
       alert('Failed to generate Word document. Falling back to text download.');
       handleDownloadTxt();
     }

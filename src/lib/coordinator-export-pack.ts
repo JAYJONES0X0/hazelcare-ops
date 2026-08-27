@@ -126,7 +126,7 @@ export function buildCoordinatorEvidenceHtml(entries: CareEntry[], meta: Coordin
   <div style="border-bottom:6px solid #1c4e4e;padding-bottom:24px;margin-bottom:30px;display:flex;justify-content:between;align-items:end;">
     <div style="flex:1;">
       <h1 style="margin:0;font-size:24px;color:#0d2d2d;text-transform:uppercase;letter-spacing:0.1em;font-weight:900;">${ex(title)}</h1>
-      <p style="margin:8px 0 0;font-size:11px;font-weight:700;color:#8a8b82;text-transform:uppercase;letter-spacing:0.2em;">Care Ops Operations Portal // Evidence Pack</p>
+      <p style="margin:8px 0 0;font-size:11px;font-weight:700;color:#8a8b82;text-transform:uppercase;letter-spacing:0.2em;">OVSITE Operations Portal // Evidence Pack</p>
     </div>
     <div style="text-align:right;">
       <p style="margin:0;font-size:10px;font-weight:900;color:#1c4e4e;">WINDOW: ${ex(meta.windowLabel)}</p>

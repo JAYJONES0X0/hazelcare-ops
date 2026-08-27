@@ -9,34 +9,6 @@ interface State {
   hasError: boolean;
 }
 
-const RECOVERY_STORAGE_KEYS = [
-  'careops-handovers',
-  'hazelcare-compliance-audits',
-  'hazelcare-ops',
-  'hazelcare-staff',
-  'hazelcare-staff-notes',
-  'hc-active-sequences-v1',
-  'hc-active-tracking-v1',
-  'hc-audit-trail-v1',
-  'hc-clients-v2',
-  'hc-coaching-events-v1',
-  'hc-coverage-plan-v1',
-  'hc-current-page',
-  'hc_current_page',
-  'hc-entry-store-v3',
-  'hc-intercept-cache',
-  'hc-module-history-v1',
-  'hc-operational-communications-v1',
-  'hc-operational-output-drafts-v1',
-  'hc-registered-sessions',
-  'hc-staff-monitoring-hourly-v1',
-  'hc-staff-monitoring-outcomes-v1',
-  'hc-staff-monitoring-runs-v1',
-  'hc-staff-register-v1',
-  'hc-template-import-context',
-  'hc-week-data-v2',
-];
-
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false

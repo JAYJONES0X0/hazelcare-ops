@@ -13,7 +13,8 @@ export function syncCareCircleLinkedAction(
     if (concernStatus === 'resolved') {
       return { ...action, status: 'completed' as const, completedAt: action.completedAt || timestamp };
     }
-    const { completedAt: _completedAt, ...openAction } = action;
+    const openAction = { ...action };
+    delete openAction.completedAt;
     return {
       ...openAction,
       status: concernStatus === 'in_progress' ? 'in_progress' as const : 'open' as const,

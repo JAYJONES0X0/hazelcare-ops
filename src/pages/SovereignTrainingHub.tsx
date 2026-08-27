@@ -347,7 +347,7 @@ export default function SovereignTrainingHub() {
       </div>
 
       <footer className="py-12 border-t border-hc-border/20 text-center bg-white">
-        <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.5em]">Care Ops - Clinical Documentation Practice</span>
+        <span className="text-[10px] font-black text-hc-muted uppercase tracking-[0.5em]">OVSITE - Clinical Documentation Practice</span>
       </footer>
     </div>
   );

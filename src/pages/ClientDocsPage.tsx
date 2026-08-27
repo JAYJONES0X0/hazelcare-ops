@@ -123,7 +123,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
         saveClient(client);
         refresh();
       }
-    } catch (err) {
+    } catch {
       alert(err instanceof Error ? err.message : 'Document upload failed.');
     } finally {
       setIsUploading(null);
@@ -155,7 +155,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
       setImportText(fullText);
       setImportResult(['Document text extracted. Use "Map Document" for deterministic support-plan/admission parsing, or "Use AI" for model analysis.']);
       setShowAiPanel(false);
-    } catch (err) {
+    } catch {
       setImportResult(['Failed to read this file. Try copy-pasting the text manually, or attach it as source evidence.']);
     } finally {
       setIsExtracting(false);

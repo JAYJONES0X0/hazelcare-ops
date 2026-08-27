@@ -7,9 +7,10 @@ import { loadClients } from '../lib/client-store';
 import { buildClientPackReviewQueue } from '../lib/operational-spine';
 import { buildFinanceOversightSummary, loadFinanceState } from '../lib/client-finance';
 import { RadarLoader } from '../components/NexusLoader';
+import { OperationalStateLab } from '../components/OperationalStateLab';
 import {
   TrendingUp, AlertCircle, Users, Home, Activity, ShieldAlert,
-  Archive, ChevronRight, RefreshCw, CheckCircle, WalletCards,
+  Archive, ChevronRight, RefreshCw, CheckCircle, WalletCards, Network,
 } from 'lucide-react';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
   const [storedWeekData, setStoredWeekData] = useState<WeekSummary | null>(null);
   const [hydrating, setHydrating] = useState(!weekDataProp);
+  const [stateLabOpen, setStateLabOpen] = useState(false);
 
   useEffect(() => {
     if (weekDataProp) return;
@@ -177,9 +179,19 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
             Cross-site quality intelligence · {houseData.length} sites in scope
           </p>
         </div>
-        <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl hc-clay-inset border border-hc-teal/20">
-          <RefreshCw size={12} className="text-hc-teal animate-spin-slow" />
-          <span className="text-[9px] font-black text-hc-teal uppercase tracking-[0.3em]">Live · {snapshot.staff.length} Personnel Scored</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl hc-clay-inset border border-hc-teal/20">
+            <RefreshCw size={12} className="text-hc-teal animate-spin-slow" />
+            <span className="text-[9px] font-black text-hc-teal uppercase tracking-[0.3em]">Live · {snapshot.staff.length} Personnel Scored</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStateLabOpen(value => !value)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-[9px] font-black uppercase tracking-[0.24em] transition-all ${stateLabOpen ? 'border-hc-teal/40 bg-hc-teal/10 text-hc-teal' : 'border-hc-border/20 text-hc-muted hover:text-hc-teal hover:border-hc-teal/30'}`}
+          >
+            <Network size={12} />
+            {stateLabOpen ? 'Close State Lab' : 'Open State Lab'}
+          </button>
         </div>
       </div>
 
@@ -227,6 +239,8 @@ export function EmpireMatrix({ weekData: weekDataProp, setPage }: Props) {
           </button>
         </div>
       )}
+
+      {stateLabOpen && <OperationalStateLab />}
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

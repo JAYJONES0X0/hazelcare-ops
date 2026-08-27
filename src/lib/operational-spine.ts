@@ -440,7 +440,7 @@ export function toNourishSafeText(text: string): string {
     .replace(/^\s*\d+\.\s+/gm, '')
     .replace(/\|/g, ' ')
     .replace(/\[[ xX]\]\s*/g, '')
-    .replace(/[✅⚠️❌]/g, '')
+    .replace(/(?:✅|⚠️|❌)/g, '')
     .split('\n')
     .map(line => line.trim())
     .filter((line, idx, arr) => line || arr[idx - 1])

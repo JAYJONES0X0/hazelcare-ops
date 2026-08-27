@@ -130,7 +130,7 @@ export function MedicationSafetyPage() {
         recordedBy: staffName || 'Medication trained staff',
         reason: isReasonRequired(outcome) ? reason : '',
         notes: outcome === 'administered' ? 'Staff-confirmed visible MAR outcome.' : 'Exception outcome requires manager review.',
-        idempotencyKey: `mar-${event.id}-${outcome}-${Date.now()}`,
+        idempotencyKey: `mar-${event.id}-${outcome}-${nowIso()}`,
         expectedEventVersion: event.eventVersion,
       });
       const nextEvents = state.events.map(item => item.id === event.id ? recorded : item);
@@ -148,7 +148,7 @@ export function MedicationSafetyPage() {
         recordedAt: nowIso(),
         recordedBy: staffName || 'Medication trained staff',
         reason: 'Duplicate guard test.',
-        idempotencyKey: `duplicate-${Date.now()}`,
+        idempotencyKey: `duplicate-${nowIso()}`,
         expectedEventVersion: event.eventVersion,
       });
       setStatus('Duplicate guard did not block this event.');

@@ -536,8 +536,8 @@ function header(lens: TemplateLens, templateId: TemplateType): string {
         <div class="meta">${ex(lens.subtitle)} / Generated ${ex(dateStamp())} / Confidential internal use only</div>
       </div>
       <div>
-        <img src="/logo-formal.png" class="logo" alt="Care Ops" onerror="this.style.display='none'" />
-        <div class="org">Care Ops</div>
+        <img src="/logo-formal.png" class="logo" alt="OVSITE" onerror="this.style.display='none'" />
+        <div class="org">OVSITE</div>
       </div>
     </div>`;
 }
@@ -570,7 +570,7 @@ export function buildTemplateDocument(
     </div>
     ${signoff(options)}
     <div class="footer">
-      <span>Care Ops / controlled document / do not redistribute</span>
+      <span>OVSITE / controlled document / do not redistribute</span>
       <span>${ex(templateId)}</span>
     </div>
   </main>

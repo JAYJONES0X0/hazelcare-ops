@@ -28,6 +28,6 @@ export function buildCareCircleInternalDraftText({
     'Draft',
     body,
     '',
-    'This draft is for manager review inside Care Ops. Use the reviewed update or share pack controls for external circulation.',
+    'This draft is for manager review inside OVSITE. Use the reviewed update or share pack controls for external circulation.',
   ].join('\n');
 }

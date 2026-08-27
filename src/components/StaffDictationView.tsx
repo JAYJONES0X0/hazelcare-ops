@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Sparkles, RefreshCw, FileText, Copy, CheckCircle2, MessageSquare, Eye, EyeOff, Send } from 'lucide-react';
+import { Sparkles, RefreshCw, Copy, CheckCircle2, MessageSquare, Eye, EyeOff, Send } from 'lucide-react';
 import { LanguageSearchDropdown } from './LanguageSearchDropdown';
 import { assessNoteStandard } from '../lib/note-quality-standard';
 import { HAZELCARE_HOUSES } from '../lib/compliance-store';

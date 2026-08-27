@@ -49,5 +49,6 @@ nul
 tmp_onedrive_extract/
 OneDrive*.zip
 tmp/
+supabase/.temp/
 
 .env*.local

@@ -454,7 +454,7 @@ function HardwareBurnSection() {
           onMouseDown={(e) => {
             e.currentTarget.classList.add('scale-95', 'bg-black');
             const timer = setTimeout(async () => {
-              if (confirm('FULL LOCAL RESET: This will wipe all Care Ops data on this device. Proceed?')) {
+              if (confirm('FULL LOCAL RESET: This will wipe all OVSITE data on this device. Proceed?')) {
                 await purgeSystemDataAsync();
               }
             }, 2000);
@@ -626,7 +626,7 @@ export function SettingsPage({ onSignOut }: Props) {
       <div className="pt-16 pb-8 flex flex-col items-center gap-4 border-t border-hc-border/10 mt-12">
         <div className="flex items-center gap-3 px-6 py-3 rounded-2xl hc-clay-inset border border-hc-teal/20 text-hc-teal">
           <Activity size={14} className="animate-pulse" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em]">Care Ops · System Core v1.0</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.3em]">OVSITE · System Core v1.0</span>
         </div>
       </div>
     </div>

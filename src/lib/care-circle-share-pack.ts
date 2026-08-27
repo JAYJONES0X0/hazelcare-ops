@@ -201,7 +201,7 @@ export function buildCareCircleSharePackHtml(client: FullClient, circle: Partial
       ${familyResponseSummaryHtml(openItems)}
     </ul>
   </div>
-  <div class="footer">Manager reviewed pack. Internal evidence references remain in Care Ops and are not printed for family-facing circulation unless separately authorised.</div>
+  <div class="footer">Manager reviewed pack. Internal evidence references remain in OVSITE and are not printed for family-facing circulation unless separately authorised.</div>
 </body>
 </html>`;
 }

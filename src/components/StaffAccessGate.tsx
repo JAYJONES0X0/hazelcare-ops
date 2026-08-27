@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, KeyRound, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldCheck, KeyRound, XCircle } from 'lucide-react';
 import { StaffDictationView } from './StaffDictationView';
 
 interface StaffLinkPayload {
@@ -70,7 +70,6 @@ export function StaffAccessGate() {
       .then(r => r.json())
       .then(data => setGateState(data.ok ? 'verified' : 'code-entry'))
       .catch(() => setGateState('code-entry'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCodeSubmit = () => {

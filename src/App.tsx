@@ -100,8 +100,6 @@ export default function App() {
 
   const [hasStaffHash] = useState(() => window.location.hash.startsWith('#staff/'));
 
-  if (hasStaffHash) return <StaffAccessGate />;
-
   // Clean up URL path after reading deep-link
   useEffect(() => {
     const path = window.location.pathname;
@@ -205,10 +203,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    setClients(loadClients());
-  }, [page]);
-
-  useEffect(() => {
     // Avoid full-history rebuild on startup when session week data already exists.
     // This prevents first-load stalls on large IndexedDB datasets.
     if (weekData) return;
@@ -284,7 +278,7 @@ export default function App() {
       return next;
     });
     setPage('actions');
-  }, [setPage]);
+  }, [setActions, setPage]);
 
   const handleGlobalDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -390,6 +384,8 @@ export default function App() {
     others.push({ id: sessionId, device, browser, timestamp: thisEntry?.timestamp || now, lastActive: now, revoked: false });
     localStorage.setItem('hc-registered-sessions', JSON.stringify(others.slice(-20)));
   }, [authed]); 
+  if (hasStaffHash) return <StaffAccessGate />;
+
   if (!sessionLoaded) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-hc-bg safe-area">
@@ -581,7 +577,7 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
     <div className="min-h-dvh flex items-center justify-center bg-hc-bg p-6">
       <form onSubmit={handleLogin} className="w-full max-w-sm hc-clay-raised p-10 space-y-8 rounded-[3rem] shadow-2xl border border-hc-muted/5">
         <div>
-          <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">Care Ops Access</h1>
+          <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">OVSITE Access</h1>
           <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-2">Enter credentials to open the care operations hub</p>
         </div>
         <div className="space-y-4">
@@ -614,7 +610,3 @@ function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
     </div>
   );
 }
-
-
-
-
