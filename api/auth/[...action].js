@@ -213,7 +213,7 @@ async function handleSendCode(req, res) {
   const token = crypto.createHmac('sha256', SECRET).update(`${code}:${bucket}`).digest('hex');
 
   const msg = [
-    '🔐 *HazelCare Ops — Access Request*',
+    '🔐 *OVSITE — Access Request*',
     '',
     `📧 Email: \`${normalizedEmail}\``,
     `🔑 Code: \`${code}\``,

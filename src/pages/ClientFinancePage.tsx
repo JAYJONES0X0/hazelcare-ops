@@ -458,7 +458,7 @@ CARD REF CF-77`);
             Money Safeguarding
           </h1>
           <p className="mt-3 max-w-3xl text-sm font-semibold text-hc-muted leading-relaxed">
-            Controlled evidence ledger for receipts, spending, balances, reconciliation, and review. CareOps records and evidences client money activity; it does not hold funds, move funds, or approve transactions automatically.
+            Controlled evidence ledger for receipts, spending, balances, reconciliation, and review. OVSITE records and evidences client money activity; it does not hold funds, move funds, or approve transactions automatically.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -587,7 +587,7 @@ CARD REF CF-77`);
                 <h2 className="text-lg font-black uppercase tracking-widest">Proposed Transaction</h2>
               </div>
               <p className="text-sm font-semibold text-hc-muted">
-                This is not posted yet. Confirm person, account, receipt evidence, and support context before CareOps recalculates the balance.
+                This is not posted yet. Confirm person, account, receipt evidence, and support context before OVSITE recalculates the balance.
               </p>
               <div className="grid gap-3 md:grid-cols-4">
                 <div className="hc-clay-inset p-4 rounded-2xl"><div className="text-[9px] font-black uppercase text-hc-muted">Merchant</div><div className="font-black">{pendingTransaction.merchant || 'Unknown'}</div></div>
@@ -610,7 +610,7 @@ CARD REF CF-77`);
             <div>
               <h2 className="text-lg font-black uppercase tracking-widest">Legacy Ledger Bridge</h2>
               <p className="mt-2 max-w-4xl text-sm font-semibold text-hc-muted leading-relaxed">
-                Paste OCR or typed rows from a paper money sheet. CareOps creates reviewable ledger evidence, proposes receipt matches, and audits the balance chain. It does not post imported rows as trusted transactions.
+                Paste OCR or typed rows from a paper money sheet. OVSITE creates reviewable ledger evidence, proposes receipt matches, and audits the balance chain. It does not post imported rows as trusted transactions.
               </p>
             </div>
           </div>
@@ -916,7 +916,7 @@ CARD REF CF-77`);
               <h2 className="text-lg font-black uppercase tracking-widest">Reconciliation</h2>
             </div>
             <p className="text-sm font-semibold text-hc-muted">
-              Enter the counted balance. CareOps compares it to the calculated balance and records discrepancy state without accusing anyone.
+              Enter the counted balance. OVSITE compares it to the calculated balance and records discrepancy state without accusing anyone.
             </p>
           </div>
           <input className="hc-clay-inset px-4 py-3 text-sm font-bold" value={expectedBalance} onChange={e => setExpectedBalance(e.target.value)} placeholder={`Counted balance, e.g. ${latestBalance.toFixed(2)}`} />

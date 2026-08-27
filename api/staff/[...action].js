@@ -417,7 +417,7 @@ async function handleIssueStaffLink(req, res) {
         const { Resend } = await import('resend');
         const resend = new Resend(resendKey);
         const { error } = await resend.emails.send({
-          from: 'Care Ops <onboarding@resend.dev>',
+          from: 'OVSITE <onboarding@resend.dev>',
           to: email.trim().toLowerCase(),
           subject: 'Care Note Request — Access Link',
           html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
@@ -633,7 +633,7 @@ async function callOpenRouter(messages, options = {}) {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://care-ops-os.vercel.app',
-        'X-Title': 'Care Ops',
+        'X-Title': 'OVSITE',
       },
       body: JSON.stringify({
         model,

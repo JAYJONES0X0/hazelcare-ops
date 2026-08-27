@@ -105,7 +105,7 @@ Our platform provides organizational intelligence, staff monitoring, and documen
 {{ORG_NAME}} acknowledges that all care-related data uploaded to the platform remains the property of the Customer (The Controller). {{ORG_NAME}} acts as a Processor under UK GDPR.
 
 ## 4. Liability
-While we strive for 100% accuracy in CareOps operating workflows, operational decisions remain the responsibility of the registered manager. {{ORG_NAME}} is not liable for clinical outcomes or regulatory findings resulting from system interactions.
+While we strive for 100% accuracy in OVSITE operating workflows, operational decisions remain the responsibility of the registered manager. {{ORG_NAME}} is not liable for clinical outcomes or regulatory findings resulting from system interactions.
 
 ## 5. Governing Law
 These terms are governed by the laws of England and Wales. Each party submits to the exclusive jurisdiction of the English courts.`,

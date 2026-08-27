@@ -225,7 +225,7 @@ export function MedicationSafetyPage() {
             MAR Safety Spine
           </h1>
           <p className="mt-3 max-w-4xl text-xs font-semibold leading-6 text-hc-muted">
-            Verified medication profile, authorised medicine order, generated MAR schedule, staff-confirmed outcome, exception review and export. CareOps records and audits support; it does not prescribe or clinically authorise medicines.
+            Verified medication profile, authorised medicine order, generated MAR schedule, staff-confirmed outcome, exception review and export. OVSITE records and audits support; it does not prescribe or clinically authorise medicines.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -389,7 +389,7 @@ export function MedicationSafetyPage() {
                     Source: {order.authorisationSourceType} | Evidence: {order.authorisationEvidenceId} | Verified by {order.verifiedBy}
                   </div>
                   <div className="mt-3">
-                    <Pill tone="green">instructions verified, not clinically approved by CareOps</Pill>
+                    <Pill tone="green">instructions verified, not clinically approved by OVSITE</Pill>
                   </div>
                 </div>
               ))}

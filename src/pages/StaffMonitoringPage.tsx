@@ -619,7 +619,7 @@ export function StaffMonitoringPage({ weekData, onDataParsed, setPage }: Props) 
             disabled={!setPage}
             className="flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 hc-clay-raised text-hc-text disabled:opacity-40"
           >
-            <ClipboardList size={13} /> Open CareOps Task Packs
+            <ClipboardList size={13} /> Open OVSITE Task Packs
           </button>
         </div>
       </div>

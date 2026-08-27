@@ -544,7 +544,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                   <div className="rounded-2xl p-4 border border-hc-border/20 bg-white/30">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-hc-muted mb-2">Recommended move</div>
                     <div className="text-[11px] text-hc-text/75 leading-relaxed">
-                      Build out the hotspot categories first, then route each generated note into the matching CareOps category or the chosen care-record system. That keeps the pack readable when printed and gives you a fast manual fallback if AI is not needed.
+                      Build out the hotspot categories first, then route each generated note into the matching OVSITE category or the chosen care-record system. That keeps the pack readable when printed and gives you a fast manual fallback if AI is not needed.
                     </div>
                   </div>
 
