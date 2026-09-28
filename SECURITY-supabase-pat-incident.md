@@ -37,7 +37,7 @@ in local history. The failure mode is mundane: any agent running `git add -A && 
 that branch, followed by a push attempt. Push Protection would *probably* block it â€” but that is
 a safety net, not a control. `.gitignore` does not currently exclude `scripts/`.
 
-## Required actions
+**POST-RELEASE VERIFICATION (2026-09-28):** The remote master has since moved to `d69e3a2` -> `44fc152` "release: deploy full OVSITE operational spine and truth ledger". Re-scanned all 24 remote-only commits plus `FETCH_HEAD` remote spine `cd509d1` for the `sbp_` literal and long JWTs: **clean**. The credential was never pushed to any ref on GitHub. History rewrite of the local spine was cosmetic; a full `git filter-repo` on the pushed history is NOT required for confidentiality.\n\n## Required actions
 
 1. **Do not push** `codex/careops-operational-spine` in its current state. Do not force-push it.
 2. **Rotate anyway** before reuse â€” a dead token is not a revoked token, and this one may be
@@ -77,4 +77,5 @@ secret is present. Fix the secret.
 The empire state file described this as a "hardcoded Supabase token." It is more accurately a
 **Supabase Personal Access Token with account-level scope** â€” meaning a leak would compromise the
 account, not just one project. The distinction matters if this is ever discussed with a third party.
+
 
