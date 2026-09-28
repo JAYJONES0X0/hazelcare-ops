@@ -52,3 +52,18 @@ tmp/
 supabase/.temp/
 
 .env*.local
+
+# ========================
+# GDPR HARD RULE (SEC-2026-09-28 / restored from pre-existing working-tree rule)
+# demo-data/ holds REAL client data (care plans, client diaries, actual resident
+# names, @14:xx emails, postcodes) from Downloads\02_CAREOPS_HAZELCARE.
+# It was gitignored in the working tree but NEVER committed to .gitignore, and a
+# filter-repo rewrite wiped the on-disk copy. It is now locked HERE.
+# NEVER commit this folder. Never `git add -f` it. The synthetic demo pack lives
+# in vision-builder\ovsite-demo-pack\ instead.
+demo-data/
+# Experimental/Derived data exports produced outside git: never commit
+experiments/
+*.geo
+*.log
+.vscode
