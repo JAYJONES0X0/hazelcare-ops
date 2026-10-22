@@ -1,55 +1,23 @@
-function sanitizeEnvValue(v) {
-  const firstLine = String(v || '').split(/\r?\n/)[0];
-  return firstLine.trim().replace(/^["']|["']$/g, '').replace(/\/$/, '');
-}
-const UPSTASH_URL = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_URL);
-const UPSTASH_TOKEN = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
-const ALLOW_INMEMORY_FALLBACK = process.env.ALLOW_INMEMORY_REPLAY_FALLBACK === '1';
+import { redisCommand, redisNamespace } from './redis.js';
 
-const inMemoryExpiries = new Map();
-
-function pruneInMemory() {
-  const now = Date.now();
-  for (const [key, exp] of inMemoryExpiries.entries()) {
-    if (exp <= now) inMemoryExpiries.delete(key);
-  }
-}
-
-async function consumeOnceInMemory(key, ttlSeconds) {
-  pruneInMemory();
-  if (inMemoryExpiries.has(key)) return { ok: true, firstUse: false };
-  inMemoryExpiries.set(key, Date.now() + ttlSeconds * 1000);
-  return { ok: true, firstUse: true };
-}
-
-async function consumeOnceUpstash(key, ttlSeconds) {
-  const res = await fetch(UPSTASH_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${UPSTASH_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(['SET', key, '1', 'EX', String(ttlSeconds), 'NX']),
-  });
-  if (!res.ok) {
-    const bodyText = await res.text().catch(() => '');
-    console.warn('[durable-once] upstash rejected:', res.status, bodyText.slice(0, 300));
-    return { ok: false, firstUse: false, error: `Redis responded ${res.status}` };
-  }
-  const body = await res.json().catch(() => null);
-  return { ok: true, firstUse: body?.result === 'OK' };
-}
+const localExpiries = new Map();
 
 export async function consumeOnce(key, ttlSeconds) {
-  if (UPSTASH_URL && UPSTASH_TOKEN) {
-    return consumeOnceUpstash(key, ttlSeconds);
+  // Preserve consumed production recovery codes and staff links across this release.
+  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+  const legacyKey = isProduction && (key.startsWith('recovery:') || key.startsWith('staff-jti:'));
+  const namespacedKey = legacyKey ? key : `${redisNamespace()}:once:${key}`;
+  if (process.env.NODE_ENV === 'test' || (process.env.ALLOW_INMEMORY_REPLAY_FALLBACK === '1' && process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production')) {
+    const now = Date.now();
+    for (const [id, expires] of localExpiries) if (expires <= now) localExpiries.delete(id);
+    if (localExpiries.has(namespacedKey)) return { ok: true, firstUse: false };
+    localExpiries.set(namespacedKey, now + ttlSeconds * 1000);
+    return { ok: true, firstUse: true };
   }
-  if (ALLOW_INMEMORY_FALLBACK) {
-    return consumeOnceInMemory(key, ttlSeconds);
+  try {
+    const result = await redisCommand(['SET', namespacedKey, '1', 'EX', String(ttlSeconds), 'NX']);
+    return { ok: true, firstUse: result === 'OK' };
+  } catch {
+    return { ok: false, firstUse: false, error: 'Authentication storage is unavailable. Please retry.' };
   }
-  return {
-    ok: false,
-    firstUse: false,
-    error: 'Durable replay protection is not configured',
-  };
 }

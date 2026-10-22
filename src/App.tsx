@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { LoginGate } from './components/LoginGate';
 import { Sidebar } from './components/Sidebar';
 import { GlobalInjest } from './components/GlobalInjest';
 import { Upload, ArrowUp, ArrowDown, Menu } from 'lucide-react';
@@ -18,7 +19,6 @@ import { isSkinTheme, normalizeTheme, normalizeBaseTheme, type AppTheme } from '
 import { setAuditIdentity } from './lib/audit';
 import {
   clearLocalPreviewAuth,
-  enableLocalPreviewAuth,
   getLocalPreviewRole,
   hasLocalPreviewAuth,
   isJsonResponse,
@@ -304,7 +304,7 @@ export default function App() {
       setSessionLoaded(true);
     }, 8000);
 
-    fetch('/api/auth/session', { credentials: 'include', signal: controller.signal })
+    fetch('/api/auth/session', { credentials: 'include', cache: 'no-store', signal: controller.signal })
       .then(async (r) => {
         if (isMissingLocalApiResponse(r)) {
           if (hasLocalPreviewAuth()) {
@@ -537,76 +537,6 @@ export default function App() {
           onDataParsed={handleDataParsed}
         />
       )}
-    </div>
-  );
-}
-
-function LoginGate({ onUnlock }: { onUnlock: (role?: string) => void }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-      credentials: 'include',
-    });
-    if (isMissingLocalApiResponse(res)) {
-      if (!email.trim() || !password.trim()) {
-        setError('Enter any local preview credentials');
-        return;
-      }
-      enableLocalPreviewAuth('admin');
-      onUnlock('admin');
-      return;
-    }
-    const payload = isJsonResponse(res) ? await res.json().catch(() => ({})) : {};
-    if (res.ok) {
-      const role = normalizeUserRole(payload?.role || localStorage.getItem('hc-user-role'));
-      localStorage.setItem('hc-user-role', role);
-      onUnlock(role);
-    }
-    else setError(payload?.error || 'Invalid credentials');
-  };
-
-  return (
-    <div className="min-h-dvh flex items-center justify-center bg-hc-bg p-6">
-      <form onSubmit={handleLogin} className="w-full max-w-sm hc-clay-raised p-10 space-y-8 rounded-[3rem] shadow-2xl border border-hc-muted/5">
-        <div>
-          <h1 className="text-2xl font-black text-hc-text uppercase tracking-tighter">OVSITE Access</h1>
-          <p className="text-[10px] font-black text-hc-muted uppercase tracking-[0.2em] mt-2">Enter credentials to open the OVSITE intelligence hub</p>
-        </div>
-        <div className="space-y-4">
-          <label className="block space-y-2">
-            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Email"
-              autoComplete="username"
-              className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text shadow-inner focus:outline-none focus:ring-2 focus:ring-hc-teal/40"
-            />
-          </label>
-          <label className="block space-y-2">
-            <span className="text-[9px] font-black text-hc-muted uppercase tracking-widest">Access Key</span>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Access Key"
-              autoComplete="current-password"
-              className="w-full hc-clay-inset px-6 py-4 text-sm font-black text-hc-text shadow-inner focus:outline-none focus:ring-2 focus:ring-hc-teal/40"
-            />
-          </label>
-        </div>
-        {error && <div className="text-[10px] font-black text-flag-red uppercase tracking-widest text-center">{error}</div>}
-        <button type="submit" className="w-full py-5 btn-tactical text-hc-bg rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all hover:scale-[1.02]">Open Operations Hub</button>
-      </form>
     </div>
   );
 }

@@ -4,7 +4,7 @@ export function parseCookies(req) {
   return raw.split(';').reduce((acc, part) => {
     const [k, ...v] = part.trim().split('=');
     if (!k) return acc;
-    acc[k] = decodeURIComponent(v.join('=') || '');
+    try { acc[k] = decodeURIComponent(v.join('=') || ''); } catch { /* Ignore malformed cookies. */ }
     return acc;
   }, {});
 }

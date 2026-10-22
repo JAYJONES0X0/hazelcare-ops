@@ -16,7 +16,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    chunkSizeWarningLimit: 2500,
+    chunkSizeWarningLimit: 500,
   },
   test: {
     setupFiles: './src/test/setup.ts',

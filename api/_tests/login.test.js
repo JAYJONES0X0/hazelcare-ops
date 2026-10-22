@@ -36,6 +36,8 @@ function createRes() {
 describe('/api/login identifier-first flow', () => {
   beforeEach(() => {
     vi.resetModules();
+    process.env.AUTH_EMERGENCY_BYPASS = '0';
+    process.env.AUTH_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
     process.env.AUTH_PASSWORD = 'TopSecret!123';
     process.env.AUTH_LOGIN_EMAIL = 'ops@hazelcare.co.uk';
     process.env.AUTH_SESSION_SECRET = 'unit-test-auth-session-secret-32b!!';
@@ -90,7 +92,7 @@ describe('/api/login identifier-first flow', () => {
     expect(res.jsonBody).toEqual({ ok: true, recognized: true });
   });
 
-  it('signs in with known email + valid password', async () => {
+  it('requires verification after a known email and valid password', async () => {
     const { default: handler } = await import('../auth/[...action].js');
     const req = createReq({ email: 'ops@hazelcare.co.uk', password: 'TopSecret!123' });
     req.url = '/api/auth/login';
@@ -99,7 +101,8 @@ describe('/api/login identifier-first flow', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.jsonBody).toMatchObject({ ok: true });
-    expect(String(res.headers['Set-Cookie'] || '')).toContain('hc_session=');
+    expect(res.jsonBody).toMatchObject({ ok: true, requires2fa: true });
+    expect(String(res.headers['Set-Cookie'] || '')).toContain('hc_auth_challenge=');
+    expect(String(res.headers['Set-Cookie'] || '')).not.toContain('hc_session=');
   });
 });

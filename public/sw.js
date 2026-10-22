@@ -21,6 +21,11 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  // Retired worker: never cache sessions, API data or authenticated documents.
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
   const isAsset = /\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/i.test(url.pathname);
 
   if (isAsset) {

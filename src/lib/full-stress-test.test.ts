@@ -5,20 +5,22 @@ import { describe, expect, it } from 'vitest';
 import { buildEnvelopeFromRaw } from './import-profiles';
 import { extractFileText } from './universal-extractor';
 
-const TEST_DIR = process.env.CAREOPS_STRESS_DIR || 'C:\\Users\\brook\\Downloads\\02_CAREOPS_HAZELCARE';
+const TEST_DIR = process.env.CAREOPS_STRESS_DIR || '';
 const HAS_STRESS_CORPUS = fs.existsSync(TEST_DIR);
 const SUPPORTED = new Set(['txt', 'csv', 'tsv', 'md', 'pdf', 'docx', 'xlsx', 'xls', 'xlsm', 'zip']);
 const BINARY = new Set(['pdf', 'docx', 'xlsx', 'xls', 'xlsm']);
 
-function discover(root) {
-  const out = [];
+type CorpusFile = { full: string; name: string; kind: 'file'; zipError?: string } | { full: string; name: string; kind: 'zip-entry'; zipPath: string };
+
+function discover(root: string): CorpusFile[] {
+  const out: CorpusFile[] = [];
   const stack = [root];
   while (stack.length) {
-    const cur = stack.pop();
+    const cur = stack.pop()!;
     for (const e of fs.readdirSync(cur, { withFileTypes: true })) {
       const full = path.join(cur, e.name);
       if (e.isDirectory()) { stack.push(full); continue; }
-      const ext = e.name.split('.').pop()?.toLowerCase();
+      const ext = e.name.split('.').pop()?.toLowerCase() || '';
       if (e.name.startsWith('~$')) continue;
       if (SUPPORTED.has(ext)) out.push({ full, name: e.name, kind: 'file' });
     }
@@ -33,9 +35,9 @@ describe.skipIf(!HAS_STRESS_CORPUS)('careops full stress test', () => {
     console.log(`\nFiles discovered: ${files.length}`);
 
     // Expand zips
-    const expanded = [];
+    const expanded: CorpusFile[] = [];
     for (const f of files) {
-      const ext = f.name.split('.').pop()?.toLowerCase();
+      const ext = f.name.split('.').pop()?.toLowerCase() || '';
       if (ext !== 'zip') { expanded.push(f); continue; }
       try {
         const zip = await JSZip.loadAsync(fs.readFileSync(f.full));
@@ -43,26 +45,26 @@ describe.skipIf(!HAS_STRESS_CORPUS)('careops full stress test', () => {
           if (entry.dir) continue;
           const iname = entry.name.split('/').pop() || entry.name;
           if (iname.startsWith('~$')) continue;
-          const iext = iname.split('.').pop()?.toLowerCase();
+          const iext = iname.split('.').pop()?.toLowerCase() || '';
           if (SUPPORTED.has(iext) && iext !== 'zip')
             expanded.push({ full: entry.name, name: iname, kind: 'zip-entry', zipPath: f.full });
         }
       } catch (e) {
-        expanded.push({ full: f.full, name: f.name, kind: 'file', zipError: e.message });
+        expanded.push({ full: f.full, name: f.name, kind: 'file', zipError: e instanceof Error ? e.message : String(e) });
       }
     }
 
     console.log(`After zip expansion: ${expanded.length} cases`);
 
     let passed = 0, failed = 0;
-    const errors = [];
-    const types = {};
-    const profiles = {};
+    const errors: { name: string; error: string }[] = [];
+    const types: Record<string, number> = {};
+    const profiles: Record<string, number> = {};
     let diaryTotal = 0, weekTotal = 0, clientTotal = 0, needTotal = 0;
 
     for (let i = 0; i < expanded.length; i++) {
       const f = expanded[i];
-      const ext = f.name.split('.').pop()?.toLowerCase();
+      const ext = f.name.split('.').pop()?.toLowerCase() || '';
       try {
         let text;
         if (f.kind === 'zip-entry') {
@@ -85,7 +87,7 @@ describe.skipIf(!HAS_STRESS_CORPUS)('careops full stress test', () => {
         needTotal += env.supportPlan?.needs?.length || 0;
       } catch (err) {
         failed++;
-        errors.push({ name: f.name, error: err.message });
+        errors.push({ name: f.name, error: err instanceof Error ? err.message : String(err) });
       }
       if ((i + 1) % 20 === 0 || i === expanded.length - 1) {
         process.stdout.write(`\r  ${i + 1}/${expanded.length} — ${passed} ok, ${failed} fail`);

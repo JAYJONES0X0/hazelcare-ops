@@ -288,7 +288,11 @@ function migrateSnapshot(input: unknown): { ok: true; export: OperationalStateEx
 }
 
 export class BrowserOperationalStateRepository implements OperationalStateRepository {
-  constructor(private readonly storage: StorageLike) {}
+  private readonly storage: StorageLike;
+
+  constructor(storage: StorageLike) {
+    this.storage = storage;
+  }
 
   load(): RepositoryLoadResult {
     const raw = this.storage.getItem(OPERATIONAL_STATE_STORAGE_KEY);

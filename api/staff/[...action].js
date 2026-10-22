@@ -1,5 +1,7 @@
 import crypto from 'crypto';
-import { put } from '@vercel/blob';
+import { get } from '@vercel/blob';
+import { handleUpload } from '@vercel/blob/client';
+import { isRateLimited } from '../_lib/rate-limit.js';
 import { HC_SESSION_COOKIE, readHcSessionClaims, verifyHcSession } from '../_lib/hc-session.js';
 import { parseCookies } from '../_lib/parse-cookies.js';
 import { consumeOnce } from '../_lib/durable-once.js';
@@ -19,7 +21,6 @@ const UPSTASH_TOKEN = sanitizeEnvValue(process.env.UPSTASH_REDIS_REST_TOKEN);
 const ALLOWED_ORIGINS = (process.env.AUTH_ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 const STAFF_TOOLS = new Set(['notes', 'handover', 'actions', 'incidents']);
-const verifyBuckets = new Map();
 const ROLE_RANK = { viewer: 0, senior: 1, manager: 2, admin: 3 };
 
 // Care Plan Domains
@@ -126,19 +127,6 @@ RULES:
 8. ORGANIC NARRATIVE: Within the structure, write with warmth. Avoid robotic phrases like "the service user was observed to be" - instead write "he appeared settled" or "I found him in good spirits."
 9. COMPLETE EVERY SECTION: If the template has multiple headings or time blocks, output every heading/time block in order. Do not stop after the first section. If the raw data has limited detail for a later section, write a concise evidence-based note for that section rather than omitting it.
 10. Output ONLY the finished note. No preamble, no explanation.`;
-
-function isRateLimited(key, max, windowMs) {
-  const now = Date.now();
-  const arr = verifyBuckets.get(key) || [];
-  const next = arr.filter((t) => now - t < windowMs);
-  if (next.length >= max) {
-    verifyBuckets.set(key, next);
-    return true;
-  }
-  next.push(now);
-  verifyBuckets.set(key, next);
-  return false;
-}
 
 function setCors(req, res) {
   const origin = req.headers.origin;
@@ -310,69 +298,79 @@ export default async function handler(req, res) {
 
   if (!route) return res.status(404).json({ error: 'Staff route not found' });
 
+  try {
   switch (route) {
-    case 'issue-staff-link': return handleIssueStaffLink(req, res);
-    case 'verify-staff-link': return handleVerifyStaffLink(req, res);
-    case 'staff-sac-status': return handleStaffSacStatus(req, res);
-    case 'submit-note': return handleSubmitNote(req, res);
-    case 'pending-notes': return handlePendingNotes(req, res);
-    case 'ack-note': return handleAckNote(req, res);
-    case 'analyze-intel': return handleAnalyzeIntel(req, res);
-    case 'enhance-note': return handleEnhanceNote(req, res);
-    case 'ghost-write': return handleGhostWrite(req, res);
-    case 'refine-tasks': return handleRefineTasks(req, res);
-    case 'upload-document': return handleUploadDocument(req, res);
+    case 'issue-staff-link': return await handleIssueStaffLink(req, res);
+    case 'verify-staff-link': return await handleVerifyStaffLink(req, res);
+    case 'staff-sac-status': return await handleStaffSacStatus(req, res);
+    case 'submit-note': return await handleSubmitNote(req, res);
+    case 'pending-notes': return await handlePendingNotes(req, res);
+    case 'ack-note': return await handleAckNote(req, res);
+    case 'analyze-intel': return await handleAnalyzeIntel(req, res);
+    case 'enhance-note': return await handleEnhanceNote(req, res);
+    case 'ghost-write': return await handleGhostWrite(req, res);
+    case 'refine-tasks': return await handleRefineTasks(req, res);
+    case 'upload-document': return await handleUploadDocument(req, res);
+    case 'document': return await handleReadDocument(req, res);
     default: return res.status(404).json({ error: 'Unknown staff action' });
+  }
+  } catch {
+    console.error('[staff] Request could not complete');
+    return res.status(503).json({ error: 'The service is temporarily unavailable. Please retry.' });
   }
 }
 
 async function handleUploadDocument(req, res) {
   if (!setCors(req, res)) return res.status(403).json({ error: 'Origin is not allowed for document uploads' });
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).end();
-
-  if (!requireSessionRole(req, res, 'senior')) return;
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return res.status(503).json({
-      error: 'External evidence upload is not configured yet. Add BLOB_READ_WRITE_TOKEN in Vercel to enable document storage.',
-      code: 'BLOB_NOT_CONFIGURED',
-    });
-  }
-
-  // Size cap (25MB) — reject before streaming a huge body to Blob.
-  const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-  const declaredLen = Number(req.headers['content-length'] || 0);
-  if (declaredLen && declaredLen > MAX_UPLOAD_BYTES) {
-    return res.status(413).json({ error: 'File too large (max 25MB).' });
-  }
-
-  // MIME allowlist — clinical evidence only (documents + photos).
-  const ALLOWED_MIME = new Set([
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-  ]);
-  const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
-  if (mime && !ALLOWED_MIME.has(mime)) {
-    return res.status(415).json({ error: `Unsupported file type: ${mime}` });
-  }
-
-  // Sanitize filename — strip path components and unsafe characters.
-  const rawName = String(req.query.filename || 'document').split(/[\\/]/).pop();
-  const filename = (rawName || 'document').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 200) || 'document';
-
+  res.setHeader('Cache-Control', 'private, no-store');
+  const token = process.env.EVIDENCE_BLOB_READ_WRITE_TOKEN;
+  if (!token) return res.status(503).json({ error: 'Private document storage is not connected. Contact the administrator.', code: 'PRIVATE_BLOB_NOT_CONFIGURED' });
+  const body = req.body;
+  if (!body || !['blob.generate-client-token', 'blob.upload-completed'].includes(body.type)) return res.status(400).json({ error: 'Use the secure document uploader.' });
+  if (body.type === 'blob.generate-client-token' && !requireSessionRole(req, res, 'senior')) return;
   try {
-    const blob = await put(filename, req, {
-      access: 'public',
+    const result = await handleUpload({
+      request: req,
+      body,
+      token,
+      onBeforeGenerateToken: async pathname => {
+        if (!/^evidence\/[a-f0-9-]+\.(pdf|doc|docx|txt|png|jpe?g|webp)$/.test(pathname)) throw new Error('Invalid document path');
+        return {
+          allowedContentTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/png', 'image/jpeg', 'image/webp'],
+          maximumSizeInBytes: 25 * 1024 * 1024,
+          validUntil: Date.now() + 10 * 60 * 1000,
+          addRandomSuffix: true,
+          allowOverwrite: false,
+        };
+      },
     });
-    return res.status(200).json(blob);
-  } catch (error) {
-    console.error('Blob upload error:', error);
-    return res.status(500).json({ error: 'Document storage failed. Check the Vercel Blob configuration and retry.' });
+    return res.status(200).json(result);
+  } catch {
+    return res.status(400).json({ error: 'Could not authorize this document upload. Check your session and retry.' });
+  }
+}
+
+async function handleReadDocument(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  if (!requireSessionRole(req, res, 'senior')) return;
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  const token = process.env.EVIDENCE_BLOB_READ_WRITE_TOKEN;
+  if (!token) return res.status(503).json({ error: 'Private document storage is not connected.' });
+  const pathname = req.query?.pathname;
+  if (typeof pathname !== 'string' || !/^evidence\/[A-Za-z0-9._-]+$/.test(pathname)) return res.status(400).json({ error: 'Invalid document path.' });
+  try {
+    const blob = await get(pathname, { access: 'private', token, useCache: false });
+    if (!blob || blob.statusCode !== 200) return res.status(404).json({ error: 'Document not found.' });
+    res.setHeader('Content-Type', blob.blob.contentType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment');
+    for await (const chunk of blob.stream) res.write(Buffer.from(chunk));
+    return res.end();
+  } catch {
+    if (res.headersSent) return res.end();
+    return res.status(502).json({ error: 'Could not retrieve this document. Please retry.' });
   }
 }
 
@@ -449,7 +447,7 @@ async function handleVerifyStaffLink(req, res) {
   if ((!linkId && !rawToken) || !code || !toolId) return res.status(400).json({ valid: false });
 
   const rateLimitKey = linkId ? `staff:id:${linkId}` : `staff:${String(rawToken).slice(0, 24)}`;
-  if (isRateLimited(rateLimitKey, 8, 10 * 60 * 1000)) {
+  if (await isRateLimited(rateLimitKey, 8, 10 * 60 * 1000)) {
     return res.status(429).json({ valid: false });
   }
 

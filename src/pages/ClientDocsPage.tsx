@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { uploadPrivateDocument } from '../lib/document-upload';
 import { loadClients, saveClient, deleteClient, emptyClient, resolveClientMatch, type ClientDocument, type FullClient } from '../lib/client-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
@@ -86,28 +87,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
 
     setIsUploading(clientId);
     try {
-      const url = `/api/staff/upload-document?filename=${encodeURIComponent(file.name)}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        body: file,
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        let detail = '';
-        try {
-          const body = await res.json();
-          detail = body?.error || body?.message || '';
-        } catch {
-          detail = await res.text().catch(() => '');
-        }
-
-        if (res.status === 401) throw new Error('Your session has expired. Sign in again, then retry the upload.');
-        if (res.status === 403) throw new Error(detail || 'Upload blocked. This profile requires senior/admin access or an allowed production domain.');
-        if (res.status === 503) throw new Error(detail || 'Staff session service is not configured.');
-        throw new Error(detail || `Upload failed with status ${res.status}.`);
-      }
-      const blob = await res.json();
+      const blob = await uploadPrivateDocument(file);
 
       const all = loadClients();
       const client = all.find(c => c.id === clientId);
@@ -123,7 +103,7 @@ export function ClientDocsPage({ setPage }: Props = {}) {
         saveClient(client);
         refresh();
       }
-    } catch {
+    } catch (err) {
       alert(err instanceof Error ? err.message : 'Document upload failed.');
     } finally {
       setIsUploading(null);
