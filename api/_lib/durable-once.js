@@ -4,7 +4,9 @@ const localExpiries = new Map();
 
 export async function consumeOnce(key, ttlSeconds) {
   // Preserve consumed production recovery codes and staff links across this release.
-  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+  const isProduction = process.env.VERCEL_ENV
+    ? process.env.VERCEL_ENV === 'production'
+    : process.env.NODE_ENV === 'production';
   const legacyKey = isProduction && (key.startsWith('recovery:') || key.startsWith('staff-jti:'));
   const namespacedKey = legacyKey ? key : `${redisNamespace()}:once:${key}`;
   if (process.env.NODE_ENV === 'test' || (process.env.ALLOW_INMEMORY_REPLAY_FALLBACK === '1' && process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production')) {
