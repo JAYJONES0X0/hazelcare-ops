@@ -6,7 +6,7 @@ export function mintHcSession(secret, ttlHours = 12, claims = {}) {
   if (!secret) throw new Error('Session secret required');
   const exp = Date.now() + ttlHours * 3600 * 1000;
   const sessionPayload = {
-    v: 2,
+    v: 3,
     exp,
     role: claims.role || 'manager',
     email: claims.email || '',
@@ -32,13 +32,13 @@ export function verifyHcSession(raw, secret) {
 /** @param {string | undefined} raw @param {string} secret */
 export function readHcSessionClaims(raw, secret) {
   if (!raw || !secret) return null;
-  const [p, s] = String(raw).split('.');
-  if (!p || !s) return null;
+  const [p, s, extra] = String(raw).split('.');
+  if (!p || !s || extra) return null;
   const expected = crypto.createHmac('sha256', secret).update(p).digest('base64url');
   if (!safeEq(expected, s)) return null;
   try {
     const payload = JSON.parse(Buffer.from(p, 'base64url').toString('utf8'));
-    if (!(payload.v === 2 && typeof payload.exp === 'number' && Date.now() <= payload.exp)) {
+    if (!(payload.v === 3 && typeof payload.exp === 'number' && Date.now() <= payload.exp)) {
       return null;
     }
     return {
