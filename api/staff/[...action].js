@@ -359,7 +359,16 @@ async function handleReadDocument(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   const token = process.env.EVIDENCE_BLOB_READ_WRITE_TOKEN;
   if (!token) return res.status(503).json({ error: 'Private document storage is not connected.' });
-  const pathname = req.query?.pathname;
+  let pathname = req.query?.pathname;
+  const legacyReference = req.query?.legacy;
+  if (legacyReference !== undefined) {
+    if (pathname !== undefined || typeof legacyReference !== 'string' || !/^[a-f0-9]{64}$/.test(legacyReference)) return res.status(400).json({ error: 'Invalid document reference.' });
+    let mappings;
+    try { mappings = JSON.parse(process.env.EVIDENCE_LEGACY_DOCUMENT_MAP || '{}'); } catch { return res.status(503).json({ error: 'Document migration is not configured correctly.' }); }
+    if (!mappings || typeof mappings !== 'object' || Array.isArray(mappings)) return res.status(503).json({ error: 'Document migration is not configured correctly.' });
+    pathname = mappings[legacyReference];
+    if (typeof pathname !== 'string') return res.status(404).json({ error: 'Document reference not found.' });
+  }
   if (typeof pathname !== 'string' || !/^evidence\/[A-Za-z0-9._-]+$/.test(pathname)) return res.status(400).json({ error: 'Invalid document path.' });
   try {
     const blob = await get(pathname, { access: 'private', token, useCache: false });

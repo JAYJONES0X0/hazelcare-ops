@@ -5,7 +5,7 @@ const { handleUpload, get } = vi.hoisted(() => ({ handleUpload: vi.fn(), get: vi
 vi.mock('@vercel/blob/client', () => ({ handleUpload }));
 vi.mock('@vercel/blob', () => ({ get }));
 const secret = 'synthetic-document-session-secret';
-function response() { return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; }, setHeader(key, value) { this.headers[key] = value; }, json(body) { this.body = body; return this; }, end() { return this; } }; }
+function response() { return { statusCode: 200, headers: {}, chunks: [], status(code) { this.statusCode = code; return this; }, setHeader(key, value) { this.headers[key] = value; }, json(body) { this.body = body; return this; }, write(chunk) { this.chunks.push(chunk); return true; }, end() { return this; } }; }
 function request(role, pathname = 'evidence/1234-abcd.pdf') { return { method: 'POST', url: '/api/staff/upload-document', headers: { cookie: role ? `hc_session=${mintHcSession(secret, 1, { role }).value}` : '' }, body: { type: 'blob.generate-client-token', payload: { pathname } } }; }
 beforeEach(() => { vi.resetModules(); vi.clearAllMocks(); vi.stubEnv('AUTH_SESSION_SECRET', secret); vi.stubEnv('EVIDENCE_BLOB_READ_WRITE_TOKEN', 'synthetic-private-store-token'); });
 afterEach(() => vi.unstubAllEnvs());
@@ -43,5 +43,44 @@ describe('private document upload boundaries', () => {
     const { default: handler } = await import('../staff/[...action].js');
     const res = response(); await handler({ method: 'GET', url: '/api/staff/document', headers: {}, query: { pathname: 'evidence/test.pdf' } }, res);
     expect(res.statusCode).toBe(401); expect(get).not.toHaveBeenCalled();
+  });
+  it('streams a migrated reference from the private store after authentication', async () => {
+    const reference = 'a'.repeat(64);
+    vi.stubEnv('EVIDENCE_LEGACY_DOCUMENT_MAP', JSON.stringify({ [reference]: 'evidence/migrated.pdf' }));
+    get.mockResolvedValue({ statusCode: 200, blob: { contentType: 'application/pdf' }, stream: (async function* () { yield Buffer.from('synthetic-document'); })() });
+    const { default: handler } = await import('../staff/[...action].js');
+    const res = response();
+    await handler({ ...request('manager'), method: 'GET', url: '/api/staff/document', query: { legacy: reference } }, res);
+    expect(res.statusCode).toBe(200);
+    expect(get).toHaveBeenCalledWith('evidence/migrated.pdf', { access: 'private', token: 'synthetic-private-store-token', useCache: false });
+    expect(Buffer.concat(res.chunks).toString()).toBe('synthetic-document');
+    expect(res.headers['Cache-Control']).toContain('no-store');
+  });
+  it('does not reveal whether a legacy reference exists without authentication', async () => {
+    vi.stubEnv('EVIDENCE_LEGACY_DOCUMENT_MAP', '{}');
+    const { default: handler } = await import('../staff/[...action].js');
+    const res = response();
+    await handler({ method: 'GET', url: '/api/staff/document', headers: {}, query: { legacy: 'a'.repeat(64) } }, res);
+    expect(res.statusCode).toBe(401); expect(get).not.toHaveBeenCalled();
+  });
+  it('does not fall back to a public URL for an unknown legacy reference', async () => {
+    vi.stubEnv('EVIDENCE_LEGACY_DOCUMENT_MAP', '{}');
+    const { default: handler } = await import('../staff/[...action].js');
+    const res = response();
+    await handler({ ...request('manager'), method: 'GET', url: '/api/staff/document', query: { legacy: 'b'.repeat(64) } }, res);
+    expect(res.statusCode).toBe(404); expect(get).not.toHaveBeenCalled();
+  });
+  it('rejects an ambiguous private and legacy document selection', async () => {
+    const { default: handler } = await import('../staff/[...action].js');
+    const res = response();
+    await handler({ ...request('manager'), method: 'GET', url: '/api/staff/document', query: { legacy: 'a'.repeat(64), pathname: 'evidence/other.pdf' } }, res);
+    expect(res.statusCode).toBe(400); expect(get).not.toHaveBeenCalled();
+  });
+  it('fails clearly when the migration mapping is malformed', async () => {
+    vi.stubEnv('EVIDENCE_LEGACY_DOCUMENT_MAP', 'invalid-json');
+    const { default: handler } = await import('../staff/[...action].js');
+    const res = response();
+    await handler({ ...request('manager'), method: 'GET', url: '/api/staff/document', query: { legacy: 'a'.repeat(64) } }, res);
+    expect(res.statusCode).toBe(503); expect(get).not.toHaveBeenCalled();
   });
 });
