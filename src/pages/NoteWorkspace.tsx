@@ -580,6 +580,7 @@ export function NoteWorkspace() {
     setRewriteEvidenceMap(prev => ({ ...prev, [entryKey]: [] }));
     try {
       const groqRes = await fetch('/api/staff/enhance-note', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -595,6 +596,10 @@ export function NoteWorkspace() {
         })
       });
 
+      if (!groqRes.ok) {
+        const error = await groqRes.json().catch(() => ({}));
+        throw new Error(error.error || error.message || `AI request failed (${groqRes.status}). Retry after checking your session.`);
+      }
       const reader = groqRes.body?.getReader();
       if (!reader) throw new Error('No stream');
       const decoder = new TextDecoder();
@@ -671,6 +676,7 @@ export function NoteWorkspace() {
     setGhostEvidenceMap(prev => ({ ...prev, [gapId]: [] }));
     try {
       const res = await fetch('/api/staff/ghost-write', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

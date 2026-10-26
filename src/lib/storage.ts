@@ -1,3 +1,4 @@
+import { persistSafely } from './persistence';
 import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember, Shift } from './types';
 
 const STORAGE_KEY = 'hazelcare-ops';
@@ -76,54 +77,24 @@ function load(): AppState {
   return normalizeState(null);
 }
 
-function isQuotaError(e: unknown): boolean {
-  return (
-    e instanceof DOMException &&
-    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)
-  );
-}
-
-/** Slim weekData to reduce payload — keep structure, truncate entry bodies */
-function slimWeekData(data: AppState['weekData']): AppState['weekData'] {
-  if (!data) return data;
-  const houses: typeof data.houses = {};
-  for (const [name, house] of Object.entries(data.houses)) {
-    houses[name] = {
-      ...house,
-      entries: house.entries.map(e => ({ ...e, entry: (e.entry ?? '').slice(0, 300) })),
-    };
-  }
-  return { ...data, houses };
-}
-
 function save(state: Partial<AppState>) {
-  const current = load();
-  const merged = normalizeState({ ...current, ...state, weekData: null });
-  const serialised = JSON.stringify(merged);
-  try {
-    getStorage().setItem(STORAGE_KEY, serialised);
-  } catch (e) {
-    if (!isQuotaError(e)) throw e;
-    // Quota exceeded — try again with truncated entry bodies
-    try {
-      const slim = { ...merged, weekData: slimWeekData(merged.weekData) };
-      getStorage().setItem(STORAGE_KEY, JSON.stringify(slim));
-    } catch {
-      // Still over quota — remove and let the session run in memory only
-      try { getStorage().removeItem(STORAGE_KEY); } catch { /* ignore */ }
-    }
-  }
+  const merged = normalizeState({ ...load(), ...state, weekData: null });
+  persistSafely(getStorage(), STORAGE_KEY, JSON.stringify(merged));
 }
 
 export function loadWeekData(): WeekSummary | null {
+  if (sessionWeekData) return sessionWeekData;
+  const raw = getStorage().getItem(WEEK_DATA_KEY);
+  if (!raw) return null;
+  try { sessionWeekData = JSON.parse(raw) as WeekSummary; }
+  catch { throw new Error('Saved weekly import could not be read. Preserve your browser data and restore a backup.'); }
   return sessionWeekData;
 }
 
 export function saveWeekData(data: WeekSummary | null) {
+  if (data) persistSafely(getStorage(), WEEK_DATA_KEY, JSON.stringify(data));
+  else getStorage().removeItem(WEEK_DATA_KEY);
   sessionWeekData = data;
-  // Keep weekData in session memory only.
-  // Persisting this in localStorage previously caused stale restores and large payload churn.
-  try { getStorage().removeItem(WEEK_DATA_KEY); } catch { /* ignore */ }
 }
 
 function entryFingerprint(entry: CareEntry): string {
@@ -283,15 +254,8 @@ export function loadStaff(): StaffMember[] {
 }
 
 export function saveStaff(staff: StaffMember[]) {
-  try {
-    getStorage().setItem(STAFF_KEY, JSON.stringify(staff));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('hc-staff-updated'));
-    }
-  } catch (e) {
-    if (!isQuotaError(e)) throw e;
-    getStorage().removeItem(STAFF_KEY);
-  }
+  persistSafely(getStorage(), STAFF_KEY, JSON.stringify(staff));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('hc-staff-updated'));
 }
 
 export function loadShifts(): Shift[] {
@@ -370,14 +334,14 @@ export function exportOpsSnapshot(): OpsSnapshot {
     staffNotes = [];
   }
 
-  // weekData is stored separately in WEEK_DATA_KEY (localStorage) — loaded lazily
+  // Include the separately persisted weekly import in the backup.
   const appState = load();
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     source: 'hazelcare-ops',
     data: {
-      appState: { ...appState, weekData: null },
+      appState: { ...appState, weekData: loadWeekData() },
       clients,
       staffNotes,
     },
@@ -400,18 +364,35 @@ export function importOpsSnapshot(snapshot: unknown): { ok: true } | { ok: false
   }
 
   const appState: AppState = {
-    weekData: null,
+    weekData: (data.appState as Partial<AppState>).weekData ?? null,
     actions: Array.isArray((data.appState as Partial<AppState>).actions) ? (data.appState as Partial<AppState>).actions as Action[] : [],
     incidents: Array.isArray((data.appState as Partial<AppState>).incidents) ? (data.appState as Partial<AppState>).incidents as Incident[] : [],
     staff: Array.isArray((data.appState as Partial<AppState>).staff) ? (data.appState as Partial<AppState>).staff as AppState['staff'] : [],
     shifts: Array.isArray((data.appState as Partial<AppState>).shifts) ? (data.appState as Partial<AppState>).shifts as Shift[] : [],
   };
 
-  sessionWeekData = null;
   const storage = getStorage();
-  storage.removeItem(WEEK_DATA_KEY);
-  storage.setItem(STORAGE_KEY, JSON.stringify(appState));
-  storage.setItem(CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : []));
-  storage.setItem(STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : []));
+  const writes: [string, string | null][] = [
+    [STORAGE_KEY, JSON.stringify({ ...appState, weekData: null })],
+    [CLIENTS_KEY, JSON.stringify(Array.isArray(data.clients) ? data.clients : [])],
+    [STAFF_NOTES_KEY, JSON.stringify(Array.isArray(data.staffNotes) ? data.staffNotes : [])],
+    [WEEK_DATA_KEY, appState.weekData ? JSON.stringify(appState.weekData) : null],
+  ];
+  const previous = writes.map(([key]) => [key, storage.getItem(key)] as const);
+  try {
+    for (const [key, value] of writes) {
+      if (value === null) storage.removeItem(key);
+      else storage.setItem(key, value);
+    }
+  } catch {
+    for (const [key, value] of previous) {
+      try {
+        if (value === null) storage.removeItem(key);
+        else storage.setItem(key, value);
+      } catch { return { ok: false, error: 'Restore failed and rollback was incomplete. Keep the backup file and do not clear browser data.' }; }
+    }
+    return { ok: false, error: 'Restore failed. Existing saved data was restored. Free browser storage and retry.' };
+  }
+  sessionWeekData = appState.weekData;
   return { ok: true };
 }

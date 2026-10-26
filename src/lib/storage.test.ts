@@ -40,7 +40,7 @@ describe('storage session week data', () => {
     vi.resetModules();
   });
 
-  it('keeps weekData in session memory only', async () => {
+  it('restores the persisted weekly import after a reload', async () => {
     const localStorage = createLocalStorageMock({
       'hc-schema-v': '3',
     });
@@ -52,10 +52,12 @@ describe('storage session week data', () => {
     storage.saveWeekData(week);
 
     expect(storage.loadWeekData()).toEqual(week);
-    expect(localStorage.setItem).not.toHaveBeenCalled();
+    vi.resetModules();
+    const reloaded = await import('./storage');
+    expect(reloaded.loadWeekData()).toEqual(week);
   });
 
-  it('excludes weekData from exported backup snapshots', async () => {
+  it('includes weekData in exported backup snapshots', async () => {
     const localStorage = createLocalStorageMock({
       'hc-schema-v': '3',
       'hazelcare-ops': JSON.stringify({ actions: [{ id: 'a1' }], incidents: [], staff: [] }),
@@ -68,12 +70,12 @@ describe('storage session week data', () => {
 
     const snapshot = storage.exportOpsSnapshot();
 
-    expect(snapshot.data.appState.weekData).toBeNull();
+    expect(snapshot.data.appState.weekData).toEqual(makeWeekSummary());
     expect(snapshot.data.appState.actions).toEqual([{ id: 'a1' }]);
     expect(snapshot.data.clients).toEqual([{ id: 'c1' }]);
   });
 
-  it('normalizes legacy persisted app state and clears session week data on restore', async () => {
+  it('restores weekly data alongside operational records', async () => {
     const localStorage = createLocalStorageMock({
       'hc-schema-v': '3',
       'hazelcare-ops': JSON.stringify({
@@ -99,8 +101,51 @@ describe('storage session week data', () => {
     });
 
     expect(restore).toEqual({ ok: true });
-    expect(storage.loadWeekData()).toBeNull();
+    expect(storage.loadWeekData()).toEqual(makeWeekSummary());
     expect(storage.loadActions()).toEqual([]);
     expect(storage.loadIncidents()).toEqual([]);
+  });
+});
+
+
+describe('storage write failures', () => {
+  it('keeps saved actions when the replacement exceeds quota', async () => {
+    vi.resetModules();
+    const localStorage = createLocalStorageMock({ 'hc-schema-v': '3', 'hazelcare-ops': JSON.stringify({ actions: [{ id: 'previous' }] }) });
+    vi.stubGlobal('localStorage', localStorage);
+    const storage = await import('./storage');
+    localStorage.setItem.mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    expect(() => storage.saveActions([])).toThrow('previous saved data is preserved');
+    expect(storage.loadActions()).toEqual([{ id: 'previous' }]);
+    expect(localStorage.removeItem).not.toHaveBeenCalled();
+  });
+  it('keeps the previous weekly import in memory and storage after a failed replacement', async () => {
+    vi.resetModules();
+    const localStorage = createLocalStorageMock({ 'hc-schema-v': '3' });
+    vi.stubGlobal('localStorage', localStorage);
+    const storage = await import('./storage');
+    const previous = makeWeekSummary();
+    storage.saveWeekData(previous);
+    localStorage.setItem.mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    expect(() => storage.saveWeekData({ ...previous, totalEntries: 500 })).toThrow('Save failed');
+    expect(storage.loadWeekData()).toEqual(previous);
+    vi.resetModules();
+    expect((await import('./storage')).loadWeekData()).toEqual(previous);
+  });
+  it('rolls back earlier restore writes when a later key fails', async () => {
+    vi.resetModules();
+    const localStorage = createLocalStorageMock({ 'hc-schema-v': '3', 'hazelcare-ops': JSON.stringify({ actions: [{ id: 'previous' }] }), 'hc-clients-v2': '[{"id":"existing"}]' });
+    vi.stubGlobal('localStorage', localStorage);
+    const storage = await import('./storage');
+    const original = localStorage.setItem.getMockImplementation()!;
+    let failed = false;
+    localStorage.setItem.mockImplementation((key, value) => {
+      if (key === 'hc-clients-v2' && !failed) { failed = true; throw new DOMException('Full', 'QuotaExceededError'); }
+      original(key, value);
+    });
+    const result = storage.importOpsSnapshot({ version: 1, source: 'hazelcare-ops', data: { appState: { actions: [] }, clients: [], staffNotes: [] } });
+    expect(result.ok).toBe(false);
+    expect(storage.loadActions()).toEqual([{ id: 'previous' }]);
+    expect(localStorage.getItem('hc-clients-v2')).toBe('[{"id":"existing"}]');
   });
 });

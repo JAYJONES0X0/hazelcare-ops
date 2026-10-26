@@ -118,6 +118,7 @@ export function StaffNotePage({ setPage }: { setPage?: (page: Page, ctx?: PageCo
         maxChars: 55_000,
       });
       const res = await fetch('/api/staff/enhance-note', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({
           text: freeText,
