@@ -1,3 +1,4 @@
+import { initialiseBrowserRecords } from './lib/browser-records';
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
@@ -17,4 +18,10 @@ window.addEventListener('error', (e) => {
 
 const rootEl = document.getElementById('root')!;
 rootEl.textContent = '';
-createRoot(rootEl).render(<App />)
+rootEl.textContent = 'Loading saved records…';
+initialiseBrowserRecords(window.localStorage).then(() => {
+  rootEl.textContent = '';
+  createRoot(rootEl).render(<App />);
+}).catch(() => {
+  rootEl.textContent = 'Record storage could not be opened. Your existing browser data has not been cleared. Close older OS tabs, allow site storage, and reload. Do not clear browser data.';
+});

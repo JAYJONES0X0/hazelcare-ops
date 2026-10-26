@@ -36,7 +36,7 @@ describe('client pack manifest', () => {
     });
   });
 
-  it('keeps every pack file visible with category, parse state, review state, and target', () => {
+  it('keeps every pack file visible with category, parse state, review state, and target', async () => {
     const carePlan = buildEnvelopeFromRaw(
       'Alistair Gunn Care Plan.pdf',
       'Person ID Full name Date of Birth Gender 102142 MR Alistair Gunn 11/03/1992 Care Plan Nutrition Medication Risk Area 1: finance'
@@ -81,14 +81,14 @@ describe('client pack manifest', () => {
     expect(pack.filesNeedsReview).toBe(2);
   });
 
-  it('routes attach-only client documents into a draft profile instead of dropping them', () => {
+  it('routes attach-only client documents into a draft profile instead of dropping them', async () => {
     const envelope = buildEnvelopeFromRaw(
       'Financial Assessment.pdf',
       'Alistair Gunn Financial Next Review Due Alistair requires support in managing his finances and benefits.'
     );
     envelope.clientCandidates = [{ name: 'Alistair Gunn' }];
 
-    const result = routeImport(envelope, { targets: ['client-docs'], clientMode: 'global' });
+    const result = await routeImport(envelope, { targets: ['client-docs'], clientMode: 'global' });
 
     expect(result.ok).toBe(true);
     expect(result.messages.join(' ')).toContain('attached');
@@ -108,7 +108,7 @@ describe('client pack manifest', () => {
     }));
   });
 
-  it('does not promote a draft client to live while critical gates remain unresolved', () => {
+  it('does not promote a draft client to live while critical gates remain unresolved', async () => {
     const summary = clientLiveGateSummary({
       identityReviewed: true,
       hasCarePlanSource: true,
@@ -125,7 +125,7 @@ describe('client pack manifest', () => {
     ]));
   });
 
-  it('uses evidence-backed identity for a pack and rejects document titles inferred from filenames', () => {
+  it('uses evidence-backed identity for a pack and rejects document titles inferred from filenames', async () => {
     const tenancy = emptyEnvelope('AG Tenancy.pdf', '');
     tenancy.clientCandidates = [{ name: 'AG Tenancy' }];
 
@@ -175,7 +175,7 @@ describe('client pack manifest', () => {
     expect(canonical.every(envelope => envelope.clientCandidates[0]?.dob === '11/03/1992')).toBe(true);
   });
 
-  it('consolidates duplicate profiles created from one pack without losing vault evidence', () => {
+  it('consolidates duplicate profiles created from one pack without losing vault evidence', async () => {
     const makeClient = (name: string, fileName: string, hasIdentity = false) => {
       const client = emptyClient();
       client.id = `client-${name.toLowerCase().replace(/\s+/g, '-')}`;

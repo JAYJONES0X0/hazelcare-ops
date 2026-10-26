@@ -1,3 +1,4 @@
+import { recordStorage, flushRecordWrites } from '../lib/browser-records';
 import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
 import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
@@ -230,7 +231,7 @@ function DataManagerProp
   const actions = loadActions();
   const incidents = loadIncidents();
   const plan = loadCoveragePlan();
-  const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
+  const notes = (() => { try { return JSON.parse(recordStorage(localStorage).getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
 
   useEffect(() => {
     void getAllEntriesAsync().then(all => setRealCount(all.length));
@@ -275,6 +276,7 @@ function DataManagerProp
         alert(`Restore failed: ${result.error}`);
         return;
       }
+      await flushRecordWrites();
       alert('Backup restored successfully. Reloading...');
       window.location.reload();
     } catch {

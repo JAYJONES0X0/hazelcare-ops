@@ -1,3 +1,4 @@
+import { recordStorage } from './browser-records';
 import type { CareEntry } from './types';
 
 // ─── IndexedDB Engine (no 5MB cap like localStorage) ─────────────────────────
@@ -160,8 +161,8 @@ export async function deleteEntriesByIdsAsync(ids: string[]): Promise<number> {
     try {
       const existing = getAllEntries();
       const surviving = existing.filter((entry) => !uniqueIds.includes(entry.id));
-      if (surviving.length) localStorage.setItem(LS_KEY, JSON.stringify(surviving));
-      else localStorage.removeItem(LS_KEY);
+      if (surviving.length) recordStorage(localStorage).setItem(LS_KEY, JSON.stringify(surviving));
+      else recordStorage(localStorage).removeItem(LS_KEY);
     } catch { /* ignore LS shim errors */ }
 
     return uniqueIds.length;
@@ -206,7 +207,7 @@ const LS_KEY = 'hc-entry-store-v3';
 
 export function getAllEntries(): CareEntry[] {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = recordStorage(localStorage).getItem(LS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -240,7 +241,7 @@ export function appendEntries(incoming: CareEntry[]): number {
     const merged = [...existing, ...toAdd]
       .sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date))
       .slice(0, 5000); // LS only holds 5k; IDB holds the full set
-    localStorage.setItem(LS_KEY, JSON.stringify(merged));
+    recordStorage(localStorage).setItem(LS_KEY, JSON.stringify(merged));
     return toAdd.length;
   } catch { return 0; }
 }
@@ -252,7 +253,7 @@ export function getStoreBounds(): { from: string; to: string; count: number } | 
 }
 
 export function clearEntryStore(): void {
-  try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+  try { recordStorage(localStorage).removeItem(LS_KEY); } catch { /* ignore */ }
   void clearEntryStoreAsync();
 }
 /**
@@ -300,9 +301,9 @@ export async function deleteEntriesByFilterAsync(filter: { house?: string; befor
   try {
     const surviving = entries.filter(e => !toDelete.includes(e.id));
     if (surviving.length > 0) {
-      localStorage.setItem(LS_KEY, JSON.stringify(surviving));
+      recordStorage(localStorage).setItem(LS_KEY, JSON.stringify(surviving));
     } else {
-      localStorage.removeItem(LS_KEY);
+      recordStorage(localStorage).removeItem(LS_KEY);
     }
   } catch { /* ignore LS errors */ }
 

@@ -1,3 +1,4 @@
+import { recordStorage } from './browser-records';
 import { persistSafely } from './persistence';
 // ============================================================
 import { consolidateDuplicatePackClients } from './client-pack-consolidation';
@@ -569,7 +570,7 @@ function compactClientForStorage(client: FullClient, aggressive = false): FullCl
 }
 
 function tryPersistClients(clients: FullClient[]) {
-  localStorage.setItem(KEY, JSON.stringify(clients));
+  recordStorage(localStorage).setItem(KEY, JSON.stringify(clients));
 }
 
 function notifyClientsChanged() {
@@ -579,7 +580,7 @@ function notifyClientsChanged() {
 
 export function loadClients(): FullClient[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = recordStorage(localStorage).getItem(KEY);
     const parsed = raw ? JSON.parse(raw) as FullClient[] : [];
     const consolidation = consolidateDuplicatePackClients(parsed);
     if (consolidation.changed) {
@@ -864,10 +865,10 @@ export function emptyClient(): FullClient {
 }
 
 export function clearClientData() {
-  localStorage.removeItem('hc-clients-v2');
+  recordStorage(localStorage).removeItem('hc-clients-v2');
 }
 
 export function clearStaffNotes() {
-  localStorage.removeItem('hazelcare-staff-notes');
+  recordStorage(localStorage).removeItem('hazelcare-staff-notes');
 }
 

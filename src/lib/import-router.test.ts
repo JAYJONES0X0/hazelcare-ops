@@ -58,7 +58,7 @@ describe('import-router rollback', () => {
 
     const { routeImport } = await import('./import-router');
 
-    const result = routeImport(
+    const result = await routeImport(
       {
         source: {
           fileName: 'batch.csv',

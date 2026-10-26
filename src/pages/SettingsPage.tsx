@@ -1,3 +1,4 @@
+import { flushRecordWrites } from '../lib/browser-records';
 import { useState, useRef } from 'react';
 import {
   ShieldCheck, Lock, Activity, Shield, Database, Trash2,
@@ -329,6 +330,7 @@ function DataSection() {
       const snapshot = JSON.parse(text) as unknown;
       const result = importOpsSnapshot(snapshot);
       if (result.ok) {
+        await flushRecordWrites();
         setImportResult({ ok: true, msg: 'Data restored successfully. Reload to apply.' });
       } else {
         setImportResult({ ok: false, msg: result.error });
@@ -338,9 +340,10 @@ function DataSection() {
     }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (clearState === 'idle') { setClearState('confirm'); return; }
     clearAllData();
+    await flushRecordWrites();
     setClearState('done');
     setTimeout(() => window.location.reload(), 1500);
   };
