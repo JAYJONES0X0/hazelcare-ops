@@ -38,9 +38,10 @@ it('falls back from a header-only provider and skips it during cooldown', async 
   const req = { method: 'POST', url: '/api/staff/enhance-note', headers: { cookie: `hc_session=${mintHcSession(secret, 1, { role: 'manager' }).value}` }, body: { text: 'Synthetic test only.' } };
   function response() { return { chunks: [], setHeader() {}, write(text) { this.chunks.push(text); }, end() {}, status() { return this; } }; }
   const first = response(); const pending = handler(req, first);
-  await vi.advanceTimersByTimeAsync(8100); await pending;
+  await vi.advanceTimersByTimeAsync(12100); await pending;
   expect(first.chunks.join('')).toBe('Synthetic output');
   expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body).generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
   const second = response(); await handler(req, second);
   expect(second.chunks.join('')).toBe('Synthetic output');
   expect(fetchMock).toHaveBeenCalledTimes(3);
