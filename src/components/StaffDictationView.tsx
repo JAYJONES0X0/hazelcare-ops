@@ -87,6 +87,7 @@ export function StaffDictationView({ hideHeader, toolId, staffName }: { hideHead
     setEnhanceError(false);
     try {
       const res = await fetch('/api/staff/enhance-note', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           toolId,

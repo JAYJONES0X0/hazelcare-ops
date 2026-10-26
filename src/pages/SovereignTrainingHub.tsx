@@ -56,6 +56,7 @@ export default function SovereignTrainingHub() {
     try {
       // 1. Generate the 'Elite' version using our hardened backend
       const res = await fetch('/api/staff/enhance-note', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,6 +85,7 @@ export default function SovereignTrainingHub() {
 
       // 2. Perform a separate 'Critique' pass
       const critiqueRes = await fetch('/api/staff/enhance-note', {
+        signal: AbortSignal.timeout(90_000),
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

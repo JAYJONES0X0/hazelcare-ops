@@ -1,3 +1,4 @@
+import { persistSafely } from './persistence';
 // ============================================================
 import { consolidateDuplicatePackClients } from './client-pack-consolidation';
 
@@ -412,12 +413,7 @@ export interface FullClient extends ClientBasic {
 // ─── STORAGE ───────────────────────────────────────────────────────────────────
 const KEY = 'hc-clients-v2';
 
-function isQuotaError(e: unknown): boolean {
-  return (
-    e instanceof DOMException &&
-    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)
-  );
-}
+
 
 function cleanText(value: string | undefined | null, max = 1200): string {
   return (value || '').split('\u0000').join('').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -597,22 +593,8 @@ export function loadClients(): FullClient[] {
 
 export function saveClients(clients: FullClient[]) {
   const compacted = clients.map((client) => compactClientForStorage(client));
-  let notified = false;
-  try {
-    tryPersistClients(compacted);
-    notified = true;
-  } catch (e) {
-    if (!isQuotaError(e)) throw e;
-    try {
-      tryPersistClients(compacted.map((client) => compactClientForStorage(client, true)));
-      notified = true;
-    } catch {
-      // Final fallback: keep the app alive, even if persistence has to be dropped.
-      try { localStorage.removeItem(KEY); } catch { /* ignore */ }
-      notified = true;
-    }
-  }
-  if (notified) notifyClientsChanged();
+  persistSafely(localStorage, KEY, JSON.stringify(compacted));
+  notifyClientsChanged();
 }
 
 export function saveClient(client: FullClient) {

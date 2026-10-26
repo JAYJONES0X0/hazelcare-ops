@@ -611,6 +611,7 @@ async function callGemini(messages, options = {}) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}${sep}key=${key}`;
     const res = await fetch(url, {
       method: 'POST',
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
@@ -636,6 +637,7 @@ async function callOpenRouter(messages, options = {}) {
   for (const model of models) {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
@@ -666,6 +668,7 @@ async function callGroq(messages, options = {}) {
   for (const model of models) {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model, messages,
@@ -684,6 +687,7 @@ async function callGroq(messages, options = {}) {
 }
 
 async function callEmpireStack(messages, options = {}) {
+  options = { ...options, signal: AbortSignal.timeout(60_000) };
   const providers = [
     () => callGemini(messages, options),
     () => callOpenRouter(messages, options),
@@ -693,6 +697,7 @@ async function callEmpireStack(messages, options = {}) {
   let lastError;
   for (const attempt of providers) {
     try {
+      options.signal.throwIfAborted();
       const result = await attempt();
       console.log(`[Empire Router] Using: ${result.provider}`);
       return result;
@@ -723,19 +728,20 @@ async function handleAnalyzeIntel(req, res) {
     // Gemini 2.5 Flash first — best at structured extraction from messy documents, 1M context
     // Groq fallback — json_object mode reliable but weaker extraction
     const TOKEN_LIMIT = 6000;
+    const signal = AbortSignal.timeout(60_000);
     const attempts = [
       async () => {
-        const { res: gemRes, model } = await callGemini(messages, { stream: false, max_tokens: TOKEN_LIMIT });
+        const { res: gemRes, model } = await callGemini(messages, { stream: false, max_tokens: TOKEN_LIMIT, signal });
         const data = await gemRes.json();
         return { raw: data.candidates?.[0]?.content?.parts?.[0]?.text, label: `Gemini ${model || ''}`.trim() };
       },
       async () => {
-        const { res: groqRes, model } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false, max_tokens: TOKEN_LIMIT });
+        const { res: groqRes, model } = await callGroq(messages, { response_format: { type: 'json_object' }, stream: false, max_tokens: TOKEN_LIMIT, signal });
         const data = await groqRes.json();
         return { raw: data.choices?.[0]?.message?.content, label: `Groq ${model || ''}`.trim() };
       },
       async () => {
-        const { res: orRes, model } = await callOpenRouter(messages, { stream: false, max_tokens: TOKEN_LIMIT });
+        const { res: orRes, model } = await callOpenRouter(messages, { stream: false, max_tokens: TOKEN_LIMIT, signal });
         const data = await orRes.json();
         return { raw: data.choices?.[0]?.message?.content, label: `OpenRouter ${model || ''}`.trim() };
       },
@@ -744,6 +750,7 @@ async function handleAnalyzeIntel(req, res) {
     const errors = [];
     for (const attempt of attempts) {
       try {
+        signal.throwIfAborted();
         const { raw, label } = await attempt();
         const result = parseModelJson(raw, label);
         return res.status(200).json(result);

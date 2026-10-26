@@ -19,6 +19,7 @@ export interface IntelAnalysisResult {
  */
 export async function analyzeIntel(rawText: string): Promise<IntelAnalysisResult> {
   const res = await fetch('/api/staff/analyze-intel', {
+        signal: AbortSignal.timeout(90_000),
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
