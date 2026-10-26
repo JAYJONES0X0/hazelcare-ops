@@ -18,6 +18,12 @@ Authentication requires `AUTH_PASSWORD`, `AUTH_SESSION_SECRET`, `AUTH_LOGIN_EMAI
 
 The remaining npm advisories are the Mammoth command-line chain (`argparse` / `sprintf-js`). The registry currently offers no patched sprintf-js release. Do not force npm's proposed Mammoth downgrade. The application's browser import path does not use Mammoth's command-line argument parser; review the dependency when an upstream fix becomes available.
 
+## Legacy document migration
+
+Links from the original public evidence store are resolved to an opaque SHA-256 reference before opening. The authenticated document endpoint maps that reference through `EVIDENCE_LEGACY_DOCUMENT_MAP` to the verified private copy. Existing browser document records retain their original metadata, while downloads use the authenticated private route. An unknown reference returns 404 and malformed migration configuration returns 503.
+
+The mapping contains only reference hashes and private pathnames. Verify the private copy byte-for-byte and verify the deployed reference route before removing its public original.
+
 ## Release checks
 
 Run `npm ci`, `npm run lint`, `npm test`, `npm run build`, and `npm audit --audit-level=high`. The build must run `tsc -b`, not plain `tsc`. Confirm the exact team, project, commit and READY deployment, then verify the login and upload boundaries in the deployed environment. A Git push alone is not proof that production is live.

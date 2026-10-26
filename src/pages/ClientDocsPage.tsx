@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { uploadPrivateDocument } from '../lib/document-upload';
+import { DocumentDownloadLink } from '../components/DocumentDownloadLink';
 import { loadClients, saveClient, deleteClient, emptyClient, resolveClientMatch, type ClientDocument, type FullClient } from '../lib/client-store';
 import { purgeSystemDataAsync } from '../lib/governance-utils';
 import { buildPBSHtml, buildRiskHtml, buildCarePlanHtml, buildEasyReadHtml, riskInfo } from '../lib/doc-renderer';
@@ -1159,9 +1160,9 @@ export function ClientDocsPage({ setPage }: Props = {}) {
                             </div>
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover/doc:opacity-100 transition-opacity">
-                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-hc-muted hover:text-hc-teal transition-colors">
+                            <DocumentDownloadLink url={doc.url} className="p-1.5 text-hc-muted hover:text-hc-teal transition-colors">
                               <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
+                            </DocumentDownloadLink>
                             <button onClick={() => deleteDoc(client.id, doc.id)} className="p-1.5 text-hc-muted hover:text-flag-red transition-colors">
                               <X className="w-3.5 h-3.5" />
                             </button>
