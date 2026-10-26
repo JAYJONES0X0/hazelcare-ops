@@ -285,7 +285,7 @@ function DataManagerProp
   }
 
   const datasets: Array<{ key: ClearableDataset; label: string; present: boolean; desc: string }> = [
-    { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries safely stored` : 'Local registry empty' },
+    { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries stored on this device` : 'Local registry empty' },
     { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
     { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
     { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },

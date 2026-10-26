@@ -938,7 +938,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                                 })}
                                 className="w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
                               >
-                                <option value="global">Shared Record Store</option>
+                                <option value="global">Workspace records on this device</option>
                                 <option value="auto">Auto Resolve</option>
                                 <option value="specific">Specific Client</option>
                               </select>
@@ -1017,7 +1017,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 <div className="space-y-6">
                    <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Client Matching</label>
                    <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
-                     <option value="global">Save to shared record store</option>
+                     <option value="global">Workspace records on this device</option>
                      <option value="auto">Auto-match clients</option>
                      <option value="specific">Import into one selected client</option>
                    </select>

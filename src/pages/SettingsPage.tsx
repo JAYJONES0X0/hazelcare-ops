@@ -540,7 +540,7 @@ export function SettingsPage({ onSignOut }: Props) {
           </button>
           <div className="flex items-center gap-3 opacity-40">
             <Lock size={12} className="text-hc-muted" />
-            <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">E2E Field-Locked Encryption</span>
+            <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">Records stored in this browser</span>
           </div>
         </div>
       </div>
