@@ -586,7 +586,7 @@ async function handleAckNote(req, res) {
 // Priority: Gemini FREE (1M tokens/day, 1M ctx) -> OpenRouter free -> Groq
 
 async function callGemini(messages, options = {}) {
-  const key = process.env.GEMINI_API_KEY;
+  const key = (process.env.GEMINI_API_KEY || '').trim();
   if (!key) throw new Error('GEMINI_API_KEY not set');
 
   const systemMsg = messages.find(m => m.role === 'system');
@@ -627,15 +627,11 @@ async function callGemini(messages, options = {}) {
 }
 
 async function callOpenRouter(messages, options = {}) {
-  const key = process.env.OPENROUTER_API_KEY;
+  const key = (process.env.OPENROUTER_API_KEY || '').trim();
   if (!key) throw new Error('OPENROUTER_API_KEY not set');
 
-  // Free models on OpenRouter
-  const models = [
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'meta-llama/llama-3.1-8b-instruct:free',
-    'google/gemini-2.0-flash-exp:free',
-  ];
+  // Resolve currently available free models rather than retired fixed IDs.
+  const models = ['openrouter/free'];
 
   for (const model of models) {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -649,6 +645,7 @@ async function callOpenRouter(messages, options = {}) {
       },
       body: JSON.stringify({
         model,
+        provider: { data_collection: 'deny' },
         messages,
         temperature: options.temperature ?? 0.25,
         max_tokens: options.max_tokens ?? 2000,
@@ -664,7 +661,7 @@ async function callOpenRouter(messages, options = {}) {
 }
 
 async function callGroq(messages, options = {}) {
-  const key = process.env.GROQ_API_KEY;
+  const key = (process.env.GROQ_API_KEY || '').trim();
   if (!key) throw new Error('GROQ_API_KEY not set');
 
   const models = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'];
