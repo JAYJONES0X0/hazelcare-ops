@@ -1,3 +1,4 @@
+import { prepareTextStream } from '../_lib/ai-stream.js';
 import crypto from 'crypto';
 import { get } from '@vercel/blob';
 import { handleUpload } from '@vercel/blob/client';
@@ -171,7 +172,9 @@ function parseModelJson(rawContent, providerLabel) {
   const raw = String(rawContent || '').trim();
   if (!raw) throw new Error(`${providerLabel} returned an empty response`);
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+  let parsed;
+  try { parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw); }
+  catch { throw new Error(`${providerLabel} returned invalid JSON`); }
   if (!parsed || typeof parsed !== 'object') throw new Error(`${providerLabel} returned non-object JSON`);
   if (!parsed.client || !parsed.carePlan || !parsed.risk || !Array.isArray(parsed.gaps)) {
     throw new Error(`${providerLabel} returned incomplete intelligence JSON`);
@@ -611,14 +614,14 @@ async function callGemini(messages, options = {}) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}${sep}key=${key}`;
     const res = await fetch(url, {
       method: 'POST',
-      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
+      signal: options.stream && options.signal ? options.signal : options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
     if (res.ok) return { res, provider: 'gemini', model };
-    const err = await res.json().catch(() => ({}));
-    console.warn(`[Gemini] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
+    await res.body?.cancel();
+    console.warn(`[AI provider] request failed: ${res.status}`);
   }
   throw new Error('All Gemini models failed');
 }
@@ -637,7 +640,7 @@ async function callOpenRouter(messages, options = {}) {
   for (const model of models) {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
+      signal: options.stream && options.signal ? options.signal : options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
@@ -654,8 +657,8 @@ async function callOpenRouter(messages, options = {}) {
     });
 
     if (res.ok) return { res, provider: 'openrouter', model };
-    const err = await res.json().catch(() => ({}));
-    console.warn(`[OpenRouter] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
+    await res.body?.cancel();
+    console.warn(`[AI provider] request failed: ${res.status}`);
   }
   throw new Error('All OpenRouter models failed');
 }
@@ -668,7 +671,7 @@ async function callGroq(messages, options = {}) {
   for (const model of models) {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
+      signal: options.stream && options.signal ? options.signal : options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model, messages,
@@ -680,33 +683,34 @@ async function callGroq(messages, options = {}) {
     });
     if (res.ok) return { res, provider: 'groq', model };
     if (res.status === 401) throw new Error('Groq auth failed');
-    const err = await res.json().catch(() => ({}));
-    console.warn(`[Groq] ${model} failed: ${res.status} ${err?.error?.message || ''}`);
+    await res.body?.cancel();
+    console.warn(`[AI provider] request failed: ${res.status}`);
   }
   throw new Error('All Groq models rate limited');
 }
 
+const providerCooldown = new Map();
 async function callEmpireStack(messages, options = {}) {
-  options = { ...options, signal: AbortSignal.timeout(60_000) };
-  const providers = [
-    () => callGemini(messages, options),
-    () => callOpenRouter(messages, options),
-    () => callGroq(messages, options),
-  ];
-
-  let lastError;
-  for (const attempt of providers) {
+  const budget = AbortSignal.timeout(45_000);
+  const providers = [['gemini', callGemini], ['groq', callGroq], ['openrouter', callOpenRouter]];
+  for (const [name, call] of providers) {
+    if ((providerCooldown.get(name) || 0) > Date.now()) continue;
+    budget.throwIfAborted();
+    const controller = new AbortController();
+    const firstTokenTimer = options.stream ? setTimeout(() => controller.abort(), 8000) : null;
     try {
-      options.signal.throwIfAborted();
-      const result = await attempt();
-      console.log(`[Empire Router] Using: ${result.provider}`);
-      return result;
-    } catch (e) {
-      lastError = e;
-      console.warn(`[Empire Router] Provider failed: ${e.message}`);
-    }
+      const result = await call(messages, { ...options, signal: AbortSignal.any([budget, controller.signal]) });
+      const textStream = options.stream ? await prepareTextStream(result) : null;
+      providerCooldown.delete(name);
+      console.log(`[AI Router] Selected ${name}`);
+      return { ...result, textStream };
+    } catch {
+      controller.abort();
+      providerCooldown.set(name, Date.now() + 30_000);
+      console.warn(`[AI Router] ${name} unavailable; trying fallback`);
+    } finally { clearTimeout(firstTokenTimer); }
   }
-  throw lastError || new Error('All AI providers unavailable. Please try again in a moment.');
+  throw new Error('AI providers are temporarily unavailable. Retry shortly; your source text is unchanged.');
 }
 
 async function handleAnalyzeIntel(req, res) {
@@ -762,7 +766,7 @@ async function handleAnalyzeIntel(req, res) {
 
     throw new Error(`All intelligence providers failed: ${errors.join(' | ')}`);
   } catch (error) {
-    console.error('Intel Analysis Error:', error);
+    console.error('Intelligence analysis request failed');
     res.status(500).json({ message: error.message || 'Internal server error' });
   }
 }
@@ -825,63 +829,32 @@ async function handleEnhanceNote(req, res) {
   res.setHeader('Cache-Control', 'no-cache');
 
   try {
-    const { res: aiRes, provider } = await callEmpireStack(messages, opts);
-    const reader = aiRes.body?.getReader();
-    if (!reader) return res.status(502).end('No response body');
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data: ')) continue;
-        const data = trimmed.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          let chunk = '';
-          if (provider === 'gemini') {
-            chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          } else {
-            chunk = parsed.choices?.[0]?.delta?.content || '';
-          }
-          if (chunk) res.write(chunk);
-        } catch { /* skip malformed chunks */ }
-      }
-    }
+    const { textStream } = await callEmpireStack(messages, opts);
+    for await (const chunk of textStream) res.write(chunk);
   } catch (e) {
     const msg = e?.message || '';
     const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
       ? 'AI models are at capacity - wait 30 seconds and try again.'
       : `Generation failed: ${msg}`;
-    res.write(friendly);
+    if (res.headersSent) {
+      res.destroy(new Error('AI generation interrupted. Discard the incomplete draft and retry.'));
+      return;
+    }
+    res.status(503).write(friendly);
   } finally {
     res.end();
   }
 }
 
-const GHOST_SYSTEM_PROMPT = `You are a senior support worker with 30 years of frontline and management experience in UK supported living. You are writing a shift note for a client you know well.
-
-RULES:
-- Write entirely in first-person as the support worker who was on shift
-- Never mention that notes were missing, that this is a reconstruction, or that you are AI
-- Do NOT invent clinical incidents, medication events, falls, or appointments unless evidenced in the context provided
-- Base the note on the client's known routines, clinical profile, and notes from surrounding dates - reconstruct a typical day for this person
-- The note must be CQC-compliant, professional, and indistinguishable from a genuine shift note written at the end of shift
-- Use UK English, past tense, write as if the shift just ended and you are handing over
-- Cover: mood and presentation on arrival, meals and hydration, activities and engagement, personal care (if relevant), any observations, handover status
-- Match the structure and format of the template provided - use its headings and sections exactly
-- Write with concrete operational detail in each section: what happened, staff response, client response, and outcome.
-- Avoid generic filler such as "support provided throughout shift" unless you also specify what support.
-- Minimum depth target: 350+ words unless source evidence is genuinely sparse.
-- Weave in relevant care plan/PBS/risk strategies naturally where appropriate (without copying policy text).`;
+const GHOST_SYSTEM_PROMPT = `You assist with evidence-based review of missing care documentation.
+Start every output with: RECONSTRUCTED DRAFT — REQUIRES HUMAN VERIFICATION.
+Use only explicitly evidenced facts in the supplied source material and identify their source/date.
+Never invent a typical day, staff attendance, meals, personal care, observations, medication, appointments, activities, or outcomes.
+Context and neighbouring notes establish context only; they do not prove events on the missing date.
+Do not write as an eyewitness or conceal that this is a reconstruction.
+Mark every unsupported event or time block NOT RECORDED — VERIFICATION REQUIRED.
+Separate supported facts, gaps, and questions for the responsible staff member.
+Use UK English. Do not claim the output is compliant, verified, or a completed contemporaneous care record.`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REFINE TASKS — returns { [taskId]: updatedNotes } for changed tasks only
@@ -971,7 +944,7 @@ async function handleRefineTasks(req, res) {
 
     return res.status(200).json(sanitized);
   } catch (error) {
-    console.error('[refine-tasks] error:', error);
+    console.error('[refine-tasks] request failed');
     return res.status(500).json({ error: error.message || 'Refinement failed' });
   }
 }
@@ -1022,8 +995,8 @@ async function handleGhostWrite(req, res) {
     '',
     safeTemplate ? `[NOTE STRUCTURE TO FOLLOW - use these headings and sections exactly]:\n${safeTemplate}` : '',
     '',
-    `TASK: Write a complete, professional shift note for ${clientName} on ${date}. Use the surrounding notes and intelligence knowledge, and any shift context provided to reconstruct the support provided. Write as the support worker on shift.`,
-    `QUALITY BAR: Include clear specifics for each section (what happened, intervention, client response, end status). Avoid vague one-line summaries.`,
+    `TASK: Prepare an explicitly labelled evidence-review draft for ${date}. Only document events explicitly evidenced for that date. Do not impersonate the support worker or infer events from surrounding dates.`,
+    `QUALITY BAR: Cite supplied evidence for every asserted event. Mark unsupported sections NOT RECORDED — VERIFICATION REQUIRED.`,
     evidenceInstruction,
   ].filter(l => l !== undefined).join('\n');
 
@@ -1037,43 +1010,19 @@ async function handleGhostWrite(req, res) {
   res.setHeader('Cache-Control', 'no-cache');
 
   try {
-    const { res: aiRes, provider } = await callEmpireStack(messages, opts);
-    const reader = aiRes.body?.getReader();
-    if (!reader) return res.status(502).end('No response body');
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data: ')) continue;
-        const data = trimmed.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          let chunk = '';
-          if (provider === 'gemini') {
-            chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          } else {
-            chunk = parsed.choices?.[0]?.delta?.content || '';
-          }
-          if (chunk) res.write(chunk);
-        } catch { /* skip malformed chunks */ }
-      }
-    }
+    const { textStream } = await callEmpireStack(messages, opts);
+    res.write('RECONSTRUCTED DRAFT — REQUIRES HUMAN VERIFICATION.\n\n');
+    for await (const chunk of textStream) res.write(chunk);
   } catch (e) {
     const msg = e?.message || '';
     const friendly = msg.includes('unavailable') || msg.includes('rate') || msg.includes('limit') || msg.includes('saturated')
       ? 'AI models are at capacity - wait 30 seconds and try again.'
       : `Generation failed: ${msg}`;
-    res.write(friendly);
+    if (res.headersSent) {
+      res.destroy(new Error('AI generation interrupted. Discard the incomplete draft and retry.'));
+      return;
+    }
+    res.status(503).write(friendly);
   } finally {
     res.end();
   }
