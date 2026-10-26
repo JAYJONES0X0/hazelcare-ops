@@ -616,7 +616,7 @@ async function callGemini(messages, options = {}) {
       method: 'POST',
       signal: options.stream && options.signal ? options.signal : options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, generationConfig: { ...body.generationConfig, ...(options.stream && model === 'gemini-2.5-flash' ? { thinkingConfig: { thinkingBudget: 0 } } : {}) } }),
     });
 
     if (res.ok) return { res, provider: 'gemini', model };
@@ -694,10 +694,10 @@ async function callEmpireStack(messages, options = {}) {
     if ((providerCooldown.get(name) || 0) > Date.now()) continue;
     budget.throwIfAborted();
     const controller = new AbortController();
-    const firstTokenTimer = options.stream ? setTimeout(() => controller.abort(), 8000) : null;
+    const firstTokenTimer = options.stream ? setTimeout(() => controller.abort(), 12000) : null;
     try {
       const result = await call(messages, { ...options, signal: AbortSignal.any([budget, controller.signal]) });
-      const textStream = options.stream ? await prepareTextStream(result) : null;
+      const textStream = options.stream ? await prepareTextStream(result, 12000) : null;
       providerCooldown.delete(name);
       console.log(`[AI Router] Selected ${name}`);
       return { ...result, textStream };
