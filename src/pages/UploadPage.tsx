@@ -1,3 +1,4 @@
+import { flushRecordWrites } from '../lib/browser-records';
 import { useState, useRef, useEffect } from 'react';
 import { Activity, Check, CheckCircle, AlertTriangle, Upload, FileText, Calendar, Trash2, Archive, Users } from 'lucide-react';
 import JSZip from 'jszip';
@@ -526,7 +527,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     }
 
     // ── DIARY UPLOAD PATH ───────────────────────────────────────────────────
-    const res = routeImport(preview.envelope, { targets: selectedTargets, clientMode, selectedClientId });
+    const res = await routeImport(preview.envelope, { targets: selectedTargets, clientMode, selectedClientId });
     if (res.ok) {
       // Persist raw entries — enriched with roster if available
       if (preview.envelope.diaryEntries?.length) {
@@ -542,6 +543,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         const data = loadWeekData();
         if (data) onDataParsed(data);
       }
+      try { await flushRecordWrites(); }
+      catch { setErrorMsg('Import could not finish saving. Preserve your source files and retry after checking device storage.'); setStep('error'); return; }
       setResultMsg(res.messages.join(' ')); setStep('done');
     } else { setErrorMsg(res.warnings.join(' | ')); setStep('error'); }
   };
@@ -616,7 +619,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
         continue;
       }
 
-      const res = routeImport(r.envelope, {
+      const res = await routeImport(r.envelope, {
         targets: [selectedTarget],
         clientMode: lockedClientId ? 'specific' : 'global',
         selectedClientId: lockedClientId,
@@ -650,6 +653,8 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
     if (success > 0) {
       const consolidation = consolidateDuplicatePackClients(loadClients());
       if (consolidation.changed) saveClients(consolidation.clients);
+      try { await flushRecordWrites(); }
+      catch { setErrorMsg('Client pack could not finish saving. Preserve your source files and retry.'); setStep('error'); return; }
       const data = loadWeekData();
       if (data) onDataParsed(data);
       getRosterSummary().then(setRosterStatus).catch(() => {});
@@ -933,7 +938,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                                 })}
                                 className="w-full hc-clay-inset px-4 py-3 rounded-xl text-[10px] font-black uppercase text-hc-text tracking-widest outline-none"
                               >
-                                <option value="global">Shared Record Store</option>
+                                <option value="global">Workspace records on this device</option>
                                 <option value="auto">Auto Resolve</option>
                                 <option value="specific">Specific Client</option>
                               </select>
@@ -1012,7 +1017,7 @@ export function UploadPage({ onDataParsed, setPage }: Props) {
                 <div className="space-y-6">
                    <label className="text-[11px] font-black text-hc-muted uppercase tracking-[0.3em] ml-1">Client Matching</label>
                    <select value={clientMode} onChange={e => setClientMode(e.target.value as ClientMode)} className="w-full hc-clay-inset px-6 py-4 rounded-2xl text-[11px] font-black uppercase text-hc-text tracking-widest outline-none shadow-inner mb-4">
-                     <option value="global">Save to shared record store</option>
+                     <option value="global">Workspace records on this device</option>
                      <option value="auto">Auto-match clients</option>
                      <option value="specific">Import into one selected client</option>
                    </select>

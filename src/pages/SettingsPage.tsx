@@ -1,3 +1,4 @@
+import { flushRecordWrites } from '../lib/browser-records';
 import { useState, useRef } from 'react';
 import {
   ShieldCheck, Lock, Activity, Shield, Database, Trash2,
@@ -329,6 +330,7 @@ function DataSection() {
       const snapshot = JSON.parse(text) as unknown;
       const result = importOpsSnapshot(snapshot);
       if (result.ok) {
+        await flushRecordWrites();
         setImportResult({ ok: true, msg: 'Data restored successfully. Reload to apply.' });
       } else {
         setImportResult({ ok: false, msg: result.error });
@@ -338,9 +340,10 @@ function DataSection() {
     }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     if (clearState === 'idle') { setClearState('confirm'); return; }
     clearAllData();
+    await flushRecordWrites();
     setClearState('done');
     setTimeout(() => window.location.reload(), 1500);
   };
@@ -537,7 +540,7 @@ export function SettingsPage({ onSignOut }: Props) {
           </button>
           <div className="flex items-center gap-3 opacity-40">
             <Lock size={12} className="text-hc-muted" />
-            <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">E2E Field-Locked Encryption</span>
+            <span className="text-[8px] font-black text-hc-muted uppercase tracking-widest">Records stored in this browser</span>
           </div>
         </div>
       </div>

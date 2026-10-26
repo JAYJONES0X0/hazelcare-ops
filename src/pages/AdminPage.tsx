@@ -1,3 +1,4 @@
+import { recordStorage, flushRecordWrites } from '../lib/browser-records';
 import { useState, useRef, useEffect } from 'react';
 import type { WeekSummary } from '../lib/types';
 import { clearCoveragePlan, loadCoveragePlan } from '../lib/coverage-plan';
@@ -230,7 +231,7 @@ function DataManagerProp
   const actions = loadActions();
   const incidents = loadIncidents();
   const plan = loadCoveragePlan();
-  const notes = (() => { try { return JSON.parse(localStorage.getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
+  const notes = (() => { try { return JSON.parse(recordStorage(localStorage).getItem('hazelcare-staff-notes') || '[]'); } catch { return []; } })();
 
   useEffect(() => {
     void getAllEntriesAsync().then(all => setRealCount(all.length));
@@ -275,6 +276,7 @@ function DataManagerProp
         alert(`Restore failed: ${result.error}`);
         return;
       }
+      await flushRecordWrites();
       alert('Backup restored successfully. Reloading...');
       window.location.reload();
     } catch {
@@ -283,7 +285,7 @@ function DataManagerProp
   }
 
   const datasets: Array<{ key: ClearableDataset; label: string; present: boolean; desc: string }> = [
-    { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries safely stored` : 'Local registry empty' },
+    { key: 'diary', label: 'Diary & Briefing', present: realCount > 0, desc: realCount > 0 ? `${realCount.toLocaleString()} entries stored on this device` : 'Local registry empty' },
     { key: 'clients', label: 'People & Support Plans', present: clients.length > 0, desc: clients.length > 0 ? `${clients.length} people configured` : 'Local registry empty' },
     { key: 'actions', label: 'Action Tracker', present: actions.length > 0, desc: actions.length > 0 ? `${actions.length} tasks logged` : 'Local registry empty' },
     { key: 'incidents', label: 'Incident Logs', present: incidents.length > 0, desc: incidents.length > 0 ? `${incidents.length} events recorded` : 'Local registry empty' },

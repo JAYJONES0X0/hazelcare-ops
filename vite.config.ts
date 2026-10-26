@@ -9,6 +9,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   root: rootDir,
   base: '/',
+  define: { 'import.meta.env.VITE_APP_REVISION': JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'local') },
   plugins: [react(), tailwindcss()],
   resolve: {
     preserveSymlinks: true,

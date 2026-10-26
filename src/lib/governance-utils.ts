@@ -1,3 +1,4 @@
+import { recordStorage, flushRecordWrites } from './browser-records';
 // ============================================================
 // GOVERNANCE UTILS — System Purge & Intelligence Scrubbing
 // ============================================================
@@ -35,19 +36,20 @@ export async function purgeSystemDataAsync() {
   ];
 
   for (const key of exactKeys) {
-    localStorage.removeItem(key);
+    recordStorage(localStorage).removeItem(key);
   }
 
   for (let i = localStorage.length - 1; i >= 0; i -= 1) {
     const key = localStorage.key(i);
     if (!key) continue;
     if (key.startsWith('hazelcare-legal-') || key.startsWith('collapse-state:')) {
-      localStorage.removeItem(key);
+      recordStorage(localStorage).removeItem(key);
     }
   }
   
   // Clear the SQL-grade intelligence database
   await clearEntryStoreAsync();
+  await flushRecordWrites();
 
   if ('serviceWorker' in navigator) {
     try {
@@ -63,9 +65,9 @@ export async function purgeSystemDataAsync() {
 }
 
 export function clearClientRegistry() {
-  localStorage.removeItem('hc-clients-v2');
+  recordStorage(localStorage).removeItem('hc-clients-v2');
 }
 
 export function clearStaffNotesRegistry() {
-  localStorage.removeItem('hazelcare-staff-notes');
+  recordStorage(localStorage).removeItem('hazelcare-staff-notes');
 }

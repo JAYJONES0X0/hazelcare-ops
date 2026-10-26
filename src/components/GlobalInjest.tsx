@@ -130,7 +130,7 @@ export function GlobalInjest({ file, onClose, onDataParsed }: Props) {
             continue;
           }
 
-          const res = routeImport(env, { targets, clientMode: 'auto' });
+          const res = await routeImport(env, { targets, clientMode: 'auto' });
           if (res.ok) {
             successCount++;
             if (env.diaryEntries?.length) {
@@ -146,7 +146,7 @@ export function GlobalInjest({ file, onClose, onDataParsed }: Props) {
           if (data) onDataParsed(data);
         }
       } else if (envelope) {
-        const res = routeImport(envelope, { targets: [target], clientMode: 'auto' });
+        const res = await routeImport(envelope, { targets: [target], clientMode: 'auto' });
         if (res.ok) {
           if (envelope.diaryEntries?.length) {
             const enriched = await enrichEntriesWithRoster(envelope.diaryEntries);

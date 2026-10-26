@@ -1,9 +1,10 @@
+import { pushPage, movePage, historyTarget, type PageHistory } from './lib/page-history';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { LoginGate } from './components/LoginGate';
 import { Sidebar } from './components/Sidebar';
 import { GlobalInjest } from './components/GlobalInjest';
-import { Upload, ArrowUp, ArrowDown, Menu } from 'lucide-react';
+import { Upload, ArrowUp, ArrowDown, Menu, ArrowLeft, ArrowRight } from 'lucide-react';
 import { RadarLoader } from './components/NexusLoader';
 
 import type { WeekSummary, Action, Incident, StaffMember, Page, PageContext } from './lib/types';
@@ -87,15 +88,18 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRole>(() => normalizeUserRole(localStorage.getItem('hc-user-role')));
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [pageId, setPageId] = useState<Page>(() => {
+  const [navigation, setNavigation] = useState<PageHistory>(() => {
     const validPages: readonly Page[] = ['briefing','dashboard','communications','upload','templates','actions','incidents','staff','staff-tools','notes','note-workspace','training-hub','handover','compliance','reports','risk','client-docs','client-diary','agency','staff-monitoring','settings','admin','empire-matrix','nourish-tasks','client-finance','medication-safety'];
     const pathMatch = window.location.pathname.match(/\/(\w[\w-]*)$/);
     const fromPath = pathMatch && validPages.includes(pathMatch[1] as Page) ? pathMatch[1] as Page : null;
     const saved = fromPath || (localStorage.getItem('hc_current_page') as Page) || 'briefing';
     const role = normalizeUserRole(localStorage.getItem('hc-user-role'));
-    return canAccessPage(role, saved) ? saved : 'briefing';
+    const page: Page = canAccessPage(role, saved) ? saved : 'briefing';
+    return { entries: [{ page, context: null, scrollTop: 0 }], index: 0 };
   });
-  const [pageCtx, setPageCtx] = useState<PageContext | null>(null);
+  const visit = navigation.entries[navigation.index];
+  const pageId = visit.page;
+  const pageCtx = visit.context;
   const mainRef = useRef<HTMLElement>(null);
 
   const [hasStaffHash] = useState(() => window.location.hash.startsWith('#staff/'));
@@ -109,31 +113,30 @@ export default function App() {
   }, []);
 
   const setPage = useCallback((p: Page, ctx?: PageContext) => {
-    if (!canAccessPage(userRole, p)) {
-      setPageId('briefing');
-      setPageCtx(null);
-      localStorage.setItem('hc_current_page', 'briefing');
-      return;
-    }
-    setPageId(p);
-    setPageCtx(ctx || null);
-    localStorage.setItem('hc_current_page', p);
+    const destination = canAccessPage(userRole, p) ? p : 'briefing';
+    const scrollTop = mainRef.current?.scrollTop ?? 0;
+    setNavigation(current => pushPage(current, { page: destination, context: destination === p ? ctx ?? null : null, scrollTop: 0 }, scrollTop));
+    localStorage.setItem('hc_current_page', destination);
   }, [userRole]);
+  const moveHistory = (direction: -1 | 1) => {
+    const scrollTop = mainRef.current?.scrollTop ?? 0;
+    setNavigation(current => movePage(current, direction, scrollTop, p => canAccessPage(userRole, p)));
+  };
+  const canReturn = historyTarget(navigation, -1, p => canAccessPage(userRole, p)) !== null;
+  const canForward = historyTarget(navigation, 1, p => canAccessPage(userRole, p)) !== null;
 
   const page = canAccessPage(userRole, pageId) ? pageId : 'briefing';
   const activePageCtx = page === pageId ? pageCtx : null;
 
   useEffect(() => {
-    if (page !== pageId) {
-      localStorage.setItem('hc_current_page', page);
-    }
+    localStorage.setItem('hc_current_page', page);
   }, [page, pageId]);
 
   useEffect(() => {
     if (mainRef.current) {
-      mainRef.current.scrollTop = 0;
+      mainRef.current.scrollTop = visit.scrollTop;
     }
-  }, [pageId]);
+  }, [pageId, visit]);
 
   const scrollToTop = () => {
     const clinicalList = document.getElementById('clinical-workspace-list');
@@ -434,6 +437,10 @@ export default function App() {
                   >
                     <Menu size={20} />
                   </button>
+                  <button type="button" onClick={() => moveHistory(-1)} disabled={!canReturn} aria-label="Return to previous page" title="Return to previous page" className="shrink-0 flex items-center gap-1 rounded-lg px-2 py-2 hc-clay-raised text-hc-text disabled:opacity-30 disabled:cursor-not-allowed">
+                    <ArrowLeft size={16} /><span className="hidden sm:inline text-xs">Back</span>
+                  </button>
+                  <button type="button" onClick={() => moveHistory(1)} disabled={!canForward} aria-label="Go forward" title="Go forward" className="shrink-0 rounded-lg px-2 py-2 hc-clay-raised text-hc-text disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRight size={16} /></button>
                   <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1">
                   {activeSection.tabs.filter(tab => canAccessPage(userRole, tab.id)).map(tab => {
                     const active = page === tab.id;
@@ -460,7 +467,7 @@ export default function App() {
                     </span>
                   )}
                   <span className="shrink-0 px-2 py-0.5 rounded-lg bg-hc-teal/10 text-[7px] sm:text-[9px] font-black uppercase tracking-widest text-hc-teal border border-hc-teal/20">
-                    v2
+                    OS · {import.meta.env.VITE_APP_REVISION}
                   </span>
                 </div>
               </div>

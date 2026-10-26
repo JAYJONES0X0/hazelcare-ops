@@ -1,3 +1,4 @@
+import { recordStorage } from './browser-records';
 import { persistSafely } from './persistence';
 import type { AppState, Action, CareEntry, Incident, WeekSummary, StaffMember, Shift } from './types';
 
@@ -36,11 +37,11 @@ const memoryStorage = (() => {
 })();
 
 export function getStorage(): StorageAdapter {
-  if (typeof window !== 'undefined' && isStorageAdapter(window.localStorage)) return window.localStorage;
+  if (typeof window !== 'undefined' && isStorageAdapter(window.localStorage)) return recordStorage(window.localStorage);
 
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
   if (descriptor && 'value' in descriptor && descriptor.value) {
-    if (isStorageAdapter(descriptor.value)) return descriptor.value;
+    if (isStorageAdapter(descriptor.value)) return recordStorage(descriptor.value);
   }
 
   return memoryStorage;
@@ -51,7 +52,6 @@ export function getStorage(): StorageAdapter {
   try {
     const storage = getStorage();
     if (storage.getItem(SCHEMA_VERSION_KEY) !== CURRENT_SCHEMA) {
-      storage.removeItem(STORAGE_KEY);
       storage.removeItem('hc_current_page');
       storage.removeItem('hc-registered-sessions');
       storage.setItem(SCHEMA_VERSION_KEY, CURRENT_SCHEMA);

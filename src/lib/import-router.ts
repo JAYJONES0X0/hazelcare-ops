@@ -1,3 +1,4 @@
+import { flushRecordWrites } from './browser-records';
 import type { FullClient, PackFileManifestRow, PackImport, VaultDoc } from './client-store';
 import { emptyCareCircle, emptyClient, loadClients, resolveClientMatch, saveClient, type CareCircleContact } from './client-store';
 import { mergeClientIdentity } from './client-identity-merge';
@@ -223,7 +224,7 @@ function applyDraftOnboardingState(client: FullClient) {
   }
 }
 
-export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImportOptions): RouteImportResult {
+export async function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImportOptions): Promise<RouteImportResult> {
   const messages: string[] = [];
   const warnings: string[] = [...envelope.warnings];
   const previousWeekData = loadWeekData();
@@ -506,10 +507,12 @@ export function routeImport(envelope: NormalizedImportEnvelope, opts: RouteImpor
       messages.push(`Imported ${added} new shifts to the Live Roster.`);
     }
 
+    await flushRecordWrites();
     return { ok: true, page, messages, warnings, requiresManualClientSelection };
   } catch (err) {
     const rollback = importOpsSnapshot(snapshot);
     saveWeekData(previousWeekData);
+    try { await flushRecordWrites(); } catch { return { ok: false, page: 'upload', messages: [], warnings: ['Import and rollback storage failed. Preserve your source files and browser data.'] }; }
     const msg = err instanceof Error ? err.message : 'Unknown import error';
     const rollbackMsg = rollback.ok ? '' : ` Rollback failed: ${rollback.error}`;
     return { ok: false, page: 'upload', messages: [], warnings: [`Import rolled back: ${msg}.${rollbackMsg}`.trim()] };

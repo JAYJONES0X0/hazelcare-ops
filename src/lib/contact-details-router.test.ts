@@ -35,7 +35,7 @@ describe('contact details route import', () => {
     vi.stubGlobal('window', { dispatchEvent: vi.fn() });
   });
 
-  it('merges contact exports into the matched client Care Circle without wiping existing contacts', () => {
+  it('merges contact exports into the matched client Care Circle without wiping existing contacts', async () => {
     const client = {
       ...emptyClient(),
       id: 'client-alistair',
@@ -64,7 +64,7 @@ describe('contact details route import', () => {
     saveClient(client);
 
     const envelope = buildEnvelopeFromRaw('Contact-details.pdf', CONTACT_DETAILS_TEXT);
-    const result = routeImport(envelope, { targets: ['client-docs'], clientMode: 'auto' });
+    const result = await routeImport(envelope, { targets: ['client-docs'], clientMode: 'auto' });
 
     expect(result.ok).toBe(true);
     expect(result.messages.join(' ')).toContain('contacts merged');
